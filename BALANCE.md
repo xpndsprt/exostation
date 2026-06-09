@@ -29,6 +29,32 @@ Base trip = 60s round-trip at TL1 bot. Mining Bot II: +50% cargo, −25% trip ti
 | Exotic Ice | 5 | Outer-belt bodies |
 | Gas (per type) | 6 | Gas clouds / nebulae |
 
+## Radar & drone fleet
+| Element | Value | Notes |
+|---------|-------|-------|
+| Sensor Array I | detect 1 ring (~2 sectors) | reveals unidentified blips |
+| Sensor Array II | detect 2 rings | auto-identifies common resources |
+| Sensor Array III | detect 3 rings + deep scan | reveals richness/hazard, finds rare/exotic sites |
+| Survey Drone | 20s / blip | identifies type, richness, hazard |
+| Mining Bot I | range 1 ring, cargo 10, speed 1× | base |
+| Mining Bot II | range 2 rings, cargo +50%, speed +25% | |
+| Mining Bot III | range 3 rings, cargo +100%, speed +40% | |
+| Charging Relay (beacon) | +1 ring effective range | forward refuel/charge node placed in space |
+| Bot Bay throughput | 1 launch/dock per 6s | more bays = more concurrent drones out |
+| Repair Bay | restores drone integrity | required to work hazard sites sustainably |
+| Standing-order automation | unlock: Robotics II | enables per-resource auto-dispatch |
+
+## Site types (radar blips)
+| Site | Resource(s) | Richness | Replenish | Hazard |
+|------|-------------|:--------:|:---------:|--------|
+| Ice Asteroid | Water/Ice | Med | none (finite) | low |
+| Rocky Asteroid | Silicates | High | none | low |
+| Organic Comet | Biomass (+Water) | Med, moving | passes (time-limited) | micrometeorite |
+| Fungal Drift | Spores | Low | slow regrow | bio |
+| Gas Cloud / Nebula | CH₄ / Cl₂ / NH₃ / H₂ | High | slow regen | corrosive / volatile |
+| Outer-Belt Body | Exotic Ice | Low, far | none | radiation, cold |
+| Derelict / Wreck | mixed salvage | one-time | event spawn | pirates, unstable |
+
 ## Food synthesis
 Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality only affects mood for **palate** species.
 
@@ -97,7 +123,8 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 | **Food** | Standard (start) → Fungal → Protein → Mineral Slurry → Cryo-Gel → Plasma |
 | **Containment & Safety** | Airlock II → Leak Sensors → Corrosion Plating → Blast Shielding |
 | **Security** | I → II → III |
-| **Robotics** | Mining Bot II → III → Repair Bots |
+| **Robotics** | Mining Bot II → III → Repair Bots → Standing Orders (per-resource auto-dispatch) |
+| **Sensors & Survey** | Sensor Array I → II → III → Survey Drone → Charging Relay |
 
 ## Progression curve (typical)
 1. **Open** with Humans (O₂ + Standard Rations already researched).

@@ -183,6 +183,39 @@ Each species has a **Tech Level (TL 1–6)** that rises with tier. Tech cuts bot
 
 ---
 
+# RESOURCE GATHERING: RADAR, SITES & DRONE FLEET
+
+Resources live **out in space**, often far from the station, so gathering is its own layer of play with its own view. You toggle between the **Build View** (station interior) and the **Radar View** (the space around you), and the gathering loop is: **scan → identify → assign drones → shuttle → deplete → move on.**
+
+## The Radar View
+A top-down tactical map centered on the station, with **concentric range rings** marking how far your drones can currently reach.
+- **Fog of space:** unscanned space is dark. A **Sensor Array** module sweeps outward; its tier sets detection range and resolution.
+- **Blips:** detected sites appear as color-coded blips (color = resource, size = richness, icon = hazard). Until surveyed they read as *unidentified contacts* — you know something's there, not what.
+- **Survey:** a **Survey Drone** (or a higher-tier passive scan) identifies a blip's composition, richness, hazard, and recommended bot tier.
+- **Live traffic:** mining drones in transit show as moving dots along their routes, so you can read congestion and range at a glance. Filters let you show/hide by resource, hazard, or depletion.
+
+## Sites
+Each site has: **position** (distance ring + bearing), **resource type(s)**, **richness** (a depleting pool), **yield rate**, **hazard**, and whether it **replenishes**. Lifecycle: *Discover → Survey → Exploit → Deplete → Abandon.*
+- **Finite** (asteroids) drain to nothing; **replenishing** (gas clouds, fungal drifts) slowly regenerate.
+- **Moving / time-limited** sites — passing comets, drifting derelicts — create urgency and reward opportunistic dispatch.
+- **Event sites** — a rich salvage wreck or a comet stream — spawn temporarily and may carry **pirates** or instability.
+- Distance is the core trade-off: a **near-poor** site vs a **far-rich** site is time, fuel, and risk weighed against need.
+
+## The Drone Fleet & Assignment
+Mining bots are a managed fleet (tiers I–III differing in **range, cargo, speed, integrity**). Assignment works on two layers:
+
+1. **Per-site assignment (base mechanic).** Click a surveyed site → set how many drones to commit. They auto-run the shuttle loop (fly out → mine → return → unload → repeat) until the site depletes or you reassign them. Direct, legible, hands-on — the early game.
+2. **Per-resource standing orders (unlockable automation).** Set a station-wide target ("keep ≥200 Water," "maximize Exotic Ice") and idle drones **auto-dispatch to the best known site** for that resource, re-routing as sites deplete or new ones are found. This is how you scale once you're juggling many sites and species demands at once.
+
+You'll typically run a **portfolio of directives** at once, tied directly to live needs — standing up a Naaz wing means pointing drones at Exotic Ice + ammonia gas clouds while your Standard-Rations chain keeps humming.
+
+## Range, Relays & Risk — the gating systems
+- **Range/charge:** a site beyond a drone's round-trip range is unreachable until you either field a **higher-tier bot**, or place a **Charging Relay (beacon)** out in space as a forward refuel/charge node that extends effective reach one ring further. Rich, distant sites therefore demand infrastructure investment — a natural expansion curve.
+- **Bays:** **Bot Bays** (launch/dock/recharge) cap concurrent traffic via airlock cycling; **Repair Bays** restore integrity. Want more drones out at once? Build more bays.
+- **Hazards:** hazardous sites yield more but risk **drone loss** (radiation, micrometeorite, corrosion, pirates). Mitigate with shielding upgrades, Repair Bays, or escorts — or accept attrition for the payout.
+
+---
+
 # STRUCTURAL INTEGRITY, DESTRUCTION & CONNECTIVITY
 
 The station is a physical structure, not just a set of rooms — and **connectivity is fragile.** Rooms and corridors form a traversal graph; lose the wrong node and the station can literally split in two.
@@ -247,6 +280,32 @@ Base trip = 60s round-trip at TL1 bot. Mining Bot II: +50% cargo, −25% trip ti
 | Silicates | 15 | Rocky asteroids |
 | Exotic Ice | 5 | Outer-belt bodies |
 | Gas (per type) | 6 | Gas clouds / nebulae |
+
+## Radar & drone fleet
+| Element | Value | Notes |
+|---------|-------|-------|
+| Sensor Array I | detect 1 ring (~2 sectors) | reveals unidentified blips |
+| Sensor Array II | detect 2 rings | auto-identifies common resources |
+| Sensor Array III | detect 3 rings + deep scan | reveals richness/hazard, finds rare/exotic sites |
+| Survey Drone | 20s / blip | identifies type, richness, hazard |
+| Mining Bot I | range 1 ring, cargo 10, speed 1× | base |
+| Mining Bot II | range 2 rings, cargo +50%, speed +25% | |
+| Mining Bot III | range 3 rings, cargo +100%, speed +40% | |
+| Charging Relay (beacon) | +1 ring effective range | forward refuel/charge node placed in space |
+| Bot Bay throughput | 1 launch/dock per 6s | more bays = more concurrent drones out |
+| Repair Bay | restores drone integrity | required to work hazard sites sustainably |
+| Standing-order automation | unlock: Robotics II | enables per-resource auto-dispatch |
+
+## Site types (radar blips)
+| Site | Resource(s) | Richness | Replenish | Hazard |
+|------|-------------|:--------:|:---------:|--------|
+| Ice Asteroid | Water/Ice | Med | none (finite) | low |
+| Rocky Asteroid | Silicates | High | none | low |
+| Organic Comet | Biomass (+Water) | Med, moving | passes (time-limited) | micrometeorite |
+| Fungal Drift | Spores | Low | slow regrow | bio |
+| Gas Cloud / Nebula | CH₄ / Cl₂ / NH₃ / H₂ | High | slow regen | corrosive / volatile |
+| Outer-Belt Body | Exotic Ice | Low, far | none | radiation, cold |
+| Derelict / Wreck | mixed salvage | one-time | event spawn | pirates, unstable |
 
 ## Food synthesis
 Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality only affects mood for **palate** species.
@@ -317,7 +376,8 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 | **Food** | Standard (start) → Fungal → Protein → Mineral Slurry → Cryo-Gel → Plasma |
 | **Containment & Safety** | Airlock II → Leak Sensors → Corrosion Plating → Blast Shielding |
 | **Security** | I → II → III |
-| **Robotics** | Mining Bot II → III → Repair Bots |
+| **Robotics** | Mining Bot II → III → Repair Bots → Standing Orders (per-resource auto-dispatch) |
+| **Sensors & Survey** | Sensor Array I → II → III → Survey Drone → Charging Relay |
 
 ## Progression curve (typical)
 1. **Open** with Humans (O₂ + Standard Rations already researched).
