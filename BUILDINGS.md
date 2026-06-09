@@ -63,6 +63,7 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Cryo-Gel Feed Synthesizer | Food for Naaz | 8 | 2×1 | 1,200 | producing / idle / input-short · quality:B/R/G |
 | Plasma Feed Emitter | "Food" (energy) for Voltaar | 10 | 2×1 | 1,500 | producing / idle / power-starved |
 | Hydroponics Bay | Grows Biomass/Spores on-station (less mining) | 6 | 3×2 | 700 | growing / harvest-ready / unlit |
+| Bio Vat *(implemented)* | Grows food base (**biomass**) from power: +3 biomass / 8s | 6 | 1×1 | — | growing / unpowered |
 | Water Reclaimer | Recovers Water from waste | 3 | 1×1 | 300 | reclaiming / idle |
 | Resource Silo | Stores raw resources & food | 0 | 2×2 | 200 | stocked / full / empty |
 

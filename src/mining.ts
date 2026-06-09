@@ -2,8 +2,7 @@ import { Site, World } from "./types";
 
 const DRONE_SPEED = 6; // tiles / second
 const CARGO_CAP = 10;
-const MINE_RATE = 5; // units / second
-const BIOMASS_FRACTION = 0.6; // rest is water
+const MINE_RATE = 5; // minerals / second
 
 function tileDist(w: World, a: number, b: number): number {
   const ax = a % w.w;
@@ -88,8 +87,7 @@ export function miningSystem(w: World, dt: number): void {
         d.t += dt / dur;
         if (d.t >= 1) {
           d.t = 0;
-          w.stock.biomass += d.cargo * BIOMASS_FRACTION;
-          w.stock.water += d.cargo * (1 - BIOMASS_FRACTION);
+          w.stock.minerals += d.cargo;
           d.cargo = 0;
           d.state = "docked";
         }

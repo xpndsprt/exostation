@@ -134,8 +134,7 @@ recomputeRooms(w3);
 addStructure(w3, "solar", 6, 6); // +10 supply covers bay's 4 draw
 addStructure(w3, "bay", 7, 6); // spawns one drone
 addSite(w3, 20, 6); // asteroid out in space
-w3.stock.biomass = 0;
-w3.stock.water = 0;
+w3.stock.minerals = 0;
 
 const bay = Object.values(w3.structures).find((s) => s.kind === "bay")!;
 const drone = Object.values(w3.drones)[0];
@@ -154,7 +153,7 @@ check("M5 bay is powered", bay.powered);
 check("M5 drone flew outbound", sawOutbound);
 check("M5 drone mined the site", sawMining);
 check("M5 site richness dropped", site.richness < richBefore);
-check("M5 drone delivered biomass+water to stock", w3.stock.biomass > 0 && w3.stock.water > 0);
+check("M5 drone delivered minerals to stock", w3.stock.minerals > 0);
 
 // --- M6: docking port spawns Drenn guests + lodging income ---
 const w4 = createWorld();
@@ -356,6 +355,26 @@ check("Advisor records every species seen", wa.seen.includes("human") && wa.seen
 addStructure(wa, "o2gen", 6, 7); // draw, but no solar -> brownout
 for (let i = 0; i < 10; i++) step(wa);
 check("Advisor raises a critical on power shortfall", advise(wa).some((a) => a.sev === "critical" && /power/i.test(a.text)));
+
+// --- Food loop: Vat grows biomass, Synth cooks meals (no mining needed) ---
+const wf = createWorld();
+carve(wf, 40, 5, 44, 8);
+recomputeRooms(wf);
+addStructure(wf, "solar", 41, 6);
+addStructure(wf, "solar", 42, 6); // 20 PU >= 11 draw
+addStructure(wf, "vat", 41, 7);
+addStructure(wf, "synth", 42, 7);
+wf.stock.biomass = 0;
+wf.stock.meals = 0;
+wf.stock.minerals = 0;
+let bioGrew = false;
+for (let i = 0; i < 300; i++) {
+  step(wf);
+  if (wf.stock.biomass > 0) bioGrew = true;
+}
+check("Vat grows biomass from power", bioGrew);
+check("Synth turns biomass into meals", wf.stock.meals > 0);
+check("No mining means minerals stay 0", wf.stock.minerals === 0);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

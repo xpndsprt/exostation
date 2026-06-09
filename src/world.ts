@@ -19,9 +19,8 @@ export function createWorld(): World {
     sites: {},
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
-    // Seed some raw resources so the synthesizer can make meals before mining
-    // (M5) exists to replenish them.
-    stock: { biomass: 40, water: 40, meals: 0 },
+    // Seed some biomass so the synth can make meals before a Vat is built.
+    stock: { minerals: 0, biomass: 40, meals: 0 },
     credits: 0,
     seen: [],
     tick: 0,

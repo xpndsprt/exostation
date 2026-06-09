@@ -7,6 +7,7 @@ const STRUCTURE_KINDS = new Set([
   "o2gen",
   "ch4gen",
   "synth",
+  "vat",
   "pod",
   "bay",
   "dock",

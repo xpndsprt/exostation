@@ -27,9 +27,10 @@ const PALETTE: PaletteEntry[] = [
   { t: "o2gen", label: "O₂ Generator", key: "3" },
   { t: "ch4gen", label: "Methane Gen", key: "4" },
   { t: "synth", label: "Rations Synth", key: "5" },
-  { t: "pod", label: "Sleeping Pod", key: "6" },
-  { t: "bay", label: "Bot Bay", key: "7" },
-  { t: "dock", label: "Docking Port", key: "8" },
+  { t: "vat", label: "Bio Vat", key: "6" },
+  { t: "pod", label: "Sleeping Pod", key: "7" },
+  { t: "bay", label: "Bot Bay", key: "8" },
+  { t: "dock", label: "Docking Port", key: "9" },
   { t: "asteroid", label: "Asteroid", key: "A", group: "Space" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
@@ -262,7 +263,8 @@ export function updateHud(world: World): void {
       chip("👥", `${alive}${guests ? ` <span class="muted">(${guests}g)</span>` : ""}${dead ? `, ${dead}✕` : ""}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
       chip("🍱", `${st.meals}`) +
-      chip("⛏", `${Math.floor(st.biomass)}/${Math.floor(st.water)}`) +
+      chip("🌱", `${Math.floor(st.biomass)}`) +
+      chip("⛏", `${Math.floor(st.minerals)}`) +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
 

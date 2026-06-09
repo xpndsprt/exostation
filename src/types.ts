@@ -9,6 +9,7 @@ export type StructureKind =
   | "ch4gen"
   | "pod"
   | "synth"
+  | "vat"
   | "bay"
   | "dock";
 
@@ -92,9 +93,9 @@ export interface Agent {
 }
 
 export interface Stock {
-  biomass: number;
-  water: number;
-  meals: number;
+  minerals: number; // mined from asteroids
+  biomass: number; // grown on-station in Vats; feedstock for the synth
+  meals: number; // synthesized from biomass; eaten by crew
 }
 
 export type DroneState = "docked" | "outbound" | "mining" | "inbound";

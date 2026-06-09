@@ -93,18 +93,20 @@ Each crew member tracks four meters (see them in the info panel; a mood dot floa
 
 ---
 
-## 6 · Food production (M4–M5)
-- The **Rations Synth** converts **2 Biomass + 1 Water → 4 meals every 10s** while powered.
-- Meals are a station-wide stock (the 🍱 chip). The station starts with some Biomass/Water seeded so you have a buffer.
-- When stock runs dry the synth stalls — which is why you need **mining**.
+## 6 · Food production — grown on-station
+Food is a two-step, **power-driven** loop that runs entirely inside the station:
+- A **Bio Vat** grows **food base (biomass)** from power alone — **+3 biomass every 8s** while powered (the 🌱 chip).
+- A **Rations Synth** converts **2 biomass → 4 meals every 10s** (the 🍱 chip); crew eat meals.
+- The station seeds a little biomass so the synth works before your first vat.
+- **Takeaway:** build **at least one Bio Vat per Rations Synth**. If meals stall, check both are powered (mid-priority — a brownout can shed them) and add more vats.
 
 ---
 
-## 7 · Mining (M5) — closing the resource loop
+## 7 · Mining (minerals) — the materials economy
 - Place an **Asteroid** out in **space** (the Space tool), and a **Bot Bay** inside the station. Each bay comes with **one mining drone**.
-- The drone auto-runs the loop: **dock → fly out → mine → fly back → unload**, delivering **Biomass + Water** to stock (cargo 10/trip; ~60% biomass / 40% water). Drone color shows its state (outbound/mining/inbound) and a pip shows it's carrying cargo.
+- The drone auto-runs the loop: **dock → fly out → mine → fly back → unload**, delivering **minerals** to stock (the ⛏ chip; cargo 10/trip). Drone color shows its state (outbound/mining/inbound); a pip shows it's carrying cargo.
 - A site has **richness** (starts at 1000) that **depletes** as it's mined.
-- **Takeaway:** one bay + one asteroid makes the station self-sustaining for food. Place the asteroid close to cut round-trip time. The bay needs power, so don't let it get shed in a brownout while you're depending on it.
+- **Takeaway:** mining is **not tied to food** — it builds your **minerals** stockpile (for trade/construction as those systems land). Food comes from Vats; minerals come from asteroids. Place the asteroid close to cut round-trip time.
 
 ---
 
@@ -150,9 +152,9 @@ This is the failure state the whole game is designed around.
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
 2. **Solar Panel** ×2 → **O₂ Generator** inside the room (air goes cyan).
 3. Add a **Human** — confirm breath holds at 100%.
-4. **Rations Synth** + a **Sleeping Pod** in the room (crew can now eat & sleep).
-5. **Bot Bay** + an **Asteroid** nearby → drone refills Biomass/Water (food loop closed).
-6. **Battery** for power headroom.
+4. **Bio Vat** + **Rations Synth** + a **Sleeping Pod** in the room (crew can now grow food, eat & sleep).
+5. **Battery** for power headroom.
+6. **Bot Bay** + an **Asteroid** nearby → drone mines **minerals** (materials stockpile).
 7. **Docking Port** + extra **Pods** → Drenn guests + lodging income.
 8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
 
@@ -161,7 +163,7 @@ This is the failure state the whole game is designed around.
 ## Common ways to die (and the fix)
 - **Crew suffocate.** No power → O₂ gen off, or room not sealed, or wrong/mixed gas. Fix power/seal/zoning.
 - **Brownout chain reaction.** Draw crept above supply; battery drained. Add solar/batteries; the Power overlay shows what's shedding.
-- **Starvation / stalled synth.** Out of Biomass/Water — your mining isn't keeping up. Add a bay/asteroid or another synth.
+- **Starvation / stalled synth.** Out of biomass — your **Bio Vats** can't keep up (or are unpowered). Add more vats, or check power.
 - **No guests arriving.** You have no free pods (capacity), or the dock is unpowered.
 - **Skirmish vents a wing.** You crowded a disliked pair or let mood crater. Separate them, raise mood; rebuild and reseal what was vented.
 
@@ -176,9 +178,9 @@ This is the failure state the whole game is designed around.
 | Space suit | drains ~20%/s off native air (~5s ≈ 20 tiles), recharges ~40%/s in native air |
 | Food / Rest | −1.5%/s, −1%/s; seek at <40 / <35; rest recovers +12%/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
-| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
-| Synthesis | 2 Biomass + 1 Water → 4 meals / 10s |
-| Mining | drone cargo 10, speed ~6 tiles/s, site richness 1000 |
+| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
+| Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
+| Mining | minerals only; drone cargo 10, speed ~6 tiles/s, site richness 1000 |
 | Guests | arrive ~20s (≤ pod count), pay ~1.5¢/s, stay ~90s |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
 | Skirmish | tension rises when mood <30 near a disliked species; fights at 100 |
