@@ -89,6 +89,7 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Docking Port | Ships arrive (guests, trade, fuel demand) | 5 | 3×3 | 1,200 | occupied / free / reserved |
+| Docking Port *(implemented)* | **Hull airlock — placed on a space-facing wall**; ships park outside and bring Drenn guests | 5 | wall | — | guests arrive by ship |
 | Fuel Pump | Sells refined fuel to docked ships | 4 | 1×1 | 400 | pumping / idle / dry |
 | Refinery Unit | Converts Ice/Gas → fuel | 10 | 3×2 | 1,800 | running / idle / input-short |
 

@@ -99,6 +99,7 @@ The station now needs a working population.
 - **Residents (crew) service it.** When a crew member isn't handling a personal need, they take a **service job**: walk to the nearest worn module (condition below 60%) and repair it (~15%/s) back to full. A small **orange bar** shows a module's upkeep; the info panel shows **Condition** and "being serviced".
 - **If condition hits 0 the module breaks** — it goes dark (unpowered) and stops working until a crew member repairs it. A broken O₂ generator means a wing starts losing air, so **keep enough crew to cover your machinery** (rough rule: one resident per ~6 modules).
 - **Visitors never work.** Guests (traders/Drenn) only use **hotel accommodations** — they eat, sleep in a pod, pay lodging, and leave. All upkeep falls on residents.
+- **Hover any module** to see its **Condition** on the rollover tooltip (and full details via the Select tool).
 - **Takeaway:** every machine you add is also upkeep. Grow your resident crew alongside your station, or things start breaking down.
 
 ## 6 · Food production — grown on-station
@@ -119,9 +120,9 @@ Food is a two-step, **power-driven** loop that runs entirely inside the station:
 ---
 
 ## 8 · Guests & economy (M6) — the hotel
-- A **Docking Port** periodically (every ~20s) brings a **Drenn** guest — **but only if you have a free Sleeping Pod**. Pods are your hosting capacity.
-- Each living guest pays **lodging (~1.5 credits/s)**; watch the **¢** chip climb.
-- Guests behave like residents (eat, sleep) and **depart after ~90s**, freeing the pod. Guests have a **gold ring** to distinguish them.
+- A **Docking Port** is a **hull airlock**: it can only be placed **on a wall that faces space** (it must have interior floor on one side and open space on the other). Build your hull, then mount the dock on it. The ghost goes red anywhere that isn't a valid hull wall.
+- It periodically (every ~20s) brings a **Drenn** guest — **but only if you have a free Sleeping Pod**. Pods are your hosting capacity. You'll **see a ship park outside** the dock when a guest arrives, then depart.
+- Guests enter through the airlock to the **interior side**, then behave like residents for needs (eat, sleep), **pay lodging (~1.5 credits/s)**, and **depart after ~90s**, freeing the pod. Guests have a **gold ring**; they never work — they just use the hotel.
 - **Takeaway:** more pods = more guests = more income — provided you can feed and air them. Income is your only credit source right now.
 
 ---
@@ -163,7 +164,7 @@ This is the failure state the whole game is designed around.
 4. **Bio Vat** + **Rations Synth** + a **Sleeping Pod** in the room (crew can now grow food, eat & sleep).
 5. **Battery** for power headroom.
 6. **Bot Bay** + an **Asteroid** nearby → drone mines **minerals** (materials stockpile).
-7. **Docking Port** + extra **Pods** → Drenn guests + lodging income.
+7. **Docking Port** on a **hull wall** (airlock to space) + extra **Pods** → Drenn guests arrive by ship + lodging income.
 8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
 
 ---

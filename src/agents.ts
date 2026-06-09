@@ -1,5 +1,6 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
+import { accessCell } from "./world";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
@@ -209,10 +210,12 @@ function claimService(w: World, a: Agent, start: number): Found | null {
   );
   jobs.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const s of jobs) {
-    const path = findPath(w, start, s.cell);
+    const target = accessCell(w, s); // wall-mounted docks are serviced from inside
+    if (target < 0) continue;
+    const path = findPath(w, start, target);
     if (path) {
       s.servicedBy = a.id;
-      return { id: s.id, cell: s.cell, path };
+      return { id: s.id, cell: target, path };
     }
   }
   return null;

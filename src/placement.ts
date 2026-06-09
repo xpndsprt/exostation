@@ -1,5 +1,5 @@
 import { Tool, World } from "./types";
-import { idx, inBounds } from "./world";
+import { idx, inBounds, canDock } from "./world";
 
 const STRUCTURE_KINDS = new Set([
   "solar",
@@ -64,6 +64,7 @@ export function solarFootprint(w: World, x: number, y: number): number[] | null 
 export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
+  if (tool === "dock") return canDock(w, x, y);
   const c = w.cells[idx(w, x, y)];
   switch (tool) {
     case "floor":

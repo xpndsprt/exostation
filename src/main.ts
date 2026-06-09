@@ -1,5 +1,5 @@
 import { Application, Container, Ticker } from "pixi.js";
-import { createWorld, setCell, addStructure, addStructureMulti, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructure, addStructureMulti, addDock, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -189,7 +189,8 @@ async function boot(): Promise<void> {
     else if (tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       if (fp) addStructureMulti(world, "solar", fp);
-    } else if ((STRUCTURE_TOOLS as string[]).includes(tool))
+    } else if (tool === "dock") addDock(world, tx, ty);
+    else if ((STRUCTURE_TOOLS as string[]).includes(tool))
       addStructure(world, tool as StructureKind, tx, ty);
     needRedraw = true;
   };

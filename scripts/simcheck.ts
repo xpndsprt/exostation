@@ -1,5 +1,5 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addStructureMulti, addSite, addAgent, eraseAt, idx } from "../src/world";
+import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, addAgent, eraseAt, idx } from "../src/world";
 import { solarFootprint } from "../src/placement";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
@@ -440,6 +440,34 @@ for (let i = 0; i < 150; i++) {
   if (g3.servicedBy >= 0) guestServiced = true;
 }
 check("Visitors never take service jobs", guestServiced === false);
+
+// --- M14: wall-mounted Docking Port (airlock) + ships ---
+const wd = createWorld();
+carve(wd, 5, 5, 9, 8);
+recomputeRooms(wd);
+addStructure(wd, "solar", 6, 6);
+addStructure(wd, "solar", 7, 6);
+addStructure(wd, "o2gen", 8, 7);
+check("Dock valid on a hull wall", canDock(wd, 5, 6));
+check("Dock invalid on interior floor", !canDock(wd, 7, 7));
+addDock(wd, 5, 6);
+const dock = Object.values(wd.structures).find((s) => s.kind === "dock")!;
+check("Dock placed and stays a wall (airlock)", !!dock && wd.cells[idx(wd, 5, 6)].type === "wall");
+addStructure(wd, "pod", 7, 7);
+addAgent(wd, 7, 6, "human"); // resident crew (services + keeps life support up)
+dock.condition = 50;
+let shipSeen = false;
+let dockServiced = false;
+let guestSeen = false;
+for (let i = 0; i < 300; i++) {
+  step(wd);
+  if (wd.ships.length > 0) shipSeen = true;
+  if (dock.servicedBy >= 0) dockServiced = true;
+  if (Object.values(wd.agents).some((a) => a.guest && a.alive)) guestSeen = true;
+}
+check("Crew service the wall-mounted dock from inside", dockServiced || dock.condition > 50);
+check("A guest arrived through the dock", guestSeen);
+check("A ship parked at the dock", shipSeen);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

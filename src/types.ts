@@ -118,6 +118,11 @@ export interface Site {
   richness: number; // remaining units
 }
 
+export interface Ship {
+  cell: number; // exterior space tile it's parked at (next to a dock)
+  t: number; // seconds remaining before it departs
+}
+
 export interface RoomInfo {
   enclosed: boolean;
   gas: RoomGas;
@@ -141,6 +146,7 @@ export interface World {
   agents: Record<number, Agent>;
   drones: Record<number, Drone>;
   sites: Record<number, Site>;
+  ships: Ship[];
   rooms: Record<number, RoomInfo>;
   power: PowerState;
   stock: Stock;

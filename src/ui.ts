@@ -296,11 +296,15 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const s = world.structures[target.id];
     if (!s) return hideTooltip();
     const def = STRUCTURES[s.kind];
+    const cc = s.condition <= 0 ? "#e24b4b" : s.condition < 60 ? "#e8a33d" : "#49d17a";
     html =
       `<h4>${def.label}</h4>` +
       `<div>${def.gen ? `+${def.gen}` : def.draw ? `−${def.draw}` : "0"} PU` +
-      (def.draw > 0 ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "powered" : "unpowered"}</span>` : "") +
-      `</div>`;
+      (def.draw > 0 ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "powered" : s.condition <= 0 ? "broken" : "unpowered"}</span>` : "") +
+      `</div>` +
+      (def.draw > 0
+        ? `<div>Condition <span style="color:${cc}">${Math.round(s.condition)}%</span>${s.servicedBy >= 0 ? " · being serviced" : ""}</div>`
+        : "");
   } else if (target.kind === "site") {
     const site = world.sites[target.id];
     if (!site) return hideTooltip();

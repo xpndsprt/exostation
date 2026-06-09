@@ -17,6 +17,7 @@ export function createWorld(): World {
     agents: {},
     drones: {},
     sites: {},
+    ships: [],
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Seed some biomass so the synth can make meals before a Vat is built.
@@ -104,6 +105,86 @@ function removeStructure(w: World, id: number): void {
   if (!s) return;
   for (const c of s.cells ?? [s.cell]) if (w.cells[c]) w.cells[c].structureId = -1;
   delete w.structures[id];
+}
+
+const ADJ = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+const isWalkable = (w: World, i: number): boolean =>
+  w.cells[i].type === "floor" || w.cells[i].type === "door";
+
+// A reachable (walkable) cell for a structure: the cell itself if walkable
+// (floor machinery), else an adjacent walkable cell (wall-mounted docks). -1 if none.
+export function accessCell(w: World, s: Structure): number {
+  for (const c of s.cells) if (isWalkable(w, c)) return c;
+  for (const c of s.cells) {
+    const x = c % w.w;
+    const y = (c / w.w) | 0;
+    for (const [dx, dy] of ADJ) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (inBounds(w, nx, ny) && isWalkable(w, idx(w, nx, ny))) return idx(w, nx, ny);
+    }
+  }
+  return -1;
+}
+
+// An exterior (space) cell adjacent to a structure — where a ship parks.
+export function exteriorCell(w: World, s: Structure): number {
+  for (const c of s.cells) {
+    const x = c % w.w;
+    const y = (c / w.w) | 0;
+    for (const [dx, dy] of ADJ) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (inBounds(w, nx, ny) && w.cells[idx(w, nx, ny)].type === "space") return idx(w, nx, ny);
+    }
+  }
+  return -1;
+}
+
+// Whether a wall cell can host a Docking Port: it must border interior floor
+// AND exterior space (a hull airlock).
+export function canDock(w: World, x: number, y: number): boolean {
+  if (!inBounds(w, x, y)) return false;
+  const i = idx(w, x, y);
+  const c = w.cells[i];
+  if (c.type !== "wall" || c.structureId >= 0) return false;
+  let floorN = false;
+  let spaceN = false;
+  for (const [dx, dy] of ADJ) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (!inBounds(w, nx, ny)) continue;
+    const t = w.cells[idx(w, nx, ny)].type;
+    if (t === "floor") floorN = true;
+    if (t === "space") spaceN = true;
+  }
+  return floorN && spaceN;
+}
+
+// Place a Docking Port on a hull wall (it stays a wall — an airlock to ships).
+export function addDock(w: World, x: number, y: number): boolean {
+  if (!canDock(w, x, y)) return false;
+  const i = idx(w, x, y);
+  const id = w.nextId++;
+  w.structures[id] = {
+    id,
+    kind: "dock",
+    cell: i,
+    cells: [i],
+    on: true,
+    powered: false,
+    occupantId: -1,
+    timer: 0,
+    condition: 100,
+    servicedBy: -1,
+  };
+  w.cells[i].structureId = id;
+  return true;
 }
 
 // Place a mining site (asteroid) on an empty space cell.
