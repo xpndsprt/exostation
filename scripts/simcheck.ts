@@ -1,7 +1,8 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addAgent, eraseAt, idx } from "../src/world";
+import { createWorld, setCell, addStructure, addSite, addAgent, eraseAt, idx } from "../src/world";
 import { recomputeRooms } from "../src/rooms";
 import { powerSystem } from "../src/power";
+import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { agentSystem } from "../src/agents";
@@ -11,6 +12,7 @@ const DT = 0.1;
 function step(w: World) {
   if (w.dirtyRooms) recomputeRooms(w);
   powerSystem(w, DT);
+  miningSystem(w, DT);
   foodSystem(w, DT);
   atmosphereSystem(w);
   agentSystem(w, DT);
@@ -95,6 +97,41 @@ for (let i = 0; i < 140; i++) {
 check("M4 agent reached pod", h.cell === idx(w2, 13, 6));
 check("M4 agent slept to full at some point", sleptFull);
 check("M4 pod released after sleeping", pod.occupantId === -1);
+
+// --- M5: mining drone loop ---
+const w3 = createWorld();
+// Small powered room so the Bot Bay has power.
+for (let y = 5; y <= 7; y++) {
+  for (let x = 5; x <= 8; x++) {
+    const border = x === 5 || x === 8 || y === 5 || y === 7;
+    setCell(w3, x, y, border ? "wall" : "floor");
+  }
+}
+recomputeRooms(w3);
+addStructure(w3, "solar", 6, 6); // +10 supply covers bay's 4 draw
+addStructure(w3, "bay", 7, 6); // spawns one drone
+addSite(w3, 20, 6); // asteroid out in space
+w3.stock.biomass = 0;
+w3.stock.water = 0;
+
+const bay = Object.values(w3.structures).find((s) => s.kind === "bay")!;
+const drone = Object.values(w3.drones)[0];
+check("M5 bay spawned a docked drone", !!drone && drone.state === "docked");
+
+const site = Object.values(w3.sites)[0];
+const richBefore = site.richness;
+let sawOutbound = false;
+let sawMining = false;
+for (let i = 0; i < 200; i++) {
+  step(w3);
+  if (drone.state === "outbound") sawOutbound = true;
+  if (drone.state === "mining") sawMining = true;
+}
+check("M5 bay is powered", bay.powered);
+check("M5 drone flew outbound", sawOutbound);
+check("M5 drone mined the site", sawMining);
+check("M5 site richness dropped", site.richness < richBefore);
+check("M5 drone delivered biomass+water to stock", w3.stock.biomass > 0 && w3.stock.water > 0);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -13,6 +13,8 @@ export function createWorld(): World {
     dirtyRooms: true,
     structures: {},
     agents: {},
+    drones: {},
+    sites: {},
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Seed some raw resources so the synthesizer can make meals before mining
@@ -53,13 +55,37 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
   const s: Structure = { id, kind, cell: i, on: true, powered: false, occupantId: -1, timer: 0 };
   w.structures[id] = s;
   c.structureId = id;
+  // A Bot Bay comes with one mining drone.
+  if (kind === "bay") {
+    const did = w.nextId++;
+    w.drones[did] = { id: did, bayId: id, siteId: -1, state: "docked", t: 0, cargo: 0 };
+  }
+  return true;
+}
+
+// Place a mining site (asteroid) on an empty space cell.
+export function addSite(w: World, x: number, y: number): boolean {
+  if (!inBounds(w, x, y)) return false;
+  const i = idx(w, x, y);
+  if (w.cells[i].type !== "space") return false;
+  for (const id in w.sites) if (w.sites[id].cell === i) return false;
+  const id = w.nextId++;
+  w.sites[id] = { id, cell: i, richness: 1000 };
   return true;
 }
 
 // Erase: remove a structure if present, else clear the floor to space.
 export function eraseAt(w: World, x: number, y: number): void {
   if (!inBounds(w, x, y)) return;
-  const c = w.cells[idx(w, x, y)];
+  const i = idx(w, x, y);
+  const c = w.cells[i];
+  // Remove a site (asteroid) sitting on this cell.
+  for (const id in w.sites) {
+    if (w.sites[id].cell === i) {
+      delete w.sites[id];
+      return;
+    }
+  }
   if (c.structureId >= 0) {
     delete w.structures[c.structureId];
     c.structureId = -1;

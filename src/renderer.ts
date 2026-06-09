@@ -24,14 +24,18 @@ export class Renderer {
   private atmo = new Graphics();
   private grid = new Graphics();
   private structs = new Graphics();
+  private sites = new Graphics();
   private agents = new Graphics();
+  private drones = new Graphics();
 
   constructor(world: Container) {
     world.addChild(this.cells);
     world.addChild(this.atmo);
     world.addChild(this.grid);
     world.addChild(this.structs);
+    world.addChild(this.sites);
     world.addChild(this.agents);
+    world.addChild(this.drones);
   }
 
   drawGrid(w: number, h: number): void {
@@ -45,7 +49,57 @@ export class Renderer {
     this.drawCells(world);
     this.drawAtmosphere(world);
     this.drawStructures(world);
+    this.drawSites(world);
     this.drawAgents(world);
+    this.drawDrones(world);
+  }
+
+  private drawSites(world: World): void {
+    const g = this.sites;
+    g.clear();
+    for (const id in world.sites) {
+      const s = world.sites[id];
+      const cx = (s.cell % world.w) * TILE + TILE / 2;
+      const cy = ((s.cell / world.w) | 0) * TILE + TILE / 2;
+      const color = s.richness > 0 ? COLORS.site : COLORS.siteEmpty;
+      g.circle(cx, cy, TILE * 0.42).fill(color);
+      g.circle(cx, cy, TILE * 0.42).stroke({ width: 1.5, color: 0x000000, alpha: 0.35 });
+    }
+  }
+
+  private drawDrones(world: World): void {
+    const g = this.drones;
+    g.clear();
+    const center = (i: number): [number, number] => [
+      (i % world.w) * TILE + TILE / 2,
+      ((i / world.w) | 0) * TILE + TILE / 2,
+    ];
+    for (const id in world.drones) {
+      const d = world.drones[id];
+      const bay = world.structures[d.bayId];
+      if (!bay) continue;
+      const [bx, by] = center(bay.cell);
+      const site = world.sites[d.siteId];
+      let x = bx;
+      let y = by;
+      if (site) {
+        const [sx, sy] = center(site.cell);
+        if (d.state === "outbound") {
+          x = bx + (sx - bx) * d.t;
+          y = by + (sy - by) * d.t;
+        } else if (d.state === "mining") {
+          x = sx;
+          y = sy;
+        } else if (d.state === "inbound") {
+          x = sx + (bx - sx) * d.t;
+          y = sy + (by - sy) * d.t;
+        }
+        if (d.state !== "docked") {
+          g.moveTo(bx, by).lineTo(sx, sy).stroke({ width: 1, color: COLORS.route, alpha: 0.5 });
+        }
+      }
+      g.circle(x, y, TILE * 0.16).fill(COLORS.drone);
+    }
   }
 
   private drawCells(world: World): void {

@@ -16,6 +16,10 @@ export const COLORS = {
   agentDead: 0x555a66,
   needLow: 0xe8a33d, // ring when food/rest is low
   unpowered: 0xff5555, // outline for an unpowered consumer
+  site: 0x8a7a5c, // asteroid / mining site
+  siteEmpty: 0x3a3730, // depleted site
+  drone: 0xdfe6f2,
+  route: 0x33506e, // faint drone flight path
 } as const;
 
 export const SIM_HZ = 10; // simulation steps per second at 1× speed

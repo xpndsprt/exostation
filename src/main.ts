@@ -1,7 +1,8 @@
 import { Application, Container, Ticker } from "pixi.js";
-import { createWorld, setCell, addStructure, eraseAt, addAgent, inBounds } from "./world";
+import { createWorld, setCell, addStructure, addSite, eraseAt, addAgent, inBounds } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
+import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
 import { agentSystem } from "./agents";
@@ -18,6 +19,7 @@ const STEP = 1 / SIM_HZ; // seconds per simulation step
 function simStep(world: World, dt: number): void {
   if (world.dirtyRooms) recomputeRooms(world);
   powerSystem(world, dt);
+  miningSystem(world, dt);
   foodSystem(world, dt);
   atmosphereSystem(world);
   agentSystem(world, dt);
@@ -69,6 +71,7 @@ async function boot(): Promise<void> {
     else if (tool === "wall") setCell(world, tx, ty, "wall");
     else if (tool === "erase") eraseAt(world, tx, ty);
     else if (tool === "human") addAgent(world, tx, ty);
+    else if (tool === "asteroid") addSite(world, tx, ty);
     else if ((STRUCTURE_TOOLS as string[]).includes(tool))
       addStructure(world, tool as StructureKind, tx, ty);
     needRedraw = true;
