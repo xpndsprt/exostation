@@ -2,6 +2,7 @@ import { Container, Graphics } from "pixi.js";
 import { World } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES } from "./structures";
+import { SPECIES } from "./species";
 
 function hslToHex(h: number, s: number, l: number): number {
   s /= 100;
@@ -217,9 +218,15 @@ export class Renderer {
         const c = world.cells[y * world.w + x];
         if (c.type !== "floor" || c.roomId < 0) continue;
         const room = world.rooms[c.roomId];
-        if (room && room.breathable) {
-          g.rect(x * TILE, y * TILE, TILE, TILE).fill({ color: COLORS.atmosphere, alpha: 0.18 });
+        if (!room || room.gas === "none") continue;
+        let color: number = COLORS.atmosphere; // o2
+        let alpha = 0.18;
+        if (room.gas === "ch4") color = 0xc98a3a;
+        else if (room.gas === "mixed") {
+          color = 0xe24b4b; // hazardous mix
+          alpha = 0.3;
         }
+        g.rect(x * TILE, y * TILE, TILE, TILE).fill({ color, alpha });
       }
     }
   }
@@ -265,9 +272,10 @@ export class Renderer {
       }
       const color = lerpColor(COLORS.agentLow, COLORS.agentOk, a.o2 / 100);
       g.circle(cx, cy, r).fill(color);
-      // outline: guests (Drenn) get a gold ring to set them apart from residents
-      const outline = a.guest ? COLORS.guest : 0x0d1016;
-      g.circle(cx, cy, r).stroke({ width: a.guest ? 2 : 1.5, color: outline, alpha: a.guest ? 0.9 : 0.6 });
+      // outline: species accent (guests still get the gold ring)
+      const outline = a.guest ? COLORS.guest : SPECIES[a.species].accent;
+      const ringed = a.guest || a.species !== "human";
+      g.circle(cx, cy, r).stroke({ width: ringed ? 2 : 1.5, color: outline, alpha: ringed ? 0.9 : 0.6 });
       // low-needs indicator
       if (a.food < 40 || a.rest < 40) {
         g.circle(cx, cy, r + 2.5).stroke({ width: 2, color: COLORS.needLow });

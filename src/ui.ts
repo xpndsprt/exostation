@@ -16,12 +16,14 @@ const PALETTE: PaletteEntry[] = [
   { t: "solar", label: "Solar Panel", key: "1", group: "Modules" },
   { t: "battery", label: "Battery", key: "2" },
   { t: "o2gen", label: "O₂ Generator", key: "3" },
-  { t: "synth", label: "Rations Synth", key: "4" },
-  { t: "pod", label: "Sleeping Pod", key: "5" },
-  { t: "bay", label: "Bot Bay", key: "6" },
-  { t: "dock", label: "Docking Port", key: "7" },
+  { t: "ch4gen", label: "Methane Gen", key: "4" },
+  { t: "synth", label: "Rations Synth", key: "5" },
+  { t: "pod", label: "Sleeping Pod", key: "6" },
+  { t: "bay", label: "Bot Bay", key: "7" },
+  { t: "dock", label: "Docking Port", key: "8" },
   { t: "asteroid", label: "Asteroid", key: "A", group: "Space" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
+  { t: "thol", label: "Thol", key: "T" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -86,8 +88,9 @@ function buildPalette(state: UIState): void {
   legend.id = "legend";
   const hex = (n: number) => "#" + n.toString(16).padStart(6, "0");
   legend.innerHTML =
-    `<div><span class="sw" style="background:${hex(COLORS.atmosphere)}"></span>breathable air</div>` +
-    `<div><span class="sw" style="background:${hex(COLORS.floorSealed)}"></span>sealed (no air)</div>` +
+    `<div><span class="sw" style="background:${hex(COLORS.atmosphere)}"></span>O₂ air</div>` +
+    `<div><span class="sw" style="background:#c98a3a"></span>methane (CH₄)</div>` +
+    `<div><span class="sw" style="background:#e24b4b"></span>mixed — lethal</div>` +
     `<div><span class="sw" style="background:${hex(COLORS.floorOpen)}"></span>open to space</div>`;
   bar.appendChild(legend);
 }
@@ -229,7 +232,8 @@ export function updateHud(world: World): void {
   for (const c of world.cells) {
     if (c.roomId >= 0 && !seen.has(c.roomId)) {
       seen.add(c.roomId);
-      if (world.rooms[c.roomId]?.breathable) breathable++;
+      const g = world.rooms[c.roomId]?.gas;
+      if (g && g !== "none" && g !== "mixed") breathable++;
     }
   }
 
@@ -290,7 +294,8 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const cx = target.cell % world.w;
     const cy = (target.cell / world.w) | 0;
     const kind = c.type === "floor" ? (c.enclosed ? "sealed floor" : "open floor") : c.type;
-    const air = c.roomId >= 0 && world.rooms[c.roomId]?.breathable ? "air" : "no air";
+    const gas = (c.roomId >= 0 && world.rooms[c.roomId]?.gas) || "none";
+    const air = gas === "none" ? "no air" : gas === "mixed" ? "MIXED ☠" : gas;
     html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}` : ""}</div>`;
   }
   tip.innerHTML = html;

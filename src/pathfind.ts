@@ -1,4 +1,4 @@
-import { World } from "./types";
+import { GasKind, World } from "./types";
 
 const DIRS = [
   [1, 0],
@@ -81,16 +81,16 @@ export function findPath(w: World, start: number, goal: number): number[] | null
   return null;
 }
 
-// BFS over floor cells to the nearest breathable room cell. Returns a cell
-// index or -1.
-export function nearestBreathable(w: World, start: number): number {
+// BFS over floor cells to the nearest room filled with the given gas. Returns a
+// cell index or -1.
+export function nearestBreathable(w: World, start: number, gas: GasKind): number {
   const seen = new Uint8Array(w.w * w.h);
   const q: number[] = [start];
   seen[start] = 1;
   while (q.length) {
     const c = q.shift() as number;
     const cell = w.cells[c];
-    if (cell.type === "floor" && cell.roomId >= 0 && w.rooms[cell.roomId]?.breathable) return c;
+    if (cell.type === "floor" && cell.roomId >= 0 && w.rooms[cell.roomId]?.gas === gas) return c;
     const x = c % w.w;
     const y = (c / w.w) | 0;
     for (const [dx, dy] of DIRS) {

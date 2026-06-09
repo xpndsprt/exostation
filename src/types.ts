@@ -6,12 +6,19 @@ export type StructureKind =
   | "solar"
   | "battery"
   | "o2gen"
+  | "ch4gen"
   | "pod"
   | "synth"
   | "bay"
   | "dock";
 
-export type Species = "human" | "drenn";
+export type Species = "human" | "drenn" | "thol";
+
+export type GasKind = "o2" | "ch4";
+
+// What a room's atmosphere currently is: empty, a single breathable gas, or a
+// lethal mix of incompatible gases.
+export type RoomGas = "none" | GasKind | "mixed";
 
 export type Tool =
   | "floor"
@@ -21,6 +28,7 @@ export type Tool =
   | "select"
   | StructureKind
   | "human"
+  | "thol"
   | "asteroid";
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
@@ -101,7 +109,7 @@ export interface Site {
 
 export interface RoomInfo {
   enclosed: boolean;
-  breathable: boolean;
+  gas: RoomGas;
 }
 
 export interface PowerState {

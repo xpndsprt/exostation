@@ -1,5 +1,6 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
+import { SPECIES } from "./species";
 
 const SPEED = 4; // cells / second
 const O2_DECAY = 8;
@@ -21,7 +22,7 @@ export function agentSystem(w: World, dt: number): void {
 
     const cell = w.cells[a.cell];
     const room = cell.roomId >= 0 ? w.rooms[cell.roomId] : undefined;
-    const breathable = !!room && room.breathable;
+    const breathable = !!room && room.gas === SPECIES[a.species].gas;
     if (breathable) {
       a.o2 = Math.min(100, a.o2 + O2_RECOVER * dt);
     } else {
@@ -61,7 +62,7 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
   if (!breathable) {
     if (!a.task || a.task.type !== "flee") {
       releaseTask(w, a);
-      const air = nearestBreathable(w, a.cell);
+      const air = nearestBreathable(w, a.cell, SPECIES[a.species].gas);
       if (air >= 0 && air !== a.cell) {
         const p = findPath(w, a.cell, air);
         if (p) {

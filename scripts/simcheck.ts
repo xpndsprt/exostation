@@ -61,7 +61,7 @@ for (let i = 0; i < 20; i++) step(w); // 2s
 const agent = Object.values(w.agents)[0];
 check("solar covers o2gen (no brownout)", w.power.brownout === false);
 check("o2gen powered", Object.values(w.structures).find((s) => s.kind === "o2gen")!.powered);
-check("room breathable", Object.values(w.rooms).some((r) => r.breathable));
+check("room breathable", Object.values(w.rooms).some((r) => r.gas === "o2"));
 check("agent O2 stays full in air", agent.o2 === 100 && agent.alive);
 
 // Cut power: remove the solar panel. o2gen has no supply and no battery.
@@ -69,7 +69,7 @@ eraseAt(w, 12, 12);
 for (let i = 0; i < 5; i++) step(w);
 check("brownout after losing solar", w.power.brownout === true);
 check("o2gen unpowered", Object.values(w.structures).find((s) => s.kind === "o2gen")!.powered === false);
-check("room no longer breathable", Object.values(w.rooms).every((r) => !r.breathable));
+check("room no longer breathable", Object.values(w.rooms).every((r) => r.gas !== "o2"));
 
 for (let i = 0; i < 200; i++) step(w); // 20s without air
 check("agent suffocates", agent.alive === false && agent.o2 === 0);
@@ -92,7 +92,7 @@ addAgent(w2, 8, 6);
 const h = Object.values(w2.agents)[0];
 
 for (let i = 0; i < 30; i++) step(w2); // settle: breathable, alive
-check("M4 room breathable", Object.values(w2.rooms).some((r) => r.breathable));
+check("M4 room breathable", Object.values(w2.rooms).some((r) => r.gas === "o2"));
 check("M4 agent alive in air", h.alive && h.o2 === 100);
 
 // Force hunger; meals available -> should walk to synth and eat.
@@ -207,6 +207,50 @@ if (w6) {
   check("M7 guest stay finite", isFinite(guest.stay) && guest.stay > 0);
   check("M7 rooms marked dirty for recompute", w6.dirtyRooms === true);
 }
+
+// --- M9: multi-gas atmospheres + gas-incompatible species ---
+function carve(w: World, x0: number, y0: number, x1: number, y1: number) {
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) {
+      const border = x === x0 || x === x1 || y === y0 || y === y1;
+      setCell(w, x, y, border ? "wall" : "floor");
+    }
+}
+
+const w7 = createWorld();
+carve(w7, 5, 5, 9, 8); // Room A (interior x6-8, y6-7)
+carve(w7, 11, 5, 15, 8); // Room B
+carve(w7, 17, 5, 21, 8); // Room C
+recomputeRooms(w7);
+addStructure(w7, "solar", 6, 6);
+addStructure(w7, "solar", 7, 6);
+addStructure(w7, "solar", 8, 6); // 30 PU == 30 PU draw
+addStructure(w7, "o2gen", 6, 7); // Room A: O2
+addAgent(w7, 7, 7, "human"); // breathes O2 -> ok
+addAgent(w7, 8, 7, "thol"); // needs CH4 in an O2 room -> dies
+addStructure(w7, "ch4gen", 12, 6); // Room B: methane
+addAgent(w7, 13, 6, "thol"); // breathes CH4 -> ok
+addStructure(w7, "o2gen", 18, 6); // Room C: O2 + CH4 = mixed
+addStructure(w7, "ch4gen", 19, 6);
+addAgent(w7, 20, 6, "human"); // mixed gas -> dies
+
+const gasOf = (cx: number, cy: number) => {
+  const rid = w7.cells[idx(w7, cx, cy)].roomId;
+  return rid >= 0 ? w7.rooms[rid].gas : "none";
+};
+const byCell = (cx: number, cy: number) =>
+  Object.values(w7.agents).find((a) => a.cell === idx(w7, cx, cy));
+
+for (let i = 0; i < 20; i++) step(w7);
+check("M9 O2 room reads o2", gasOf(7, 7) === "o2");
+check("M9 methane room reads ch4", gasOf(13, 6) === "ch4");
+check("M9 two gases = mixed (lethal)", gasOf(20, 6) === "mixed");
+
+for (let i = 0; i < 200; i++) step(w7);
+check("M9 human breathes O2", byCell(7, 7)!.alive === true);
+check("M9 thol breathes methane", byCell(13, 6)!.alive === true);
+check("M9 thol dies in an O2 room", byCell(8, 7)!.alive === false);
+check("M9 human dies in mixed gas", byCell(20, 6)!.alive === false);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

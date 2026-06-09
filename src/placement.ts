@@ -1,7 +1,16 @@
 import { Tool, World } from "./types";
 import { idx, inBounds } from "./world";
 
-const STRUCTURE_KINDS = new Set(["solar", "battery", "o2gen", "synth", "pod", "bay", "dock"]);
+const STRUCTURE_KINDS = new Set([
+  "solar",
+  "battery",
+  "o2gen",
+  "ch4gen",
+  "synth",
+  "pod",
+  "bay",
+  "dock",
+]);
 
 function hasSite(w: World, cell: number): boolean {
   for (const id in w.sites) if (w.sites[id].cell === cell) return true;
@@ -21,6 +30,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
     case "erase":
       return c.structureId >= 0 || c.type !== "space" || hasSite(w, idx(w, x, y));
     case "human":
+    case "thol":
       return c.type === "floor";
     case "asteroid":
       return c.type === "space" && !hasSite(w, idx(w, x, y));

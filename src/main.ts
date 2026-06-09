@@ -28,6 +28,7 @@ import {
 } from "./ui";
 import { TILE, COLORS, SIM_HZ } from "./config";
 import { STRUCTURES } from "./structures";
+import { SPECIES } from "./species";
 import { HoverTarget, OverlayMode, Selection, Speed, StructureKind, UIState, World } from "./types";
 
 const STEP = 1 / SIM_HZ;
@@ -174,6 +175,7 @@ async function boot(): Promise<void> {
     else if (tool === "wall") setCell(world, tx, ty, "wall");
     else if (tool === "erase") eraseAt(world, tx, ty);
     else if (tool === "human") addAgent(world, tx, ty);
+    else if (tool === "thol") addAgent(world, tx, ty, "thol");
     else if (tool === "asteroid") addSite(world, tx, ty);
     else if ((STRUCTURE_TOOLS as string[]).includes(tool))
       addStructure(world, tool as StructureKind, tx, ty);
@@ -370,11 +372,16 @@ async function boot(): Promise<void> {
     rememberAgents();
 
     // contextual hints (throttled by message-grouping in pushAlert)
-    let hasO2 = false;
-    let crew = 0;
-    for (const id in world.structures) if (world.structures[id].kind === "o2gen") hasO2 = true;
-    for (const id in world.agents) if (world.agents[id].alive) crew++;
-    if (crew > 0 && !hasO2) pushAlert("No O₂ generator — crew will suffocate.", "warn");
+    for (const id in world.agents) {
+      const a = world.agents[id];
+      if (!a.alive) continue;
+      const room = world.cells[a.cell].roomId;
+      const gas = room >= 0 ? world.rooms[room]?.gas : "none";
+      if (a.o2 < 40 && gas !== SPECIES[a.species].gas) {
+        pushAlert("Crew can't breathe — check atmosphere.", "warn");
+        break;
+      }
+    }
     if (world.stock.meals === 0) {
       for (const id in world.agents) {
         const a = world.agents[id];
