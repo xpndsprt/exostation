@@ -9,6 +9,7 @@ import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import { setupUI, updateHud } from "./ui";
 import { TILE, COLORS, SIM_HZ } from "./config";
+import { STRUCTURES } from "./structures";
 import { StructureKind, UIState, World } from "./types";
 
 const STEP = 1 / SIM_HZ; // seconds per simulation step
@@ -57,7 +58,7 @@ async function boot(): Promise<void> {
 
   let needRedraw = true;
   const canvas = app.canvas;
-  const STRUCTURE_TOOLS: StructureKind[] = ["solar", "battery", "o2gen"];
+  const STRUCTURE_TOOLS = Object.keys(STRUCTURES) as StructureKind[];
 
   const paintAt = (clientX: number, clientY: number): void => {
     const rect = canvas.getBoundingClientRect();
