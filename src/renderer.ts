@@ -283,6 +283,9 @@ export class Renderer {
       // mood dot above the head
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;
       g.circle(cx, cy - r - 4, 2.6).fill(moodColor);
+      // combat: red ring while fighting, orange when tension is building
+      if (a.fighting) g.circle(cx, cy, r + 4).stroke({ width: 2.5, color: 0xff3b3b });
+      else if (a.tension > 50) g.circle(cx, cy, r + 4).stroke({ width: 1.5, color: 0xe8a33d, alpha: 0.8 });
     }
   }
 }

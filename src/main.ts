@@ -7,6 +7,7 @@ import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
+import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells } from "./placement";
@@ -42,6 +43,7 @@ function simStep(world: World, dt: number): void {
   atmosphereSystem(world);
   agentSystem(world, dt);
   moodSystem(world, dt);
+  combatSystem(world, dt);
   economySystem(world, dt);
   world.tick++;
 }
@@ -338,9 +340,15 @@ async function boot(): Promise<void> {
 
   // --- alerts (transition detection) ---
   let prevBrownout = false;
+  let prevFighting = false;
   const detectAlerts = (): void => {
     if (world.power.brownout && !prevBrownout) pushAlert("Brownout — shedding power.", "warn");
     prevBrownout = world.power.brownout;
+
+    let anyFight = false;
+    for (const id in world.agents) if (world.agents[id].fighting) anyFight = true;
+    if (anyFight && !prevFighting) pushAlert("Skirmish! Crew are fighting.", "bad");
+    prevFighting = anyFight;
 
     const curAlive = new Map<number, boolean>();
     for (const id in world.agents) {

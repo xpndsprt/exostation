@@ -79,6 +79,9 @@ export interface Agent {
   food: number; // 0..100
   rest: number; // 0..100
   mood: number; // 0..100 (needs + neighbor relations)
+  health: number; // 0..100 (combat)
+  tension: number; // 0..100 (toward a skirmish)
+  fighting: boolean; // transient: throwing blows this tick
   alive: boolean;
   task: Task | null;
   path: number[]; // remaining cells to step onto (excludes current)

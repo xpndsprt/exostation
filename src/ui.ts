@@ -346,7 +346,12 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     html += `<div class="row"><span>Rest</span><b>${Math.round(a.rest)}%</b></div>${bar(a.rest, "#9b6cd5")}`;
     const mc = a.mood >= 60 ? "#49d17a" : a.mood >= 35 ? "#e8c349" : "#e24b4b";
     html += `<div class="row"><span>Mood</span><b>${Math.round(a.mood)}%</b></div>${bar(a.mood, mc)}`;
-    html += `<div class="row"><span>State</span><b>${a.alive ? a.task?.type ?? "idle" : "dead"}</b></div>`;
+    if (a.health < 100 || a.tension > 0) {
+      html += `<div class="row"><span>Health</span><b>${Math.round(a.health)}%</b></div>${bar(a.health, "#e24b4b")}`;
+      html += `<div class="row"><span>Tension</span><b>${Math.round(a.tension)}%</b></div>`;
+    }
+    const stateLabel = !a.alive ? "dead" : a.fighting ? "fighting" : a.task?.type ?? "idle";
+    html += `<div class="row"><span>State</span><b>${stateLabel}</b></div>`;
     if (a.guest && isFinite(a.stay))
       html += `<div class="row"><span>Leaves in</span><b>${Math.max(0, Math.round(a.stay))}s</b></div>`;
   } else if (sel.kind === "structure") {

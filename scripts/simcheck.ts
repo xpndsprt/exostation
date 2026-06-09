@@ -7,6 +7,7 @@ import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { agentSystem } from "../src/agents";
 import { moodSystem } from "../src/mood";
+import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
@@ -34,6 +35,7 @@ function step(w: World) {
   atmosphereSystem(w);
   agentSystem(w, DT);
   moodSystem(w, DT);
+  combatSystem(w, DT);
   economySystem(w, DT);
 }
 
@@ -279,6 +281,34 @@ const humanB = find(w9, 17, 6);
 check("M10 all parties alive (gas-correct rooms)", humanA.alive && humanB.alive && find(w9, 13, 6).alive);
 check("M10 human near liked Drenn is happier than human near disliked Thol", humanA.mood > humanB.mood);
 check("M10 relation gap is meaningful (>8)", humanA.mood - humanB.mood > 8);
+
+// --- M11: tension -> skirmish -> casualty ---
+const w11 = createWorld();
+carve(w11, 5, 5, 9, 8); // Room A (O2): human at the border
+carve(w11, 9, 5, 13, 8); // Room B (CH4): thol, sharing wall at x9
+recomputeRooms(w11);
+addStructure(w11, "solar", 6, 6);
+addStructure(w11, "solar", 7, 6); // 20 PU >= 15 draw
+addStructure(w11, "o2gen", 8, 6);
+addAgent(w11, 8, 7, "human"); // resentful human (dislikes thol)
+addStructure(w11, "ch4gen", 11, 6);
+addAgent(w11, 10, 7, "thol"); // 2 tiles away, breathing its own methane
+const humanR = Object.values(w11.agents).find((a) => a.species === "human")!;
+const tholV = Object.values(w11.agents).find((a) => a.species === "thol")!;
+humanR.food = 0; // keep mood below the anger threshold
+humanR.rest = 0;
+
+let sawFight = false;
+let tholMinHealth = 100;
+for (let i = 0; i < 500; i++) {
+  step(w11);
+  if (humanR.fighting) sawFight = true;
+  tholMinHealth = Math.min(tholMinHealth, tholV.health);
+}
+check("M11 tension produced a skirmish", sawFight);
+check("M11 thol took combat damage", tholMinHealth < 100);
+check("M11 resentful human survives (one-sided)", humanR.alive === true);
+check("M11 the disliked thol is killed", tholV.alive === false);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

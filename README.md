@@ -74,6 +74,16 @@ Current playable state (**M0 → M7 — MVP complete**):
   Rooms); **Recenter**; **autosave** every 30s.
 - **Time:** Pause / 1× / 2× / 3×.
 
+### Beyond the MVP (M9–M11) — *architecture is politics*
+- **Multi-gas atmospheres (M9):** generators emit a specific gas; a room takes that
+  gas, and **two different gases in one room is a lethal "mixed" hazard**. The **Thol**
+  breathe methane, so they need a sealed wing of their own — the zoning/airlock puzzle.
+- **Political web (M10):** species hold asymmetric opinions; living near a liked
+  neighbor lifts **mood**, a disliked one drops it (mood dot over each crew member).
+- **Tension & skirmishes (M11):** sustained low mood next to a disliked species builds
+  **tension** into a **skirmish** — fights cause casualties and **collateral that can vent
+  a room**. Build well and they collaborate; build badly and it ends in blood.
+
 ### Controls
 - **Left-drag** build · **right-drag** pan · **wheel** zoom · **Select** tool to inspect.
 - Keys: tool hotkeys (shown on buttons), `Space` pause, `[` / `]` slower/faster, `Esc` → Select.
@@ -84,10 +94,10 @@ at 3×. The drone mines, the synth cooks, Drenn guests arrive and pay rent, and
 everyone eats/sleeps on their own.
 
 ## Status
-**MVP slice complete (M0–M8):** build → power → atmosphere → crew (needs +
-pathfinding) → mining → food → guests + lodging, plus save/load, info panel, alert
-toasts, and a full UI/UX pass (ghost preview, hover tooltips, shortcuts, overlays).
-35/35 headless sim checks pass (`npm test`).
+**M0–M11 complete.** MVP loop (build → power → atmosphere → crew → mining → food →
+guests + lodging) plus save/load and a full UI/UX pass, and now the core
+*architecture-as-politics* systems: multi-gas atmospheres, the species political web,
+and tension/skirmishes. **49/49 headless sim checks pass** (`npm test`).
 
 Post-MVP candidates (from [`GAME_DESIGN.md`](GAME_DESIGN.md)): Tier 2/3 species &
 multi-gas atmospheres, the political web, skirmishes/takeover, the radar layer with
