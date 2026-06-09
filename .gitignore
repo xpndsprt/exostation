@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# OS cruft
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Personal/local Claude overrides (keep shared .claude/settings.json tracked)
+.claude/settings.local.json
