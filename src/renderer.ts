@@ -3,6 +3,18 @@ import { World } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES } from "./structures";
 
+function hslToHex(h: number, s: number, l: number): number {
+  s /= 100;
+  l /= 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const r = Math.round(f(0) * 255);
+  const g = Math.round(f(8) * 255);
+  const b = Math.round(f(4) * 255);
+  return (r << 16) | (g << 8) | b;
+}
+
 // Lerp between two 0xRRGGBB colors (t in 0..1).
 function lerpColor(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 0xff;
@@ -27,7 +39,9 @@ export class Renderer {
   private sites = new Graphics();
   private agents = new Graphics();
   private drones = new Graphics();
+  private overlay = new Graphics();
   private selection = new Graphics();
+  private cursor = new Graphics();
 
   constructor(world: Container) {
     world.addChild(this.cells);
@@ -37,7 +51,31 @@ export class Renderer {
     world.addChild(this.sites);
     world.addChild(this.agents);
     world.addChild(this.drones);
+    world.addChild(this.overlay);
     world.addChild(this.selection);
+    world.addChild(this.cursor);
+  }
+
+  // Ghost preview + hover outline, drawn on its own layer so it can update on
+  // mouse-move without a full world redraw.
+  drawCursor(world: World, ghostCells: number[], valid: boolean, hover: number): void {
+    const g = this.cursor;
+    g.clear();
+    const tint = valid ? 0x49d17a : 0xe24b4b;
+    for (const cell of ghostCells) {
+      const x = (cell % world.w) * TILE;
+      const y = ((cell / world.w) | 0) * TILE;
+      g.rect(x, y, TILE, TILE).fill({ color: tint, alpha: 0.28 });
+    }
+    if (hover >= 0 && ghostCells.length === 0) {
+      const x = (hover % world.w) * TILE;
+      const y = ((hover / world.w) | 0) * TILE;
+      g.rect(x + 0.5, y + 0.5, TILE - 1, TILE - 1).stroke({ width: 1.5, color: 0xffffff, alpha: 0.5 });
+    }
+  }
+
+  clearCursor(): void {
+    this.cursor.clear();
   }
 
   drawGrid(w: number, h: number): void {
@@ -47,14 +85,46 @@ export class Renderer {
     this.grid.stroke({ width: 1, color: COLORS.grid, alpha: 0.6 });
   }
 
-  draw(world: World, selCell = -1): void {
+  draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none"): void {
     this.drawCells(world);
     this.drawAtmosphere(world);
     this.drawStructures(world);
     this.drawSites(world);
     this.drawAgents(world);
     this.drawDrones(world);
+    this.drawOverlay(world, overlay);
     this.drawSelection(world, selCell);
+  }
+
+  private drawOverlay(world: World, mode: "none" | "power" | "rooms"): void {
+    const g = this.overlay;
+    g.clear();
+    if (mode === "none") return;
+    if (mode === "rooms") {
+      for (let i = 0; i < world.cells.length; i++) {
+        const c = world.cells[i];
+        if (c.type !== "floor" || c.roomId < 0) continue;
+        // distinct hue per room id
+        const hue = (c.roomId * 47) % 360;
+        const color = hslToHex(hue, 55, 50);
+        const x = (i % world.w) * TILE;
+        const y = ((i / world.w) | 0) * TILE;
+        g.rect(x, y, TILE, TILE).fill({ color, alpha: 0.3 });
+      }
+      return;
+    }
+    // power: highlight consumers green (powered) / red (unpowered)
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      const x = (s.cell % world.w) * TILE;
+      const y = ((s.cell / world.w) | 0) * TILE;
+      const def = STRUCTURES[s.kind];
+      let color: number;
+      if (def.gen > 0) color = 0x3a7bd5;
+      else if (def.draw > 0) color = s.powered ? 0x49d17a : 0xe24b4b;
+      else color = 0xd5b13a;
+      g.rect(x, y, TILE, TILE).fill({ color, alpha: 0.45 });
+    }
   }
 
   private drawSelection(world: World, selCell: number): void {
@@ -110,7 +180,17 @@ export class Renderer {
           g.moveTo(bx, by).lineTo(sx, sy).stroke({ width: 1, color: COLORS.route, alpha: 0.5 });
         }
       }
-      g.circle(x, y, TILE * 0.16).fill(COLORS.drone);
+      // tint by state so the loop is readable at a glance
+      const tint =
+        d.state === "outbound"
+          ? 0xffd27a
+          : d.state === "mining"
+            ? 0x9be29b
+            : d.state === "inbound"
+              ? 0x7ab8ff
+              : COLORS.drone;
+      g.circle(x, y, TILE * 0.16).fill(tint);
+      if (d.cargo > 0) g.circle(x, y, TILE * 0.07).fill(0x8a7a5c); // cargo pip
     }
   }
 

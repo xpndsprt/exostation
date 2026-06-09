@@ -60,8 +60,50 @@
       color: #d7dbe2; max-width: 320px; animation: toastfade 5s forwards; }
     #alerts .toast.warn { border-left-color: #e8a33d; }
     #alerts .toast.bad { border-left-color: #e24b4b; }
+    #alerts .toast.clickable { pointer-events: auto; cursor: pointer; }
     @keyframes toastfade { 0%{opacity:0; transform:translateY(6px);} 8%{opacity:1; transform:none;}
       80%{opacity:1;} 100%{opacity:0;} }
+    /* HUD chips */
+    #status { display: inline-flex; gap: 10px; align-items: center; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; color: #c3cbdc;
+      font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .chip .ic { opacity: .8; }
+    .chip.bad b { color: #ff6a6a; }
+    .pbar { width: 46px; height: 7px; border-radius: 4px; background: #2a3142; overflow: hidden; display: inline-block; vertical-align: middle; }
+    .pbar > i { display: block; height: 100%; background: #49d17a; }
+    /* palette hotkey badge */
+    #palette button .hk { float: right; opacity: .5; font-size: 10px; margin-left: 8px; }
+    /* overlay toggle */
+    #overlayctl { display: inline-flex; gap: 4px; }
+    #overlayctl .tbtn { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; line-height: 1; }
+    #overlayctl .tbtn.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+    /* info-panel action buttons */
+    #infopanel .actions { display: flex; gap: 6px; margin-top: 8px; }
+    #infopanel .actions button { flex: 1; background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 5px; font-size: 11.5px; cursor: pointer; }
+    #infopanel .actions button:hover { background: #232c3d; }
+    #infopanel .actions button.danger:hover { background: #5a2330; border-color: #8a3548; }
+    /* floating hover tooltip */
+    #tooltip { position: fixed; z-index: 30; pointer-events: none; display: none;
+      background: rgba(20,26,36,.96); border: 1px solid #2c3445; border-radius: 7px;
+      padding: 7px 10px; font-size: 12px; line-height: 1.5; color: #d7dbe2; max-width: 220px; }
+    #tooltip.show { display: block; }
+    #tooltip h4 { margin: 0 0 3px; font-size: 12.5px; color: #6ea8ff; }
+    #tooltip .muted { color: #8b93a6; }
+    /* brownout banner */
+    #banner { position: fixed; top: 48px; left: 50%; transform: translateX(-50%); z-index: 15;
+      display: none; background: rgba(80,30,30,.92); border: 1px solid #8a3548; color: #ffd0d0;
+      padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    #banner.show { display: block; }
+    /* speed / paused watermark */
+    #watermark { position: fixed; right: 16px; bottom: 14px; z-index: 5; color: #6b7488;
+      font-size: 13px; font-weight: 700; letter-spacing: .06em; pointer-events: none; }
+    /* drag size label */
+    #draglabel { position: fixed; z-index: 30; pointer-events: none; display: none;
+      background: rgba(20,26,36,.96); border: 1px solid #2c3445; border-radius: 6px;
+      padding: 3px 8px; font-size: 12px; color: #d7dbe2; font-variant-numeric: tabular-nums; }
+    #draglabel.show { display: block; }
   </style>
 </head>
 <body>
@@ -74,6 +116,10 @@
   <div id="palette"></div>
   <div id="infopanel"></div>
   <div id="alerts"></div>
+  <div id="tooltip"></div>
+  <div id="draglabel"></div>
+  <div id="banner">⚠ BROWNOUT — shedding power</div>
+  <div id="watermark"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

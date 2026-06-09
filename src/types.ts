@@ -25,6 +25,13 @@ export type Tool =
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
+export type OverlayMode = "none" | "power" | "rooms";
+
+export type HoverTarget =
+  | { kind: "agent" | "structure" | "site"; id: number }
+  | { kind: "cell"; cell: number }
+  | null;
+
 export type CellType = "space" | "floor" | "wall";
 
 export type Speed = 0 | 1 | 2 | 3;

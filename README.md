@@ -64,7 +64,19 @@ Current playable state (**M0 → M7 — MVP complete**):
 - **Polish (M7):** **Save/Load** (localStorage) survives a refresh; the **Select** tool
   opens an info panel with an entity's live state (O₂/food/rest, power, occupancy,
   richness); **toast alerts** announce brownouts, deaths, and guest arrivals/departures.
+- **UI/UX pass (M8):** ghost placement preview with green/red validity tint and an
+  invalid (`not-allowed`) cursor; **drag-rectangle** build for Floor/Wall/Erase with a
+  size label; **hover tooltips** for crew/modules/asteroids/cells; **keyboard shortcuts**
+  (tools, `Space` pause, `[`/`]` speed, `Esc` select) shown on palette buttons; info-panel
+  **Deconstruct** / **toggle on-off**; HUD **chips** (credits, power+battery bar, crew,
+  meals, resources) with a **BROWNOUT banner** and paused/speed watermark; **click-to-focus**
+  + grouped alerts and contextual hints (no-O₂, starvation); **overlay** views (Power /
+  Rooms); **Recenter**; **autosave** every 30s.
 - **Time:** Pause / 1× / 2× / 3×.
+
+### Controls
+- **Left-drag** build · **right-drag** pan · **wheel** zoom · **Select** tool to inspect.
+- Keys: tool hotkeys (shown on buttons), `Space` pause, `[` / `]` slower/faster, `Esc` → Select.
 
 Try it: build a sealed room with Solar, O₂ Generator, Rations Synth, a few Sleeping
 Pods, a Bot Bay, and a Docking Port; place an Asteroid in space; add a Human and run
@@ -72,9 +84,10 @@ at 3×. The drone mines, the synth cooks, Drenn guests arrive and pay rent, and
 everyone eats/sleeps on their own.
 
 ## Status
-**MVP slice complete (M0–M7):** build → power → atmosphere → crew (needs +
-pathfinding) → mining → food → guests + lodging, with save/load, a selection info
-panel, and alert toasts. 35/35 headless sim checks pass (`npm test`).
+**MVP slice complete (M0–M8):** build → power → atmosphere → crew (needs +
+pathfinding) → mining → food → guests + lodging, plus save/load, info panel, alert
+toasts, and a full UI/UX pass (ghost preview, hover tooltips, shortcuts, overlays).
+35/35 headless sim checks pass (`npm test`).
 
 Post-MVP candidates (from [`GAME_DESIGN.md`](GAME_DESIGN.md)): Tier 2/3 species &
 multi-gas atmospheres, the political web, skirmishes/takeover, the radar layer with
