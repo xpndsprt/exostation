@@ -370,7 +370,7 @@ async function boot(): Promise<void> {
       if (!curAlive.has(id)) {
         const a = world.agents[id];
         if (a && !a.alive) {
-          pushAlert(`A ${a.species === "drenn" ? "Drenn" : "crew member"} died.`, "bad", () => {
+          pushAlert(`A ${SPECIES[a.species].label} died.`, "bad", () => {
             sel = { kind: "agent", id };
             centerOnCell(a.cell);
             needRedraw = true;

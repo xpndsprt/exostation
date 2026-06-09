@@ -1,6 +1,7 @@
 import { HoverTarget, OverlayMode, Selection, Speed, Tool, UIState, World } from "./types";
 import { COLORS } from "./config";
 import { STRUCTURES } from "./structures";
+import { SPECIES } from "./species";
 
 interface PaletteEntry {
   t: Tool;
@@ -276,7 +277,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
   if (target.kind === "agent") {
     const a = world.agents[target.id];
     if (!a) return hideTooltip();
-    const name = a.species === "drenn" ? "Drenn" : "Human";
+    const name = SPECIES[a.species].label;
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
       `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}%</div>` +
@@ -340,7 +341,7 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
   if (sel.kind === "agent") {
     const a = world.agents[sel.id];
     if (!a) return void panel.classList.remove("show");
-    const name = a.species === "drenn" ? "Drenn" : "Human";
+    const name = SPECIES[a.species].label;
     html += `<h3>${name}${a.guest ? " (guest)" : ""}</h3>`;
     html += `<div class="row"><span>O₂</span><b>${Math.round(a.o2)}%</b></div>${bar(a.o2, a.o2 > 30 ? "#49d17a" : "#e24b4b")}`;
     if (a.suit < 100) html += `<div class="row"><span>Suit</span><b>${Math.round(a.suit)}%</b></div>${bar(a.suit, "#9fd8ff")}`;
