@@ -14,4 +14,9 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   solar: { label: "Solar Panel", color: 0x3a7bd5, gen: 10, draw: 0, battery: 0, priority: 0 },
   battery: { label: "Battery", color: 0xd5b13a, gen: 0, draw: 0, battery: 50, priority: 0 },
   o2gen: { label: "O₂ Generator", color: 0x35c2c2, gen: 0, draw: 6, battery: 0, priority: 10 },
+  synth: { label: "Rations Synth", color: 0xcf7a3a, gen: 0, draw: 5, battery: 0, priority: 5 },
+  pod: { label: "Sleeping Pod", color: 0x9b6cd5, gen: 0, draw: 1, battery: 0, priority: 2 },
 };
+
+// Food synthesis recipe (matches BALANCE.md: 2 biomass + 1 water -> 4 meals / 10s).
+export const SYNTH = { time: 10, biomass: 2, water: 1, meals: 4 } as const;

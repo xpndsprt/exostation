@@ -14,6 +14,7 @@ export const COLORS = {
   agentOk: 0x49d17a, // healthy O₂
   agentLow: 0xe24b4b, // low O₂
   agentDead: 0x555a66,
+  needLow: 0xe8a33d, // ring when food/rest is low
   unpowered: 0xff5555, // outline for an unpowered consumer
 } as const;
 

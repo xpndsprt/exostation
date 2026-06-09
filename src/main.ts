@@ -2,6 +2,7 @@ import { Application, Container, Ticker } from "pixi.js";
 import { createWorld, setCell, addStructure, eraseAt, addAgent, inBounds } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
+import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
 import { agentSystem } from "./agents";
 import { Renderer } from "./renderer";
@@ -16,6 +17,7 @@ const STEP = 1 / SIM_HZ; // seconds per simulation step
 function simStep(world: World, dt: number): void {
   if (world.dirtyRooms) recomputeRooms(world);
   powerSystem(world, dt);
+  foodSystem(world, dt);
   atmosphereSystem(world);
   agentSystem(world, dt);
   world.tick++;

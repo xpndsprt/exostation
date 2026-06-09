@@ -2,7 +2,7 @@
 // MVP simplification: tile-based walls (a cell is space/floor/wall). The
 // edge-wall model in TECH_DESIGN.md is a post-MVP refinement.
 
-export type StructureKind = "solar" | "battery" | "o2gen";
+export type StructureKind = "solar" | "battery" | "o2gen" | "pod" | "synth";
 
 export type Tool =
   | "floor"
@@ -29,6 +29,16 @@ export interface Structure {
   cell: number; // grid index
   on: boolean; // player toggle
   powered: boolean; // receiving power this tick
+  occupantId: number; // agent using this (pods); -1 if free
+  timer: number; // production progress (synth)
+}
+
+export type TaskType = "flee" | "eat" | "sleep";
+
+export interface Task {
+  type: TaskType;
+  target: number; // destination cell index
+  structureId?: number; // claimed structure (e.g. pod)
 }
 
 export interface Agent {
@@ -36,7 +46,18 @@ export interface Agent {
   species: "human";
   cell: number;
   o2: number; // 0..100
+  food: number; // 0..100
+  rest: number; // 0..100
   alive: boolean;
+  task: Task | null;
+  path: number[]; // remaining cells to step onto (excludes current)
+  moveAcc: number; // 0..1 progress toward path[0]
+}
+
+export interface Stock {
+  biomass: number;
+  water: number;
+  meals: number;
 }
 
 export interface RoomInfo {
@@ -62,6 +83,7 @@ export interface World {
   agents: Record<number, Agent>;
   rooms: Record<number, RoomInfo>;
   power: PowerState;
+  stock: Stock;
 
   tick: number;
   speed: Speed;

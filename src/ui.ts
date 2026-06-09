@@ -14,6 +14,8 @@ const PALETTE: PaletteEntry[] = [
   { t: "solar", label: "Solar Panel", group: "Modules" },
   { t: "battery", label: "Battery" },
   { t: "o2gen", label: "O₂ Generator" },
+  { t: "synth", label: "Rations Synth" },
+  { t: "pod", label: "Sleeping Pod" },
   { t: "human", label: "Human", group: "Crew" },
   { t: "pan", label: "Pan", group: "View" },
 ];
@@ -118,7 +120,8 @@ export function updateHud(world: World): void {
   if (status) {
     status.textContent =
       `rooms: ${seen.size} (${breathable} with air) · crew: ${alive} alive` +
-      (dead ? `, ${dead} dead` : "");
+      (dead ? `, ${dead} dead` : "") +
+      ` · meals: ${world.stock.meals}`;
   }
 
   // keep speed buttons in sync (e.g. if changed programmatically)

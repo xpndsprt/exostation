@@ -97,20 +97,32 @@ export class Renderer {
   private drawAgents(world: World): void {
     const g = this.agents;
     g.clear();
+    const center = (i: number): [number, number] => [
+      (i % world.w) * TILE + TILE / 2,
+      ((i / world.w) | 0) * TILE + TILE / 2,
+    ];
     for (const id in world.agents) {
       const a = world.agents[id];
-      const cx = (a.cell % world.w) * TILE + TILE / 2;
-      const cy = ((a.cell / world.w) | 0) * TILE + TILE / 2;
+      let [cx, cy] = center(a.cell);
+      if (a.path.length > 0) {
+        const [nx, ny] = center(a.path[0]);
+        cx = cx + (nx - cx) * a.moveAcc;
+        cy = cy + (ny - cy) * a.moveAcc;
+      }
       const r = TILE * 0.3;
       if (!a.alive) {
         g.circle(cx, cy, r).fill(COLORS.agentDead);
         g.moveTo(cx - r * 0.5, cy - r * 0.5).lineTo(cx + r * 0.5, cy + r * 0.5);
         g.moveTo(cx + r * 0.5, cy - r * 0.5).lineTo(cx - r * 0.5, cy + r * 0.5);
         g.stroke({ width: 2, color: 0x1a1e26 });
-      } else {
-        const color = lerpColor(COLORS.agentLow, COLORS.agentOk, a.o2 / 100);
-        g.circle(cx, cy, r).fill(color);
-        g.circle(cx, cy, r).stroke({ width: 1.5, color: 0x0d1016, alpha: 0.6 });
+        continue;
+      }
+      const color = lerpColor(COLORS.agentLow, COLORS.agentOk, a.o2 / 100);
+      g.circle(cx, cy, r).fill(color);
+      g.circle(cx, cy, r).stroke({ width: 1.5, color: 0x0d1016, alpha: 0.6 });
+      // low-needs indicator
+      if (a.food < 40 || a.rest < 40) {
+        g.circle(cx, cy, r + 2.5).stroke({ width: 2, color: COLORS.needLow });
       }
     }
   }

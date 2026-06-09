@@ -46,22 +46,25 @@ npm run build    # type-check (tsc) + production build to dist/
 npm test         # headless sim sanity check (power → atmosphere → suffocation)
 ```
 
-Current playable state (**M0 → M3**):
+Current playable state (**M0 → M4**):
 - Boots to a station grid; pan (right-drag) / zoom (wheel) camera; build palette.
 - **Build:** place Floor / Wall / Erase; live room detection seals enclosed floor.
-- **Modules:** Solar Panel (+power), Battery (storage), O₂ Generator (life support).
-- **Power (M2):** station-wide supply vs draw with a battery buffer; when supply
-  runs out the top bar shows **BROWNOUT** and consumers shed by priority (life
-  support last).
+- **Modules:** Solar Panel, Battery, O₂ Generator, Rations Synth, Sleeping Pod.
+- **Power (M2):** station-wide supply vs draw with a battery buffer; on shortfall the
+  top bar shows **BROWNOUT** and consumers shed by priority (life support last).
 - **Atmosphere (M3):** an enclosed room with a *powered* O₂ generator turns
-  breathable (cyan tint). Place a **Human**: they hold O₂ in air and **suffocate**
-  in vacuum or after a brownout — the circle fades green→red, then dies.
+  breathable (cyan tint). A **Human** holds O₂ in air and **suffocates** in vacuum
+  or after a brownout — the circle fades green→red, then dies.
+- **Needs + AI (M4):** Humans get hungry and tired (orange ring warns), then
+  **A\*-pathfind** to a Rations Synth to eat or a Sleeping Pod to sleep. The synth
+  turns stored biomass+water into meals while powered.
 - **Time:** Pause / 1× / 2× / 3×.
 
-Try it: build a sealed room, drop a Solar + O₂ Generator inside, add a Human,
-run at 3× — then delete the Solar and watch the brownout suffocate them.
+Try it: build a sealed room with a Solar, O₂ Generator, Rations Synth, and a
+Sleeping Pod; add a Human and run at 3×. Watch it walk to eat and sleep on its
+own — then delete the Solar and watch the brownout suffocate it.
 
 ## Status
-Pre-production. Engine runs **M0–M3** (build, power, atmosphere, breathing crew).
-Next: **M4** needs + A* pathfinding (eating/resting), then **M5** mining loop and
-**M6** Drenn guests + lodging. See [`MVP_SCOPE.md`](MVP_SCOPE.md).
+Pre-production. Engine runs **M0–M4** (build, power, atmosphere, breathing crew,
+needs + pathfinding). Next: **M5** mining drones (asteroid → silo → synth), then
+**M6** Drenn guests + lodging income. See [`MVP_SCOPE.md`](MVP_SCOPE.md).

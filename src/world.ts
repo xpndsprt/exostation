@@ -15,6 +15,9 @@ export function createWorld(): World {
     agents: {},
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
+    // Seed some raw resources so the synthesizer can make meals before mining
+    // (M5) exists to replenish them.
+    stock: { biomass: 40, water: 40, meals: 0 },
     tick: 0,
     speed: 1,
     nextId: 1,
@@ -47,7 +50,7 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
   const c = w.cells[i];
   if (c.type !== "floor" || c.structureId >= 0) return false;
   const id = w.nextId++;
-  const s: Structure = { id, kind, cell: i, on: true, powered: false };
+  const s: Structure = { id, kind, cell: i, on: true, powered: false, occupantId: -1, timer: 0 };
   w.structures[id] = s;
   c.structureId = id;
   return true;
@@ -70,7 +73,18 @@ export function addAgent(w: World, x: number, y: number): boolean {
   const c = w.cells[idx(w, x, y)];
   if (c.type !== "floor") return false;
   const id = w.nextId++;
-  const a: Agent = { id, species: "human", cell: idx(w, x, y), o2: 100, alive: true };
+  const a: Agent = {
+    id,
+    species: "human",
+    cell: idx(w, x, y),
+    o2: 100,
+    food: 100,
+    rest: 100,
+    alive: true,
+    task: null,
+    path: [],
+    moveAcc: 0,
+  };
   w.agents[id] = a;
   return true;
 }
