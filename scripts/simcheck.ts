@@ -1,6 +1,7 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
 import { createWorld, setCell, addStructure, addSite, addAgent, eraseAt, idx } from "../src/world";
 import { recomputeRooms } from "../src/rooms";
+import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
 import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
@@ -309,6 +310,37 @@ check("M11 tension produced a skirmish", sawFight);
 check("M11 thol took combat damage", tholMinHealth < 100);
 check("M11 resentful human survives (one-sided)", humanR.alive === true);
 check("M11 the disliked thol is killed", tholV.alive === false);
+
+// --- M12a: doors connect rooms for traffic but keep atmospheres separate ---
+const w12 = createWorld();
+carve(w12, 5, 5, 9, 8); // Room A, interior x6-8 y6-7
+carve(w12, 9, 5, 13, 8); // Room B, shares wall col x9
+setCell(w12, 9, 7, "door"); // airlock between A and B
+recomputeRooms(w12);
+addStructure(w12, "solar", 6, 6);
+addStructure(w12, "solar", 7, 6); // 20 PU >= 12 draw
+addStructure(w12, "o2gen", 6, 7);
+addStructure(w12, "o2gen", 12, 6);
+for (let i = 0; i < 10; i++) step(w12);
+const roomA = w12.cells[idx(w12, 7, 7)].roomId;
+const roomB = w12.cells[idx(w12, 11, 7)].roomId;
+check("M12 door keeps rooms as separate atmospheres", roomA !== roomB && roomA >= 0 && roomB >= 0);
+check("M12 both rooms still hold their own O2", w12.rooms[roomA].gas === "o2" && w12.rooms[roomB].gas === "o2");
+check("M12 door is not part of any room", w12.cells[idx(w12, 9, 7)].roomId === -1);
+check("M12 crew can path through the door A->B", findPath(w12, idx(w12, 7, 7), idx(w12, 11, 7)) !== null);
+
+// --- M12b: space suit grants limited venture into a hostile zone, then death ---
+const w13 = createWorld();
+carve(w13, 5, 5, 9, 8); // isolated methane room (no O2 room to flee to)
+recomputeRooms(w13);
+addStructure(w13, "solar", 6, 6);
+addStructure(w13, "ch4gen", 6, 7);
+addAgent(w13, 7, 7, "human"); // human in methane -> suit protects, then fails
+const venturer = Object.values(w13.agents)[0];
+for (let i = 0; i < 20; i++) step(w13); // ~2s
+check("M12 suit protects briefly (alive, O2 full, suit draining)", venturer.alive && venturer.o2 === 100 && venturer.suit < 100);
+for (let i = 0; i < 220; i++) step(w13); // ~22s total -> suit then O2 exhausted
+check("M12 venturer dies once suit and O2 run out", venturer.alive === false);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

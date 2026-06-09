@@ -3,8 +3,10 @@ import { findPath, manhattan, nearestBreathable } from "./pathfind";
 import { SPECIES } from "./species";
 
 const SPEED = 4; // cells / second
-const O2_DECAY = 8;
+const O2_DECAY = 8; // breath lost per second once the suit is empty
 const O2_RECOVER = 15;
+const SUIT_DECAY = 20; // suit reserve spent per second in a non-native zone (~5s)
+const SUIT_RECHARGE = 40; // suit refilled per second back in native air
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
 const FOOD_LOW = 40;
@@ -25,6 +27,10 @@ export function agentSystem(w: World, dt: number): void {
     const breathable = !!room && room.gas === SPECIES[a.species].gas;
     if (breathable) {
       a.o2 = Math.min(100, a.o2 + O2_RECOVER * dt);
+      a.suit = Math.min(100, a.suit + SUIT_RECHARGE * dt);
+    } else if (a.suit > 0) {
+      // suit auto-dons in a hostile zone and keeps them breathing — for a while
+      a.suit = Math.max(0, a.suit - SUIT_DECAY * dt);
     } else {
       a.o2 = Math.max(0, a.o2 - O2_DECAY * dt);
       if (a.o2 <= 0) {

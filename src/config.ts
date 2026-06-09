@@ -8,6 +8,8 @@ export const COLORS = {
   space: 0x0a0e16, // app background (vacuum)
   grid: 0x1b2230,
   wall: 0x8a93a6,
+  door: 0x4a6a8a, // airlock: walkable, holds pressure
+  suit: 0x9fd8ff, // ring shown when an agent is suited (off native air)
   floorOpen: 0x7a3b3b, // floor exposed to space — NOT sealed (warning hue)
   floorSealed: 0x244a39, // enclosed room floor, no air yet
   atmosphere: 0x35c2c2, // translucent overlay on breathable rooms

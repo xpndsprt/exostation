@@ -18,6 +18,7 @@ The skeleton. Mostly unpowered; defines rooms, atmosphere boundaries, and the tr
 | Deck Tile | Buildable floor; defines a room's extent | 0 | 1 | 5 | built / damaged |
 | Wall | Blocks movement & gas; structural | 0 | 1 | 10 | intact / breached |
 | Door | Passage; holds atmosphere when closed | 1 | 1 | 40 | open / closed / locked |
+| Door *(implemented, M12)* | Walkable but **blocks gas** — links wings without mixing atmospheres; crew cross on suit | 0 | 1 | — | walkable airlock |
 | Airlock (internal) | Passage **between different atmospheres** without mixing | 2 | 1 | 120 | cycling / sealed / open |
 | Space-facing Airlock | EVA egress to vacuum; spacewalk point | 2 | 1 | 150 | cycling / sealed / suited-transit |
 | Corridor | Traversal + atmosphere conduit (deck + walls) | 0 | n | 5/tile | pressurized / vented |

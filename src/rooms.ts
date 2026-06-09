@@ -12,7 +12,8 @@ export function recomputeRooms(w: World): void {
     if (x < 0 || y < 0 || x >= w.w || y >= w.h) return;
     const i = y * w.w + x;
     if (exposed[i]) return;
-    if (w.cells[i].type === "wall") return; // walls block the flood
+    // walls and (closed) doors block gas flow / hold pressure
+    if (w.cells[i].type === "wall" || w.cells[i].type === "door") return;
     exposed[i] = 1;
     stack.push(i);
   };

@@ -29,7 +29,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
-- Structures, **Asteroid**, and crew place on a single click.
+- **Door**, structures, **Asteroid**, and crew place on a single click.
 
 **Inspecting**
 - **Hover** anything for a quick tooltip (no click).
@@ -44,7 +44,8 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 ## 2 · Sealing a room (first build)
 - The grid starts as empty **space** (vacuum). Lay **Floor**, then enclose it with **Wall**.
 - The sim constantly detects rooms. A floor area that can't reach open space is **sealed** (it can hold atmosphere); a floor exposed to space stays **open** (it never will).
-- **Doors don't exist yet** — to connect two rooms, leave a floor gap in the shared wall (that merges them into one room/atmosphere). To keep atmospheres separate, keep them fully walled apart.
+- **Doors are airlocks:** a **Door** tile is **walkable but blocks gas**, so it connects two rooms for traffic **while keeping their atmospheres separate**. Put a door in the shared wall between wings — each side keeps its own gas, and crew can still pass through (on suit for the moment they're in the doorway).
+- To **merge** two rooms into one shared atmosphere instead, leave a plain **floor** gap (no door) in the wall.
 - **Erasing a wall that exposes a sealed room vents it** — everyone inside loses air.
 
 ---
@@ -64,8 +65,16 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
   - **Methane Generator** → CH₄ (orange tint) — for Thol.
 - **A room with two *different* gas generators becomes "mixed" (red) and is lethal to everyone.** Never put an O₂ and a Methane generator in the same room.
 - No power or not enclosed → **no air** (vacuum).
-- **The zoning puzzle:** species that breathe different gases need **separate, sealed wings**. Plan your floorplan so incompatible atmospheres never share a room, and route traffic carefully.
-- Crew breathe their species' gas only: in the right gas they're fine; in the wrong gas, mix, or vacuum their **breath drops ~8%/s and they die at 0** (recovering ~15%/s in good air). A panicked crew member will try to flee toward a room with their own gas if one is reachable.
+- **The zoning puzzle:** species that breathe different gases need **separate, sealed wings**, linked by **doors** so crew can still move around without the gases mixing. Plan your floorplan so incompatible atmospheres never share a room.
+- Crew breathe their species' gas only. In the right gas they're fine (breath recovers ~15%/s, suit refills). In the wrong gas, a mix, or vacuum, their **space suit auto-dons** and protects them — see below.
+- A crew member who ends up off their native air will **try to path to a room with their own gas** (through doors if needed) before the suit runs out.
+
+### Space suits (limited venturing)
+Every species can briefly cross hostile zones — a suit dons automatically.
+- Off native air, the **suit reserve drains (~20%/s → about 5 seconds)** while keeping breath topped up. That's roughly **20 tiles of travel** — enough to cross a wing or a vented corridor.
+- When the suit hits 0, **breath then drops ~8%/s and they die at 0** (~12.5s more).
+- Back in native air the **suit recharges fast (~40%/s)**. A suited crew member shows a **light-blue ring**.
+- **Implication:** doors + suits let you run one shared corridor past several differently-gassed wings; just keep the hostile stretch short enough that nobody's suit empties before they reach their own air.
 
 ---
 
@@ -142,7 +151,7 @@ This is the failure state the whole game is designed around.
 5. **Bot Bay** + an **Asteroid** nearby → drone refills Biomass/Water (food loop closed).
 6. **Battery** for power headroom.
 7. **Docking Port** + extra **Pods** → Drenn guests + lodging income.
-8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), kept apart from O₂ crew.
+8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
 
 ---
 
@@ -159,7 +168,9 @@ This is the failure state the whole game is designed around.
 | System | Key numbers |
 |--------|-------------|
 | Sim tick | 10 steps/s at 1× |
-| Breath | −8%/s in wrong air, +15%/s in right air, death at 0 |
+| Doors | walkable but block gas (airlock); connect wings without mixing atmospheres |
+| Breath | suit protects first; once suit empty, −8%/s in wrong air; +15%/s in right air; death at 0 |
+| Space suit | drains ~20%/s off native air (~5s ≈ 20 tiles), recharges ~40%/s in native air |
 | Food / Rest | −1.5%/s, −1%/s; seek at <40 / <35; rest recovers +12%/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |

@@ -115,6 +115,7 @@ export function addAgent(
     stay: guest ? GUEST_STAY : Infinity,
     cell: idx(w, x, y),
     o2: 100,
+    suit: 100,
     food: 100,
     rest: 100,
     mood: 70,

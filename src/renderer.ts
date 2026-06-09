@@ -203,6 +203,7 @@ export class Renderer {
         const c = world.cells[y * world.w + x];
         let color: number;
         if (c.type === "wall") color = COLORS.wall;
+        else if (c.type === "door") color = COLORS.door;
         else if (c.type === "floor") color = c.enclosed ? COLORS.floorSealed : COLORS.floorOpen;
         else continue; // space — show app background
         g.rect(x * TILE, y * TILE, TILE, TILE).fill(color);
@@ -276,6 +277,12 @@ export class Renderer {
       const outline = a.guest ? COLORS.guest : SPECIES[a.species].accent;
       const ringed = a.guest || a.species !== "human";
       g.circle(cx, cy, r).stroke({ width: ringed ? 2 : 1.5, color: outline, alpha: ringed ? 0.9 : 0.6 });
+      // suited: in a non-native zone (uses suit reserve)
+      const rm = world.cells[a.cell].roomId;
+      const native = rm >= 0 && world.rooms[rm]?.gas === SPECIES[a.species].gas;
+      if (!native) {
+        g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
+      }
       // low-needs indicator
       if (a.food < 40 || a.rest < 40) {
         g.circle(cx, cy, r + 2.5).stroke({ width: 2, color: COLORS.needLow });

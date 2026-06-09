@@ -12,6 +12,7 @@ interface PaletteEntry {
 const PALETTE: PaletteEntry[] = [
   { t: "floor", label: "Floor", key: "F", group: "Build" },
   { t: "wall", label: "Wall", key: "W" },
+  { t: "door", label: "Door", key: "D" },
   { t: "erase", label: "Erase", key: "E" },
   { t: "solar", label: "Solar Panel", key: "1", group: "Modules" },
   { t: "battery", label: "Battery", key: "2" },
@@ -278,7 +279,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const name = a.species === "drenn" ? "Drenn" : "Human";
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
-      `<div>O₂ ${Math.round(a.o2)}% · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}%</div>` +
+      `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}%</div>` +
       `<div>Mood ${Math.round(a.mood)}%</div>` +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {
@@ -342,6 +343,7 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     const name = a.species === "drenn" ? "Drenn" : "Human";
     html += `<h3>${name}${a.guest ? " (guest)" : ""}</h3>`;
     html += `<div class="row"><span>O₂</span><b>${Math.round(a.o2)}%</b></div>${bar(a.o2, a.o2 > 30 ? "#49d17a" : "#e24b4b")}`;
+    if (a.suit < 100) html += `<div class="row"><span>Suit</span><b>${Math.round(a.suit)}%</b></div>${bar(a.suit, "#9fd8ff")}`;
     html += `<div class="row"><span>Food</span><b>${Math.round(a.food)}%</b></div>${bar(a.food, "#6ea8ff")}`;
     html += `<div class="row"><span>Rest</span><b>${Math.round(a.rest)}%</b></div>${bar(a.rest, "#9b6cd5")}`;
     const mc = a.mood >= 60 ? "#49d17a" : a.mood >= 35 ? "#e8c349" : "#e24b4b";

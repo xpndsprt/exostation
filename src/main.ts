@@ -177,6 +177,7 @@ async function boot(): Promise<void> {
     const tool = state.tool;
     if (tool === "floor") setCell(world, tx, ty, "floor");
     else if (tool === "wall") setCell(world, tx, ty, "wall");
+    else if (tool === "door") setCell(world, tx, ty, "door");
     else if (tool === "erase") eraseAt(world, tx, ty);
     else if (tool === "human") addAgent(world, tx, ty);
     else if (tool === "thol") addAgent(world, tx, ty, "thol");

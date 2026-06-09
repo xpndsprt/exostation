@@ -7,7 +7,9 @@ const DIRS = [
   [0, -1],
 ];
 
-const walkable = (w: World, i: number): boolean => w.cells[i].type === "floor";
+// Doors are walkable (they open for traffic) even though they block gas.
+const walkable = (w: World, i: number): boolean =>
+  w.cells[i].type === "floor" || w.cells[i].type === "door";
 
 export function manhattan(w: World, a: number, b: number): number {
   const ax = a % w.w;

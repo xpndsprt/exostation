@@ -23,6 +23,7 @@ export type RoomGas = "none" | GasKind | "mixed";
 export type Tool =
   | "floor"
   | "wall"
+  | "door"
   | "erase"
   | "pan"
   | "select"
@@ -40,7 +41,8 @@ export type HoverTarget =
   | { kind: "cell"; cell: number }
   | null;
 
-export type CellType = "space" | "floor" | "wall";
+// "door" is walkable (pathfinding) but blocks gas (atmosphere) — an airlock.
+export type CellType = "space" | "floor" | "wall" | "door";
 
 export type Speed = 0 | 1 | 2 | 3;
 
@@ -76,6 +78,7 @@ export interface Agent {
   stay: number; // seconds remaining before a guest leaves (Infinity for residents)
   cell: number;
   o2: number; // 0..100
+  suit: number; // 0..100 reserve; auto-dons in a non-native zone, then depletes
   food: number; // 0..100
   rest: number; // 0..100
   mood: number; // 0..100 (needs + neighbor relations)
