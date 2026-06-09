@@ -27,6 +27,7 @@ export class Renderer {
   private sites = new Graphics();
   private agents = new Graphics();
   private drones = new Graphics();
+  private selection = new Graphics();
 
   constructor(world: Container) {
     world.addChild(this.cells);
@@ -36,6 +37,7 @@ export class Renderer {
     world.addChild(this.sites);
     world.addChild(this.agents);
     world.addChild(this.drones);
+    world.addChild(this.selection);
   }
 
   drawGrid(w: number, h: number): void {
@@ -45,13 +47,23 @@ export class Renderer {
     this.grid.stroke({ width: 1, color: COLORS.grid, alpha: 0.6 });
   }
 
-  draw(world: World): void {
+  draw(world: World, selCell = -1): void {
     this.drawCells(world);
     this.drawAtmosphere(world);
     this.drawStructures(world);
     this.drawSites(world);
     this.drawAgents(world);
     this.drawDrones(world);
+    this.drawSelection(world, selCell);
+  }
+
+  private drawSelection(world: World, selCell: number): void {
+    const g = this.selection;
+    g.clear();
+    if (selCell < 0) return;
+    const x = (selCell % world.w) * TILE;
+    const y = ((selCell / world.w) | 0) * TILE;
+    g.rect(x - 1, y - 1, TILE + 2, TILE + 2).stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
   }
 
   private drawSites(world: World): void {

@@ -18,9 +18,12 @@ export type Tool =
   | "wall"
   | "erase"
   | "pan"
+  | "select"
   | StructureKind
   | "human"
   | "asteroid";
+
+export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
 export type CellType = "space" | "floor" | "wall";
 

@@ -7,7 +7,22 @@ import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { agentSystem } from "../src/agents";
 import { economySystem } from "../src/economy";
+import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
+
+// Minimal localStorage shim so persistence works under tsx/node.
+(globalThis as unknown as { localStorage: Storage }).localStorage = (() => {
+  const store: Record<string, string> = {};
+  return {
+    getItem: (k: string) => (k in store ? store[k] : null),
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+  } as unknown as Storage;
+})();
 
 const DT = 0.1;
 function step(w: World) {
@@ -167,6 +182,31 @@ check("M6 guest count capped by pods", maxGuests <= 2);
 check("M6 lodging earned credits", w4.credits > 0);
 check("M6 guests are the drenn species", Object.values(w4.agents).every((a) => !a.guest || a.species === "drenn"));
 check("M6 guests depart after their stay", seenGuestIds.size > aliveGuests);
+
+// --- M7: save / load round-trip ---
+const w5 = createWorld();
+setCell(w5, 3, 3, "floor");
+setCell(w5, 4, 3, "floor");
+recomputeRooms(w5);
+addAgent(w5, 3, 3); // resident (stay = Infinity)
+addAgent(w5, 4, 3, "drenn", true); // guest (finite stay)
+w5.credits = 123;
+w5.stock.meals = 7;
+
+check("M7 save succeeds", saveWorld(w5));
+const w6 = loadWorld();
+check("M7 load returns a world", !!w6);
+if (w6) {
+  check("M7 credits preserved", w6.credits === 123);
+  check("M7 meals preserved", w6.stock.meals === 7);
+  check("M7 agent count preserved", Object.keys(w6.agents).length === 2);
+  const agents = Object.values(w6.agents);
+  const resident = agents.find((a) => !a.guest)!;
+  const guest = agents.find((a) => a.guest)!;
+  check("M7 resident stay restored to Infinity", resident.stay === Infinity);
+  check("M7 guest stay finite", isFinite(guest.stay) && guest.stay > 0);
+  check("M7 rooms marked dirty for recompute", w6.dirtyRooms === true);
+}
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -1,5 +1,6 @@
-import { Speed, Tool, UIState, World } from "./types";
+import { Selection, Speed, Tool, UIState, World } from "./types";
 import { COLORS } from "./config";
+import { STRUCTURES } from "./structures";
 
 interface PaletteEntry {
   t: Tool;
@@ -20,7 +21,8 @@ const PALETTE: PaletteEntry[] = [
   { t: "dock", label: "Docking Port" },
   { t: "asteroid", label: "Asteroid", group: "Space" },
   { t: "human", label: "Human", group: "Crew" },
-  { t: "pan", label: "Pan", group: "View" },
+  { t: "select", label: "Select", group: "View" },
+  { t: "pan", label: "Pan" },
 ];
 
 const SPEEDS: { s: Speed; label: string; title: string }[] = [
@@ -32,9 +34,109 @@ const SPEEDS: { s: Speed; label: string; title: string }[] = [
 
 let speedButtons: HTMLButtonElement[] = [];
 
-export function setupUI(state: UIState, world: World): void {
+export interface UIHandlers {
+  onSave: () => void;
+  onLoad: () => void;
+}
+
+export function setupUI(state: UIState, world: World, handlers: UIHandlers): void {
   buildPalette(state);
   buildTimeControls(world);
+  buildSaveControls(handlers);
+}
+
+function buildSaveControls(handlers: UIHandlers): void {
+  const bar = document.getElementById("topbar");
+  if (!bar) return;
+  const wrap = document.createElement("span");
+  wrap.id = "savectl";
+  const mk = (label: string, fn: () => void) => {
+    const b = document.createElement("button");
+    b.className = "tbtn";
+    b.textContent = label;
+    b.onclick = fn;
+    wrap.appendChild(b);
+  };
+  mk("Save", handlers.onSave);
+  mk("Load", handlers.onLoad);
+  bar.appendChild(wrap);
+}
+
+export function pushAlert(text: string, kind: "info" | "warn" | "bad" = "info"): void {
+  const box = document.getElementById("alerts");
+  if (!box) return;
+  const el = document.createElement("div");
+  el.className = "toast" + (kind === "info" ? "" : " " + kind);
+  el.textContent = text;
+  box.appendChild(el);
+  // auto-remove after the fade animation completes
+  setTimeout(() => el.remove(), 5200);
+  // cap the number of visible toasts
+  while (box.children.length > 6) box.firstChild?.remove();
+}
+
+function bar(value: number, color: string): string {
+  const v = Math.max(0, Math.min(100, value));
+  return `<div class="bar"><i style="width:${v}%;background:${color}"></i></div>`;
+}
+
+export function updateInfo(world: World, sel: Selection): void {
+  const panel = document.getElementById("infopanel");
+  if (!panel) return;
+  if (!sel) {
+    panel.classList.remove("show");
+    return;
+  }
+
+  let html = "";
+  if (sel.kind === "agent") {
+    const a = world.agents[sel.id];
+    if (!a) {
+      panel.classList.remove("show");
+      return;
+    }
+    const name = a.species === "drenn" ? "Drenn" : "Human";
+    html += `<h3>${name}${a.guest ? " (guest)" : ""}</h3>`;
+    html += `<div class="row"><span>O₂</span><b>${Math.round(a.o2)}%</b></div>`;
+    html += bar(a.o2, a.o2 > 30 ? "#49d17a" : "#e24b4b");
+    html += `<div class="row"><span>Food</span><b>${Math.round(a.food)}%</b></div>`;
+    html += bar(a.food, "#6ea8ff");
+    html += `<div class="row"><span>Rest</span><b>${Math.round(a.rest)}%</b></div>`;
+    html += bar(a.rest, "#9b6cd5");
+    html += `<div class="row"><span>State</span><b>${a.alive ? a.task?.type ?? "idle" : "dead"}</b></div>`;
+    if (a.guest && isFinite(a.stay)) {
+      html += `<div class="row"><span>Leaves in</span><b>${Math.max(0, Math.round(a.stay))}s</b></div>`;
+    }
+  } else if (sel.kind === "structure") {
+    const s = world.structures[sel.id];
+    if (!s) {
+      panel.classList.remove("show");
+      return;
+    }
+    const def = STRUCTURES[s.kind];
+    html += `<h3>${def.label}</h3>`;
+    html += `<div class="row"><span>Power</span><b>${def.gen ? `+${def.gen}` : def.draw ? `−${def.draw}` : "0"} PU</b></div>`;
+    if (def.draw > 0) {
+      html += `<div class="row"><span>Status</span><b style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "powered" : "unpowered"}</b></div>`;
+    }
+    if (s.kind === "pod") {
+      html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
+    } else if (s.kind === "synth") {
+      html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
+    }
+  } else if (sel.kind === "site") {
+    const site = world.sites[sel.id];
+    if (!site) {
+      panel.classList.remove("show");
+      return;
+    }
+    html += `<h3>Asteroid</h3>`;
+    html += `<div class="row"><span>Richness</span><b>${Math.round(site.richness)}</b></div>`;
+    html += bar((site.richness / 1000) * 100, "#8a7a5c");
+  }
+
+  panel.innerHTML = html;
+  panel.classList.add("show");
 }
 
 function buildPalette(state: UIState): void {

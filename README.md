@@ -46,7 +46,7 @@ npm run build    # type-check (tsc) + production build to dist/
 npm test         # headless sim sanity check (power → atmosphere → suffocation)
 ```
 
-Current playable state (**M0 → M6**):
+Current playable state (**M0 → M7 — MVP complete**):
 - Boots to a station grid; pan (right-drag) / zoom (wheel) camera; build palette.
 - **Build:** place Floor / Wall / Erase; live room detection seals enclosed floor.
 - **Modules:** Solar, Battery, O₂ Generator, Rations Synth, Sleeping Pod, Bot Bay, Docking Port.
@@ -61,6 +61,9 @@ Current playable state (**M0 → M6**):
 - **Guests + economy (M6):** a **Docking Port** brings **Drenn** guests (gold ring),
   capped by your Sleeping Pod count; they lodge, pay **credits** (¢ in the top bar),
   and depart after their stay.
+- **Polish (M7):** **Save/Load** (localStorage) survives a refresh; the **Select** tool
+  opens an info panel with an entity's live state (O₂/food/rest, power, occupancy,
+  richness); **toast alerts** announce brownouts, deaths, and guest arrivals/departures.
 - **Time:** Pause / 1× / 2× / 3×.
 
 Try it: build a sealed room with Solar, O₂ Generator, Rations Synth, a few Sleeping
@@ -69,7 +72,10 @@ at 3×. The drone mines, the synth cooks, Drenn guests arrive and pay rent, and
 everyone eats/sleeps on their own.
 
 ## Status
-Pre-production. Engine runs **M0–M6** — the core MVP loop is feature-complete
-(build, power, atmosphere, crew with needs + pathfinding, mining, guests + lodging).
-Next: **M7** polish — save/load, selection/info panel, alert toasts. See
-[`MVP_SCOPE.md`](MVP_SCOPE.md).
+**MVP slice complete (M0–M7):** build → power → atmosphere → crew (needs +
+pathfinding) → mining → food → guests + lodging, with save/load, a selection info
+panel, and alert toasts. 35/35 headless sim checks pass (`npm test`).
+
+Post-MVP candidates (from [`GAME_DESIGN.md`](GAME_DESIGN.md)): Tier 2/3 species &
+multi-gas atmospheres, the political web, skirmishes/takeover, the radar layer with
+survey + standing orders, build costs, and real art. See [`MVP_SCOPE.md`](MVP_SCOPE.md).

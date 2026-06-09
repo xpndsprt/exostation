@@ -39,6 +39,29 @@
       border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer; line-height: 1; }
     #timectl .tbtn:hover { background: #232c3d; }
     #timectl .tbtn.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+    #savectl { display: inline-flex; gap: 4px; }
+    #savectl .tbtn { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer; line-height: 1; }
+    #savectl .tbtn:hover { background: #232c3d; }
+    #savectl .tbtn:disabled { opacity: .4; cursor: default; }
+    #infopanel { position: fixed; right: 12px; top: 52px; z-index: 10; width: 210px;
+      background: rgba(16,20,28,.9); border: 1px solid #232b3a; border-radius: 10px;
+      padding: 12px 14px; font-size: 12.5px; line-height: 1.55; display: none; }
+    #infopanel.show { display: block; }
+    #infopanel h3 { margin: 0 0 6px; font-size: 13px; color: #6ea8ff; }
+    #infopanel .row { display: flex; justify-content: space-between; color: #aab2c4; }
+    #infopanel .row b { color: #e3e7ef; font-weight: 600; }
+    #infopanel .bar { height: 6px; border-radius: 3px; background: #2a3142; margin: 2px 0 5px; overflow: hidden; }
+    #infopanel .bar > i { display: block; height: 100%; }
+    #alerts { position: fixed; left: 12px; bottom: 12px; z-index: 20;
+      display: flex; flex-direction: column-reverse; gap: 6px; pointer-events: none; }
+    #alerts .toast { background: rgba(20,26,36,.95); border: 1px solid #2c3445;
+      border-left: 3px solid #2d6cdf; border-radius: 6px; padding: 7px 12px; font-size: 12.5px;
+      color: #d7dbe2; max-width: 320px; animation: toastfade 5s forwards; }
+    #alerts .toast.warn { border-left-color: #e8a33d; }
+    #alerts .toast.bad { border-left-color: #e24b4b; }
+    @keyframes toastfade { 0%{opacity:0; transform:translateY(6px);} 8%{opacity:1; transform:none;}
+      80%{opacity:1;} 100%{opacity:0;} }
   </style>
 </head>
 <body>
@@ -49,6 +72,8 @@
     <span class="hint">left-drag: build · right-drag: pan · wheel: zoom</span>
   </div>
   <div id="palette"></div>
+  <div id="infopanel"></div>
+  <div id="alerts"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
