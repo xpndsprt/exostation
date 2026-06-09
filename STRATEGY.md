@@ -29,7 +29,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
-- **Door**, structures, **Asteroid**, and crew place on a single click.
+- **Door**, modules, and crew place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth 2×1, quarters/batteries 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor.
 
 **Inspecting**
 - **Hover** anything for a quick tooltip (no click).
@@ -119,7 +119,7 @@ Food is a two-step, **power-driven** loop that runs entirely inside the station:
 ---
 
 ## 7 · Mining (minerals) — the materials economy
-- Place an **Asteroid** out in **space** (the Space tool), and a **Bot Bay** inside the station. Each bay comes with **one mining drone**.
+- **Asteroids occur naturally** — they're scattered around the map in open space at the start (you don't place them). Build a **Bot Bay** inside the station near some, and each bay comes with **one mining drone**.
 - The drone auto-runs the loop: **dock → fly out → mine → fly back → unload**, delivering **minerals** to stock (the ⛏ chip; cargo 10/trip). Drone color shows its state (outbound/mining/inbound); a pip shows it's carrying cargo.
 - A site has **richness** (starts at 1000) that **depletes** as it's mined.
 - **Takeaway:** mining is **not tied to food** — it builds your **minerals** stockpile (for trade/construction as those systems land). Food comes from Vats; minerals come from asteroids. Place the asteroid close to cut round-trip time.
@@ -170,7 +170,7 @@ This is the failure state the whole game is designed around.
 3. Add a **Human** — confirm breath holds at 100%.
 4. **Bio Vat** + **Rations Synth** + **Crew Quarters** in the room (crew can now grow food, eat & sleep).
 5. **Battery** for power headroom.
-6. **Bot Bay** + an **Asteroid** nearby → drone mines **minerals** (materials stockpile).
+6. **Bot Bay** near a natural **asteroid** → drone mines **minerals** (materials stockpile).
 7. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
 8. **Docking Port** on a **hull wall** (airlock to space) + **Hotel Rooms** → Drenn guests arrive by ship + lodging income; **trader ships** buy your minerals for credits.
 8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
@@ -199,7 +199,8 @@ This is the failure state the whole game is designed around.
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
-| Mining | minerals only; drone cargo 10, speed ~6 tiles/s, site richness 1000 |
+| Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
+| Footprints | battery/quarters/hotel-bed 1×1, synth 2×1, generators/vat/bay/lounge 2×2, solar 1×3 (wall) |
 | Guests | arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s |
 | Trade | every ~30s a trader buys ≤25 minerals at ~3¢ each |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |

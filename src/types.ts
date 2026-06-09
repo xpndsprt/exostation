@@ -32,8 +32,7 @@ export type Tool =
   | "select"
   | StructureKind
   | "human"
-  | "thol"
-  | "asteroid";
+  | "thol";
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 

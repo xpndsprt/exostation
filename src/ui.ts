@@ -34,7 +34,6 @@ const PALETTE: PaletteEntry[] = [
   { t: "rec", label: "Lounge", key: "9" },
   { t: "bay", label: "Bot Bay", key: "0" },
   { t: "dock", label: "Docking Port", key: "-" },
-  { t: "asteroid", label: "Asteroid", key: "A", group: "Space" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
   { t: "select", label: "Select", key: "S", group: "View" },

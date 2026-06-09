@@ -1,5 +1,5 @@
 import { Application, Container, Ticker } from "pixi.js";
-import { createWorld, setCell, addStructure, addStructureMulti, addDock, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructureMulti, addDock, seedAsteroids, eraseAt, addAgent, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -12,7 +12,7 @@ import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
-import { canPlace, isAreaTool, rectCells, solarFootprint } from "./placement";
+import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -70,6 +70,7 @@ async function boot(): Promise<void> {
   app.stage.addChild(worldContainer);
 
   const world = createWorld();
+  seedAsteroids(world); // scatter natural asteroids to mine
   const cam = createCamera();
   const renderer = new Renderer(worldContainer);
   renderer.drawGrid(world.w, world.h);
@@ -109,7 +110,6 @@ async function boot(): Promise<void> {
       maxy = Math.max(maxy, y);
     };
     for (let i = 0; i < world.cells.length; i++) if (world.cells[i].type !== "space") grow(i);
-    for (const id in world.sites) grow(world.sites[id].cell);
     if (maxx < 0) {
       minx = world.w / 2 - 1;
       maxx = world.w / 2;
@@ -186,13 +186,14 @@ async function boot(): Promise<void> {
     else if (tool === "erase") eraseAt(world, tx, ty);
     else if (tool === "human") addAgent(world, tx, ty);
     else if (tool === "thol") addAgent(world, tx, ty, "thol");
-    else if (tool === "asteroid") addSite(world, tx, ty);
     else if (tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       if (fp) addStructureMulti(world, "solar", fp);
     } else if (tool === "dock") addDock(world, tx, ty);
-    else if ((STRUCTURE_TOOLS as string[]).includes(tool))
-      addStructure(world, tool as StructureKind, tx, ty);
+    else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
+      const fp = footprintCells(world, tool as StructureKind, tx, ty);
+      if (fp) addStructureMulti(world, tool as StructureKind, fp);
+    }
     needRedraw = true;
   };
 
@@ -239,6 +240,10 @@ async function boot(): Promise<void> {
       showDragLabel(`${w}×${h}`, clientX, clientY);
     } else if (hover >= 0 && tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
+      ghost = fp ?? [hover];
+      valid = fp !== null;
+    } else if (hover >= 0 && tool in STRUCTURES && tool !== "dock") {
+      const fp = footprintCells(world, tool as StructureKind, tx, ty);
       ghost = fp ?? [hover];
       valid = fp !== null;
     } else if (hover >= 0 && tool !== "pan" && tool !== "select") {

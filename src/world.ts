@@ -188,6 +188,23 @@ export function addDock(w: World, x: number, y: number): boolean {
   return true;
 }
 
+// Scatter natural asteroids across open space, keeping the central build area
+// clear. Called once for a fresh game (not from createWorld, so tests stay
+// deterministic). Uses Math.random — fine because the result is saved.
+export function seedAsteroids(w: World, count = 12): void {
+  const cx = w.w / 2;
+  const cy = w.h / 2;
+  let placed = 0;
+  let tries = 0;
+  while (placed < count && tries < count * 30) {
+    tries++;
+    const x = Math.floor(Math.random() * w.w);
+    const y = Math.floor(Math.random() * w.h);
+    if (Math.hypot(x - cx, y - cy) < 20) continue; // leave room for the station
+    if (addSite(w, x, y)) placed++;
+  }
+}
+
 // Place a mining site (asteroid) on an empty space cell.
 export function addSite(w: World, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;

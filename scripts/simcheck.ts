@@ -1,6 +1,6 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, addAgent, eraseAt, idx } from "../src/world";
-import { solarFootprint } from "../src/placement";
+import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
+import { solarFootprint, footprintCells } from "../src/placement";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
@@ -551,6 +551,22 @@ for (let i = 0; i < 120; i++) {
 }
 check("Crew sleep in Crew Quarters", usedPod);
 check("Crew never use Hotel Rooms", !crewUsedHotel);
+
+// --- M17: sized module footprints ---
+const wf2 = createWorld();
+for (let y = 5; y <= 7; y++) for (let x = 5; x <= 7; x++) setCell(wf2, x, y, "floor");
+recomputeRooms(wf2);
+const fpc = footprintCells(wf2, "o2gen", 5, 5); // 2x2
+check("2x2 module footprint has 4 cells", fpc !== null && fpc.length === 4);
+addStructureMulti(wf2, "o2gen", fpc!);
+check("Sized module occupies all its cells", fpc!.every((c) => wf2.cells[c].structureId >= 0));
+check("Footprint over an occupied tile is rejected", footprintCells(wf2, "vat", 5, 6) === null);
+
+// --- M18: natural asteroids ---
+const wa2 = createWorld();
+check("Fresh world has no asteroids", Object.keys(wa2.sites).length === 0);
+seedAsteroids(wa2, 8);
+check("seedAsteroids scatters asteroids into space", Object.keys(wa2.sites).length > 0);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

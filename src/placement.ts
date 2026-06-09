@@ -1,5 +1,6 @@
-import { Tool, World } from "./types";
+import { StructureKind, Tool, World } from "./types";
 import { idx, inBounds, canDock } from "./world";
+import { STRUCTURES } from "./structures";
 
 const STRUCTURE_KINDS = new Set([
   "solar",
@@ -61,12 +62,31 @@ export function solarFootprint(w: World, x: number, y: number): number[] | null 
   return null;
 }
 
+// Footprint cells for a sized module placed with (x,y) as its top-left corner.
+// Returns the occupied cells (all must be free floor) or null if it doesn't fit.
+export function footprintCells(w: World, kind: StructureKind, x: number, y: number): number[] | null {
+  const def = STRUCTURES[kind];
+  const cells: number[] = [];
+  for (let dy = 0; dy < def.h; dy++) {
+    for (let dx = 0; dx < def.w; dx++) {
+      const cx = x + dx;
+      const cy = y + dy;
+      if (!inBounds(w, cx, cy)) return null;
+      const c = w.cells[idx(w, cx, cy)];
+      if (c.type !== "floor" || c.structureId >= 0) return null;
+      cells.push(idx(w, cx, cy));
+    }
+  }
+  return cells;
+}
+
 // Whether the current tool would do something valid at (x,y). Drives the
 // ghost-preview tint and the invalid cursor.
 export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
   if (tool === "dock") return canDock(w, x, y);
+  if (tool in STRUCTURES) return footprintCells(w, tool as StructureKind, x, y) !== null;
   const c = w.cells[idx(w, x, y)];
   switch (tool) {
     case "floor":
@@ -80,8 +100,6 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
     case "human":
     case "thol":
       return c.type === "floor";
-    case "asteroid":
-      return c.type === "space" && !hasSite(w, idx(w, x, y));
     default:
       if (STRUCTURE_KINDS.has(tool)) return c.type === "floor" && c.structureId < 0;
       return false; // pan / select have no placement
