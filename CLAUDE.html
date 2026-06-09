@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXOSTATION — Project Guide for Claude</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>EXOSTATION — Project Guide for Claude</h1>
+<p>A top-down space-station management sim (browser) — TypeScript + Vite + PixiJS. Design lives in <code>GAME_DESIGN.md</code> / <code>BALANCE.md</code> / <code>BUILDINGS.md</code>; the engine in <code>src/</code>.</p>
+<h2>Standing rules</h2>
+<h3>Keep the strategy guide in sync (important)</h3>
+<p><code>STRATEGY.md</code> is the player-facing guide to <strong>every mechanic</strong>, ordered by importance and appearance. <strong>Whenever you change gameplay mechanics, update <code>STRATEGY.md</code> in the same change</strong> so it never drifts from the code. This includes:</p>
+<ul><li>new/removed <strong>modules, species, resources, tools, or systems</strong>;</li><li>changed <strong>tuning numbers</strong> (power draws, decay/recovery rates, thresholds, costs, timings, combat values) — update the inline numbers and the <strong>Quick reference</strong> table;</li><li>new <strong>controls / shortcuts / UI</strong> the player needs to know.</li></ul>
+<p><code>STRATEGY.html</code> is generated automatically from <code>STRATEGY.md</code> by the Markdown→HTML hook — don't hand-edit it. A <code>Stop</code> hook reminds you if <code>src/</code> changed without a <code>STRATEGY.md</code> update. Keep <code>BALANCE.md</code> consistent with the same numbers.</p>
+<h3>Markdown → HTML</h3>
+<p>Every <code>.md</code> in this repo has a generated <code>.html</code> sibling (PostToolUse hook runs <code>.claude/md2html.py</code>). Don't edit the <code>.html</code> files by hand.</p>
+<h3>Build, test, commit</h3>
+<ul><li>After code changes: <code>npm run build</code> (strict tsc + Vite) <strong>and</strong> <code>npm test</code> (<code>scripts/simcheck.ts</code> — the headless sim checks). Add checks for new systems.</li><li>Keep the simulation <strong>state plain-JSON-serializable</strong> (no class instances/functions) so save/load keeps working.</li><li><strong>Commit locally; do not push unless asked.</strong> End commit messages with the Co-Authored-By trailer.</li></ul>
+<h2>Architecture (quick map)</h2>
+<ul><li><code>src/world.ts</code> — <code>World</code> state + create/place/erase helpers.</li><li><code>src/main.ts</code> — boot, fixed-step sim loop (10 Hz), input, camera, UI wiring.</li><li>Systems (run per tick, in this order): <code>power → mining → food → atmosphere → agents → mood → combat → economy</code>.</li><li><code>src/rooms.ts</code> room detection · <code>src/pathfind.ts</code> A* · <code>src/renderer.ts</code> PixiJS layers · <code>src/ui.ts</code> DOM HUD/panels · <code>src/persistence.ts</code> localStorage save/load.</li><li>Data: <code>src/structures.ts</code>, <code>src/species.ts</code>, <code>src/relations.ts</code>, <code>src/config.ts</code>.</li></ul>
+<h2>Milestones so far</h2>
+<p>M0–M8: build, power, atmosphere, crew (needs + A* pathfinding), mining, food, guests + lodging, save/load, UI/UX pass. M9 multi-gas atmospheres + Thol; M10 political web (relations → mood); M11 tension → skirmishes. See <code>MVP_SCOPE.md</code>.</p>
+</main>
+</body>
+</html>

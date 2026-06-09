@@ -20,6 +20,7 @@ A top-down space-station management sim for the browser — in the spirit of *Pr
 | [`BUILDINGS.md`](BUILDINGS.md) | Catalog of every buildable/interactive item: function, power draw, footprint, cost, states. |
 | [`MVP_SCOPE.md`](MVP_SCOPE.md) | The tight first-build scope: what ships, what's deferred, milestones. |
 | [`TECH_DESIGN.md`](TECH_DESIGN.md) | Technical/architecture design for the MVP (stack, tick model, systems, data model). |
+| [`STRATEGY.md`](STRATEGY.md) | Player strategy guide — every mechanic, ordered by importance & appearance. Kept in sync with the code. |
 
 Each `.md` has a nicely formatted `.html` sibling (e.g. `GAME_DESIGN.html`) generated automatically — open it in a browser for a styled read.
 
