@@ -17,6 +17,7 @@ export function agentSystem(w: World, dt: number): void {
 
     a.food = Math.max(0, a.food - FOOD_DECAY * dt);
     a.rest = Math.max(0, a.rest - REST_DECAY * dt);
+    if (a.guest) a.stay -= dt;
 
     const cell = w.cells[a.cell];
     const room = cell.roomId >= 0 ? w.rooms[cell.roomId] : undefined;
@@ -33,6 +34,14 @@ export function agentSystem(w: World, dt: number): void {
     }
 
     advanceMovement(a, dt);
+
+    // A departing guest that reached the dock leaves the station.
+    if (a.task && a.task.type === "leave" && a.path.length === 0 && a.cell === a.task.target) {
+      releaseTask(w, a);
+      delete w.agents[id];
+      continue;
+    }
+
     think(w, a, dt, breathable);
   }
 }
@@ -66,6 +75,17 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
 
   // Safe air: a flee task is complete.
   if (a.task && a.task.type === "flee") a.task = null;
+
+  // Guest whose stay is up heads for a dock to leave (overrides eat/sleep).
+  if (a.guest && a.stay <= 0) {
+    if (!a.task || a.task.type !== "leave") {
+      releaseTask(w, a);
+      const dock = nearestReachable(w, a.cell, "dock");
+      a.task = { type: "leave", target: dock ? dock.cell : a.cell };
+      a.path = dock ? dock.path : [];
+    }
+    return;
+  }
 
   if (a.path.length > 0) return; // still walking
 

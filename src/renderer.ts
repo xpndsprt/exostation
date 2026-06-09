@@ -173,7 +173,9 @@ export class Renderer {
       }
       const color = lerpColor(COLORS.agentLow, COLORS.agentOk, a.o2 / 100);
       g.circle(cx, cy, r).fill(color);
-      g.circle(cx, cy, r).stroke({ width: 1.5, color: 0x0d1016, alpha: 0.6 });
+      // outline: guests (Drenn) get a gold ring to set them apart from residents
+      const outline = a.guest ? COLORS.guest : 0x0d1016;
+      g.circle(cx, cy, r).stroke({ width: a.guest ? 2 : 1.5, color: outline, alpha: a.guest ? 0.9 : 0.6 });
       // low-needs indicator
       if (a.food < 40 || a.rest < 40) {
         g.circle(cx, cy, r + 2.5).stroke({ width: 2, color: COLORS.needLow });

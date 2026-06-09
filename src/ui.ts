@@ -17,6 +17,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "synth", label: "Rations Synth" },
   { t: "pod", label: "Sleeping Pod" },
   { t: "bay", label: "Bot Bay" },
+  { t: "dock", label: "Docking Port" },
   { t: "asteroid", label: "Asteroid", group: "Space" },
   { t: "human", label: "Human", group: "Crew" },
   { t: "pan", label: "Pan", group: "View" },
@@ -109,7 +110,16 @@ export function updateHud(world: World): void {
 
   let alive = 0;
   let dead = 0;
-  for (const id in world.agents) (world.agents[id].alive ? alive++ : dead++);
+  let guests = 0;
+  for (const id in world.agents) {
+    const a = world.agents[id];
+    if (a.alive) {
+      alive++;
+      if (a.guest) guests++;
+    } else {
+      dead++;
+    }
+  }
   const seen = new Set<number>();
   let breathable = 0;
   for (const c of world.cells) {
@@ -122,7 +132,8 @@ export function updateHud(world: World): void {
   if (status) {
     const st = world.stock;
     status.textContent =
-      `rooms: ${seen.size} (${breathable} with air) · crew: ${alive} alive` +
+      `¢${Math.floor(world.credits)} · rooms: ${seen.size} (${breathable} air) · ` +
+      `crew: ${alive}${guests ? ` (${guests} guest)` : ""}` +
       (dead ? `, ${dead} dead` : "") +
       ` · B/W/meals: ${Math.floor(st.biomass)}/${Math.floor(st.water)}/${st.meals}`;
   }

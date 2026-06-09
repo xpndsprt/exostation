@@ -20,6 +20,7 @@ export const COLORS = {
   siteEmpty: 0x3a3730, // depleted site
   drone: 0xdfe6f2,
   route: 0x33506e, // faint drone flight path
+  guest: 0xe8c349, // Drenn guest outline
 } as const;
 
 export const SIM_HZ = 10; // simulation steps per second at 1× speed

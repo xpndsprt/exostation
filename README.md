@@ -46,27 +46,30 @@ npm run build    # type-check (tsc) + production build to dist/
 npm test         # headless sim sanity check (power → atmosphere → suffocation)
 ```
 
-Current playable state (**M0 → M5**):
+Current playable state (**M0 → M6**):
 - Boots to a station grid; pan (right-drag) / zoom (wheel) camera; build palette.
 - **Build:** place Floor / Wall / Erase; live room detection seals enclosed floor.
-- **Modules:** Solar Panel, Battery, O₂ Generator, Rations Synth, Sleeping Pod, Bot Bay.
+- **Modules:** Solar, Battery, O₂ Generator, Rations Synth, Sleeping Pod, Bot Bay, Docking Port.
 - **Power (M2):** station-wide supply vs draw with a battery buffer; on shortfall the
   top bar shows **BROWNOUT** and consumers shed by priority (life support last).
 - **Atmosphere (M3):** an enclosed room with a *powered* O₂ generator turns
-  breathable (cyan tint). A **Human** holds O₂ in air and **suffocates** in vacuum
-  or after a brownout — the circle fades green→red, then dies.
-- **Needs + AI (M4):** Humans get hungry and tired (orange ring warns), then
-  **A\*-pathfind** to a Rations Synth to eat or a Sleeping Pod to sleep.
-- **Mining (M5):** place an **Asteroid** out in space and a **Bot Bay**; its drone
-  flies out, mines, and shuttles biomass+water back to stock, which the synth turns
-  into meals — closing the resource loop so the station sustains itself.
+  breathable (cyan tint). Crew hold O₂ in air and **suffocate** in vacuum/brownout.
+- **Needs + AI (M4):** crew get hungry and tired (orange ring), then **A\*-pathfind**
+  to a Rations Synth to eat or a Sleeping Pod to sleep.
+- **Mining (M5):** place an **Asteroid** in space + a **Bot Bay**; its drone mines and
+  shuttles biomass+water back, which the synth turns into meals — a self-sustaining loop.
+- **Guests + economy (M6):** a **Docking Port** brings **Drenn** guests (gold ring),
+  capped by your Sleeping Pod count; they lodge, pay **credits** (¢ in the top bar),
+  and depart after their stay.
 - **Time:** Pause / 1× / 2× / 3×.
 
-Try it: build a sealed room with Solar, O₂ Generator, Rations Synth, Sleeping Pod,
-and a Bot Bay; place an Asteroid nearby in space; add a Human and run at 3×. The
-drone mines, the synth cooks, and the Human eats/sleeps on its own.
+Try it: build a sealed room with Solar, O₂ Generator, Rations Synth, a few Sleeping
+Pods, a Bot Bay, and a Docking Port; place an Asteroid in space; add a Human and run
+at 3×. The drone mines, the synth cooks, Drenn guests arrive and pay rent, and
+everyone eats/sleeps on their own.
 
 ## Status
-Pre-production. Engine runs **M0–M5** (build, power, atmosphere, crew with needs +
-pathfinding, mining loop). Next: **M6** Drenn guests dock + lodging income, then
-**M7** time/save/polish. See [`MVP_SCOPE.md`](MVP_SCOPE.md).
+Pre-production. Engine runs **M0–M6** — the core MVP loop is feature-complete
+(build, power, atmosphere, crew with needs + pathfinding, mining, guests + lodging).
+Next: **M7** polish — save/load, selection/info panel, alert toasts. See
+[`MVP_SCOPE.md`](MVP_SCOPE.md).

@@ -17,6 +17,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   synth: { label: "Rations Synth", color: 0xcf7a3a, gen: 0, draw: 5, battery: 0, priority: 5 },
   pod: { label: "Sleeping Pod", color: 0x9b6cd5, gen: 0, draw: 1, battery: 0, priority: 2 },
   bay: { label: "Bot Bay", color: 0x4aa3a3, gen: 0, draw: 4, battery: 0, priority: 3 },
+  dock: { label: "Docking Port", color: 0x5a8ad5, gen: 0, draw: 5, battery: 0, priority: 1 },
 };
 
 // Food synthesis recipe (matches BALANCE.md: 2 biomass + 1 water -> 4 meals / 10s).

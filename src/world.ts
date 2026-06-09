@@ -1,5 +1,7 @@
-import { Agent, Cell, CellType, Structure, StructureKind, World } from "./types";
+import { Agent, Cell, CellType, Species, Structure, StructureKind, World } from "./types";
 import { GRID_W, GRID_H } from "./config";
+
+export const GUEST_STAY = 90; // seconds a Drenn guest stays before leaving
 
 export function createWorld(): World {
   const cells: Cell[] = new Array(GRID_W * GRID_H);
@@ -20,6 +22,7 @@ export function createWorld(): World {
     // Seed some raw resources so the synthesizer can make meals before mining
     // (M5) exists to replenish them.
     stock: { biomass: 40, water: 40, meals: 0 },
+    credits: 0,
     tick: 0,
     speed: 1,
     nextId: 1,
@@ -94,14 +97,22 @@ export function eraseAt(w: World, x: number, y: number): void {
   setCell(w, x, y, "space");
 }
 
-export function addAgent(w: World, x: number, y: number): boolean {
+export function addAgent(
+  w: World,
+  x: number,
+  y: number,
+  species: Species = "human",
+  guest = false,
+): boolean {
   if (!inBounds(w, x, y)) return false;
   const c = w.cells[idx(w, x, y)];
   if (c.type !== "floor") return false;
   const id = w.nextId++;
   const a: Agent = {
     id,
-    species: "human",
+    species,
+    guest,
+    stay: guest ? GUEST_STAY : Infinity,
     cell: idx(w, x, y),
     o2: 100,
     food: 100,

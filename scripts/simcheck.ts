@@ -6,6 +6,7 @@ import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { agentSystem } from "../src/agents";
+import { economySystem } from "../src/economy";
 import { World } from "../src/types";
 
 const DT = 0.1;
@@ -16,6 +17,7 @@ function step(w: World) {
   foodSystem(w, DT);
   atmosphereSystem(w);
   agentSystem(w, DT);
+  economySystem(w, DT);
 }
 
 let failures = 0;
@@ -132,6 +134,39 @@ check("M5 drone flew outbound", sawOutbound);
 check("M5 drone mined the site", sawMining);
 check("M5 site richness dropped", site.richness < richBefore);
 check("M5 drone delivered biomass+water to stock", w3.stock.biomass > 0 && w3.stock.water > 0);
+
+// --- M6: docking port spawns Drenn guests + lodging income ---
+const w4 = createWorld();
+// Breathable room with power, a dock, and pods (capacity to host).
+for (let y = 5; y <= 9; y++) {
+  for (let x = 5; x <= 12; x++) {
+    const border = x === 5 || x === 12 || y === 5 || y === 9;
+    setCell(w4, x, y, border ? "wall" : "floor");
+  }
+}
+recomputeRooms(w4);
+addStructure(w4, "solar", 6, 6);
+addStructure(w4, "solar", 7, 6); // plenty of power
+addStructure(w4, "o2gen", 6, 7);
+addStructure(w4, "synth", 7, 7);
+addStructure(w4, "dock", 11, 8);
+addStructure(w4, "pod", 8, 6);
+addStructure(w4, "pod", 9, 6); // capacity 2
+
+let maxGuests = 0;
+const seenGuestIds = new Set<number>();
+for (let i = 0; i < 1500; i++) {
+  step(w4);
+  const live = Object.values(w4.agents).filter((a) => a.alive && a.guest);
+  for (const g of live) seenGuestIds.add(g.id);
+  if (live.length > maxGuests) maxGuests = live.length;
+}
+const aliveGuests = Object.values(w4.agents).filter((a) => a.alive && a.guest).length;
+check("M6 drenn guests arrived via dock", maxGuests >= 1);
+check("M6 guest count capped by pods", maxGuests <= 2);
+check("M6 lodging earned credits", w4.credits > 0);
+check("M6 guests are the drenn species", Object.values(w4.agents).every((a) => !a.guest || a.species === "drenn"));
+check("M6 guests depart after their stay", seenGuestIds.size > aliveGuests);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
