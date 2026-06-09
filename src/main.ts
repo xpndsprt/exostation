@@ -1,19 +1,37 @@
-import { Application, Container } from "pixi.js";
-import { createWorld, setCell, inBounds } from "./world";
+import { Application, Container, Ticker } from "pixi.js";
+import { createWorld, setCell, addStructure, eraseAt, addAgent, inBounds } from "./world";
 import { recomputeRooms } from "./rooms";
+import { powerSystem } from "./power";
+import { atmosphereSystem } from "./atmosphere";
+import { agentSystem } from "./agents";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
-import { setupUI, setStatus } from "./ui";
-import { TILE, COLORS } from "./config";
-import { UIState } from "./types";
+import { setupUI, updateHud } from "./ui";
+import { TILE, COLORS, SIM_HZ } from "./config";
+import { StructureKind, UIState, World } from "./types";
+
+const STEP = 1 / SIM_HZ; // seconds per simulation step
+
+// One simulation step (fixed dt). Order matches TECH_DESIGN.md.
+function simStep(world: World, dt: number): void {
+  if (world.dirtyRooms) recomputeRooms(world);
+  powerSystem(world, dt);
+  atmosphereSystem(world);
+  agentSystem(world, dt);
+  world.tick++;
+}
+
+// Recompute derived state without advancing time (so a paused view stays
+// consistent right after the player builds something).
+function refresh(world: World): void {
+  if (world.dirtyRooms) recomputeRooms(world);
+  powerSystem(world, 0);
+  atmosphereSystem(world);
+}
 
 async function boot(): Promise<void> {
   const app = new Application();
-  await app.init({
-    background: COLORS.space,
-    resizeTo: window,
-    antialias: true,
-  });
+  await app.init({ background: COLORS.space, resizeTo: window, antialias: true });
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
   mount.appendChild(app.canvas);
@@ -27,7 +45,7 @@ async function boot(): Promise<void> {
   renderer.drawGrid(world.w, world.h);
 
   const state: UIState = { tool: "floor" };
-  setupUI(state);
+  setupUI(state, world);
 
   const applyCam = (): void => {
     worldContainer.position.set(cam.x, cam.y);
@@ -37,15 +55,20 @@ async function boot(): Promise<void> {
 
   let needRedraw = true;
   const canvas = app.canvas;
+  const STRUCTURE_TOOLS: StructureKind[] = ["solar", "battery", "o2gen"];
 
   const paintAt = (clientX: number, clientY: number): void => {
     const rect = canvas.getBoundingClientRect();
     const { tx, ty } = screenToTile(cam, clientX - rect.left, clientY - rect.top, TILE);
     if (!inBounds(world, tx, ty)) return;
-    if (state.tool === "floor") setCell(world, tx, ty, "floor");
-    else if (state.tool === "wall") setCell(world, tx, ty, "wall");
-    else if (state.tool === "erase") setCell(world, tx, ty, "space");
-    if (world.dirtyRooms) needRedraw = true;
+    const tool = state.tool;
+    if (tool === "floor") setCell(world, tx, ty, "floor");
+    else if (tool === "wall") setCell(world, tx, ty, "wall");
+    else if (tool === "erase") eraseAt(world, tx, ty);
+    else if (tool === "human") addAgent(world, tx, ty);
+    else if ((STRUCTURE_TOOLS as string[]).includes(tool))
+      addStructure(world, tool as StructureKind, tx, ty);
+    needRedraw = true;
   };
 
   let painting = false;
@@ -91,20 +114,25 @@ async function boot(): Promise<void> {
     { passive: false },
   );
 
-  app.ticker.add(() => {
-    if (world.dirtyRooms) recomputeRooms(world);
+  let acc = 0;
+  app.ticker.add((ticker: Ticker) => {
+    if (world.speed > 0) {
+      acc += (ticker.deltaMS / 1000) * world.speed;
+      let steps = 0;
+      while (acc >= STEP && steps < 120) {
+        simStep(world, STEP);
+        acc -= STEP;
+        steps++;
+        needRedraw = true;
+      }
+    } else if (needRedraw) {
+      refresh(world); // keep paused view coherent after edits
+    }
+
     if (needRedraw) {
       renderer.draw(world);
+      updateHud(world);
       needRedraw = false;
-      let rooms = 0;
-      let sealed = 0;
-      for (const c of world.cells) {
-        if (c.type === "floor" && c.enclosed) sealed++;
-      }
-      const seen = new Set<number>();
-      for (const c of world.cells) if (c.roomId >= 0) seen.add(c.roomId);
-      rooms = seen.size;
-      setStatus(`rooms: ${rooms} · sealed tiles: ${sealed}`);
     }
   });
 }

@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsx scripts/simcheck.ts"
   },
   "dependencies": {
     "pixi.js": "^8.2.6"
   },
   "devDependencies": {
+    "tsx": "^4.19.1",
     "typescript": "^5.5.4",
     "vite": "^5.4.2"
   }

@@ -29,8 +29,16 @@
     }
     #palette button:hover { background: #232c3d; }
     #palette button.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
-    #legend { margin-top: 4px; font-size: 11px; color: #8b93a6; line-height: 1.5; }
+    #palette .group { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+      color: #6b7488; margin: 6px 2px 0; }
+    #legend { margin-top: 8px; font-size: 11px; color: #8b93a6; line-height: 1.6; }
     #legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+    #power { font-variant-numeric: tabular-nums; color: #c3cbdc; }
+    #timectl { display: inline-flex; gap: 4px; }
+    #timectl .tbtn { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer; line-height: 1; }
+    #timectl .tbtn:hover { background: #232c3d; }
+    #timectl .tbtn.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
   </style>
 </head>
 <body>

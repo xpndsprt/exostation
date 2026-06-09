@@ -43,16 +43,25 @@ Stack: **TypeScript + Vite + PixiJS**.
 npm install
 npm run dev      # start the dev server, open the printed localhost URL
 npm run build    # type-check (tsc) + production build to dist/
+npm test         # headless sim sanity check (power → atmosphere → suffocation)
 ```
 
-Current playable state (**M0 → M1**): boots to a rendered station grid with a
-pan/zoom camera and a build palette. Place **Floor** and **Wall** tiles; the
-sim continuously detects enclosed rooms and tints floor **green when sealed**
-(would hold atmosphere) or **red when open to space**. Right-drag pans, wheel
-zooms. See [`MVP_SCOPE.md`](MVP_SCOPE.md) for the milestone roadmap (power,
-atmosphere, agents, mining, guests next).
+Current playable state (**M0 → M3**):
+- Boots to a station grid; pan (right-drag) / zoom (wheel) camera; build palette.
+- **Build:** place Floor / Wall / Erase; live room detection seals enclosed floor.
+- **Modules:** Solar Panel (+power), Battery (storage), O₂ Generator (life support).
+- **Power (M2):** station-wide supply vs draw with a battery buffer; when supply
+  runs out the top bar shows **BROWNOUT** and consumers shed by priority (life
+  support last).
+- **Atmosphere (M3):** an enclosed room with a *powered* O₂ generator turns
+  breathable (cyan tint). Place a **Human**: they hold O₂ in air and **suffocate**
+  in vacuum or after a brownout — the circle fades green→red, then dies.
+- **Time:** Pause / 1× / 2× / 3×.
+
+Try it: build a sealed room, drop a Solar + O₂ Generator inside, add a Human,
+run at 3× — then delete the Solar and watch the brownout suffocate them.
 
 ## Status
-Pre-production. Design complete for the MVP slice; engine scaffold builds and
-runs (M0–M1). Next: power network (M2) and per-room atmosphere + a Human who
-breathes (M3).
+Pre-production. Engine runs **M0–M3** (build, power, atmosphere, breathing crew).
+Next: **M4** needs + A* pathfinding (eating/resting), then **M5** mining loop and
+**M6** Drenn guests + lodging. See [`MVP_SCOPE.md`](MVP_SCOPE.md).
