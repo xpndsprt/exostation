@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXOSTATION — Technical Design (MVP)</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>EXOSTATION — Technical Design (MVP)</h1>
+<blockquote>How the <a href="MVP_SCOPE.md"><code>MVP_SCOPE.md</code></a> slice is actually built. Stack: <strong>TypeScript + Vite + PixiJS</strong>. Bias: simplest model that's correct; simplify hard systems (atmosphere, power) to room/station-level zones rather than per-tile physics.</blockquote>
+<h2>Stack &amp; tooling</h2>
+<ul><li><strong>Vite</strong> dev server + build; <strong>TypeScript</strong> strict; <strong>PixiJS</strong> (WebGL 2D) for the world canvas.</li><li><strong>UI</strong> as plain HTML/CSS DOM overlay (top bar, build palette, info panel) above the Pixi canvas — far easier than drawing UI in Pixi for an MVP.</li><li>No game framework, no ECS library — a hand-rolled <strong>state + systems</strong> model (below). Vitest for a few pure-logic unit tests (power, room detection, pathfinding).</li></ul>
+<h2>Architecture: state + systems</h2>
+<p>A single serializable <strong><code>World</code></strong> state object, mutated each tick by a fixed, ordered list of pure-ish <strong>system</strong> functions. Rendering reads <code>World</code> and is fully decoupled from simulation.</p>
+<pre><code>tick(world, dt):
+  powerSystem(world)        // 1. compute supply/draw, set brownout, gate consumers
+  atmosphereSystem(world)   // 2. recompute room breathability
+  needsSystem(world)        // 3. decay needs, mark urgencies
+  aiSystem(world)           // 4. pick actions, advance pathfinding/tasks
+  miningSystem(world)       // 5. advance drone shuttle loop
+  economySystem(world)      // 6. accrue lodging credits, spawn guests
+  cleanupSystem(world)      // 7. deaths, removals, dirty-flag resets</code></pre>
+<h3>Tick / time model</h3>
+<ul><li>Fixed simulation step: <strong>10 ticks/sec at 1×</strong> (accumulator pattern; render via <code>requestAnimationFrame</code>, decoupled).</li><li>Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s).</li><li>Determinism: no <code>Math.random()</code> in render; sim randomness via a small seeded PRNG stored in <code>World</code> (keeps save/load reproducible).</li></ul>
+<h2>Data model (sketch)</h2>
+<pre><code>type CellType = 'space' | 'floor';
+interface Cell {
+  type: CellType;
+  walls: number;        // bitmask N/E/S/W edges
+  structureId?: ID;     // module occupying this cell
+  roomId?: ID;          // assigned by room detection
+}
+interface World {
+  tick: number; speed: 0|1|2|3; seed: number;
+  grid: { w: number; h: number; cells: Cell[] };   // flat array, idx = y*w+x
+  rooms: Record&lt;ID, Room&gt;;
+  structures: Record&lt;ID, Structure&gt;;
+  agents: Record&lt;ID, Agent&gt;;
+  drones: Record&lt;ID, Drone&gt;;
+  sites: Record&lt;ID, Site&gt;;       // MVP: one asteroid
+  power: { supply: number; draw: number; battery: number; batteryMax: number; brownout: boolean };
+  stock: { biomass: number; water: number; meals: number };  // station inventory (Silo)
+  credits: number;
+  dirty: { rooms: boolean };
+}
+interface Room { id: ID; cells: number[]; enclosed: boolean; breathable: boolean; o2: boolean; }
+interface Structure { id: ID; kind: StructureKind; cell: number; on: boolean; powered: boolean; integrity: number; }
+interface Agent { id: ID; species: 'human'|'drenn'; cell: number; path?: number[];
+  needs: { o2: number; food: number; rest: number }; mood: number; task?: Task; alive: boolean; guest: boolean; }
+interface Drone { id: ID; state: 'docked'|'outbound'|'mining'|'inbound'; progress: number; cargo: {biomass:number;water:number}; bayId: ID; }
+interface Site { id: ID; resource: 'mixed'; richness: number; distance: number; }</code></pre>
+<h2>Key systems</h2>
+<h3>Room detection (atmosphere boundaries)</h3>
+<ul><li>Triggered when structures/walls change (<code>dirty.rooms</code>).</li><li><strong>Flood fill</strong> over <code>floor</code> cells, not crossing walls/closed doors, to partition the grid into rooms.</li><li>A room is <strong>enclosed</strong> if its flood fill never touches a <code>space</code> cell or the map edge. Open airlocks/doors connect rooms (merge or link for traversal).</li></ul>
+<h3>Atmosphere (per-room zone — <em>not</em> per-tile physics)</h3>
+<ul><li>For each room: <code>o2 = enclosed &amp;&amp; hasPoweredO2Generator(room)</code>; <code>breathable = o2</code>.</li><li>A breach (a wall removed/destroyed exposing the room to <code>space</code>) flips <code>enclosed=false</code> → not breathable. MVP skips gradual diffusion and decompression spread (deferred).</li></ul>
+<h3>Power (station-wide single network)</h3>
+<ul><li><code>supply = Σ solar (× lit factor)</code>; <code>draw = Σ on&amp;powered consumers</code>.</li><li>If <code>draw &gt; supply + availableBattery</code>: <strong>brownout</strong> — shed consumers in ascending <strong>priority</strong> (Life Support last to die), recompute, set <code>powered=false</code> on shed modules.</li><li>Battery integrates <code>supply − draw</code> each tick, clamped <code>[0, batteryMax]</code>. (MVP ignores conduit routing; adjacency/route graph is a post-MVP refinement.)</li></ul>
+<h3>Needs + AI (autonomy)</h3>
+<ul><li>Each tick needs decay: <code>o2</code> only while in a non-breathable room (fast), <code>food</code> and <code>rest</code> slowly. Mood derives from need satisfaction.</li><li><strong>Utility selection:</strong> score candidate actions (FleeToBreathableRoom, Eat if meals&gt;0, Rest if tired, Wander) by urgency; pick the highest <strong>achievable</strong> one.</li><li><strong>Pathfinding:</strong> A\* over walkable cells (floor, passable wall edge / open door), 4-directional, Manhattan heuristic. Cache paths; invalidate on grid change.</li><li>Death: <code>o2</code> hits 0 → suffocate; prolonged <code>food</code> 0 → starve. Removes agent (guests just leave/are lost).</li></ul>
+<h3>Mining loop</h3>
+<ul><li>One Site at a <code>distance</code>. Drone FSM: <code>docked → outbound (progress to 1) → mining (fill cargo) → inbound → unload to stock → repeat</code>. Round-trip time scales with <code>distance</code> and bot tier.</li><li>Synthesizer: when it has power + inputs, consume <code>biomass+water</code> → produce <code>meals</code> into stock on a timer.</li></ul>
+<h3>Economy</h3>
+<ul><li>Each occupied Sleeping Pod accrues lodging <code>¢/day</code> (scaled by tick). Docking Port periodically spawns a <strong>Drenn</strong> guest (seeded) up to capacity; guest seeks a vacant pod, lodges, pays, eventually departs.</li></ul>
+<h2>Rendering (PixiJS)</h2>
+<ul><li>Root <strong>world <code>Container</code></strong> holds: a tile layer, a structure layer, an agent/drone layer, an overlay layer (room tint / power / breathable heatmap toggles).</li><li><strong>Camera</strong> = world container transform: drag to pan, wheel to zoom (clamp scale). Tiles ~24px world units.</li><li>Sprites are placeholder graphics (colored <code>Graphics</code> rects/circles) — no art pipeline in MVP.</li><li>Render pass diff-updates only changed cells/entities; full redraw only on big changes.</li></ul>
+<h2>UI (DOM overlay)</h2>
+<ul><li><strong>Top bar:</strong> credits, power balance (supply/draw/battery), tick clock, Pause/1×/2×/3×.</li><li><strong>Build palette:</strong> pick a tile/module; ghost preview; click/drag to place, right-click to remove; cost validated against credits.</li><li><strong>Info panel:</strong> on selecting a structure/agent, show kind, state flags (powered/on/breathable/needs), and actions (toggle on/off, deconstruct).</li><li><strong>Alerts:</strong> toast feed for brownout / suffocation / starvation / guest arrival.</li></ul>
+<h2>Persistence</h2>
+<ul><li><code>World</code> is plain JSON-serializable → <strong>localStorage</strong> save/load (single slot for MVP). Version field for forward migration.</li></ul>
+<h2>Project layout</h2>
+<pre><code>index.html
+package.json  tsconfig.json  vite.config.ts
+src/
+  main.ts            // boot: create app, world, loops
+  sim/               // world.ts, systems/*.ts, pathfind.ts, rooms.ts, rng.ts
+  render/            // renderer.ts, camera.ts, layers.ts
+  ui/                // topbar, palette, infopanel, alerts (DOM)
+  data/              // structures.ts (catalog stats), species.ts, config.ts
+  types.ts
+test/                // power, rooms, pathfind unit tests</code></pre>
+<h2>Performance targets</h2>
+<p>~80×80 grid, dozens of agents/drones, stable at 3× — comfortably within Canvas/WebGL budget given the zone-level (not per-tile) atmosphere and power models.</p>
+<h2>Risks / watch-list</h2>
+<ul><li><strong>Atmosphere creep:</strong> resist per-tile gas sim in MVP; room zones are enough to prove the loop.</li><li><strong>Pathfinding churn:</strong> invalidate caches narrowly on grid edits, not globally.</li><li><strong>Power priority bugs:</strong> unit-test brownout shedding order (life support must never be shed before commerce).</li><li><strong>Save/load drift:</strong> keep <code>World</code> strictly JSON-serializable (no class instances / functions in state).</li></ul>
+</main>
+</body>
+</html>

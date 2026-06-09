@@ -74,15 +74,21 @@ tr:hover td { background: #eef3ff; }
 <h2>Pillars</h2>
 <ul><li><strong>Build &amp; power</strong> — grid-based modules, solar + batteries, life support you must zone and contain.</li><li><strong>Resource gathering</strong> — a Radar View of surrounding space; scan sites and assign a drone fleet (per-site, or per-resource standing orders).</li><li><strong>Species &amp; compatibility</strong> — three tiers from kindred (shared air &amp; food) to fully alien (exotic gas, diet, temperature), each needing its own sealed systems.</li><li><strong>Politics</strong> — an asymmetric web of loves and hatreds; adjacency is diplomacy.</li><li><strong>Tech, profit &amp; danger</strong> — advanced species pay more but fight harder; skirmishes can vent a wing.</li><li><strong>Structural integrity</strong> — destroyed rooms can sever the station, forcing EVA spacewalks until you rebuild.</li></ul>
 <h2>Documents</h2>
-<table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="GAME_DESIGN.md"><code>GAME_DESIGN.md</code></a></td><td>The full design doc (all systems + an embedded copy of the balance sheet).</td></tr><tr><td><a href="BALANCE.md"><code>BALANCE.md</code></a></td><td>Standalone first-pass tuning sheet (species stats, yields, mood, combat, research).</td></tr><tr><td><a href="BUILDINGS.md"><code>BUILDINGS.md</code></a></td><td>Catalog of every buildable/interactive item: function, power draw, footprint, cost, states.</td></tr></tbody></table>
+<table><thead><tr><th>File</th><th>What it is</th></tr></thead><tbody><tr><td><a href="GAME_DESIGN.md"><code>GAME_DESIGN.md</code></a></td><td>The full design doc (all systems + an embedded copy of the balance sheet).</td></tr><tr><td><a href="BALANCE.md"><code>BALANCE.md</code></a></td><td>Standalone first-pass tuning sheet (species stats, yields, mood, combat, research).</td></tr><tr><td><a href="BUILDINGS.md"><code>BUILDINGS.md</code></a></td><td>Catalog of every buildable/interactive item: function, power draw, footprint, cost, states.</td></tr><tr><td><a href="MVP_SCOPE.md"><code>MVP_SCOPE.md</code></a></td><td>The tight first-build scope: what ships, what's deferred, milestones.</td></tr><tr><td><a href="TECH_DESIGN.md"><code>TECH_DESIGN.md</code></a></td><td>Technical/architecture design for the MVP (stack, tick model, systems, data model).</td></tr></tbody></table>
 <p>Each <code>.md</code> has a nicely formatted <code>.html</code> sibling (e.g. <code>GAME_DESIGN.html</code>) generated automatically — open it in a browser for a styled read.</p>
 <h2>Tooling</h2>
 <p>HTML versions are produced by a self-contained converter with <strong>no third-party dependencies</strong> (Python only — no pandoc or pip installs):</p>
 <ul><li><code>.claude/md2html.py</code> — Markdown → styled HTML (tables, nested lists, code, light/dark CSS).</li><li><code>.claude/md_hook.py</code> — a Claude Code <code>PostToolUse</code> hook entrypoint.</li><li><code>.claude/settings.json</code> — registers the hook so any <code>.md</code> written/edited in this repo regenerates its <code>.html</code> automatically.</li></ul>
 <p>To regenerate by hand:</p>
 <pre><code>python .claude/md2html.py GAME_DESIGN.md</code></pre>
+<h2>Running the game (MVP scaffold)</h2>
+<p>Stack: <strong>TypeScript + Vite + PixiJS</strong>.</p>
+<pre><code>npm install
+npm run dev      # start the dev server, open the printed localhost URL
+npm run build    # type-check (tsc) + production build to dist/</code></pre>
+<p>Current playable state (<strong>M0 → M1</strong>): boots to a rendered station grid with a pan/zoom camera and a build palette. Place <strong>Floor</strong> and <strong>Wall</strong> tiles; the sim continuously detects enclosed rooms and tints floor <strong>green when sealed</strong> (would hold atmosphere) or <strong>red when open to space</strong>. Right-drag pans, wheel zooms. See <a href="MVP_SCOPE.md"><code>MVP_SCOPE.md</code></a> for the milestone roadmap (power, atmosphere, agents, mining, guests next).</p>
 <h2>Status</h2>
-<p>Pre-production — design and balance only. No game code yet.</p>
+<p>Pre-production. Design complete for the MVP slice; engine scaffold builds and runs (M0–M1). Next: power network (M2) and per-room atmosphere + a Human who breathes (M3).</p>
 </main>
 </body>
 </html>
