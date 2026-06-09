@@ -93,6 +93,14 @@ Each crew member tracks four meters (see them in the info panel; a mood dot floa
 
 ---
 
+## 5b · Jobs & upkeep — residents work, visitors lodge
+The station now needs a working population.
+- **Machinery wears down.** Every powered module (O₂/Methane generators, Synth, Vat, Bot Bay, Docking Port, Pods) loses **condition** while running (~0.6%/s). Solar panels and batteries are passive and never wear.
+- **Residents (crew) service it.** When a crew member isn't handling a personal need, they take a **service job**: walk to the nearest worn module (condition below 60%) and repair it (~15%/s) back to full. A small **orange bar** shows a module's upkeep; the info panel shows **Condition** and "being serviced".
+- **If condition hits 0 the module breaks** — it goes dark (unpowered) and stops working until a crew member repairs it. A broken O₂ generator means a wing starts losing air, so **keep enough crew to cover your machinery** (rough rule: one resident per ~6 modules).
+- **Visitors never work.** Guests (traders/Drenn) only use **hotel accommodations** — they eat, sleep in a pod, pay lodging, and leave. All upkeep falls on residents.
+- **Takeaway:** every machine you add is also upkeep. Grow your resident crew alongside your station, or things start breaking down.
+
 ## 6 · Food production — grown on-station
 Food is a two-step, **power-driven** loop that runs entirely inside the station:
 - A **Bio Vat** grows **food base (biomass)** from power alone — **+3 biomass every 8s** while powered (the 🌱 chip).
@@ -164,6 +172,7 @@ This is the failure state the whole game is designed around.
 - **Crew suffocate.** No power → O₂ gen off, or room not sealed, or wrong/mixed gas. Fix power/seal/zoning.
 - **Brownout chain reaction.** Draw crept above supply; battery drained. Add solar/batteries; the Power overlay shows what's shedding.
 - **Starvation / stalled synth.** Out of biomass — your **Bio Vats** can't keep up (or are unpowered). Add more vats, or check power.
+- **Modules breaking down.** Machinery wore to 0 because you had too few **resident crew** to service it. Add residents (visitors don't work), or build fewer machines per crew.
 - **No guests arriving.** You have no free pods (capacity), or the dock is unpowered.
 - **Skirmish vents a wing.** You crowded a disliked pair or let mood crater. Separate them, raise mood; rebuild and reseal what was vented.
 
@@ -178,6 +187,7 @@ This is the failure state the whole game is designed around.
 | Space suit | drains ~20%/s off native air (~5s ≈ 20 tiles), recharges ~40%/s in native air |
 | Food / Rest | −1.5%/s, −1%/s; seek at <40 / <35; rest recovers +12%/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
+| Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; drone cargo 10, speed ~6 tiles/s, site richness 1000 |

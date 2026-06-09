@@ -13,6 +13,11 @@ export function powerSystem(w: World, dt: number): void {
   for (const id in w.structures) {
     const s = w.structures[id];
     const def = STRUCTURES[s.kind];
+    // broken machinery (worn to 0) is dead: no draw, no function
+    if (def.draw > 0 && s.condition <= 0) {
+      s.powered = false;
+      continue;
+    }
     supply += def.gen;
     batteryMax += def.battery;
     if (def.draw > 0 && s.on) {

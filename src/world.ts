@@ -52,7 +52,18 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
   const c = w.cells[i];
   if (c.type !== "floor" || c.structureId >= 0) return false;
   const id = w.nextId++;
-  const s: Structure = { id, kind, cell: i, cells: [i], on: true, powered: false, occupantId: -1, timer: 0 };
+  const s: Structure = {
+    id,
+    kind,
+    cell: i,
+    cells: [i],
+    on: true,
+    powered: false,
+    occupantId: -1,
+    timer: 0,
+    condition: 100,
+    servicedBy: -1,
+  };
   w.structures[id] = s;
   c.structureId = id;
   if (kind === "bay") spawnDrone(w, id);
@@ -78,6 +89,8 @@ export function addStructureMulti(w: World, kind: StructureKind, cells: number[]
     powered: false,
     occupantId: -1,
     timer: 0,
+    condition: 100,
+    servicedBy: -1,
   };
   w.structures[id] = s;
   for (const c of cells) w.cells[c].structureId = id;

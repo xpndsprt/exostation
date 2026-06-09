@@ -1,5 +1,6 @@
 import { Species, World } from "./types";
 import { SPECIES } from "./species";
+import { STRUCTURES } from "./structures";
 
 export type Severity = "critical" | "warn" | "tip";
 export interface Advice {
@@ -41,6 +42,16 @@ export function advise(world: World): Advice[] {
     out.push({ sev: "critical", text: "Crew are losing air — fix power/atmosphere or get them to their gas." });
   if (world.stock.meals === 0 && agents.some((a) => a.food < 35))
     out.push({ sev: "critical", text: "Out of meals — crew are going hungry." });
+  if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))
+    out.push({ sev: "critical", text: "A module has broken down — crew (residents) must repair it." });
+
+  // crew vs upkeep: residents do the maintenance; visitors don't
+  const residents = agents.filter((a) => !a.guest).length;
+  const machines = structures.filter((s) => STRUCTURES[s.kind].draw > 0).length;
+  if (machines > 0 && residents === 0)
+    out.push({ sev: "warn", text: "No resident crew to maintain the station — add Humans to service modules." });
+  else if (residents > 0 && machines > residents * 6)
+    out.push({ sev: "tip", text: "Lots of machinery per crew — add residents so upkeep keeps pace." });
 
   // --- progression: the single next build-order gap ---
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);

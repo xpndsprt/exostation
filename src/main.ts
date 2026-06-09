@@ -2,6 +2,7 @@ import { Application, Container, Ticker } from "pixi.js";
 import { createWorld, setCell, addStructure, addStructureMulti, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
+import { maintenanceSystem } from "./maintenance";
 import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
@@ -40,6 +41,7 @@ const STEP = 1 / SIM_HZ;
 function simStep(world: World, dt: number): void {
   if (world.dirtyRooms) recomputeRooms(world);
   powerSystem(world, dt);
+  maintenanceSystem(world, dt);
   miningSystem(world, dt);
   foodSystem(world, dt);
   atmosphereSystem(world);

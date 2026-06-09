@@ -1,6 +1,8 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
 import { SPECIES } from "./species";
+import { STRUCTURES } from "./structures";
+import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 
 const SPEED = 4; // cells / second
 const O2_DECAY = 8; // breath lost per second once the suit is empty
@@ -109,6 +111,14 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
         a.rest = Math.min(100, a.rest + REST_RATE * dt);
         if (a.rest >= 100) releaseTask(w, a);
         return; // keep sleeping
+      } else if (a.task.type === "service") {
+        const s = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
+        if (s) {
+          s.condition = Math.min(100, s.condition + REPAIR_RATE * dt);
+          if (s.condition >= 100) releaseTask(w, a);
+          return; // keep working until fully serviced
+        }
+        releaseTask(w, a);
       } else {
         a.task = null;
       }
@@ -135,13 +145,25 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
       return;
     }
   }
+  // Residents (crew) work: service worn machinery. Visitors never take jobs.
+  if (!a.guest) {
+    const job = claimService(w, a, a.cell);
+    if (job) {
+      a.task = { type: "service", target: job.cell, structureId: job.id };
+      a.path = job.path;
+      return;
+    }
+  }
   // else: idle (stand)
 }
 
 function releaseTask(w: World, a: Agent): void {
-  if (a.task && a.task.type === "sleep" && a.task.structureId != null) {
+  if (a.task && a.task.structureId != null) {
     const s = w.structures[a.task.structureId];
-    if (s && s.occupantId === a.id) s.occupantId = -1;
+    if (s) {
+      if (a.task.type === "sleep" && s.occupantId === a.id) s.occupantId = -1;
+      if (a.task.type === "service" && s.servicedBy === a.id) s.servicedBy = -1;
+    }
   }
   a.task = null;
   a.path = [];
@@ -173,6 +195,25 @@ function nearestReachable(w: World, start: number, kind: Structure["kind"]): Fou
   for (const s of list) {
     const path = findPath(w, start, s.cell);
     if (path) return { id: s.id, cell: s.cell, path };
+  }
+  return null;
+}
+
+// Claim the nearest worn, unclaimed machine that needs servicing.
+function claimService(w: World, a: Agent, start: number): Found | null {
+  const jobs = Object.values(w.structures).filter(
+    (s) =>
+      STRUCTURES[s.kind].draw > 0 &&
+      s.condition < SERVICE_THRESHOLD &&
+      (s.servicedBy < 0 || s.servicedBy === a.id),
+  );
+  jobs.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const s of jobs) {
+    const path = findPath(w, start, s.cell);
+    if (path) {
+      s.servicedBy = a.id;
+      return { id: s.id, cell: s.cell, path };
+    }
   }
   return null;
 }

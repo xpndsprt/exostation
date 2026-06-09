@@ -3,6 +3,7 @@ import { World } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES } from "./structures";
 import { SPECIES } from "./species";
+import { SERVICE_THRESHOLD } from "./maintenance";
 
 function hslToHex(h: number, s: number, l: number): number {
   s /= 100;
@@ -245,6 +246,12 @@ export class Renderer {
         if (def.draw > 0 && !s.powered) {
           g.roundRect(x + 3, y + 3, TILE - 6, TILE - 6, 4).stroke({ width: 2, color: COLORS.unpowered });
         }
+      }
+      // worn-but-running machinery shows an orange upkeep bar
+      if (def.draw > 0 && s.condition > 0 && s.condition < SERVICE_THRESHOLD) {
+        const x = (s.cell % world.w) * TILE;
+        const y = ((s.cell / world.w) | 0) * TILE;
+        g.rect(x + 4, y + TILE - 6, (TILE - 8) * (s.condition / 100), 3).fill(0xe8a33d);
       }
     }
   }

@@ -63,9 +63,11 @@ export interface Structure {
   powered: boolean; // receiving power this tick
   occupantId: number; // agent using this (pods); -1 if free
   timer: number; // production progress (synth)
+  condition: number; // 0..100 upkeep; machinery wears down and breaks at 0
+  servicedBy: number; // crew currently servicing this; -1 if none
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service";
 
 export interface Task {
   type: TaskType;

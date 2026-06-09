@@ -40,6 +40,8 @@ export function loadWorld(): World | null {
     for (const id in w.structures) {
       const s = w.structures[id];
       if (!Array.isArray(s.cells)) s.cells = [s.cell]; // older saves
+      if (typeof s.condition !== "number") s.condition = 100;
+      if (typeof s.servicedBy !== "number") s.servicedBy = -1;
     }
     w.dirtyRooms = true;
     return w;

@@ -4,6 +4,7 @@ import { solarFootprint } from "../src/placement";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
+import { maintenanceSystem } from "../src/maintenance";
 import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
@@ -33,6 +34,7 @@ const DT = 0.1;
 function step(w: World) {
   if (w.dirtyRooms) recomputeRooms(w);
   powerSystem(w, DT);
+  maintenanceSystem(w, DT);
   miningSystem(w, DT);
   foodSystem(w, DT);
   atmosphereSystem(w);
@@ -394,6 +396,50 @@ check("Placed solar generates power", ws.power.supply >= 10);
 check("Solar occupies all 3 cells", fp!.every((c) => ws.cells[c].structureId >= 0));
 eraseAt(ws, 12, 10);
 check("Erasing any solar cell removes the whole array", fp!.every((c) => ws.cells[c].structureId === -1));
+
+// --- M13: jobs — crew maintain machinery; visitors don't work ---
+const wm = createWorld();
+carve(wm, 5, 5, 9, 8);
+recomputeRooms(wm);
+addStructure(wm, "solar", 6, 6);
+addStructure(wm, "o2gen", 6, 7);
+const gen = Object.values(wm.structures).find((s) => s.kind === "o2gen")!;
+for (let i = 0; i < 50; i++) step(wm); // 5s, no crew
+check("Machinery wears down while running", gen.condition < 100);
+gen.condition = 0.3;
+for (let i = 0; i < 10; i++) step(wm);
+check("Worn-out machine breaks (unpowered)", gen.powered === false && gen.condition === 0);
+check("Broken O2 generator stops making air", Object.values(wm.rooms).every((r) => r.gas !== "o2"));
+
+const wc = createWorld();
+carve(wc, 5, 5, 9, 8);
+recomputeRooms(wc);
+addStructure(wc, "solar", 6, 6);
+addStructure(wc, "o2gen", 6, 7);
+addAgent(wc, 7, 7, "human"); // resident
+const g2 = Object.values(wc.structures).find((s) => s.kind === "o2gen")!;
+g2.condition = 50;
+let serviced = false;
+for (let i = 0; i < 200; i++) {
+  step(wc);
+  if (g2.servicedBy >= 0) serviced = true;
+}
+check("Resident crew services worn machinery", serviced && g2.condition > 50);
+
+const wg = createWorld();
+carve(wg, 5, 5, 9, 8);
+recomputeRooms(wg);
+addStructure(wg, "solar", 6, 6);
+addStructure(wg, "o2gen", 6, 7);
+addAgent(wg, 7, 7, "drenn", true); // a visitor
+const g3 = Object.values(wg.structures).find((s) => s.kind === "o2gen")!;
+g3.condition = 40;
+let guestServiced = false;
+for (let i = 0; i < 150; i++) {
+  step(wg);
+  if (g3.servicedBy >= 0) guestServiced = true;
+}
+check("Visitors never take service jobs", guestServiced === false);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
