@@ -1,5 +1,5 @@
 import { Application, Container, Ticker } from "pixi.js";
-import { createWorld, setCell, addStructure, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructure, addStructureMulti, addSite, eraseAt, addAgent, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { miningSystem } from "./mining";
@@ -11,7 +11,7 @@ import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
-import { canPlace, isAreaTool, rectCells } from "./placement";
+import { canPlace, isAreaTool, rectCells, solarFootprint } from "./placement";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -184,7 +184,10 @@ async function boot(): Promise<void> {
     else if (tool === "human") addAgent(world, tx, ty);
     else if (tool === "thol") addAgent(world, tx, ty, "thol");
     else if (tool === "asteroid") addSite(world, tx, ty);
-    else if ((STRUCTURE_TOOLS as string[]).includes(tool))
+    else if (tool === "solar") {
+      const fp = solarFootprint(world, tx, ty);
+      if (fp) addStructureMulti(world, "solar", fp);
+    } else if ((STRUCTURE_TOOLS as string[]).includes(tool))
       addStructure(world, tool as StructureKind, tx, ty);
     needRedraw = true;
   };
@@ -230,6 +233,10 @@ async function boot(): Promise<void> {
       const w = Math.abs((dragStart % world.w) - tx) + 1;
       const h = Math.abs(((dragStart / world.w) | 0) - ty) + 1;
       showDragLabel(`${w}×${h}`, clientX, clientY);
+    } else if (hover >= 0 && tool === "solar") {
+      const fp = solarFootprint(world, tx, ty);
+      ghost = fp ?? [hover];
+      valid = fp !== null;
     } else if (hover >= 0 && tool !== "pan" && tool !== "select") {
       ghost = [hover];
       valid = canPlace(world, tool, tx, ty);

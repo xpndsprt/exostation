@@ -1,5 +1,6 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addSite, addAgent, eraseAt, idx } from "../src/world";
+import { createWorld, setCell, addStructure, addStructureMulti, addSite, addAgent, eraseAt, idx } from "../src/world";
+import { solarFootprint } from "../src/placement";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
@@ -375,6 +376,24 @@ for (let i = 0; i < 300; i++) {
 check("Vat grows biomass from power", bioGrew);
 check("Synth turns biomass into meals", wf.stock.meals > 0);
 check("No mining means minerals stay 0", wf.stock.minerals === 0);
+
+// --- Solar panels: wall-mounted, 3 tiles normal to a space-facing wall ---
+const ws = createWorld();
+setCell(ws, 10, 10, "wall");
+recomputeRooms(ws);
+const fp = solarFootprint(ws, 11, 10); // space east of the wall
+check("Solar footprint is 3 tiles", fp !== null && fp.length === 3);
+check(
+  "Solar extends normal to the wall, into space",
+  fp !== null && fp[0] === idx(ws, 11, 10) && fp[1] === idx(ws, 12, 10) && fp[2] === idx(ws, 13, 10),
+);
+check("Solar requires a space-facing wall", solarFootprint(ws, 30, 30) === null);
+addStructureMulti(ws, "solar", fp!);
+for (let i = 0; i < 3; i++) step(ws);
+check("Placed solar generates power", ws.power.supply >= 10);
+check("Solar occupies all 3 cells", fp!.every((c) => ws.cells[c].structureId >= 0));
+eraseAt(ws, 12, 10);
+check("Erasing any solar cell removes the whole array", fp!.every((c) => ws.cells[c].structureId === -1));
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

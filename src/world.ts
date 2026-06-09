@@ -40,10 +40,7 @@ export function setCell(w: World, x: number, y: number, type: CellType): void {
   const c = w.cells[i];
   if (c.type === type) return;
   // Removing a floor also removes anything built on it.
-  if (type !== "floor" && c.structureId >= 0) {
-    delete w.structures[c.structureId];
-    c.structureId = -1;
-  }
+  if (type !== "floor" && c.structureId >= 0) removeStructure(w, c.structureId);
   c.type = type;
   w.dirtyRooms = true;
 }
@@ -55,15 +52,45 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
   const c = w.cells[i];
   if (c.type !== "floor" || c.structureId >= 0) return false;
   const id = w.nextId++;
-  const s: Structure = { id, kind, cell: i, on: true, powered: false, occupantId: -1, timer: 0 };
+  const s: Structure = { id, kind, cell: i, cells: [i], on: true, powered: false, occupantId: -1, timer: 0 };
   w.structures[id] = s;
   c.structureId = id;
-  // A Bot Bay comes with one mining drone.
-  if (kind === "bay") {
-    const did = w.nextId++;
-    w.drones[did] = { id: did, bayId: id, siteId: -1, state: "docked", t: 0, cargo: 0 };
-  }
+  if (kind === "bay") spawnDrone(w, id);
   return true;
+}
+
+function spawnDrone(w: World, bayId: number): void {
+  const did = w.nextId++;
+  w.drones[did] = { id: did, bayId, siteId: -1, state: "docked", t: 0, cargo: 0 };
+}
+
+// Place a multi-tile structure occupying the given cells (e.g. a solar array).
+export function addStructureMulti(w: World, kind: StructureKind, cells: number[]): boolean {
+  if (cells.length === 0) return false;
+  for (const c of cells) if (w.cells[c].structureId >= 0) return false;
+  const id = w.nextId++;
+  const s: Structure = {
+    id,
+    kind,
+    cell: cells[0],
+    cells: [...cells],
+    on: true,
+    powered: false,
+    occupantId: -1,
+    timer: 0,
+  };
+  w.structures[id] = s;
+  for (const c of cells) w.cells[c].structureId = id;
+  if (kind === "bay") spawnDrone(w, id);
+  return true;
+}
+
+// Remove a structure and clear every cell it occupied.
+function removeStructure(w: World, id: number): void {
+  const s = w.structures[id];
+  if (!s) return;
+  for (const c of s.cells ?? [s.cell]) if (w.cells[c]) w.cells[c].structureId = -1;
+  delete w.structures[id];
 }
 
 // Place a mining site (asteroid) on an empty space cell.
@@ -90,8 +117,7 @@ export function eraseAt(w: World, x: number, y: number): void {
     }
   }
   if (c.structureId >= 0) {
-    delete w.structures[c.structureId];
-    c.structureId = -1;
+    removeStructure(w, c.structureId);
     return;
   }
   setCell(w, x, y, "space");

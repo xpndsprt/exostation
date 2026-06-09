@@ -54,7 +54,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 ---
 
 ## 3 · Power (M2) — nothing runs without it
-- **Solar Panel** generates **+10 PU** (power units). **Battery Bank** stores **50 PU** of surplus for later.
+- **Solar Panel** generates **+10 PU** (power units). It mounts on the **outside of a space-facing wall** and extends **3 tiles out into space** (normal to the wall) — so build your hull first, then line panels along its exterior. The ghost shows the 3-tile footprint and turns red if there's no wall to anchor to or no room to extend. **Battery Bank** stores **50 PU** of surplus for later.
 - Consumers draw power: **O₂ Generator −6**, **Methane Gen −9**, **Rations Synth −5**, **Bot Bay −4**, **Docking Port −5**, **Sleeping Pod −1**.
 - The network is **station-wide**: `net = supply − draw`. Surplus charges the battery; deficit drains it.
 - When the battery is empty and draw still exceeds supply → **BROWNOUT** (red banner). Modules are **shed by priority, life support last**: pods/docks/bays go dark before generators.
@@ -150,7 +150,7 @@ This is the failure state the whole game is designed around.
 
 ## Recommended build order (a clean opening)
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
-2. **Solar Panel** ×2 → **O₂ Generator** inside the room (air goes cyan).
+2. **Solar Panel** ×2 along the **outside** of the hull walls (each takes 3 tiles into space) → **O₂ Generator** inside the room (air goes cyan).
 3. Add a **Human** — confirm breath holds at 100%.
 4. **Bio Vat** + **Rations Synth** + a **Sleeping Pod** in the room (crew can now grow food, eat & sleep).
 5. **Battery** for power headroom.

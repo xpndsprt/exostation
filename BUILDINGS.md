@@ -29,6 +29,7 @@ The skeleton. Mostly unpowered; defines rooms, atmosphere boundaries, and the tr
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Solar Panel I | Generates power from starlight | +10 | 2×1 | 200 | lit / shaded / damaged |
+| Solar Panel *(implemented)* | +10 PU; **mounts on a space-facing wall, extends 3 tiles into space** | +10 | 1×3 | — | placed on hull exterior |
 | Solar Panel II | Higher-yield array | +18 | 2×1 | 450 | lit / shaded / damaged |
 | Solar Panel III | Top-tier array | +30 | 2×2 | 900 | lit / shaded / damaged |
 | Battery Bank | Stores surplus power (50 PU) for dark side | 0 | 1×1 | 250 | charging / discharging / full / empty |

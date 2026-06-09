@@ -37,6 +37,10 @@ export function loadWorld(): World | null {
       else if (a.stay == null) a.stay = 0;
     }
     if (!Array.isArray(w.seen)) w.seen = []; // older saves
+    for (const id in w.structures) {
+      const s = w.structures[id];
+      if (!Array.isArray(s.cells)) s.cells = [s.cell]; // older saves
+    }
     w.dirtyRooms = true;
     return w;
   } catch {

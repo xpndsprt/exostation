@@ -238,12 +238,13 @@ export class Renderer {
     for (const id in world.structures) {
       const s = world.structures[id];
       const def = STRUCTURES[s.kind];
-      const x = (s.cell % world.w) * TILE;
-      const y = ((s.cell / world.w) | 0) * TILE;
-      g.roundRect(x + 3, y + 3, TILE - 6, TILE - 6, 4).fill(def.color);
-      if (def.draw > 0 && !s.powered) {
-        // unpowered consumer — flag it
-        g.roundRect(x + 3, y + 3, TILE - 6, TILE - 6, 4).stroke({ width: 2, color: COLORS.unpowered });
+      for (const cell of s.cells ?? [s.cell]) {
+        const x = (cell % world.w) * TILE;
+        const y = ((cell / world.w) | 0) * TILE;
+        g.roundRect(x + 3, y + 3, TILE - 6, TILE - 6, 4).fill(def.color);
+        if (def.draw > 0 && !s.powered) {
+          g.roundRect(x + 3, y + 3, TILE - 6, TILE - 6, 4).stroke({ width: 2, color: COLORS.unpowered });
+        }
       }
     }
   }

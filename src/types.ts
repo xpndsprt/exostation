@@ -57,7 +57,8 @@ export interface Cell {
 export interface Structure {
   id: number;
   kind: StructureKind;
-  cell: number; // grid index
+  cell: number; // anchor grid index
+  cells: number[]; // all occupied cells (multi-tile, e.g. solar arrays)
   on: boolean; // player toggle
   powered: boolean; // receiving power this tick
   occupantId: number; // agent using this (pods); -1 if free
