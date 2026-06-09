@@ -6,6 +6,7 @@ import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
 import { agentSystem } from "./agents";
+import { moodSystem } from "./mood";
 import { economySystem } from "./economy";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells } from "./placement";
@@ -40,6 +41,7 @@ function simStep(world: World, dt: number): void {
   foodSystem(world, dt);
   atmosphereSystem(world);
   agentSystem(world, dt);
+  moodSystem(world, dt);
   economySystem(world, dt);
   world.tick++;
 }

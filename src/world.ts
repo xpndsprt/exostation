@@ -117,6 +117,7 @@ export function addAgent(
     o2: 100,
     food: 100,
     rest: 100,
+    mood: 70,
     alive: true,
     task: null,
     path: [],

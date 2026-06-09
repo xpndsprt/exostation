@@ -6,6 +6,7 @@ import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { agentSystem } from "../src/agents";
+import { moodSystem } from "../src/mood";
 import { economySystem } from "../src/economy";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
@@ -32,6 +33,7 @@ function step(w: World) {
   foodSystem(w, DT);
   atmosphereSystem(w);
   agentSystem(w, DT);
+  moodSystem(w, DT);
   economySystem(w, DT);
 }
 
@@ -251,6 +253,32 @@ check("M9 human breathes O2", byCell(7, 7)!.alive === true);
 check("M9 thol breathes methane", byCell(13, 6)!.alive === true);
 check("M9 thol dies in an O2 room", byCell(8, 7)!.alive === false);
 check("M9 human dies in mixed gas", byCell(20, 6)!.alive === false);
+
+// --- M10: political web (relations -> mood) ---
+const w9 = createWorld();
+carve(w9, 5, 5, 9, 8); // Room A (O2): human + drenn (human LIKES drenn)
+carve(w9, 11, 5, 15, 8); // Room B (CH4): thol
+carve(w9, 16, 5, 20, 8); // Room C (O2): human near the thol next door
+recomputeRooms(w9);
+addStructure(w9, "solar", 6, 6);
+addStructure(w9, "solar", 7, 6);
+addStructure(w9, "solar", 8, 6);
+addStructure(w9, "o2gen", 6, 7);
+addAgent(w9, 7, 7, "human"); // humanA, neighbor = drenn
+addAgent(w9, 8, 7, "drenn");
+addStructure(w9, "ch4gen", 12, 6);
+addAgent(w9, 13, 6, "thol");
+addStructure(w9, "o2gen", 19, 6);
+addAgent(w9, 17, 6, "human"); // humanB, within 4 tiles of the thol -> DISLIKE
+
+const find = (w: World, cx: number, cy: number) =>
+  Object.values(w.agents).find((a) => a.cell === idx(w, cx, cy))!;
+for (let i = 0; i < 120; i++) step(w9);
+const humanA = find(w9, 7, 7);
+const humanB = find(w9, 17, 6);
+check("M10 all parties alive (gas-correct rooms)", humanA.alive && humanB.alive && find(w9, 13, 6).alive);
+check("M10 human near liked Drenn is happier than human near disliked Thol", humanA.mood > humanB.mood);
+check("M10 relation gap is meaningful (>8)", humanA.mood - humanB.mood > 8);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

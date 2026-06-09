@@ -220,13 +220,16 @@ export function updateHud(world: World): void {
   let alive = 0;
   let dead = 0;
   let guests = 0;
+  let moodSum = 0;
   for (const id in world.agents) {
     const a = world.agents[id];
     if (a.alive) {
       alive++;
+      moodSum += a.mood;
       if (a.guest) guests++;
     } else dead++;
   }
+  const avgMood = alive > 0 ? Math.round(moodSum / alive) : 0;
   const seen = new Set<number>();
   let breathable = 0;
   for (const c of world.cells) {
@@ -248,6 +251,7 @@ export function updateHud(world: World): void {
         p.brownout,
       ) +
       chip("👥", `${alive}${guests ? ` <span class="muted">(${guests}g)</span>` : ""}${dead ? `, ${dead}✕` : ""}`) +
+      chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
       chip("🍱", `${st.meals}`) +
       chip("⛏", `${Math.floor(st.biomass)}/${Math.floor(st.water)}`) +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
@@ -275,6 +279,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
       `<div>O₂ ${Math.round(a.o2)}% · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}%</div>` +
+      `<div>Mood ${Math.round(a.mood)}%</div>` +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {
     const s = world.structures[target.id];
@@ -339,6 +344,8 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     html += `<div class="row"><span>O₂</span><b>${Math.round(a.o2)}%</b></div>${bar(a.o2, a.o2 > 30 ? "#49d17a" : "#e24b4b")}`;
     html += `<div class="row"><span>Food</span><b>${Math.round(a.food)}%</b></div>${bar(a.food, "#6ea8ff")}`;
     html += `<div class="row"><span>Rest</span><b>${Math.round(a.rest)}%</b></div>${bar(a.rest, "#9b6cd5")}`;
+    const mc = a.mood >= 60 ? "#49d17a" : a.mood >= 35 ? "#e8c349" : "#e24b4b";
+    html += `<div class="row"><span>Mood</span><b>${Math.round(a.mood)}%</b></div>${bar(a.mood, mc)}`;
     html += `<div class="row"><span>State</span><b>${a.alive ? a.task?.type ?? "idle" : "dead"}</b></div>`;
     if (a.guest && isFinite(a.stay))
       html += `<div class="row"><span>Leaves in</span><b>${Math.max(0, Math.round(a.stay))}s</b></div>`;

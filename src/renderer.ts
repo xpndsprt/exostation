@@ -280,6 +280,9 @@ export class Renderer {
       if (a.food < 40 || a.rest < 40) {
         g.circle(cx, cy, r + 2.5).stroke({ width: 2, color: COLORS.needLow });
       }
+      // mood dot above the head
+      const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;
+      g.circle(cx, cy - r - 4, 2.6).fill(moodColor);
     }
   }
 }
