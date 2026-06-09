@@ -238,6 +238,7 @@ export function addAgent(
     suit: 100,
     food: 100,
     rest: 100,
+    fun: 100,
     mood: 70,
     health: 100,
     tension: 0,

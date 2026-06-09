@@ -11,7 +11,8 @@ export type StructureKind =
   | "synth"
   | "vat"
   | "bay"
-  | "dock";
+  | "dock"
+  | "rec";
 
 export type Species = "human" | "drenn" | "thol";
 
@@ -67,7 +68,7 @@ export interface Structure {
   servicedBy: number; // crew currently servicing this; -1 if none
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax";
 
 export interface Task {
   type: TaskType;
@@ -85,6 +86,7 @@ export interface Agent {
   suit: number; // 0..100 reserve; auto-dons in a non-native zone, then depletes
   food: number; // 0..100
   rest: number; // 0..100
+  fun: number; // 0..100 recreation; restored at entertainment modules
   mood: number; // 0..100 (needs + neighbor relations)
   health: number; // 0..100 (combat)
   tension: number; // 0..100 (toward a skirmish)

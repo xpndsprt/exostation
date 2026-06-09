@@ -21,6 +21,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   vat: { label: "Bio Vat", color: 0x4f9d5b, gen: 0, draw: 6, battery: 0, priority: 4 },
   bay: { label: "Bot Bay", color: 0x4aa3a3, gen: 0, draw: 4, battery: 0, priority: 3 },
   dock: { label: "Docking Port", color: 0x5a8ad5, gen: 0, draw: 5, battery: 0, priority: 1 },
+  rec: { label: "Lounge", color: 0xc05fa8, gen: 0, draw: 4, battery: 0, priority: 2 },
 };
 
 // Bio Vats grow food base (biomass) from power alone.

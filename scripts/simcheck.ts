@@ -301,6 +301,7 @@ const humanR = Object.values(w11.agents).find((a) => a.species === "human")!;
 const tholV = Object.values(w11.agents).find((a) => a.species === "thol")!;
 humanR.food = 0; // keep mood below the anger threshold
 humanR.rest = 0;
+humanR.fun = 0;
 
 let sawFight = false;
 let tholMinHealth = 100;
@@ -468,6 +469,33 @@ for (let i = 0; i < 300; i++) {
 check("Crew service the wall-mounted dock from inside", dockServiced || dock.condition > 50);
 check("A guest arrived through the dock", guestSeen);
 check("A ship parked at the dock", shipSeen);
+
+// --- M15: entertainment (Lounge) + recreation need ---
+const wq = createWorld();
+carve(wq, 5, 5, 9, 8);
+recomputeRooms(wq);
+addStructure(wq, "solar", 6, 6);
+addStructure(wq, "o2gen", 6, 7);
+addAgent(wq, 7, 7, "human");
+const hq = Object.values(wq.agents)[0];
+for (let i = 0; i < 50; i++) step(wq);
+check("Fun decays over time", hq.fun < 100);
+
+const wr = createWorld();
+carve(wr, 5, 5, 9, 8);
+recomputeRooms(wr);
+addStructure(wr, "solar", 6, 6);
+addStructure(wr, "o2gen", 6, 7);
+addStructure(wr, "rec", 8, 7); // Lounge
+addAgent(wr, 7, 7, "human");
+const hr = Object.values(wr.agents)[0];
+hr.fun = 10;
+let maxFun = 0;
+for (let i = 0; i < 150; i++) {
+  step(wr);
+  maxFun = Math.max(maxFun, hr.fun);
+}
+check("Crew relax at a Lounge to restore fun", maxFun > 60);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -12,9 +12,12 @@ const SUIT_DECAY = 20; // suit reserve spent per second in a non-native zone (~5
 const SUIT_RECHARGE = 40; // suit refilled per second back in native air
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
+const FUN_DECAY = 0.4;
 const FOOD_LOW = 40;
 const REST_LOW = 35;
+const FUN_LOW = 40;
 const REST_RATE = 12; // recovery while sleeping
+const RELAX_RATE = 20; // fun recovered while at a Lounge
 
 export function agentSystem(w: World, dt: number): void {
   for (const id in w.agents) {
@@ -23,6 +26,7 @@ export function agentSystem(w: World, dt: number): void {
 
     a.food = Math.max(0, a.food - FOOD_DECAY * dt);
     a.rest = Math.max(0, a.rest - REST_DECAY * dt);
+    a.fun = Math.max(0, a.fun - FUN_DECAY * dt);
     if (a.guest) a.stay -= dt;
 
     const cell = w.cells[a.cell];
@@ -112,6 +116,11 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
         a.rest = Math.min(100, a.rest + REST_RATE * dt);
         if (a.rest >= 100) releaseTask(w, a);
         return; // keep sleeping
+      } else if (a.task.type === "relax") {
+        a.fun = Math.min(100, a.fun + RELAX_RATE * dt);
+        a.mood = Math.min(100, a.mood + 2 * dt);
+        if (a.fun >= 100) releaseTask(w, a);
+        return; // keep relaxing (and socializing with whoever's here)
       } else if (a.task.type === "service") {
         const s = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
         if (s) {
@@ -143,6 +152,15 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
     if (synth) {
       a.task = { type: "eat", target: synth.cell };
       a.path = synth.path;
+      return;
+    }
+  }
+  // Both crew and visitors relax at a Lounge when bored (and socialize there).
+  if (a.fun < FUN_LOW) {
+    const rec = nearestReachable(w, a.cell, "rec");
+    if (rec) {
+      a.task = { type: "relax", target: rec.cell };
+      a.path = rec.path;
       return;
     }
   }

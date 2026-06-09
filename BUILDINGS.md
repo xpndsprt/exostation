@@ -74,6 +74,7 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Sleeping Pod | Rest (species-appropriate); restores mood | 1 | 1×1 | 150 | assigned / vacant / comfort:tier |
 | Quarters (suite) | Higher-comfort lodging; premium fees | 2 | 2×2 | 500 | assigned / vacant / comfort:tier |
 | Recreation Module | Social space — **where relations play out** | 4 | 3×2 | 600 | busy / empty |
+| Lounge *(implemented)* | Entertainment: crew & visitors relax (restore Fun) and socialize | 4 | 1×1 | — | busy / empty |
 | Sanitation Unit | Hygiene need; prevents mood penalty | 2 | 1×1 | 200 | available / occupied / dirty |
 | Decor / Fixture | Ambient mood boost | 0–1 | 1×1 | 50+ | placed |
 

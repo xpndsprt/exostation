@@ -86,12 +86,18 @@ Each crew member tracks four meters (see them in the info panel; a mood dot floa
 - **O₂ / breath** — from atmosphere (above).
 - **Food** — decays ~**1.5%/s**; when **< 40** they path to a **Rations Synth** and eat a meal (refills to full).
 - **Rest** — decays ~**1%/s**; when **< 35** they claim a free **Sleeping Pod**, sleep (recover ~**12%/s**) to full, then release it.
+- **Fun** — decays ~**0.4%/s**; when **< 40** they head to a **Lounge** to relax (recover ~**20%/s**). Both crew and visitors use lounges — see *Entertainment* below.
 - **Mood** — see the political web below.
 - Crew **pathfind (A\*)** at ~**4 tiles/s** along connected floor. If they can't reach food/a pod, the need stays unmet — an **orange ring** warns you.
 
 **Build for autonomy:** put pods and a synth inside the breathable wing so crew can satisfy needs without crossing a vacuum or the wrong gas.
 
 ---
+
+## 5a · Entertainment — where everyone unwinds
+- A **Lounge** is an entertainment module (mid-priority power). When **Fun** runs low, crew **and** visitors path to the nearest Lounge and relax, restoring fun and giving a small mood lift.
+- Lounges are **social hubs**: agents gather there, so the **political web applies** — friends relaxing together get a mood boost; if you let species that dislike each other share a Lounge, the proximity penalty (and tension) bites. Consider separate lounges for incompatible groups.
+- **Takeaway:** build at least one Lounge once you have a few residents or regular guests; bored crew slide into low mood (and toward tension). Visitors with somewhere to relax are happier guests.
 
 ## 5b · Jobs & upkeep — residents work, visitors lodge
 The station now needs a working population.
@@ -164,7 +170,8 @@ This is the failure state the whole game is designed around.
 4. **Bio Vat** + **Rations Synth** + a **Sleeping Pod** in the room (crew can now grow food, eat & sleep).
 5. **Battery** for power headroom.
 6. **Bot Bay** + an **Asteroid** nearby → drone mines **minerals** (materials stockpile).
-7. **Docking Port** on a **hull wall** (airlock to space) + extra **Pods** → Drenn guests arrive by ship + lodging income.
+7. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
+8. **Docking Port** on a **hull wall** (airlock to space) + extra **Pods** → Drenn guests arrive by ship + lodging income.
 8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
 
 ---
@@ -186,7 +193,7 @@ This is the failure state the whole game is designed around.
 | Doors | walkable but block gas (airlock); connect wings without mixing atmospheres |
 | Breath | suit protects first; once suit empty, −8%/s in wrong air; +15%/s in right air; death at 0 |
 | Space suit | drains ~20%/s off native air (~5s ≈ 20 tiles), recharges ~40%/s in native air |
-| Food / Rest | −1.5%/s, −1%/s; seek at <40 / <35; rest recovers +12%/s |
+| Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |

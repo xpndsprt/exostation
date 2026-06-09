@@ -24,7 +24,7 @@ export function moodSystem(w: World, dt: number): void {
     social = Math.max(-SOCIAL_CLAMP, Math.min(SOCIAL_CLAMP, social));
     const target = Math.max(
       0,
-      Math.min(100, 50 + (a.food - 50) * 0.2 + (a.rest - 50) * 0.2 + social),
+      Math.min(100, 50 + (a.food - 50) * 0.15 + (a.rest - 50) * 0.15 + (a.fun - 50) * 0.15 + social),
     );
     a.mood += (target - a.mood) * Math.min(1, RATE * dt);
   }

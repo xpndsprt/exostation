@@ -29,8 +29,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "synth", label: "Rations Synth", key: "5" },
   { t: "vat", label: "Bio Vat", key: "6" },
   { t: "pod", label: "Sleeping Pod", key: "7" },
-  { t: "bay", label: "Bot Bay", key: "8" },
-  { t: "dock", label: "Docking Port", key: "9" },
+  { t: "rec", label: "Lounge", key: "8" },
+  { t: "bay", label: "Bot Bay", key: "9" },
+  { t: "dock", label: "Docking Port", key: "0" },
   { t: "asteroid", label: "Asteroid", key: "A", group: "Space" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
@@ -289,7 +290,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const name = SPECIES[a.species].label;
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
-      `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}%</div>` +
+      `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
       `<div>Mood ${Math.round(a.mood)}%</div>` +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {
@@ -382,6 +383,7 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     if (a.suit < 100) html += `<div class="row"><span>Suit</span><b>${Math.round(a.suit)}%</b></div>${bar(a.suit, "#9fd8ff")}`;
     html += `<div class="row"><span>Food</span><b>${Math.round(a.food)}%</b></div>${bar(a.food, "#6ea8ff")}`;
     html += `<div class="row"><span>Rest</span><b>${Math.round(a.rest)}%</b></div>${bar(a.rest, "#9b6cd5")}`;
+    html += `<div class="row"><span>Fun</span><b>${Math.round(a.fun)}%</b></div>${bar(a.fun, "#c05fa8")}`;
     const mc = a.mood >= 60 ? "#49d17a" : a.mood >= 35 ? "#e8c349" : "#e24b4b";
     html += `<div class="row"><span>Mood</span><b>${Math.round(a.mood)}%</b></div>${bar(a.mood, mc)}`;
     if (a.health < 100 || a.tension > 0) {

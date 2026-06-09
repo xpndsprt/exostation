@@ -74,6 +74,11 @@ export function advise(world: World): Advice[] {
     const avgMood = agents.reduce((s, a) => s + a.mood, 0) / agents.length;
     if (avgMood < 40)
       out.push({ sev: "warn", text: "Morale is low — improve food/rest or separate disliked species." });
+    const avgFun = agents.reduce((s, a) => s + a.fun, 0) / agents.length;
+    if (!has("rec") && agents.length > 1)
+      out.push({ sev: "tip", text: "Build a Lounge so crew and visitors can relax and socialize." });
+    else if (has("rec") && avgFun < 35)
+      out.push({ sev: "warn", text: "Everyone's bored — add another Lounge for recreation." });
   }
   if (agents.some((a) => a.tension > 50))
     out.push({ sev: "warn", text: "Tension is rising — keep disliked species apart." });

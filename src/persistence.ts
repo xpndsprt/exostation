@@ -35,6 +35,7 @@ export function loadWorld(): World | null {
       const a = w.agents[id];
       if (!a.guest) a.stay = Infinity;
       else if (a.stay == null) a.stay = 0;
+      if (typeof a.fun !== "number") a.fun = 100;
     }
     if (!Array.isArray(w.seen)) w.seen = []; // older saves
     if (!Array.isArray(w.ships)) w.ships = [];
