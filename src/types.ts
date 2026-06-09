@@ -141,6 +141,7 @@ export interface World {
   power: PowerState;
   stock: Stock;
   credits: number;
+  seen: Species[]; // every species that has ever visited the station
 
   tick: number;
   speed: Speed;

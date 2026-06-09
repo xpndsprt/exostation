@@ -39,6 +39,9 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - **Pause / 1× / 2× / 3×** (`Space` pause, `[` / `]` slower/faster).
 - **Save / Load** (top bar) persist to your browser; the game also **autosaves every 30s**.
 
+**Advisor board (lower-right)**
+- Lists **every species that has visited** the station, and an **AI advisor** that watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
+
 ---
 
 ## 2 · Sealing a room (first build)

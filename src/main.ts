@@ -9,6 +9,7 @@ import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
+import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells } from "./placement";
 import { Renderer } from "./renderer";
@@ -17,6 +18,7 @@ import {
   setupUI,
   updateHud,
   updateInfo,
+  renderAdvisor,
   pushAlert,
   showTooltip,
   hideTooltip,
@@ -428,9 +430,11 @@ async function boot(): Promise<void> {
     if (needRedraw) {
       const sc = selCell();
       if (sc < 0 && sel) sel = null;
+      updateSeen(world);
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);
+      renderAdvisor(world);
       needRedraw = false;
     }
   });

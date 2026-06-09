@@ -10,6 +10,7 @@ import { agentSystem } from "../src/agents";
 import { moodSystem } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
+import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
 
@@ -341,6 +342,20 @@ for (let i = 0; i < 20; i++) step(w13); // ~2s
 check("M12 suit protects briefly (alive, O2 full, suit draining)", venturer.alive && venturer.o2 === 100 && venturer.suit < 100);
 for (let i = 0; i < 220; i++) step(w13); // ~22s total -> suit then O2 exhausted
 check("M12 venturer dies once suit and O2 run out", venturer.alive === false);
+
+// --- Advisor board ---
+const wa = createWorld();
+recomputeRooms(wa);
+check("Advisor suggests sealing a room on an empty station", advise(wa).some((a) => /seal a room/i.test(a.text)));
+carve(wa, 5, 5, 9, 8);
+recomputeRooms(wa);
+addAgent(wa, 7, 7, "human");
+addAgent(wa, 8, 7, "thol");
+updateSeen(wa);
+check("Advisor records every species seen", wa.seen.includes("human") && wa.seen.includes("thol"));
+addStructure(wa, "o2gen", 6, 7); // draw, but no solar -> brownout
+for (let i = 0; i < 10; i++) step(wa);
+check("Advisor raises a critical on power shortfall", advise(wa).some((a) => a.sev === "critical" && /power/i.test(a.text)));
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

@@ -36,6 +36,7 @@ export function loadWorld(): World | null {
       if (!a.guest) a.stay = Infinity;
       else if (a.stay == null) a.stay = 0;
     }
+    if (!Array.isArray(w.seen)) w.seen = []; // older saves
     w.dirtyRooms = true;
     return w;
   } catch {

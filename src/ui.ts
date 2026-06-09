@@ -1,7 +1,14 @@
-import { HoverTarget, OverlayMode, Selection, Speed, Tool, UIState, World } from "./types";
+import { HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, World } from "./types";
 import { COLORS } from "./config";
 import { STRUCTURES } from "./structures";
 import { SPECIES } from "./species";
+import { advise } from "./advisor";
+
+const SP_COLOR: Record<Species, string> = {
+  human: "#6ea8ff",
+  drenn: "#e8c349",
+  thol: "#d98a3a",
+};
 
 interface PaletteEntry {
   t: Tool;
@@ -313,6 +320,28 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
 
 export function hideTooltip(): void {
   document.getElementById("tooltip")?.classList.remove("show");
+}
+
+// Lower-right advisor board: species seen so far + the AI's next-step guidance.
+export function renderAdvisor(world: World): void {
+  const el = document.getElementById("advisor");
+  if (!el) return;
+  const seen = world.seen.length
+    ? world.seen
+        .map(
+          (s) =>
+            `<span class="sp"><span class="d" style="background:${SP_COLOR[s]}"></span>${SPECIES[s].label}</span>`,
+        )
+        .join("")
+    : `<span class="muted">none yet</span>`;
+  const advice = advise(world)
+    .slice(0, 4)
+    .map((a) => `<li class="${a.sev}"><span class="mk"></span><span>${a.text}</span></li>`)
+    .join("");
+  el.innerHTML =
+    `<h3>🤖 ADVISOR</h3>` +
+    `<div class="seen">${seen}</div>` +
+    `<ul class="advice">${advice}</ul>`;
 }
 
 export function showDragLabel(text: string, x: number, y: number): void {

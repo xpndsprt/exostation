@@ -23,6 +23,7 @@ export function createWorld(): World {
     // (M5) exists to replenish them.
     stock: { biomass: 40, water: 40, meals: 0 },
     credits: 0,
+    seen: [],
     tick: 0,
     speed: 1,
     nextId: 1,
