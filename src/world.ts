@@ -23,6 +23,7 @@ export function createWorld(): World {
     // Seed some biomass so the synth can make meals before a Vat is built.
     stock: { minerals: 0, biomass: 40, meals: 0 },
     credits: 0,
+    tradeTimer: 0,
     seen: [],
     tick: 0,
     speed: 1,

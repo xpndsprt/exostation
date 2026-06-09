@@ -149,11 +149,12 @@ export class Renderer {
       g.circle(cx, cy, TILE * 0.42).fill(color);
       g.circle(cx, cy, TILE * 0.42).stroke({ width: 1.5, color: 0x000000, alpha: 0.35 });
     }
-    // docked ships parked outside the hull
+    // docked ships parked outside the hull (traders green, guest shuttles grey)
     for (const ship of world.ships) {
       const x = (ship.cell % world.w) * TILE;
       const y = ((ship.cell / world.w) | 0) * TILE;
-      g.roundRect(x + 2, y + TILE * 0.3, TILE - 4, TILE * 0.4, 3).fill(0xb9c2d0);
+      const hull = ship.trader ? 0x6fcf97 : 0xb9c2d0;
+      g.roundRect(x + 2, y + TILE * 0.3, TILE - 4, TILE * 0.4, 3).fill(hull);
       g.roundRect(x + 2, y + TILE * 0.3, TILE - 4, TILE * 0.4, 3).stroke({ width: 1, color: 0x2a3142 });
       g.circle(x + TILE - 5, y + TILE * 0.5, 2).fill(0x6ea8ff); // cockpit
     }

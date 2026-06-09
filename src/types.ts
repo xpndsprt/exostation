@@ -12,7 +12,8 @@ export type StructureKind =
   | "vat"
   | "bay"
   | "dock"
-  | "rec";
+  | "rec"
+  | "hotel";
 
 export type Species = "human" | "drenn" | "thol";
 
@@ -123,6 +124,7 @@ export interface Site {
 export interface Ship {
   cell: number; // exterior space tile it's parked at (next to a dock)
   t: number; // seconds remaining before it departs
+  trader?: boolean; // a trade ship (buys minerals) vs a guest shuttle
 }
 
 export interface RoomInfo {
@@ -153,6 +155,7 @@ export interface World {
   power: PowerState;
   stock: Stock;
   credits: number;
+  tradeTimer: number; // accumulator for periodic mineral trades
   seen: Species[]; // every species that has ever visited the station
 
   tick: number;

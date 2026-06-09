@@ -39,8 +39,9 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - **Pause / 1× / 2× / 3×** (`Space` pause, `[` / `]` slower/faster).
 - **Save / Load** (top bar) persist to your browser; the game also **autosaves every 30s**.
 
-**Advisor board (lower-right)**
-- Lists **every species that has visited** the station, and an **AI advisor** that watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
+**Alienpedia + Advisor (lower-right)**
+- The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard.
+- The **Advisor** (below) watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 
 ---
 
@@ -85,7 +86,7 @@ Every species can briefly cross hostile zones — a suit dons automatically.
 Each crew member tracks four meters (see them in the info panel; a mood dot floats over their head):
 - **O₂ / breath** — from atmosphere (above).
 - **Food** — decays ~**1.5%/s**; when **< 40** they path to a **Rations Synth** and eat a meal (refills to full).
-- **Rest** — decays ~**1%/s**; when **< 35** they claim a free **Sleeping Pod**, sleep (recover ~**12%/s**) to full, then release it.
+- **Rest** — decays ~**1%/s**; when **< 35** they sleep (recover ~**12%/s**) to full, then release the bunk. **Crew sleep in Crew Quarters; visitors sleep in Hotel Rooms** — separate accommodations.
 - **Fun** — decays ~**0.4%/s**; when **< 40** they head to a **Lounge** to relax (recover ~**20%/s**). Both crew and visitors use lounges — see *Entertainment* below.
 - **Mood** — see the political web below.
 - Crew **pathfind (A\*)** at ~**4 tiles/s** along connected floor. If they can't reach food/a pod, the need stays unmet — an **orange ring** warns you.
@@ -125,11 +126,11 @@ Food is a two-step, **power-driven** loop that runs entirely inside the station:
 
 ---
 
-## 8 · Guests & economy (M6) — the hotel
-- A **Docking Port** is a **hull airlock**: it can only be placed **on a wall that faces space** (it must have interior floor on one side and open space on the other). Build your hull, then mount the dock on it. The ghost goes red anywhere that isn't a valid hull wall.
-- It periodically (every ~20s) brings a **Drenn** guest — **but only if you have a free Sleeping Pod**. Pods are your hosting capacity. You'll **see a ship park outside** the dock when a guest arrives, then depart.
-- Guests enter through the airlock to the **interior side**, then behave like residents for needs (eat, sleep), **pay lodging (~1.5 credits/s)**, and **depart after ~90s**, freeing the pod. Guests have a **gold ring**; they never work — they just use the hotel.
-- **Takeaway:** more pods = more guests = more income — provided you can feed and air them. Income is your only credit source right now.
+## 8 · Guests, trade & economy — the hotel and the market
+- A **Docking Port** is a **hull airlock**: place it **on a wall that faces space** (interior floor one side, open space the other). The ghost goes red anywhere that isn't a valid hull wall.
+- **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). A grey **shuttle** parks outside on arrival. Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work).
+- **Trade:** every ~30s a **trader ship** (green) docks at a powered port and **buys your minerals** (up to 25 at ~3¢ each), converting your mining output into credits. So the materials loop now closes: mine asteroids → minerals → traders pay you.
+- **Takeaway:** Hotel Rooms drive lodging income; mining + a dock drives trade income. Both need a powered Docking Port on the hull.
 
 ---
 
@@ -167,11 +168,11 @@ This is the failure state the whole game is designed around.
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
 2. **Solar Panel** ×2 along the **outside** of the hull walls (each takes 3 tiles into space) → **O₂ Generator** inside the room (air goes cyan).
 3. Add a **Human** — confirm breath holds at 100%.
-4. **Bio Vat** + **Rations Synth** + a **Sleeping Pod** in the room (crew can now grow food, eat & sleep).
+4. **Bio Vat** + **Rations Synth** + **Crew Quarters** in the room (crew can now grow food, eat & sleep).
 5. **Battery** for power headroom.
 6. **Bot Bay** + an **Asteroid** nearby → drone mines **minerals** (materials stockpile).
 7. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
-8. **Docking Port** on a **hull wall** (airlock to space) + extra **Pods** → Drenn guests arrive by ship + lodging income.
+8. **Docking Port** on a **hull wall** (airlock to space) + **Hotel Rooms** → Drenn guests arrive by ship + lodging income; **trader ships** buy your minerals for credits.
 8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
 
 ---
@@ -199,7 +200,8 @@ This is the failure state the whole game is designed around.
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; drone cargo 10, speed ~6 tiles/s, site richness 1000 |
-| Guests | arrive ~20s (≤ pod count), pay ~1.5¢/s, stay ~90s |
+| Guests | arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s |
+| Trade | every ~30s a trader buys ≤25 minerals at ~3¢ each |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
 | Skirmish | tension rises when mood <30 near a disliked species; fights at 100 |
 

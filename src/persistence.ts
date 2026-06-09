@@ -39,6 +39,7 @@ export function loadWorld(): World | null {
     }
     if (!Array.isArray(w.seen)) w.seen = []; // older saves
     if (!Array.isArray(w.ships)) w.ships = [];
+    if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
     for (const id in w.structures) {
       const s = w.structures[id];
       if (!Array.isArray(s.cells)) s.cells = [s.cell]; // older saves

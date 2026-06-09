@@ -4,10 +4,10 @@ import { addAgent, accessCell, exteriorCell } from "./world";
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
 const SHIP_TIME = 14; // seconds a ship stays parked at the dock
+const TRADE_INTERVAL = 30; // seconds between trader visits
+const TRADE_BATCH = 25; // max minerals sold per trade
+const MINERAL_PRICE = 3; // credits per mineral
 
-// Docking ports bring Drenn guests (a Tier-1 species — same air & food as
-// humans). Guests pay lodging while present and leave after their stay.
-// Arrivals are capped by Sleeping Pod count, so you must build capacity to host.
 export function economySystem(w: World, dt: number): void {
   // ships depart over time
   for (let i = w.ships.length - 1; i >= 0; i--) {
@@ -22,28 +22,43 @@ export function economySystem(w: World, dt: number): void {
   }
   w.credits += guests * LODGING_RATE * dt;
 
-  let pods = 0;
+  let hotels = 0; // guest capacity = Hotel Rooms
   const docks = [];
   for (const id in w.structures) {
     const s = w.structures[id];
-    if (s.kind === "pod") pods++;
+    if (s.kind === "hotel") hotels++;
     else if (s.kind === "dock") docks.push(s);
   }
 
+  // guest arrivals (need a free hotel room AND a powered dock)
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;
     if (dock.timer >= SPAWN_INTERVAL) {
       dock.timer -= SPAWN_INTERVAL;
-      if (guests < pods) {
-        const access = accessCell(w, dock); // interior side of the airlock
+      if (guests < hotels) {
+        const access = accessCell(w, dock);
         if (access < 0) continue;
         if (addAgent(w, access % w.w, (access / w.w) | 0, "drenn", true)) {
           guests++;
-          const ex = exteriorCell(w, dock); // park a ship outside
+          const ex = exteriorCell(w, dock);
           if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME });
         }
       }
+    }
+  }
+
+  // trader ships periodically buy minerals at any powered dock
+  w.tradeTimer += dt;
+  if (w.tradeTimer >= TRADE_INTERVAL) {
+    w.tradeTimer -= TRADE_INTERVAL;
+    const dock = docks.find((d) => d.powered);
+    if (dock && w.stock.minerals > 0) {
+      const amount = Math.min(w.stock.minerals, TRADE_BATCH);
+      w.stock.minerals -= amount;
+      w.credits += amount * MINERAL_PRICE;
+      const ex = exteriorCell(w, dock);
+      if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME, trader: true });
     }
   }
 }

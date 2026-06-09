@@ -99,10 +99,23 @@
     /* speed / paused watermark (top-right, under the bar) */
     #watermark { position: fixed; right: 14px; top: 48px; z-index: 5; color: #6b7488;
       font-size: 13px; font-weight: 700; letter-spacing: .06em; pointer-events: none; }
-    /* advisor board (lower-right) */
-    #advisor { position: fixed; right: 12px; bottom: 12px; z-index: 12; width: 244px;
-      background: rgba(16,20,28,.93); border: 1px solid #232b3a; border-radius: 10px;
-      padding: 10px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+    /* lower-right column: Alienpedia stacked above the Advisor */
+    #rightcol { position: fixed; right: 12px; bottom: 12px; z-index: 12; width: 244px;
+      display: flex; flex-direction: column; gap: 8px; }
+    #alienpedia, #advisor { background: rgba(16,20,28,.93); border: 1px solid #232b3a;
+      border-radius: 10px; padding: 10px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+    #alienpedia { max-height: 42vh; overflow-y: auto; }
+    #alienpedia h3, #advisor h3 { margin: 0 0 7px; font-size: 12px; color: #6ea8ff;
+      letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+    #alienpedia .ent { border-top: 1px solid #232b3a; padding: 7px 0; }
+    #alienpedia .ent:first-of-type { border-top: none; padding-top: 0; }
+    #alienpedia .hd { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #e3e7ef; }
+    #alienpedia .hd .d { width: 9px; height: 9px; border-radius: 50%; }
+    #alienpedia .hd .role { margin-left: auto; font-weight: 400; font-size: 10.5px; color: #8b93a6; }
+    #alienpedia .stat { color: #aab2c4; margin-top: 2px; }
+    #alienpedia .stat b { color: #cdd4e2; font-weight: 600; }
+    #alienpedia .blurb { color: #8b93a6; margin-top: 3px; font-size: 11px; line-height: 1.45; }
+    #alienpedia .empty { color: #6b7488; }
     #advisor h3 { margin: 0 0 7px; font-size: 12px; color: #6ea8ff; letter-spacing: .06em;
       display: flex; align-items: center; gap: 6px; }
     #advisor .seen { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
@@ -138,7 +151,10 @@
   <div id="draglabel"></div>
   <div id="banner">⚠ BROWNOUT — shedding power</div>
   <div id="watermark"></div>
-  <div id="advisor"></div>
+  <div id="rightcol">
+    <div id="alienpedia"></div>
+    <div id="advisor"></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

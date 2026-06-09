@@ -12,6 +12,7 @@ const STRUCTURE_KINDS = new Set([
   "bay",
   "dock",
   "rec",
+  "hotel",
 ]);
 
 function hasSite(w: World, cell: number): boolean {

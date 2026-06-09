@@ -20,6 +20,7 @@ import {
   updateHud,
   updateInfo,
   renderAdvisor,
+  renderAlienpedia,
   pushAlert,
   showTooltip,
   hideTooltip,
@@ -444,6 +445,7 @@ async function boot(): Promise<void> {
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);
+      renderAlienpedia(world);
       renderAdvisor(world);
       needRedraw = false;
     }

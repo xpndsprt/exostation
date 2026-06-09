@@ -140,10 +140,11 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
 
   // Pick a new task by need (rest first, then food).
   if (a.rest < REST_LOW) {
-    const pod = claimPod(w, a, a.cell);
-    if (pod) {
-      a.task = { type: "sleep", target: pod.cell, structureId: pod.id };
-      a.path = pod.path;
+    // crew sleep in Crew Quarters; visitors in Hotel Rooms
+    const bunk = claimBunk(w, a, a.cell, a.guest ? "hotel" : "pod");
+    if (bunk) {
+      a.task = { type: "sleep", target: bunk.cell, structureId: bunk.id };
+      a.path = bunk.path;
       return;
     }
   }
@@ -195,14 +196,14 @@ interface Found {
   path: number[];
 }
 
-function claimPod(w: World, a: Agent, start: number): Found | null {
-  const pods = Object.values(w.structures).filter((s) => s.kind === "pod" && s.occupantId < 0);
-  pods.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
-  for (const p of pods) {
-    const path = findPath(w, start, p.cell);
+function claimBunk(w: World, a: Agent, start: number, kind: Structure["kind"]): Found | null {
+  const bunks = Object.values(w.structures).filter((s) => s.kind === kind && s.occupantId < 0);
+  bunks.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const b of bunks) {
+    const path = findPath(w, start, b.cell);
     if (path) {
-      p.occupantId = a.id;
-      return { id: p.id, cell: p.cell, path };
+      b.occupantId = a.id;
+      return { id: b.id, cell: b.cell, path };
     }
   }
   return null;

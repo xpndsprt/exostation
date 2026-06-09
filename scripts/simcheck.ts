@@ -173,8 +173,8 @@ addStructure(w4, "solar", 7, 6); // plenty of power
 addStructure(w4, "o2gen", 6, 7);
 addStructure(w4, "synth", 7, 7);
 addStructure(w4, "dock", 11, 8);
-addStructure(w4, "pod", 8, 6);
-addStructure(w4, "pod", 9, 6); // capacity 2
+addStructure(w4, "hotel", 8, 6);
+addStructure(w4, "hotel", 9, 6); // guest capacity 2 (hotel rooms)
 
 let maxGuests = 0;
 const seenGuestIds = new Set<number>();
@@ -186,7 +186,7 @@ for (let i = 0; i < 1500; i++) {
 }
 const aliveGuests = Object.values(w4.agents).filter((a) => a.alive && a.guest).length;
 check("M6 drenn guests arrived via dock", maxGuests >= 1);
-check("M6 guest count capped by pods", maxGuests <= 2);
+check("M6 guest count capped by hotel rooms", maxGuests <= 2);
 check("M6 lodging earned credits", w4.credits > 0);
 check("M6 guests are the drenn species", Object.values(w4.agents).every((a) => !a.guest || a.species === "drenn"));
 check("M6 guests depart after their stay", seenGuestIds.size > aliveGuests);
@@ -454,7 +454,7 @@ check("Dock invalid on interior floor", !canDock(wd, 7, 7));
 addDock(wd, 5, 6);
 const dock = Object.values(wd.structures).find((s) => s.kind === "dock")!;
 check("Dock placed and stays a wall (airlock)", !!dock && wd.cells[idx(wd, 5, 6)].type === "wall");
-addStructure(wd, "pod", 7, 7);
+addStructure(wd, "hotel", 7, 7); // guest capacity
 addAgent(wd, 7, 6, "human"); // resident crew (services + keeps life support up)
 dock.condition = 50;
 let shipSeen = false;
@@ -496,6 +496,61 @@ for (let i = 0; i < 150; i++) {
   maxFun = Math.max(maxFun, hr.fun);
 }
 check("Crew relax at a Lounge to restore fun", maxFun > 60);
+
+// --- M16: trader ships, hotel vs quarters ---
+const wt = createWorld();
+carve(wt, 5, 5, 9, 8);
+recomputeRooms(wt);
+addStructure(wt, "solar", 6, 6);
+addStructure(wt, "solar", 7, 6);
+addStructure(wt, "o2gen", 8, 7);
+addDock(wt, 5, 6); // hull airlock
+addAgent(wt, 7, 7, "human"); // resident keeps the dock serviced
+wt.stock.minerals = 100;
+let traderSeen = false;
+for (let i = 0; i < 400; i++) {
+  step(wt);
+  if (wt.ships.some((s) => s.trader)) traderSeen = true;
+}
+check("Trader buys minerals for credits", wt.credits > 0 && wt.stock.minerals < 100);
+check("A trader ship visited the dock", traderSeen);
+
+const wh = createWorld();
+carve(wh, 5, 5, 11, 9);
+recomputeRooms(wh);
+addStructure(wh, "solar", 6, 6);
+addStructure(wh, "solar", 7, 6);
+addStructure(wh, "solar", 8, 6);
+addStructure(wh, "o2gen", 9, 7);
+addDock(wh, 5, 7);
+addAgent(wh, 7, 7, "human");
+for (let i = 0; i < 300; i++) step(wh);
+check("No hotel rooms means no guests", Object.values(wh.agents).every((a) => !a.guest));
+addStructure(wh, "hotel", 8, 7);
+for (let i = 0; i < 300; i++) step(wh);
+check("A Hotel Room enables guest arrival", Object.values(wh.agents).some((a) => a.guest && a.alive));
+
+const wb = createWorld();
+carve(wb, 5, 5, 9, 8);
+recomputeRooms(wb);
+addStructure(wb, "solar", 6, 6);
+addStructure(wb, "o2gen", 6, 7);
+addStructure(wb, "pod", 8, 6); // crew quarters
+addStructure(wb, "hotel", 8, 7); // hotel room
+addAgent(wb, 7, 7, "human");
+const res = Object.values(wb.agents)[0];
+res.rest = 10;
+const podS = Object.values(wb.structures).find((s) => s.kind === "pod")!;
+const hotelS = Object.values(wb.structures).find((s) => s.kind === "hotel")!;
+let usedPod = false;
+let crewUsedHotel = false;
+for (let i = 0; i < 120; i++) {
+  step(wb);
+  if (podS.occupantId === res.id) usedPod = true;
+  if (hotelS.occupantId === res.id) crewUsedHotel = true;
+}
+check("Crew sleep in Crew Quarters", usedPod);
+check("Crew never use Hotel Rooms", !crewUsedHotel);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

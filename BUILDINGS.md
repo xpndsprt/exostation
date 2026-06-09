@@ -75,6 +75,9 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Quarters (suite) | Higher-comfort lodging; premium fees | 2 | 2×2 | 500 | assigned / vacant / comfort:tier |
 | Recreation Module | Social space — **where relations play out** | 4 | 3×2 | 600 | busy / empty |
 | Lounge *(implemented)* | Entertainment: crew & visitors relax (restore Fun) and socialize | 4 | 1×1 | — | busy / empty |
+| Crew Quarters *(implemented)* | Where **resident crew** sleep | 1 | 1×1 | — | assigned / vacant |
+| Hotel Room *(implemented)* | Where **visitors** lodge; sets guest capacity | 2 | 1×1 | — | assigned / vacant |
+| Trader ship *(implemented)* | Docks periodically and **buys minerals** for credits | — | — | — | trading / departed |
 | Sanitation Unit | Hygiene need; prevents mood penalty | 2 | 1×1 | 200 | available / occupied / dirty |
 | Decor / Fixture | Ambient mood boost | 0–1 | 1×1 | 50+ | placed |
 

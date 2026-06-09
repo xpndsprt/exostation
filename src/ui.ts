@@ -2,6 +2,7 @@ import { HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, Wor
 import { COLORS } from "./config";
 import { STRUCTURES } from "./structures";
 import { SPECIES } from "./species";
+import { RELATIONS } from "./relations";
 import { advise } from "./advisor";
 
 const SP_COLOR: Record<Species, string> = {
@@ -28,10 +29,11 @@ const PALETTE: PaletteEntry[] = [
   { t: "ch4gen", label: "Methane Gen", key: "4" },
   { t: "synth", label: "Rations Synth", key: "5" },
   { t: "vat", label: "Bio Vat", key: "6" },
-  { t: "pod", label: "Sleeping Pod", key: "7" },
-  { t: "rec", label: "Lounge", key: "8" },
-  { t: "bay", label: "Bot Bay", key: "9" },
-  { t: "dock", label: "Docking Port", key: "0" },
+  { t: "pod", label: "Crew Quarters", key: "7" },
+  { t: "hotel", label: "Hotel Room", key: "8" },
+  { t: "rec", label: "Lounge", key: "9" },
+  { t: "bay", label: "Bot Bay", key: "0" },
+  { t: "dock", label: "Docking Port", key: "-" },
   { t: "asteroid", label: "Asteroid", key: "A", group: "Space" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
@@ -327,6 +329,49 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
 
 export function hideTooltip(): void {
   document.getElementById("tooltip")?.classList.remove("show");
+}
+
+const GAS_LABEL: Record<string, string> = { o2: "Oxygen", ch4: "Methane" };
+
+// Alienpedia: a reference card for every species that has visited the station.
+export function renderAlienpedia(world: World): void {
+  const el = document.getElementById("alienpedia");
+  if (!el) return;
+  if (world.seen.length === 0) {
+    el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="empty">No species encountered yet.</div>`;
+    return;
+  }
+  const present: Record<string, number> = {};
+  for (const id in world.agents) {
+    const a = world.agents[id];
+    if (a.alive) present[a.species] = (present[a.species] || 0) + 1;
+  }
+  const entries = world.seen
+    .map((s) => {
+      const d = SPECIES[s];
+      const likes: string[] = [];
+      const dislikes: string[] = [];
+      for (const o in RELATIONS[s]) {
+        if (o === s) continue;
+        const v = RELATIONS[s][o as Species];
+        if (v > 0) likes.push(SPECIES[o as Species].label);
+        else if (v < 0) dislikes.push(SPECIES[o as Species].label);
+      }
+      const rel =
+        [likes.length ? "likes " + likes.join(", ") : "", dislikes.length ? "dislikes " + dislikes.join(", ") : ""]
+          .filter(Boolean)
+          .join(" · ") || "neutral to all";
+      const here = present[s] || 0;
+      return (
+        `<div class="ent"><div class="hd"><span class="d" style="background:${SP_COLOR[s]}"></span>${d.label}` +
+        `<span class="role">${d.role}${here ? ` · ${here} aboard` : ""}</span></div>` +
+        `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${d.diet}</b> · Power <b>${d.power}</b></div>` +
+        `<div class="stat">${rel}</div>` +
+        `<div class="blurb">${d.blurb}</div></div>`
+      );
+    })
+    .join("");
+  el.innerHTML = `<h3>📖 ALIENPEDIA</h3>${entries}`;
 }
 
 // Lower-right advisor board: species seen so far + the AI's next-step guidance.
