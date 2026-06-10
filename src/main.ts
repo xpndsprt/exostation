@@ -1,4 +1,5 @@
 import { Application, Container, Ticker } from "pixi.js";
+import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
 import { createWorld, setCell, addStructureMulti, addDock, seedAsteroids, eraseAt, addAgent, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
