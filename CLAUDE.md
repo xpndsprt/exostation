@@ -18,6 +18,10 @@ same change** so it never drifts from the code. This includes:
 hook — don't hand-edit it. A `Stop` hook reminds you if `src/` changed without a
 `STRATEGY.md` update. Keep `BALANCE.md` consistent with the same numbers.
 
+**Build costs:** the authoritative prices live in code (`STRUCTURES[*].cost` and
+`TILE_COST` in `src/structures.ts`). `COSTS.md` mirrors them as the human-readable
+source of truth — update it whenever you change a cost.
+
 ### Markdown → HTML
 Every `.md` in this repo has a generated `.html` sibling (PostToolUse hook runs
 `.claude/md2html.py`). Don't edit the `.html` files by hand.

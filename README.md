@@ -18,6 +18,7 @@ A top-down space-station management sim for the browser — in the spirit of *Pr
 | [`GAME_DESIGN.md`](GAME_DESIGN.md) | The full design doc (all systems + an embedded copy of the balance sheet). |
 | [`BALANCE.md`](BALANCE.md) | Standalone first-pass tuning sheet (species stats, yields, mood, combat, research). |
 | [`BUILDINGS.md`](BUILDINGS.md) | Catalog of every buildable/interactive item: function, power draw, footprint, cost, states. |
+| [`COSTS.md`](COSTS.md) | Source-of-truth build costs (credits) for every tile and module; kept in sync with the code. |
 | [`MVP_SCOPE.md`](MVP_SCOPE.md) | The tight first-build scope: what ships, what's deferred, milestones. |
 | [`TECH_DESIGN.md`](TECH_DESIGN.md) | Technical/architecture design for the MVP (stack, tick model, systems, data model). |
 | [`STRATEGY.md`](STRATEGY.md) | Player strategy guide — every mechanic, ordered by importance & appearance. Kept in sync with the code. |

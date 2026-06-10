@@ -30,6 +30,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
 - **Door**, modules, and crew place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth 2×1, quarters/batteries 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor.
+- **Everything costs credits.** Each build button shows its price (¢); the ghost turns red and the cursor blocks if you can't afford it. You start with **¢1000**. **Deconstructing** a module (Select → Deconstruct) refunds **50%**. Full price list: [`COSTS.md`](COSTS.md). Crew are free to add.
 
 **Inspecting**
 - **Hover** anything for a quick tooltip (no click).
@@ -129,8 +130,8 @@ Food is a two-step, **power-driven** loop that runs entirely inside the station:
 ## 8 · Guests, trade & economy — the hotel and the market
 - A **Docking Port** is a **hull airlock**: place it **on a wall that faces space** (interior floor one side, open space the other). The ghost goes red anywhere that isn't a valid hull wall.
 - **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). A grey **shuttle** parks outside on arrival. Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work).
-- **Trade:** every ~30s a **trader ship** (green) docks at a powered port and **buys your minerals** (up to 25 at ~3¢ each), converting your mining output into credits. So the materials loop now closes: mine asteroids → minerals → traders pay you.
-- **Takeaway:** Hotel Rooms drive lodging income; mining + a dock drives trade income. Both need a powered Docking Port on the hull.
+- **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: mine asteroids → minerals → Trade Hub → credits.
+- **Takeaway:** Hotel Rooms + a dock drive lodging income; mining + a **Trade Hub** drive trade income. Spend credits to expand; deconstruct for a 50% refund.
 
 ---
 
@@ -202,7 +203,8 @@ This is the failure state the whole game is designed around.
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters/hotel-bed 1×1, synth 2×1, generators/vat/bay/lounge 2×2, solar 1×3 (wall) |
 | Guests | arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s |
-| Trade | every ~30s a trader buys ≤25 minerals at ~3¢ each |
+| Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
+| Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
 | Skirmish | tension rises when mood <30 near a disliked species; fights at 100 |
 

@@ -55,7 +55,6 @@ export function advise(world: World): Advice[] {
 
   // --- progression: the single next build-order gap ---
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);
-  const noSite = Object.values(world.sites).every((s) => s.richness <= 0);
   if (!sealed) out.push({ sev: "warn", text: "Seal a room: lay Floor, then enclose it with Wall." });
   else if (!has("solar")) out.push({ sev: "warn", text: "Place a Solar Panel to power the station." });
   else if (!has("o2gen")) out.push({ sev: "warn", text: "Add an O₂ Generator inside a sealed room." });
@@ -65,9 +64,11 @@ export function advise(world: World): Advice[] {
   else if (!has("pod")) out.push({ sev: "warn", text: "Add a Sleeping Pod so crew can rest." });
   else if (!has("dock")) out.push({ sev: "tip", text: "Build a Docking Port to attract paying Drenn guests." });
 
-  // mining is for minerals now, not food — surface it as an opportunity
-  if (has("vat") && (!has("bay") || noSite))
-    out.push({ sev: "tip", text: "Mine minerals: build a Bot Bay and place an Asteroid." });
+  // mining & trade (minerals economy)
+  if (has("vat") && !has("bay"))
+    out.push({ sev: "tip", text: "Mine minerals: build a Bot Bay near an asteroid." });
+  if (has("bay") && !has("tradehub") && world.stock.minerals > 40)
+    out.push({ sev: "tip", text: "Build a Trade Hub so traders buy your minerals for credits." });
 
   // --- quality / risk ---
   if (agents.length > 0) {

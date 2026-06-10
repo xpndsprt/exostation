@@ -13,7 +13,8 @@ export type StructureKind =
   | "bay"
   | "dock"
   | "rec"
-  | "hotel";
+  | "hotel"
+  | "tradehub";
 
 export type Species = "human" | "drenn" | "thol";
 

@@ -23,11 +23,13 @@ export function economySystem(w: World, dt: number): void {
   w.credits += guests * LODGING_RATE * dt;
 
   let hotels = 0; // guest capacity = Hotel Rooms
+  let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
   const docks = [];
   for (const id in w.structures) {
     const s = w.structures[id];
     if (s.kind === "hotel") hotels++;
     else if (s.kind === "dock") docks.push(s);
+    else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
   }
 
   // guest arrivals (need a free hotel room AND a powered dock)
@@ -48,17 +50,20 @@ export function economySystem(w: World, dt: number): void {
     }
   }
 
-  // trader ships periodically buy minerals at any powered dock
+  // traders buy minerals — but only if you run a powered Trade Hub (your
+  // trading station). A ship visibly parks at a dock if you have one.
   w.tradeTimer += dt;
   if (w.tradeTimer >= TRADE_INTERVAL) {
     w.tradeTimer -= TRADE_INTERVAL;
-    const dock = docks.find((d) => d.powered);
-    if (dock && w.stock.minerals > 0) {
+    if (hasTradeHub && w.stock.minerals > 0) {
       const amount = Math.min(w.stock.minerals, TRADE_BATCH);
       w.stock.minerals -= amount;
       w.credits += amount * MINERAL_PRICE;
-      const ex = exteriorCell(w, dock);
-      if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME, trader: true });
+      const dock = docks.find((d) => d.powered);
+      if (dock) {
+        const ex = exteriorCell(w, dock);
+        if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME, trader: true });
+      }
     }
   }
 }

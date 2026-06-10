@@ -1,6 +1,6 @@
 import { HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, World } from "./types";
 import { COLORS } from "./config";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
 import { RELATIONS } from "./relations";
 import { advise } from "./advisor";
@@ -34,6 +34,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "rec", label: "Lounge", key: "9" },
   { t: "bay", label: "Bot Bay", key: "0" },
   { t: "dock", label: "Docking Port", key: "-" },
+  { t: "tradehub", label: "Trade Hub", key: "M" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
   { t: "select", label: "Select", key: "S", group: "View" },
@@ -89,7 +90,9 @@ function buildPalette(state: UIState): void {
       bar.appendChild(h);
     }
     const b = document.createElement("button");
-    b.innerHTML = `${entry.label}<span class="hk">${entry.key}</span>`;
+    const cost = costOf(entry.t);
+    const costStr = cost > 0 ? `¢${cost} ` : "";
+    b.innerHTML = `${entry.label}<span class="hk">${costStr}${entry.key}</span>`;
     if (entry.t === state.tool) b.classList.add("active");
     b.onclick = () => setActiveTool(entry.t, state);
     toolButtons.set(entry.t, b);

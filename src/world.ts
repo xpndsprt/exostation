@@ -22,7 +22,7 @@ export function createWorld(): World {
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Seed some biomass so the synth can make meals before a Vat is built.
     stock: { minerals: 0, biomass: 40, meals: 0 },
-    credits: 0,
+    credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
     seen: [],
     tick: 0,

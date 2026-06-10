@@ -1,6 +1,7 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
 import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
-import { solarFootprint, footprintCells } from "../src/placement";
+import { solarFootprint, footprintCells, canPlace } from "../src/placement";
+import { costOf } from "../src/structures";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
@@ -505,7 +506,8 @@ addStructure(wt, "solar", 6, 6);
 addStructure(wt, "solar", 7, 6);
 addStructure(wt, "o2gen", 8, 7);
 addDock(wt, 5, 6); // hull airlock
-addAgent(wt, 7, 7, "human"); // resident keeps the dock serviced
+addStructure(wt, "tradehub", 8, 6); // trading station (enables mineral sales)
+addAgent(wt, 7, 7, "human"); // resident keeps things serviced
 wt.stock.minerals = 100;
 let traderSeen = false;
 for (let i = 0; i < 400; i++) {
@@ -592,6 +594,28 @@ for (let i = 0; i < 250; i++) {
 }
 check("Agent crosses a door without getting stuck (reaches far room)", reachedB);
 check("Agent completes its goal across the door (relaxed)", maxFunD > 60);
+
+// --- M19: build costs + Trade Hub gating ---
+check("Modules and tiles have costs", costOf("o2gen") === 90 && costOf("floor") === 2 && costOf("door") === 25);
+const wcost = createWorld();
+for (let y = 5; y <= 7; y++) for (let x = 5; x <= 7; x++) setCell(wcost, x, y, "floor");
+recomputeRooms(wcost);
+wcost.credits = 1000;
+check("Can place a module when affordable", canPlace(wcost, "o2gen", 5, 5));
+wcost.credits = 10;
+check("Cannot place a module you can't afford", !canPlace(wcost, "o2gen", 5, 5));
+
+// trade requires a powered Trade Hub
+const wnohub = createWorld();
+carve(wnohub, 5, 5, 9, 8);
+recomputeRooms(wnohub);
+addStructure(wnohub, "solar", 6, 6);
+addStructure(wnohub, "o2gen", 8, 7);
+addDock(wnohub, 5, 6);
+wnohub.stock.minerals = 100;
+wnohub.credits = 0;
+for (let i = 0; i < 400; i++) step(wnohub);
+check("No Trade Hub means minerals aren't sold", wnohub.credits === 0 && wnohub.stock.minerals === 100);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

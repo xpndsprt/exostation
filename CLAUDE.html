@@ -75,6 +75,7 @@ tr:hover td { background: #eef3ff; }
 <p><code>STRATEGY.md</code> is the player-facing guide to <strong>every mechanic</strong>, ordered by importance and appearance. <strong>Whenever you change gameplay mechanics, update <code>STRATEGY.md</code> in the same change</strong> so it never drifts from the code. This includes:</p>
 <ul><li>new/removed <strong>modules, species, resources, tools, or systems</strong>;</li><li>changed <strong>tuning numbers</strong> (power draws, decay/recovery rates, thresholds, costs, timings, combat values) — update the inline numbers and the <strong>Quick reference</strong> table;</li><li>new <strong>controls / shortcuts / UI</strong> the player needs to know.</li></ul>
 <p><code>STRATEGY.html</code> is generated automatically from <code>STRATEGY.md</code> by the Markdown→HTML hook — don't hand-edit it. A <code>Stop</code> hook reminds you if <code>src/</code> changed without a <code>STRATEGY.md</code> update. Keep <code>BALANCE.md</code> consistent with the same numbers.</p>
+<p><strong>Build costs:</strong> the authoritative prices live in code (<code>STRUCTURES[*].cost</code> and <code>TILE_COST</code> in <code>src/structures.ts</code>). <code>COSTS.md</code> mirrors them as the human-readable source of truth — update it whenever you change a cost.</p>
 <h3>Markdown → HTML</h3>
 <p>Every <code>.md</code> in this repo has a generated <code>.html</code> sibling (PostToolUse hook runs <code>.claude/md2html.py</code>). Don't edit the <code>.html</code> files by hand.</p>
 <h3>Build, test, commit</h3>

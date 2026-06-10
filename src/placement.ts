@@ -1,6 +1,6 @@
 import { StructureKind, Tool, World } from "./types";
 import { idx, inBounds, canDock } from "./world";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, costOf } from "./structures";
 
 const STRUCTURE_KINDS = new Set([
   "solar",
@@ -14,6 +14,7 @@ const STRUCTURE_KINDS = new Set([
   "dock",
   "rec",
   "hotel",
+  "tradehub",
 ]);
 
 function hasSite(w: World, cell: number): boolean {
@@ -84,6 +85,7 @@ export function footprintCells(w: World, kind: StructureKind, x: number, y: numb
 // ghost-preview tint and the invalid cursor.
 export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;
+  if (w.credits < costOf(tool)) return false; // can't afford it
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
   if (tool === "dock") return canDock(w, x, y);
   if (tool in STRUCTURES) return footprintCells(w, tool as StructureKind, x, y) !== null;

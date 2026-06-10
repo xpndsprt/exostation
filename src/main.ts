@@ -33,7 +33,7 @@ import {
   UIHandlers,
 } from "./ui";
 import { TILE, COLORS, SIM_HZ } from "./config";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
 import { HoverTarget, OverlayMode, Selection, Speed, StructureKind, UIState, World } from "./types";
 
@@ -153,6 +153,7 @@ async function boot(): Promise<void> {
     onDeconstruct: (id) => {
       const s = world.structures[id];
       if (!s) return;
+      world.credits += Math.floor(costOf(s.kind) * 0.5); // 50% salvage refund
       eraseAt(world, s.cell % world.w, (s.cell / world.w) | 0);
       if (sel && sel.kind === "structure" && sel.id === id) sel = null;
       needRedraw = true;
@@ -180,21 +181,54 @@ async function boot(): Promise<void> {
   const applyTool = (tx: number, ty: number): void => {
     if (!inBounds(world, tx, ty)) return;
     const tool = state.tool;
-    if (tool === "floor") setCell(world, tx, ty, "floor");
-    else if (tool === "wall") setCell(world, tx, ty, "wall");
-    else if (tool === "door") setCell(world, tx, ty, "door");
-    else if (tool === "erase") eraseAt(world, tx, ty);
-    else if (tool === "human") addAgent(world, tx, ty);
-    else if (tool === "thol") addAgent(world, tx, ty, "thol");
-    else if (tool === "solar") {
-      const fp = solarFootprint(world, tx, ty);
-      if (fp) addStructureMulti(world, "solar", fp);
-    } else if (tool === "dock") addDock(world, tx, ty);
-    else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
-      const fp = footprintCells(world, tool as StructureKind, tx, ty);
-      if (fp) addStructureMulti(world, tool as StructureKind, fp);
+    // free actions
+    if (tool === "erase") {
+      eraseAt(world, tx, ty);
+      needRedraw = true;
+      return;
     }
-    needRedraw = true;
+    if (tool === "human") {
+      addAgent(world, tx, ty);
+      needRedraw = true;
+      return;
+    }
+    if (tool === "thol") {
+      addAgent(world, tx, ty, "thol");
+      needRedraw = true;
+      return;
+    }
+    // paid actions — only charge on a successful placement
+    const cost = costOf(tool);
+    if (world.credits < cost) return;
+    let ok = false;
+    if (tool === "floor") {
+      if (world.cells[idx(world, tx, ty)].type !== "floor") {
+        setCell(world, tx, ty, "floor");
+        ok = true;
+      }
+    } else if (tool === "wall") {
+      if (world.cells[idx(world, tx, ty)].type !== "wall") {
+        setCell(world, tx, ty, "wall");
+        ok = true;
+      }
+    } else if (tool === "door") {
+      if (world.cells[idx(world, tx, ty)].type !== "door") {
+        setCell(world, tx, ty, "door");
+        ok = true;
+      }
+    } else if (tool === "solar") {
+      const fp = solarFootprint(world, tx, ty);
+      if (fp) ok = addStructureMulti(world, "solar", fp);
+    } else if (tool === "dock") {
+      ok = addDock(world, tx, ty);
+    } else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
+      const fp = footprintCells(world, tool as StructureKind, tx, ty);
+      if (fp) ok = addStructureMulti(world, tool as StructureKind, fp);
+    }
+    if (ok) {
+      world.credits -= cost;
+      needRedraw = true;
+    }
   };
 
   const pickEntity = (cell: number): Selection => {
