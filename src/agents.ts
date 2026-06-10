@@ -10,6 +10,7 @@ const O2_DECAY = 8; // breath lost per second once the suit is empty
 const O2_RECOVER = 15;
 const SUIT_DECAY = 20; // suit reserve spent per second in a non-native zone (~5s)
 const SUIT_RECHARGE = 40; // suit refilled per second back in native air
+const SUIT_PANIC = 50; // only flee to native air once the suit drops below this
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
 const FUN_DECAY = 0.4;
@@ -71,8 +72,10 @@ function advanceMovement(a: Agent, dt: number): void {
 }
 
 function think(w: World, a: Agent, dt: number, breathable: boolean): void {
-  // Emergency: bad air overrides everything.
-  if (!breathable) {
+  // Emergency: off native air AND the suit is running out. Crew are suited, so a
+  // brief transit (e.g. crossing a door, which is a vacuum airlock tile) does
+  // NOT trigger this — only genuine, prolonged exposure does.
+  if (!breathable && a.suit < SUIT_PANIC) {
     if (!a.task || a.task.type !== "flee") {
       releaseTask(w, a);
       const air = nearestBreathable(w, a.cell, SPECIES[a.species].gas);
@@ -87,8 +90,8 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
     return;
   }
 
-  // Safe air: a flee task is complete.
-  if (a.task && a.task.type === "flee") a.task = null;
+  // Back in good air: a flee task is complete.
+  if (breathable && a.task && a.task.type === "flee") a.task = null;
 
   // Guest whose stay is up heads for a dock to leave (overrides eat/sleep).
   if (a.guest && a.stay <= 0) {

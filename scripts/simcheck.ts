@@ -568,5 +568,30 @@ check("Fresh world has no asteroids", Object.keys(wa2.sites).length === 0);
 seedAsteroids(wa2, 8);
 check("seedAsteroids scatters asteroids into space", Object.keys(wa2.sites).length > 0);
 
+// --- Door crossing: agents transit a door without oscillating (suit covers it) ---
+const wdoor = createWorld();
+carve(wdoor, 5, 5, 9, 8); // room A
+carve(wdoor, 9, 5, 13, 8); // room B (shares wall x9)
+setCell(wdoor, 9, 7, "door");
+recomputeRooms(wdoor);
+addStructure(wdoor, "solar", 6, 6);
+addStructure(wdoor, "solar", 7, 6);
+addStructure(wdoor, "o2gen", 8, 6); // room A O2
+addStructure(wdoor, "solar", 12, 6);
+addStructure(wdoor, "o2gen", 11, 6); // room B O2
+addStructure(wdoor, "rec", 10, 7); // Lounge in room B
+addAgent(wdoor, 6, 7, "human");
+const hd = Object.values(wdoor.agents)[0];
+hd.fun = 10; // wants the lounge, which is across the door in room B
+let reachedB = false;
+let maxFunD = 0;
+for (let i = 0; i < 250; i++) {
+  step(wdoor);
+  if (hd.cell % wdoor.w >= 10) reachedB = true;
+  maxFunD = Math.max(maxFunD, hd.fun);
+}
+check("Agent crosses a door without getting stuck (reaches far room)", reachedB);
+check("Agent completes its goal across the door (relaxed)", maxFunD > 60);
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
