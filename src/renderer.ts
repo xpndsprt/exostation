@@ -307,6 +307,14 @@ export class Renderer {
       // mood dot above the head
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;
       g.circle(cx, cy - r - 4, 2.6).fill(moodColor);
+      // suit-reserve bar — shows while suited (off native air); empties, then they die
+      if (a.suit < 100) {
+        const bw = r * 2;
+        const by = cy - r - 9;
+        g.rect(cx - r, by, bw, 2).fill(0x11151c);
+        const lvl = a.suit > 30 ? COLORS.suit : 0xe24b4b;
+        g.rect(cx - r, by, bw * (a.suit / 100), 2).fill(lvl);
+      }
       // combat: red ring while fighting, orange when tension is building
       if (a.fighting) g.circle(cx, cy, r + 4).stroke({ width: 2.5, color: 0xff3b3b });
       else if (a.tension > 50) g.circle(cx, cy, r + 4).stroke({ width: 1.5, color: 0xe8a33d, alpha: 0.8 });

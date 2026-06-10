@@ -8,9 +8,10 @@ import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 const SPEED = 4; // cells / second
 const O2_DECAY = 8; // breath lost per second once the suit is empty
 const O2_RECOVER = 15;
-const SUIT_DECAY = 20; // suit reserve spent per second in a non-native zone (~5s)
-const SUIT_RECHARGE = 40; // suit refilled per second back in native air
-const SUIT_PANIC = 50; // only flee to native air once the suit drops below this
+const SUIT_DECAY = 14; // suit reserve spent per second off native air (~7s of cover)
+const SUIT_RECHARGE = 40; // suit refilled per second back in native air (~2.5s)
+const SUIT_PANIC = 30; // head for air once the suit drops below this (still time to exit)
+const VENTURE_SUIT = 80; // only start a task in a hostile room when nearly fully charged
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
 const FUN_DECAY = 0.4;
@@ -71,7 +72,16 @@ function advanceMovement(a: Agent, dt: number): void {
   if (a.path.length === 0) a.moveAcc = 0;
 }
 
-function think(w: World, a: Agent, dt: number, breathable: boolean): void {
+function nativeAt(w: World, a: Agent, cell: number): boolean {
+  const r = w.cells[cell].roomId;
+  return r >= 0 && w.rooms[r]?.gas === SPECIES[a.species].gas;
+}
+
+function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
+  // Recompute from the agent's CURRENT cell (it may have just moved onto a door
+  // or into another room this tick — the value passed in is pre-movement).
+  const breathable = nativeAt(w, a, a.cell);
+
   // Emergency: off native air AND the suit is running out. Crew are suited, so a
   // brief transit (e.g. crossing a door, which is a vacuum airlock tile) does
   // NOT trigger this — only genuine, prolonged exposure does.
@@ -97,7 +107,7 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
   if (a.guest && a.stay <= 0) {
     if (!a.task || a.task.type !== "leave") {
       releaseTask(w, a);
-      const dock = nearestReachable(w, a.cell, "dock");
+      const dock = nearestDockAccess(w, a.cell); // gas doesn't matter — they're leaving
       a.task = { type: "leave", target: dock ? dock.cell : a.cell };
       a.path = dock ? dock.path : [];
     }
@@ -152,7 +162,7 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
     }
   }
   if (a.food < FOOD_LOW && w.stock.meals > 0) {
-    const synth = nearestReachable(w, a.cell, "synth");
+    const synth = nearestReachable(w, a, a.cell, "synth", true); // eating is quick — may venture
     if (synth) {
       a.task = { type: "eat", target: synth.cell };
       a.path = synth.path;
@@ -160,8 +170,9 @@ function think(w: World, a: Agent, dt: number, breathable: boolean): void {
     }
   }
   // Both crew and visitors relax at a Lounge when bored (and socialize there).
+  // You won't lounge somewhere you can't breathe, so this stays native-only.
   if (a.fun < FUN_LOW) {
-    const rec = nearestReachable(w, a.cell, "rec");
+    const rec = nearestReachable(w, a, a.cell, "rec", false);
     if (rec) {
       a.task = { type: "relax", target: rec.cell };
       a.path = rec.path;
@@ -200,7 +211,10 @@ interface Found {
 }
 
 function claimBunk(w: World, a: Agent, start: number, kind: Structure["kind"]): Found | null {
-  const bunks = Object.values(w.structures).filter((s) => s.kind === kind && s.occupantId < 0);
+  // only bunks the agent can actually breathe at
+  const bunks = Object.values(w.structures).filter(
+    (s) => s.kind === kind && s.occupantId < 0 && nativeAt(w, a, s.cell),
+  );
   bunks.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const b of bunks) {
     const path = findPath(w, start, b.cell);
@@ -212,12 +226,36 @@ function claimBunk(w: World, a: Agent, start: number, kind: Structure["kind"]): 
   return null;
 }
 
-function nearestReachable(w: World, start: number, kind: Structure["kind"]): Found | null {
-  const list = Object.values(w.structures).filter((s) => s.kind === kind);
+// Find the nearest reachable module of a kind. Native-air targets are always
+// allowed; a hostile-air target is only allowed when `venture` is set AND the
+// suit is nearly full (enough cover to do the job and get back).
+function nearestReachable(
+  w: World,
+  a: Agent,
+  start: number,
+  kind: Structure["kind"],
+  venture: boolean,
+): Found | null {
+  const ok = (s: Structure) => nativeAt(w, a, s.cell) || (venture && a.suit >= VENTURE_SUIT);
+  const list = Object.values(w.structures).filter((s) => s.kind === kind && ok(s));
   list.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const s of list) {
     const path = findPath(w, start, s.cell);
     if (path) return { id: s.id, cell: s.cell, path };
+  }
+  return null;
+}
+
+// Nearest dock, targeting its interior access cell (the wall cell isn't
+// walkable). Gas-agnostic — used by departing guests.
+function nearestDockAccess(w: World, start: number): Found | null {
+  const docks = Object.values(w.structures).filter((s) => s.kind === "dock");
+  docks.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const d of docks) {
+    const t = accessCell(w, d);
+    if (t < 0) continue;
+    const path = findPath(w, start, t);
+    if (path) return { id: d.id, cell: t, path };
   }
   return null;
 }
@@ -234,6 +272,8 @@ function claimService(w: World, a: Agent, start: number): Found | null {
   for (const s of jobs) {
     const target = accessCell(w, s); // wall-mounted docks are serviced from inside
     if (target < 0) continue;
+    // only service in hostile air with a charged suit (enough cover to finish)
+    if (!nativeAt(w, a, target) && a.suit < VENTURE_SUIT) continue;
     const path = findPath(w, start, target);
     if (path) {
       s.servicedBy = a.id;

@@ -617,5 +617,37 @@ wnohub.credits = 0;
 for (let i = 0; i < 400; i++) step(wnohub);
 check("No Trade Hub means minerals aren't sold", wnohub.credits === 0 && wnohub.stock.minerals === 100);
 
+// --- Suit / venturing: no bounce into hostile rooms; quick venture is allowed ---
+const wb1 = createWorld();
+carve(wb1, 5, 5, 9, 8); // room A (O2)
+carve(wb1, 9, 5, 13, 8); // room B (no generator => hostile)
+setCell(wb1, 9, 7, "door");
+recomputeRooms(wb1);
+addStructure(wb1, "solar", 6, 6);
+addStructure(wb1, "o2gen", 8, 6);
+addStructure(wb1, "rec", 11, 7); // a Lounge in the hostile room
+addAgent(wb1, 6, 7, "human");
+const hb = Object.values(wb1.agents)[0];
+hb.fun = 10;
+const homeRoom = wb1.cells[idx(wb1, 6, 7)].roomId;
+let strayed = false;
+for (let i = 0; i < 200; i++) { step(wb1); if (wb1.cells[hb.cell].roomId !== homeRoom) strayed = true; }
+check("Crew don't bounce into a hostile room for a lounge", !strayed && hb.alive);
+
+const wv = createWorld();
+carve(wv, 5, 5, 9, 8); // room A (O2)
+carve(wv, 9, 5, 13, 8); // room B (hostile)
+setCell(wv, 9, 7, "door");
+recomputeRooms(wv);
+addStructure(wv, "solar", 6, 6);
+addStructure(wv, "o2gen", 8, 6);
+addStructure(wv, "synth", 11, 7); // synth across the door in hostile air
+addAgent(wv, 6, 7, "human");
+const hv = Object.values(wv.agents)[0];
+hv.food = 10; wv.stock.meals = 5;
+let ate = false;
+for (let i = 0; i < 200; i++) { step(wv); if (hv.food > 90) ate = true; }
+check("Crew venture (suited) into hostile air for a quick task and survive", ate && hv.alive);
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
