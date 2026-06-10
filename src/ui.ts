@@ -322,9 +322,11 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const cx = target.cell % world.w;
     const cy = (target.cell / world.w) | 0;
     const kind = c.type === "floor" ? (c.enclosed ? "sealed floor" : "open floor") : c.type;
-    const gas = (c.roomId >= 0 && world.rooms[c.roomId]?.gas) || "none";
+    const room = c.roomId >= 0 ? world.rooms[c.roomId] : undefined;
+    const gas = room?.gas || "none";
     const air = gas === "none" ? "no air" : gas === "mixed" ? "MIXED ☠" : gas;
-    html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}` : ""}</div>`;
+    const harm = room ? (room.harmony > 0.2 ? " · harmonious" : room.harmony < -0.2 ? " · tense" : "") : "";
+    html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}${harm}` : ""}</div>`;
   }
   tip.innerHTML = html;
   tip.style.left = `${x + 14}px`;

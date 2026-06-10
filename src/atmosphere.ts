@@ -13,7 +13,7 @@ export function atmosphereSystem(w: World): void {
 
   for (const c of w.cells) {
     if (c.type === "floor" && c.roomId >= 0 && !(c.roomId in rooms)) {
-      rooms[c.roomId] = { enclosed: c.enclosed, gas: "none" };
+      rooms[c.roomId] = { enclosed: c.enclosed, gas: "none", harmony: 0 };
       gases[c.roomId] = new Set();
     }
   }

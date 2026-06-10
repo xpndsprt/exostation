@@ -146,6 +146,12 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them, which matters next.
 
+### Room harmony — who you put together matters
+Beyond the proximity mood effect, each enclosed room has a **harmony** from how the species sharing it get along (Select-hover a tile to see *harmonious* / *tense*):
+- **Harmonious room** (compatible/friendly species together): up to **+40% work & production** in that room (faster Vats, Synths, repairs) and a **mood lift**.
+- **Tense room** (rivals together): down to **−40%** and a mood hit. (With the current roster, rivals breathe different gases so they rarely share a room — friction matters more as same‑air rivals are added.)
+- **Takeaway:** group friends (e.g. Drenn with anyone) in your production/work rooms for a real throughput boost. The Advisor warns if a room turns tense.
+
 ### Species traits — diversity pays off
 Each species (except generalist Humans) brings a **bonus**, so a mixed station out‑produces a uniform one:
 - **Thol — Engineer:** service/repair machinery **+50% faster**. Park them near your busiest modules.

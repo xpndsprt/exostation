@@ -3,6 +3,7 @@ import { findPath, manhattan, nearestBreathable } from "./pathfind";
 import { accessCell } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { STRUCTURES } from "./structures";
+import { productivity } from "./harmony";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 
 const SPEED = 4; // cells / second
@@ -138,7 +139,9 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       } else if (a.task.type === "service") {
         const s = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
         if (s) {
-          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1); // Thol engineers
+          const room = w.cells[a.cell].roomId;
+          const prod = room >= 0 && w.rooms[room] ? productivity(w.rooms[room].harmony) : 1;
+          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod;
           s.condition = Math.min(100, s.condition + rate * dt);
           if (s.condition >= 100) releaseTask(w, a);
           return; // keep working until fully serviced

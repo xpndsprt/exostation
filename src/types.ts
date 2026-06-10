@@ -135,6 +135,7 @@ export interface Ship {
 export interface RoomInfo {
   enclosed: boolean;
   gas: RoomGas;
+  harmony: number; // -1..1 from relations among occupants (synergy vs friction)
 }
 
 export interface PowerState {

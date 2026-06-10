@@ -9,6 +9,7 @@ import { maintenanceSystem } from "../src/maintenance";
 import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
+import { harmonySystem } from "../src/harmony";
 import { agentSystem } from "../src/agents";
 import { moodSystem } from "../src/mood";
 import { combatSystem } from "../src/combat";
@@ -39,6 +40,7 @@ function step(w: World) {
   miningSystem(w, DT);
   foodSystem(w, DT);
   atmosphereSystem(w);
+  harmonySystem(w);
   agentSystem(w, DT);
   moodSystem(w, DT);
   combatSystem(w, DT);
@@ -730,6 +732,35 @@ function repairGain(species: "thol" | "human", gas: "ch4" | "o2"): number {
   return gen.condition;
 }
 check("Thol engineer repairs faster than a human", repairGain("thol", "ch4") > repairGain("human", "o2"));
+
+// --- M22: room harmony (synergy/friction) ---
+const whar = createWorld();
+carve(whar, 5, 5, 9, 8);
+recomputeRooms(whar);
+addStructure(whar, "solar", 6, 6);
+addStructure(whar, "o2gen", 6, 7);
+addAgent(whar, 7, 7, "human");
+addAgent(whar, 8, 7, "drenn");
+for (let i = 0; i < 5; i++) step(whar);
+const hrid = whar.cells[idx(whar, 7, 7)].roomId;
+check("Friends sharing a room are harmonious", whar.rooms[hrid].harmony > 0.2);
+
+function synthMeals(twoFriends: boolean): number {
+  const w = createWorld();
+  carve(w, 5, 5, 11, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 9, 7);
+  addAgent(w, 8, 6, "human");
+  if (twoFriends) addAgent(w, 9, 6, "drenn");
+  w.stock.biomass = 200;
+  w.stock.meals.rations = 0;
+  for (let i = 0; i < 300; i++) step(w);
+  return w.stock.meals.rations;
+}
+check("Harmonious room boosts production", synthMeals(true) > synthMeals(false));
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

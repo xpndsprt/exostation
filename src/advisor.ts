@@ -85,6 +85,8 @@ export function advise(world: World): Advice[] {
   }
   if (agents.some((a) => a.tension > 50))
     out.push({ sev: "warn", text: "Tension is rising — keep disliked species apart." });
+  if (Object.values(world.rooms).some((r) => r.harmony < -0.3))
+    out.push({ sev: "warn", text: "Rivals share a room — productivity and mood suffer. Separate them, or group friends for a buff." });
   if (has("solar") && !has("battery") && p.supply - p.draw < 4)
     out.push({ sev: "tip", text: "Power margin is thin — add a Battery for safety." });
 

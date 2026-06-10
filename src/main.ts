@@ -7,6 +7,7 @@ import { maintenanceSystem } from "./maintenance";
 import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
 import { atmosphereSystem } from "./atmosphere";
+import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
@@ -47,6 +48,7 @@ function simStep(world: World, dt: number): void {
   miningSystem(world, dt);
   foodSystem(world, dt);
   atmosphereSystem(world);
+  harmonySystem(world);
   agentSystem(world, dt);
   moodSystem(world, dt);
   combatSystem(world, dt);

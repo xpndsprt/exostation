@@ -22,9 +22,11 @@ export function moodSystem(w: World, dt: number): void {
       }
     }
     social = Math.max(-SOCIAL_CLAMP, Math.min(SOCIAL_CLAMP, social));
+    const rid = w.cells[a.cell].roomId;
+    const roomHarmony = rid >= 0 && w.rooms[rid] ? w.rooms[rid].harmony * 10 : 0;
     const target = Math.max(
       0,
-      Math.min(100, 50 + (a.food - 50) * 0.15 + (a.rest - 50) * 0.15 + (a.fun - 50) * 0.15 + social),
+      Math.min(100, 50 + (a.food - 50) * 0.15 + (a.rest - 50) * 0.15 + (a.fun - 50) * 0.15 + social + roomHarmony),
     );
     a.mood += (target - a.mood) * Math.min(1, RATE * dt);
   }
