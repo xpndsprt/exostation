@@ -372,6 +372,7 @@ export function renderAlienpedia(world: World): void {
         `<span class="role">${d.role}${here ? ` · ${here} aboard` : ""}</span></div>` +
         `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${d.diet}</b> · Power <b>${d.power}</b></div>` +
         `<div class="stat">${rel}</div>` +
+        `<div class="stat" style="color:#9fd8a0">⭐ ${d.trait}</div>` +
         `<div class="blurb">${d.blurb}</div></div>`
       );
     })

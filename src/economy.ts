@@ -1,5 +1,6 @@
 import { World } from "./types";
 import { addAgent, accessCell, exteriorCell } from "./world";
+import { TRAITS } from "./species";
 
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
@@ -16,9 +17,12 @@ export function economySystem(w: World, dt: number): void {
   }
 
   let guests = 0;
+  let hasDrenn = false; // Drenn merchant trait raises mineral prices
   for (const id in w.agents) {
     const a = w.agents[id];
-    if (a.alive && a.guest) guests++;
+    if (!a.alive) continue;
+    if (a.guest) guests++;
+    if (a.species === "drenn") hasDrenn = true;
   }
   w.credits += guests * LODGING_RATE * dt;
 
@@ -58,7 +62,7 @@ export function economySystem(w: World, dt: number): void {
     if (hasTradeHub && w.stock.minerals > 0) {
       const amount = Math.min(w.stock.minerals, TRADE_BATCH);
       w.stock.minerals -= amount;
-      w.credits += amount * MINERAL_PRICE;
+      w.credits += amount * MINERAL_PRICE * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered);
       if (dock) {
         const ex = exteriorCell(w, dock);

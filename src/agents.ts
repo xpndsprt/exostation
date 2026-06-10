@@ -1,7 +1,7 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
 import { accessCell } from "./world";
-import { SPECIES } from "./species";
+import { SPECIES, TRAITS } from "./species";
 import { STRUCTURES } from "./structures";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 
@@ -138,7 +138,8 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       } else if (a.task.type === "service") {
         const s = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
         if (s) {
-          s.condition = Math.min(100, s.condition + REPAIR_RATE * dt);
+          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1); // Thol engineers
+          s.condition = Math.min(100, s.condition + rate * dt);
           if (s.condition >= 100) releaseTask(w, a);
           return; // keep working until fully serviced
         }

@@ -7,8 +7,16 @@ export interface SpeciesDef {
   accent: number; // ring color for quick visual ID
   power: number; // combat power (from BALANCE.md)
   role: string; // how they appear on the station
+  trait: string; // Alienpedia line describing their species bonus
   blurb: string; // Alienpedia flavor / notes
 }
+
+// trait magnitudes (used by the systems)
+export const TRAITS = {
+  tholRepair: 1.5, // Thol service machinery 50% faster
+  vrylVat: 1.5, // Vry'l boost Bio Vat output in their room by 50%
+  drennTrade: 1.5, // Drenn raise mineral sale price 50% while aboard
+} as const;
 
 export const SPECIES: Record<Species, SpeciesDef> = {
   human: {
@@ -18,6 +26,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     accent: 0x0d1016,
     power: 20,
     role: "Resident crew",
+    trait: "Generalist — no bonuses or penalties.",
     blurb: "Baseline oxygen breathers. Adaptable generalists — your starting workforce.",
   },
   drenn: {
@@ -27,6 +36,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     accent: 0xe8c349,
     power: 18,
     role: "Visitor (trader)",
+    trait: "Merchant — traders pay +50% for minerals while a Drenn is aboard.",
     blurb: "Gregarious merchant culture. Like nearly everyone; the station's social glue and best-paying guests.",
   },
   thol: {
@@ -36,6 +46,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     accent: 0xd98a3a,
     power: 35,
     role: "Resident crew",
+    trait: "Engineer — service & repair machinery 50% faster.",
     blurb: "Methane breathers — need a sealed CH₄ wing. Stoic and strong; humans resent them.",
   },
   vryl: {
@@ -45,6 +56,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     accent: 0x8fd14f,
     power: 22,
     role: "Resident crew",
+    trait: "Botanist — Bio Vats in their room grow +50% faster.",
     blurb: "Oxygen breathers, but they eat only Fungal Mash — they need a Spore vat + a Synth set to Fungal. Beloved by the Drenn.",
   },
 };

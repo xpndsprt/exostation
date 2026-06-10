@@ -683,5 +683,53 @@ for (let i = 0; i < 80; i++) step(w20);
 check("Vry'l eat Fungal Mash", vry.food > 80);
 check("Humans won't eat Fungal Mash (no rations)", hum.food < 60);
 
+// --- M21: species traits ---
+function vatBiomass(botanist: boolean): number {
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "vat", 8, 7);
+  addAgent(w, 7, 7, botanist ? "vryl" : "human");
+  w.stock.biomass = 0;
+  for (let i = 0; i < 200; i++) step(w);
+  return w.stock.biomass;
+}
+check("Vry'l botanist boosts Vat output", vatBiomass(true) > vatBiomass(false));
+
+function tradeCredits(drenn: boolean): number {
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 8, 7);
+  addDock(w, 5, 6);
+  addStructure(w, "tradehub", 8, 6);
+  addAgent(w, 7, 7, drenn ? "drenn" : "human");
+  w.stock.minerals = 100;
+  w.credits = 0;
+  for (let i = 0; i < 400; i++) step(w);
+  return w.credits;
+}
+check("Drenn merchant raises mineral trade revenue", tradeCredits(true) > tradeCredits(false));
+
+function repairGain(species: "thol" | "human", gas: "ch4" | "o2"): number {
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, gas === "ch4" ? "ch4gen" : "o2gen", 8, 6);
+  const gen = Object.values(w.structures).find((s) => s.kind !== "solar")!;
+  gen.condition = 50;
+  addAgent(w, 7, 7, species);
+  for (let i = 0; i < 25; i++) step(w);
+  return gen.condition;
+}
+check("Thol engineer repairs faster than a human", repairGain("thol", "ch4") > repairGain("human", "o2"));
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

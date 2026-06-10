@@ -1,5 +1,16 @@
 import { FoodLine, World } from "./types";
 import { SYNTH, VAT } from "./structures";
+import { TRAITS } from "./species";
+
+// A living Vry'l (botanist) in the same room boosts a vat's yield.
+function botanistIn(w: World, roomId: number): boolean {
+  if (roomId < 0) return false;
+  for (const id in w.agents) {
+    const a = w.agents[id];
+    if (a.alive && a.species === "vryl" && w.cells[a.cell].roomId === roomId) return true;
+  }
+  return false;
+}
 
 // Bio Vats grow a base resource (biomass or spores by recipe); Rations Synths
 // convert a base resource into a food line (rations from biomass, fungal from
@@ -13,8 +24,10 @@ export function foodSystem(w: World, dt: number): void {
       s.timer += dt;
       if (s.timer >= VAT.time) {
         s.timer -= VAT.time;
-        if (s.recipe === "spores") w.stock.spores += VAT.amount;
-        else w.stock.biomass += VAT.amount;
+        const boost = botanistIn(w, w.cells[s.cell].roomId) ? TRAITS.vrylVat : 1;
+        const yield_ = Math.round(VAT.amount * boost);
+        if (s.recipe === "spores") w.stock.spores += yield_;
+        else w.stock.biomass += yield_;
       }
     } else if (s.kind === "synth") {
       const fungal = s.recipe === "fungal";

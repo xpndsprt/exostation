@@ -146,6 +146,14 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them, which matters next.
 
+### Species traits — diversity pays off
+Each species (except generalist Humans) brings a **bonus**, so a mixed station out‑produces a uniform one:
+- **Thol — Engineer:** service/repair machinery **+50% faster**. Park them near your busiest modules.
+- **Vry'l — Botanist:** Bio Vats **in their room grow +50% faster**. Keep one beside your vats.
+- **Drenn — Merchant:** traders pay **+50% for minerals** while a Drenn is aboard. A docked Drenn pays for itself.
+- **Human — Generalist:** no bonus, no penalty.
+Traits show in the **Alienpedia** (⭐ line). The catch is always the cost: Thol need a methane wing, Vry'l need a fungal food chain — weigh the bonus against the infrastructure.
+
 ---
 
 ## 10 · The political web (M10) — mood from neighbors
