@@ -67,7 +67,8 @@ function tex(name: string, state: string): Texture | null {
 }
 
 export class Renderer {
-  private cells = new Graphics();
+  private cellsC = new Container();
+  private lastTileSig = -1;
   private atmo = new Graphics();
   private grid = new Graphics();
   private sitesC = new Container();
@@ -85,7 +86,7 @@ export class Renderer {
   constructor(world: Container) {
     buildTextures();
     for (const layer of [
-      this.cells, this.atmo, this.grid, this.sitesC, this.structsC, this.structFx,
+      this.cellsC, this.atmo, this.grid, this.sitesC, this.structsC, this.structFx,
       this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsC,
       this.overlay, this.selection, this.cursor,
     ])
@@ -117,7 +118,7 @@ export class Renderer {
   }
 
   draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none"): void {
-    this.drawCells(world);
+    this.drawTiles(world);
     this.drawAtmosphere(world);
     this.drawSprites(this.sitesC, Object.values(world.sites).map((s) => ({
       t: tex("asteroid", "default"), x: (s.cell % world.w) * TILE, y: ((s.cell / world.w) | 0) * TILE, c: false,
@@ -144,18 +145,30 @@ export class Renderer {
     }
   }
 
-  private drawCells(world: World): void {
-    const g = this.cells;
-    g.clear();
+  // Tiles are drawn as sprites, rebuilt only when the grid actually changes
+  // (cheap FNV hash of cell types + floor-seal state).
+  private drawTiles(world: World): void {
+    let h = 2166136261;
+    for (let i = 0; i < world.cells.length; i++) {
+      const c = world.cells[i];
+      const code = c.type === "space" ? 0 : c.type === "floor" ? (c.enclosed ? 2 : 1) : c.type === "wall" ? 3 : 4;
+      h = Math.imul(h ^ (i * 5 + code), 16777619);
+    }
+    if (h === this.lastTileSig) return;
+    this.lastTileSig = h;
+    this.cellsC.removeChildren();
     for (let y = 0; y < world.h; y++)
       for (let x = 0; x < world.w; x++) {
         const c = world.cells[y * world.w + x];
-        let color: number;
-        if (c.type === "wall") color = COLORS.wall;
-        else if (c.type === "door") color = COLORS.door;
-        else if (c.type === "floor") color = c.enclosed ? COLORS.floorSealed : COLORS.floorOpen;
-        else continue;
-        g.rect(x * TILE, y * TILE, TILE, TILE).fill(color);
+        if (c.type === "space") continue;
+        const t = c.type === "floor" ? tex("floor", "default") : c.type === "wall" ? tex("wall", "default") : tex("door", "closed");
+        if (!t) continue;
+        const sp = new Sprite(t);
+        sp.scale.set(SCALE);
+        sp.x = x * TILE;
+        sp.y = y * TILE;
+        if (c.type === "floor" && !c.enclosed) sp.tint = 0xff9a9a; // open-to-space cue
+        this.cellsC.addChild(sp);
       }
   }
 
@@ -185,6 +198,29 @@ export class Renderer {
     for (const id in world.structures) {
       const s = world.structures[id];
       const def = STRUCTURES[s.kind];
+
+      // Solar arrays rotate to match their placement direction (away from the wall).
+      if (s.kind === "solar") {
+        const t = tex("solar", "default");
+        if (t) {
+          let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+          for (const cc of s.cells) {
+            const cx = cc % world.w, cy = (cc / world.w) | 0;
+            minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
+            miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
+          }
+          const sp = new Sprite(t);
+          sp.scale.set(SCALE);
+          sp.anchor.set(0.5);
+          sp.x = ((minx + maxx + 1) / 2) * TILE;
+          sp.y = ((miny + maxy + 1) / 2) * TILE;
+          const d = (s.cells[1] ?? s.cells[0]) - s.cells[0]; // outward delta
+          sp.rotation = d === 1 ? -Math.PI / 2 : d === -1 ? Math.PI / 2 : d === -world.w ? Math.PI : 0;
+          this.structsC.addChild(sp);
+        }
+        continue;
+      }
+
       const state = def.draw > 0 ? (s.powered ? "enabled" : "disabled") : "default";
       const t = tex(s.kind, state);
       const x = (s.cell % world.w) * TILE;
