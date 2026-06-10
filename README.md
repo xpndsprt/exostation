@@ -25,6 +25,16 @@ A top-down space-station management sim for the browser — in the spirit of *Pr
 
 Each `.md` has a nicely formatted `.html` sibling (e.g. `GAME_DESIGN.html`) generated automatically — open it in a browser for a styled read.
 
+## Sprite editor
+`editor.html` is a standalone, in-browser **pixel-art editor** (open it directly).
+- 16×16 per tile; multi-tile items expand the grid (solar 1×3, generators/vat/bay/
+  lounge/trade-hub 2×2, synth/hotel 2×1).
+- Each sprite holds named **states** — creatures: idle/walk/dead; active modules:
+  enabled/disabled (e.g. the Rations Synth).
+- Save a **PNG** (current state), a **PNG sheet** (all states), and a **JSON** copy of
+  the bitmap; a library dropdown loads the first-pass art in `assets/sprites.js` or
+  anything you save to the browser.
+
 ## Tooling
 HTML versions are produced by a self-contained converter with **no third-party dependencies** (Python only — no pandoc or pip installs):
 

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EXOSTATION — Sprite Editor</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0e1118; color: #d7dbe2; }
+  header { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: #151a24; border-bottom: 1px solid #232b3a; flex-wrap: wrap; }
+  header .brand { font-weight: 700; letter-spacing: .06em; color: #6ea8ff; }
+  header label { font-size: 12px; color: #9aa3b5; }
+  input, select, button { font: inherit; font-size: 13px; }
+  input[type=text] { background: #1c2230; color: #e3e7ef; border: 1px solid #2c3445; border-radius: 6px; padding: 5px 8px; width: 130px; }
+  select { background: #1c2230; color: #e3e7ef; border: 1px solid #2c3445; border-radius: 6px; padding: 5px 8px; }
+  button { background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  button:hover { background: #232c3d; }
+  button.primary { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+  button.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #side { width: 234px; padding: 12px; border-right: 1px solid #232b3a; overflow-y: auto; }
+  #side h4 { margin: 14px 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6b7488; }
+  #side h4:first-child { margin-top: 0; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 6px; }
+  .swatches div { aspect-ratio: 1; border-radius: 4px; border: 1px solid #2c3445; cursor: pointer; }
+  .swatches div.sel { outline: 2px solid #fff; }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 16px; }
+  canvas#cv { image-rendering: pixelated; background: #0a0e16; box-shadow: 0 0 0 1px #2c3445; cursor: crosshair; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+  .hint { font-size: 11px; color: #6b7488; line-height: 1.5; }
+  #curcolor { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #2c3445; }
+  #states { display: flex; gap: 6px; flex-wrap: wrap; }
+  #states button.st { padding: 4px 9px; font-size: 12px; }
+  #preview { margin-top: 6px; display: flex; gap: 8px; align-items: flex-end; }
+  #preview canvas { image-rendering: pixelated; background: #0a0e16; border: 1px solid #2c3445; }
+  #preview .cap { font-size: 10px; color: #8b93a6; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">EXOSTATION ✎ SPRITE EDITOR</span>
+  <label>Library</label>
+  <select id="library"><option value="">— pick —</option></select>
+  <button id="loadBtn">Load</button>
+  <span style="width:10px"></span>
+  <label>Name</label>
+  <input type="text" id="name" value="untitled" />
+  <label>Tiles</label>
+  <select id="tw"><option>1</option><option>2</option><option>3</option></select><span>×</span>
+  <select id="th"><option>1</option><option>2</option><option>3</option></select>
+  <button id="newBtn">New</button>
+  <span style="flex:1"></span>
+  <button id="savePng" class="primary">PNG</button>
+  <button id="saveSheet" class="primary">PNG sheet</button>
+  <button id="saveJson" class="primary">JSON</button>
+  <button id="saveLib">Save to Library</button>
+  <button id="importBtn">Import</button>
+  <input type="file" id="importFile" accept="application/json" style="display:none" />
+</header>
+<main>
+  <div id="side">
+    <h4>States / frames</h4>
+    <div id="states"></div>
+    <div class="row" style="margin-top:6px">
+      <button id="addState">+ state</button>
+      <button id="dupState">duplicate</button>
+      <button id="renState">rename</button>
+      <button id="delState">delete</button>
+    </div>
+    <div class="row">
+      <button id="presetCreature">preset: idle/walk/dead</button>
+    </div>
+    <div class="row">
+      <button id="presetModule">preset: enabled/disabled</button>
+    </div>
+
+    <h4>Tool</h4>
+    <div class="tools">
+      <button data-tool="paint" class="active">Paint</button>
+      <button data-tool="erase">Erase</button>
+      <button data-tool="pick">Pick</button>
+      <button data-tool="fill">Fill</button>
+    </div>
+    <h4>Color</h4>
+    <div class="row">
+      <input type="color" id="color" value="#6ea8ff" />
+      <div id="curcolor"></div>
+      <button id="addSwatch">+ swatch</button>
+    </div>
+    <div class="swatches" id="swatches"></div>
+    <h4>Zoom</h4>
+    <div class="row"><input type="range" id="zoom" min="8" max="40" value="22" /></div>
+    <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
+      <label><input type="checkbox" id="showTiles" checked /> tiles</label></div>
+    <h4>Preview (all states)</h4>
+    <div id="preview"></div>
+    <h4>Notes</h4>
+    <div class="hint">One tile = 16×16. Multi-tile items expand the grid. Each
+      sprite holds named <b>states</b> (creatures: idle/walk/dead; modules:
+      enabled/disabled). Left-drag paints, right-drag erases. JSON saves every
+      state; PNG saves the current state; PNG sheet saves all states in a row.</div>
+  </div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+</main>
+
+<script src="assets/sprites.js"></script>
+<script>
+const TILE = 16;
+let ps = 22, tool = "paint", color = "#6ea8ff", showGrid = true, showTiles = true;
+// current sprite
+let sprite = newSprite("untitled", 1, 1);
+let cur = 0; // current state index
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const W = () => sprite.tileW * TILE, H = () => sprite.tileH * TILE;
+const px = () => sprite.states[cur].pixels;
+
+function newSprite(name, tw, th) {
+  return { name, tileW: tw, tileH: th, states: [{ name: "default", pixels: new Array(tw * th * TILE * TILE).fill(null) }] };
+}
+function resizeAll(tw, th) {
+  const nw = tw * TILE, nh = th * TILE, ow = sprite.tileW * TILE, oh = sprite.tileH * TILE;
+  sprite.states.forEach((s) => {
+    const np = new Array(nw * nh).fill(null);
+    for (let y = 0; y < Math.min(nh, oh); y++) for (let x = 0; x < Math.min(nw, ow); x++) np[y*nw+x] = s.pixels[y*ow+x];
+    s.pixels = np;
+  });
+  sprite.tileW = tw; sprite.tileH = th;
+}
+
+// --- rendering ---
+function render() {
+  const w = W(), h = H();
+  cv.width = w * ps; cv.height = h * ps;
+  const p = px();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = p[y*w+x];
+    if (c) ctx.fillStyle = c; else ctx.fillStyle = (x + y) % 2 === 0 ? "#1a2030" : "#141a26";
+    ctx.fillRect(x*ps, y*ps, ps, ps);
+  }
+  if (showGrid && ps >= 12) {
+    ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1;
+    for (let x = 0; x <= w; x++) line(x*ps,0,x*ps,h*ps);
+    for (let y = 0; y <= h; y++) line(0,y*ps,w*ps,y*ps);
+  }
+  if (showTiles) {
+    ctx.strokeStyle = "rgba(110,168,255,.5)"; ctx.lineWidth = 2;
+    for (let x = 0; x <= w; x += TILE) line(x*ps,0,x*ps,h*ps);
+    for (let y = 0; y <= h; y += TILE) line(0,y*ps,w*ps,y*ps);
+  }
+  renderStates(); renderPreview();
+}
+function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
+
+function renderStates() {
+  const box = $("states"); box.innerHTML = "";
+  sprite.states.forEach((s, i) => {
+    const b = document.createElement("button"); b.className = "st" + (i === cur ? " active" : "");
+    b.textContent = s.name; b.onclick = () => { cur = i; render(); };
+    box.appendChild(b);
+  });
+}
+function renderPreview() {
+  const box = $("preview"); box.innerHTML = ""; const w = W(), h = H();
+  const scale = Math.max(1, Math.floor(48 / Math.max(w, h)));
+  sprite.states.forEach((s) => {
+    const wrap = document.createElement("div");
+    const c = document.createElement("canvas"); c.width = w * scale; c.height = h * scale;
+    const o = c.getContext("2d");
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const col = s.pixels[y*w+x]; if (col) { o.fillStyle = col; o.fillRect(x*scale,y*scale,scale,scale); } }
+    const cap = document.createElement("div"); cap.className = "cap"; cap.textContent = s.name;
+    wrap.appendChild(c); wrap.appendChild(cap); box.appendChild(wrap);
+  });
+}
+
+// --- painting ---
+let painting = false, eraseDrag = false;
+function cellAt(e) {
+  const r = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / ps), y = Math.floor((e.clientY - r.top) / ps);
+  if (x < 0 || y < 0 || x >= W() || y >= H()) return null;
+  return { x, y, i: y * W() + x };
+}
+function apply(e, erasing) {
+  const c = cellAt(e); if (!c) return; const p = px();
+  if (tool === "pick") { const v = p[c.i]; if (v) { color = v; $("color").value = v; updateColor(); } return; }
+  if (tool === "fill") { flood(c.x, c.y, erasing ? null : color); render(); return; }
+  p[c.i] = (tool === "erase" || erasing) ? null : color; render();
+}
+function flood(x, y, to) {
+  const p = px(), w = W(), h = H(), from = p[y*w+x]; if (from === to) return;
+  const st = [[x, y]];
+  while (st.length) { const [cx, cy] = st.pop(); if (cx<0||cy<0||cx>=w||cy>=h) continue; if (p[cy*w+cx] !== from) continue; p[cy*w+cx] = to; st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
+}
+cv.addEventListener("contextmenu", (e) => e.preventDefault());
+cv.addEventListener("pointerdown", (e) => { painting = true; eraseDrag = e.button === 2; apply(e, eraseDrag); });
+window.addEventListener("pointerup", () => painting = false);
+window.addEventListener("pointermove", (e) => { if (painting) apply(e, eraseDrag); });
+
+// --- states UI ---
+function addState(name, copyFrom) {
+  const base = copyFrom != null ? sprite.states[copyFrom].pixels.slice() : new Array(W()*H()).fill(null);
+  sprite.states.push({ name: name || ("state" + sprite.states.length), pixels: base });
+  cur = sprite.states.length - 1; render();
+}
+$("addState").onclick = () => { const n = prompt("State name:", "state" + sprite.states.length); if (n) addState(n, null); };
+$("dupState").onclick = () => { const n = prompt("New state name:", sprite.states[cur].name + "2"); if (n) addState(n, cur); };
+$("renState").onclick = () => { const n = prompt("Rename state:", sprite.states[cur].name); if (n) { sprite.states[cur].name = n; render(); } };
+$("delState").onclick = () => { if (sprite.states.length <= 1) return alert("Keep at least one state."); sprite.states.splice(cur, 1); cur = 0; render(); };
+$("presetCreature").onclick = () => { ensureStates(["idle","walk","dead"]); };
+$("presetModule").onclick = () => { ensureStates(["enabled","disabled"]); };
+function ensureStates(names) {
+  names.forEach((n) => { if (!sprite.states.some((s) => s.name === n)) sprite.states.push({ name: n, pixels: sprite.states[cur].pixels.slice() }); });
+  // rename first default if it's the lone empty one
+  render();
+}
+
+// --- tools/color ---
+function updateColor() { $("curcolor").style.background = color; }
+document.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll("[data-tool]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); });
+$("color").oninput = (e) => { color = e.target.value; updateColor(); };
+const RECENT = ["#11151c","#8a93a6","#3a7bd5","#35c2c2","#c98a3a","#cf7a3a","#4f9d5b","#9b6cd5","#c05fa8","#4aa3a3","#6fcf97","#e8c349","#d98a3a","#e24b4b","#ffffff","#6ea8ff"];
+function renderSwatches() { const box = $("swatches"); box.innerHTML = ""; RECENT.forEach((hex) => { const d = document.createElement("div"); d.style.background = hex; if (hex === color) d.classList.add("sel"); d.onclick = () => { color = hex; $("color").value = hex; updateColor(); renderSwatches(); }; box.appendChild(d); }); }
+$("addSwatch").onclick = () => { if (!RECENT.includes(color)) { RECENT.unshift(color); RECENT.pop(); renderSwatches(); } };
+$("zoom").oninput = (e) => { ps = +e.target.value; render(); };
+$("showGrid").onchange = (e) => { showGrid = e.target.checked; render(); };
+$("showTiles").onchange = (e) => { showTiles = e.target.checked; render(); };
+$("newBtn").onclick = () => { sprite = newSprite($("name").value || "untitled", +$("tw").value, +$("th").value); cur = 0; render(); };
+$("tw").onchange = () => { resizeAll(+$("tw").value, +$("th").value); render(); };
+$("th").onchange = () => { resizeAll(+$("tw").value, +$("th").value); render(); };
+$("name").oninput = () => { sprite.name = $("name").value; };
+
+// --- export ---
+function bitmap() { return { name: sprite.name, tileW: sprite.tileW, tileH: sprite.tileH, w: W(), h: H(), states: sprite.states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) }; }
+function download(fn, url) { const a = document.createElement("a"); a.href = url; a.download = fn; a.click(); }
+function statePng(pixels) { const w = W(), h = H(), off = document.createElement("canvas"); off.width = w; off.height = h; const o = off.getContext("2d"); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = pixels[y*w+x]; if (c) { o.fillStyle = c; o.fillRect(x,y,1,1); } } return off; }
+$("savePng").onclick = () => download(sprite.name + "_" + sprite.states[cur].name + ".png", statePng(px()).toDataURL("image/png"));
+$("saveSheet").onclick = () => {
+  const w = W(), h = H(), n = sprite.states.length;
+  const off = document.createElement("canvas"); off.width = w * n; off.height = h; const o = off.getContext("2d");
+  sprite.states.forEach((s, i) => o.drawImage(statePng(s.pixels), i * w, 0));
+  download(sprite.name + "_sheet.png", off.toDataURL("image/png"));
+};
+$("saveJson").onclick = () => { const blob = new Blob([JSON.stringify(bitmap())], { type: "application/json" }); download(sprite.name + ".json", URL.createObjectURL(blob)); };
+
+// --- library ---
+const LS_KEY = "exo.sprites";
+const loadLib = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
+const saveLibStore = (o) => localStorage.setItem(LS_KEY, JSON.stringify(o));
+
+function asciiToBitmap(s) {
+  const w = s.tileW * TILE, h = s.tileH * TILE;
+  const states = Object.keys(s.states).map((sn) => {
+    const rows = s.states[sn], p = new Array(w * h).fill(null);
+    for (let y = 0; y < h; y++) { const row = rows[y] || ""; for (let x = 0; x < w; x++) { const ch = row[x] || "."; if (ch !== "." && s.palette[ch]) p[y*w+x] = s.palette[ch]; } }
+    return { name: sn, pixels: p };
+  });
+  return { name: s.name, tileW: s.tileW, tileH: s.tileH, w, h, states };
+}
+function builtinBitmaps() { const out = {}; (window.SPRITES || []).forEach((s) => out[s.name] = asciiToBitmap(s)); return out; }
+function refreshLibrary() {
+  const sel = $("library"); sel.innerHTML = '<option value="">— pick —</option>';
+  const built = builtinBitmaps();
+  const g1 = document.createElement("optgroup"); g1.label = "Built-in (first pass)"; sel.appendChild(g1);
+  Object.keys(built).forEach((k) => { const o = document.createElement("option"); o.value = "built:" + k; o.textContent = k; g1.appendChild(o); });
+  const saved = loadLib(), keys = Object.keys(saved);
+  if (keys.length) { const g2 = document.createElement("optgroup"); g2.label = "Saved"; sel.appendChild(g2); keys.forEach((k) => { const o = document.createElement("option"); o.value = "saved:" + k; o.textContent = k; g2.appendChild(o); }); }
+}
+function loadBitmap(bm) {
+  // tolerate single-state {pixels} JSON
+  const states = bm.states || [{ name: "default", pixels: bm.pixels }];
+  sprite = { name: bm.name, tileW: bm.tileW, tileH: bm.tileH, states: states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) };
+  cur = 0; $("name").value = sprite.name; $("tw").value = sprite.tileW; $("th").value = sprite.tileH; render();
+}
+$("loadBtn").onclick = () => { const v = $("library").value; if (!v) return; const [g, k] = v.split(/:(.+)/); const bm = g === "built" ? builtinBitmaps()[k] : loadLib()[k]; if (bm) loadBitmap(bm); };
+$("saveLib").onclick = () => { const o = loadLib(); const bm = bitmap(); o[bm.name] = bm; saveLibStore(o); refreshLibrary(); alert("Saved “" + bm.name + "” to library."); };
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { loadBitmap(JSON.parse(r.result)); } catch { alert("Bad JSON"); } }; r.readAsText(f); };
+
+updateColor(); renderSwatches(); refreshLibrary(); render();
+</script>
+</body>
+</html>
