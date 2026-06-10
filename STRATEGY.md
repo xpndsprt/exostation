@@ -114,7 +114,7 @@ The station now needs a working population.
 Food is a two-step, **power-driven** loop that runs entirely inside the station:
 - A **Bio Vat** grows **food base (biomass)** from power alone — **+3 biomass every 8s** while powered (the 🌱 chip).
 - A **Rations Synth** converts **2 biomass → 4 meals every 10s** (the 🍱 chip); crew eat meals.
-- The station seeds a little biomass so the synth works before your first vat.
+- The station starts with a **generous biomass reserve (300)**, so a Rations Synth alone feeds your crew for a long while — build **Bio Vats** later, before that reserve runs low, to make food production self-sustaining.
 - **Takeaway:** build **at least one Bio Vat per Rations Synth**. If meals stall, check both are powered (mid-priority — a brownout can shed them) and add more vats.
 
 ---
