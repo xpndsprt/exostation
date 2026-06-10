@@ -9,6 +9,7 @@ const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
   drenn: "#e8c349",
   thol: "#d98a3a",
+  vryl: "#8fd14f",
 };
 
 interface PaletteEntry {
@@ -37,6 +38,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "tradehub", label: "Trade Hub", key: "M" },
   { t: "human", label: "Human", key: "H", group: "Crew" },
   { t: "thol", label: "Thol", key: "T" },
+  { t: "vryl", label: "Vry'l", key: "V" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -63,6 +65,7 @@ export interface UIHandlers {
   onLoad: () => void;
   onDeconstruct: (id: number) => void;
   onToggle: (id: number) => void;
+  onRecipe: (id: number) => void;
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
 }
@@ -267,8 +270,8 @@ export function updateHud(world: World): void {
       ) +
       chip("👥", `${alive}${guests ? ` <span class="muted">(${guests}g)</span>` : ""}${dead ? `, ${dead}✕` : ""}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
-      chip("🍱", `${st.meals}`) +
-      chip("🌱", `${Math.floor(st.biomass)}`) +
+      chip("🍱", `${st.meals.rations}/${st.meals.fungal}`) +
+      chip("🌱", `${Math.floor(st.biomass)}/${Math.floor(st.spores)}`) +
       chip("⛏", `${Math.floor(st.minerals)}`) +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
@@ -455,10 +458,17 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       if (s.servicedBy >= 0) html += `<div class="row"><span></span><b style="color:#6ea8ff">being serviced</b></div>`;
     }
     if (s.kind === "pod") html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
-    else if (s.kind === "synth") html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
+    else if (s.kind === "synth") {
+      html += `<div class="row"><span>Recipe</span><b>${s.recipe === "fungal" ? "Fungal Mash" : "Std Rations"}</b></div>`;
+      html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
+    } else if (s.kind === "vat") {
+      html += `<div class="row"><span>Grows</span><b>${s.recipe === "spores" ? "Spores" : "Biomass"}</b></div>`;
+    }
     const toggleLabel = s.on ? "Turn off" : "Turn on";
+    const recipeBtn = s.kind === "synth" || s.kind === "vat" ? `<button data-act="recipe">Switch recipe</button>` : "";
     actions =
       `<div class="actions">` +
+      recipeBtn +
       (def.draw > 0 ? `<button data-act="toggle">${toggleLabel}</button>` : "") +
       `<button class="danger" data-act="remove">Deconstruct</button></div>`;
   } else {
@@ -475,5 +485,6 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     const id = sel.id;
     panel.querySelector('[data-act="remove"]')?.addEventListener("click", () => handlers.onDeconstruct(id));
     panel.querySelector('[data-act="toggle"]')?.addEventListener("click", () => handlers.onToggle(id));
+    panel.querySelector('[data-act="recipe"]')?.addEventListener("click", () => handlers.onRecipe(id));
   }
 }

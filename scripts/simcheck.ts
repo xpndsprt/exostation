@@ -107,11 +107,11 @@ check("M4 agent alive in air", h.alive && h.o2 === 100);
 
 // Force hunger; meals available -> should walk to synth and eat.
 h.food = 8;
-w2.stock.meals = 5;
-const mealsBefore = w2.stock.meals;
+w2.stock.meals.rations = 5;
+const mealsBefore = w2.stock.meals.rations;
 for (let i = 0; i < 25; i++) step(w2); // ~2.5s: time to reach synth (1 cell) and eat
 check("M4 agent walked to synth & ate (food restored)", h.food > 90);
-check("M4 a meal was consumed", w2.stock.meals === mealsBefore - 1);
+check("M4 a meal was consumed", w2.stock.meals.rations === mealsBefore - 1);
 
 // Force tiredness -> should claim a pod, walk there, and sleep to full.
 h.rest = 8;
@@ -200,14 +200,14 @@ recomputeRooms(w5);
 addAgent(w5, 3, 3); // resident (stay = Infinity)
 addAgent(w5, 4, 3, "drenn", true); // guest (finite stay)
 w5.credits = 123;
-w5.stock.meals = 7;
+w5.stock.meals.rations = 7;
 
 check("M7 save succeeds", saveWorld(w5));
 const w6 = loadWorld();
 check("M7 load returns a world", !!w6);
 if (w6) {
   check("M7 credits preserved", w6.credits === 123);
-  check("M7 meals preserved", w6.stock.meals === 7);
+  check("M7 meals preserved", w6.stock.meals.rations === 7);
   check("M7 agent count preserved", Object.keys(w6.agents).length === 2);
   const agents = Object.values(w6.agents);
   const resident = agents.find((a) => !a.guest)!;
@@ -370,7 +370,7 @@ addStructure(wf, "solar", 42, 6); // 20 PU >= 11 draw
 addStructure(wf, "vat", 41, 7);
 addStructure(wf, "synth", 42, 7);
 wf.stock.biomass = 0;
-wf.stock.meals = 0;
+wf.stock.meals.rations = 0;
 wf.stock.minerals = 0;
 let bioGrew = false;
 for (let i = 0; i < 300; i++) {
@@ -378,7 +378,7 @@ for (let i = 0; i < 300; i++) {
   if (wf.stock.biomass > 0) bioGrew = true;
 }
 check("Vat grows biomass from power", bioGrew);
-check("Synth turns biomass into meals", wf.stock.meals > 0);
+check("Synth turns biomass into meals", wf.stock.meals.rations > 0);
 check("No mining means minerals stay 0", wf.stock.minerals === 0);
 
 // --- Solar panels: wall-mounted, 3 tiles normal to a space-facing wall ---
@@ -644,10 +644,44 @@ addStructure(wv, "o2gen", 8, 6);
 addStructure(wv, "synth", 11, 7); // synth across the door in hostile air
 addAgent(wv, 6, 7, "human");
 const hv = Object.values(wv.agents)[0];
-hv.food = 10; wv.stock.meals = 5;
+hv.food = 10; wv.stock.meals.rations = 5;
 let ate = false;
 for (let i = 0; i < 200; i++) { step(wv); if (hv.food > 90) ate = true; }
 check("Crew venture (suited) into hostile air for a quick task and survive", ate && hv.alive);
+
+// --- M20: Vry'l + Fungal Mash via selectable Vat/Synth recipes ---
+const w20 = createWorld();
+carve(w20, 5, 5, 11, 9);
+recomputeRooms(w20);
+addStructure(w20, "solar", 6, 6);
+addStructure(w20, "solar", 7, 6);
+addStructure(w20, "o2gen", 6, 8);
+addStructure(w20, "vat", 8, 8);
+addStructure(w20, "synth", 8, 6);
+const vat = Object.values(w20.structures).find((s) => s.kind === "vat")!;
+const syn = Object.values(w20.structures).find((s) => s.kind === "synth")!;
+vat.recipe = "spores";
+syn.recipe = "fungal";
+w20.stock.biomass = 0;
+w20.stock.spores = 0;
+let sawSpores = false;
+for (let i = 0; i < 400; i++) {
+  step(w20);
+  if (w20.stock.spores > 0) sawSpores = true;
+}
+check("Vat (spores) grows spores", sawSpores);
+check("Synth (fungal) produces Fungal Mash", w20.stock.meals.fungal > 0);
+
+addAgent(w20, 9, 7, "vryl");
+addAgent(w20, 10, 7, "human");
+const vry = Object.values(w20.agents).find((a) => a.species === "vryl")!;
+const hum = Object.values(w20.agents).find((a) => a.species === "human")!;
+vry.food = 10;
+hum.food = 10;
+w20.stock.meals.rations = 0; // only fungal available
+for (let i = 0; i < 80; i++) step(w20);
+check("Vry'l eat Fungal Mash", vry.food > 80);
+check("Humans won't eat Fungal Mash (no rations)", hum.food < 60);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

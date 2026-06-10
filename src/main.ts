@@ -164,6 +164,13 @@ async function boot(): Promise<void> {
       if (s) s.on = !s.on;
       needRedraw = true;
     },
+    onRecipe: (id) => {
+      const s = world.structures[id];
+      if (!s) return;
+      if (s.kind === "synth") s.recipe = s.recipe === "fungal" ? "rations" : "fungal";
+      else if (s.kind === "vat") s.recipe = s.recipe === "spores" ? "biomass" : "spores";
+      needRedraw = true;
+    },
     onOverlay: (m) => {
       overlay = m;
       needRedraw = true;
@@ -195,6 +202,11 @@ async function boot(): Promise<void> {
     }
     if (tool === "thol") {
       addAgent(world, tx, ty, "thol");
+      needRedraw = true;
+      return;
+    }
+    if (tool === "vryl") {
+      addAgent(world, tx, ty, "vryl");
       needRedraw = true;
       return;
     }
@@ -446,13 +458,11 @@ async function boot(): Promise<void> {
         break;
       }
     }
-    if (world.stock.meals === 0) {
-      for (const id in world.agents) {
-        const a = world.agents[id];
-        if (a.alive && a.food < 30) {
-          pushAlert("Crew are hungry and there are no meals.", "warn");
-          break;
-        }
+    for (const id in world.agents) {
+      const a = world.agents[id];
+      if (a.alive && a.food < 30 && world.stock.meals[SPECIES[a.species].diet] === 0) {
+        pushAlert("Crew are hungry — no meals of their food type.", "warn");
+        break;
       }
     }
   };

@@ -16,7 +16,9 @@ export type StructureKind =
   | "hotel"
   | "tradehub";
 
-export type Species = "human" | "drenn" | "thol";
+export type Species = "human" | "drenn" | "thol" | "vryl";
+
+export type FoodLine = "rations" | "fungal";
 
 export type GasKind = "o2" | "ch4";
 
@@ -33,7 +35,8 @@ export type Tool =
   | "select"
   | StructureKind
   | "human"
-  | "thol";
+  | "thol"
+  | "vryl";
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
@@ -67,6 +70,7 @@ export interface Structure {
   timer: number; // production progress (synth)
   condition: number; // 0..100 upkeep; machinery wears down and breaks at 0
   servicedBy: number; // crew currently servicing this; -1 if none
+  recipe: string; // synth: food line ("rations"/"fungal"); vat: base ("biomass"/"spores")
 }
 
 export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax";
@@ -100,8 +104,9 @@ export interface Agent {
 
 export interface Stock {
   minerals: number; // mined from asteroids
-  biomass: number; // grown on-station in Vats; feedstock for the synth
-  meals: number; // synthesized from biomass; eaten by crew
+  biomass: number; // grown in Vats; feedstock for Rations
+  spores: number; // grown in Vats; feedstock for Fungal Mash
+  meals: Record<FoodLine, number>; // synthesized food, per line; eaten by crew
 }
 
 export type DroneState = "docked" | "outbound" | "mining" | "inbound";

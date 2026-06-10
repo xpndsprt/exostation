@@ -40,8 +40,10 @@ export function advise(world: World): Advice[] {
     out.push({ sev: "critical", text: "Skirmish in progress — separate hostile species and raise morale." });
   if (agents.some((a) => a.o2 < 40 || (a.suit < 25 && !isNative(world, a.cell, a.species))))
     out.push({ sev: "critical", text: "Crew are losing air — fix power/atmosphere or get them to their gas." });
-  if (world.stock.meals === 0 && agents.some((a) => a.food < 35))
-    out.push({ sev: "critical", text: "Out of meals — crew are going hungry." });
+  if (agents.some((a) => a.food < 35 && world.stock.meals[SPECIES[a.species].diet] === 0))
+    out.push({ sev: "critical", text: "Crew are starving — no meals of their food type." });
+  if (agents.some((a) => a.alive && a.species === "vryl") && world.stock.meals.fungal === 0)
+    out.push({ sev: "warn", text: "Vry'l eat Fungal Mash — set a Bio Vat to Spores and a Synth to Fungal." });
   if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))
     out.push({ sev: "critical", text: "A module has broken down — crew (residents) must repair it." });
 

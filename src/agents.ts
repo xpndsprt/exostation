@@ -120,8 +120,9 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
   if (a.task) {
     if (a.cell === a.task.target) {
       if (a.task.type === "eat") {
-        if (w.stock.meals > 0) {
-          w.stock.meals -= 1;
+        const line = SPECIES[a.species].diet;
+        if (w.stock.meals[line] > 0) {
+          w.stock.meals[line] -= 1;
           a.food = 100;
         }
         a.task = null;
@@ -161,7 +162,7 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       return;
     }
   }
-  if (a.food < FOOD_LOW && w.stock.meals > 0) {
+  if (a.food < FOOD_LOW && w.stock.meals[SPECIES[a.species].diet] > 0) {
     const synth = nearestReachable(w, a, a.cell, "synth", true); // eating is quick — may venture
     if (synth) {
       a.task = { type: "eat", target: synth.cell };

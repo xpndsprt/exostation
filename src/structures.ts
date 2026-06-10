@@ -40,7 +40,7 @@ export function costOf(tool: string): number {
   return TILE_COST[tool] ?? 0;
 }
 
-// Bio Vats grow food base (biomass) from power alone.
-export const VAT = { time: 8, biomass: 3 } as const;
-// Rations synth converts biomass into meals.
-export const SYNTH = { time: 10, biomass: 2, meals: 4 } as const;
+// Bio Vats grow a base resource from power (recipe: biomass or spores).
+export const VAT = { time: 8, amount: 3 } as const;
+// Synth converts a base resource into a food line (recipe: rations or fungal).
+export const SYNTH = { time: 10, input: 2, meals: 4 } as const;

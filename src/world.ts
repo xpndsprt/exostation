@@ -22,7 +22,7 @@ export function createWorld(): World {
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Generous starting biomass so the synth feeds crew for a long while — the
     // player needn't spend on Bio Vats right at the start.
-    stock: { minerals: 0, biomass: 300, meals: 0 },
+    stock: { minerals: 0, biomass: 300, spores: 0, meals: { rations: 0, fungal: 0 } },
     credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
     seen: [],
@@ -33,6 +33,9 @@ export function createWorld(): World {
 }
 
 export const idx = (w: World, x: number, y: number): number => y * w.w + x;
+
+export const defaultRecipe = (kind: StructureKind): string =>
+  kind === "vat" ? "biomass" : kind === "synth" ? "rations" : "";
 
 export const inBounds = (w: World, x: number, y: number): boolean =>
   x >= 0 && y >= 0 && x < w.w && y < w.h;
@@ -66,6 +69,7 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
     timer: 0,
     condition: 100,
     servicedBy: -1,
+    recipe: defaultRecipe(kind),
   };
   w.structures[id] = s;
   c.structureId = id;
@@ -94,6 +98,7 @@ export function addStructureMulti(w: World, kind: StructureKind, cells: number[]
     timer: 0,
     condition: 100,
     servicedBy: -1,
+    recipe: defaultRecipe(kind),
   };
   w.structures[id] = s;
   for (const c of cells) w.cells[c].structureId = id;
@@ -184,6 +189,7 @@ export function addDock(w: World, x: number, y: number): boolean {
     timer: 0,
     condition: 100,
     servicedBy: -1,
+    recipe: "",
   };
   w.cells[i].structureId = id;
   return true;

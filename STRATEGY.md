@@ -110,10 +110,11 @@ The station now needs a working population.
 - **Hover any module** to see its **Condition** on the rollover tooltip (and full details via the Select tool).
 - **Takeaway:** every machine you add is also upkeep. Grow your resident crew alongside your station, or things start breaking down.
 
-## 6 · Food production — grown on-station
-Food is a two-step, **power-driven** loop that runs entirely inside the station:
-- A **Bio Vat** grows **food base (biomass)** from power alone — **+3 biomass every 8s** while powered (the 🌱 chip).
-- A **Rations Synth** converts **2 biomass → 4 meals every 10s** (the 🍱 chip); crew eat meals.
+## 6 · Food production — grown on-station, two food lines
+Food is a two-step, **power-driven** loop, and modules have **selectable recipes** (Select → Switch recipe):
+- A **Bio Vat** grows a base resource from power — **Biomass** (default) or **Spores** — **+3 every 8s** (🌱 shows biomass/spores).
+- A **Rations Synth** converts a base into a food line — **Rations** (from biomass) or **Fungal Mash** (from spores) — **2 → 4 meals every 10s** (🍱 shows rations/fungal).
+- **Each species eats its own line:** Humans/Drenn/Thol eat **Rations**; **Vry'l eat Fungal Mash**. To host Vry'l, set a Vat to **Spores** and a Synth to **Fungal**.
 - The station starts with a **generous biomass reserve (300)**, so a Rations Synth alone feeds your crew for a long while — build **Bio Vats** later, before that reserve runs low, to make food production self-sustaining.
 - **Takeaway:** build **at least one Bio Vat per Rations Synth**. If meals stall, check both are powered (mid-priority — a brownout can shed them) and add more vats.
 
@@ -138,11 +139,12 @@ Food is a two-step, **power-driven** loop that runs entirely inside the station:
 ## 9 · The species (who you're hosting)
 | Species | Breathes | Likes / Dislikes | Combat power | Notes |
 |---------|----------|------------------|:-----------:|-------|
-| **Human** | O₂ | likes Drenn · **dislikes Thol** | 20 | Your starting crew. |
-| **Drenn** | O₂ | likes everyone | 18 | Easy guests; share air & food with humans. |
-| **Thol** | **CH₄ (methane)** | likes Drenn · neutral to humans | **35** | Need a sealed methane wing; strong in a fight. |
+| **Human** | O₂ | likes Drenn · **dislikes Thol** | 20 | Rations diet. Your starting crew. |
+| **Drenn** | O₂ | likes everyone | 18 | Rations diet. Easy guests; share air & food with humans. |
+| **Thol** | **CH₄ (methane)** | likes Drenn · neutral to humans | **35** | Rations diet, but need a sealed methane wing; strong in a fight. |
+| **Vry'l** | O₂ | likes Drenn · neutral to others | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
 
-Humans and Drenn co-house freely (same gas). **Thol must be kept in their own methane wing** — and humans resent them, which matters next.
+Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them, which matters next.
 
 ---
 
