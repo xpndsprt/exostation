@@ -264,6 +264,26 @@
     "................................",
   ];
 
+  // Docking Port — a hull airlock hatch (1x1) with hazard corners + ring
+  const DOCK = [
+    "kkkkkkkkkkkkkkkk",
+    "kbbyybbbbbbyybLk",
+    "kbbyybbbbbbyybLk",
+    "kbbbbbaaaabbbbbk",
+    "kbbbbaaaaaabbbbk",
+    "kbbbaakhhkaabbbk",
+    "kbbbahhhhhhabbbk",
+    "kbbbahhhhhhabbbk",
+    "kbbbahhhhhhabbbk",
+    "kbbbaakhhkaabbbk",
+    "kbbbbaaaaaabbbbk",
+    "kbbbbbaaaabbbbbk",
+    "kbbyybbbbbbyybbk",
+    "kbbyybbbbbbyybbk",
+    "kbbbbbbbbbbbbbbk",
+    "kkkkkkkkkkkkkkkk",
+  ];
+
   // Hotel Room — a made bed with pillow, headboard and a bedside lamp
   const HOTEL = [
     "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk...",
@@ -382,6 +402,11 @@
       name: "hotel", tileW: 2, tileH: 1,
       palette: { k: "#11151c", b: "#9b6caf", h: "#c99bd5", w: "#f0dcf5", p: "#e8c349", q: "#caa6da", g: "#c0b0cc", y: "#ffe9a8" },
       states: { default: HOTEL },
+    },
+    {
+      name: "dock", tileW: 1, tileH: 1,
+      palette: { k: "#11151c", b: "#2a4a78", h: "#3a5f9a", a: "#7fb0e8", y: "#e8c349", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: DOCK, disabled: off(DOCK) },
     },
 
     /* ---------- habitation (1x1) ---------- */
