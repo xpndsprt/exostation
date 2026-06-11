@@ -160,6 +160,14 @@ Each species (except generalist Humans) brings a **bonus**, so a mixed station o
 - **Human — Generalist:** no bonus, no penalty.
 Traits show in the **Alienpedia** (⭐ line). The catch is always the cost: Thol need a methane wing, Vry'l need a fungal food chain — weigh the bonus against the infrastructure.
 
+### Reputation & requests (M23) — keep each species happy with you
+Every species you've hosted holds a **reputation** of your station (0–100, starts at **50**), shown as a bar in the **Alienpedia**. It rises and falls through **requests** — short goals each species posts in the **📋 REQUESTS** panel (top-right):
+- **Host *N* of us aboard** — have at least N of that species on the station.
+- **Keep us content** — get that species' average mood to **≥ 60**.
+- **Build us a Lounge** — have a Lounge (rec module) somewhere on the station.
+Each request shows its **reward (credits)**, **rep gain**, and a **countdown** (you have **120 s**). Fulfil it in time → credits + reputation. Let it **expire** → you lose reputation with that species. Up to **2** are active at once, a new one every **~50 s**.
+- **Why it matters:** Drenn reputation drives **how often guests arrive** — high Drenn rep means a busier, more profitable hotel; low rep slows arrivals. Build reputation early with the cheap "host"/"Lounge" requests.
+
 ---
 
 ## 10 · The political web (M10) — mood from neighbors
@@ -222,6 +230,7 @@ This is the failure state the whole game is designed around.
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
+| Reputation | per-species 0–100, starts 50; requests give +10–15 / expiry −6–10; ≤2 active, new ~every 50s, 120s to fulfil; Drenn rep scales guest arrival rate |
 | Skirmish | tension rises when mood <30 near a disliked species; fights at 100 |
 
 *Build for everyone's needs, and the politics take care of themselves.*

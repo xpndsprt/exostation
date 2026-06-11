@@ -94,6 +94,13 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 - **Collateral = winner TL × intensity:** high-TL combatants damage modules, and have a chance to **breach atmosphere** → cascading cross-contamination disaster (the real catastrophe — a Tier 3 feud can vent a whole wing).
 - **Security** (guards/turrets/riot response) adds defensive Combat Power and a chance to suppress before casualties.
 
+## Reputation & requests (M23)
+- Each **seen species** holds a station **Reputation** 0–100, initialized at **50**.
+- Species post **requests** (goals): *host N aboard*, *keep us content (avg mood ≥60)*, or *build a Lounge*.
+- **≤2 active** at once; a new one every **~50 s**; each has **120 s** to fulfil.
+- Fulfil → **+credits** (host 150×N, content 200, lounge 120) and **+rep** (12 / 15 / 10). Expire → **−rep** (8 / 10 / 6).
+- **Drenn reputation scales guest arrival rate**: interval × clamp(1 + (50 − repDrenn)/100, 0.5, 1.5) — high rep ⇒ guests arrive up to 2× faster, low rep ⇒ up to 2× slower.
+
 ## Security
 | Tier | Adds | Cost ¢ |
 |------|------|:------:|

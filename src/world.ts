@@ -25,6 +25,9 @@ export function createWorld(): World {
     stock: { minerals: 0, biomass: 300, spores: 0, meals: { rations: 0, fungal: 0 } },
     credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
+    reputation: {},
+    requests: [],
+    reqTimer: 0,
     seen: [],
     tick: 0,
     speed: 1,

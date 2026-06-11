@@ -4,6 +4,7 @@ import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
 import { RELATIONS } from "./relations";
 import { advise } from "./advisor";
+import { getRep, requestText } from "./requests";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -340,6 +341,27 @@ export function hideTooltip(): void {
 
 const GAS_LABEL: Record<string, string> = { o2: "Oxygen", ch4: "Methane" };
 
+// Active species requests (goals).
+export function renderRequests(world: World): void {
+  const el = document.getElementById("requests");
+  if (!el) return;
+  if (world.requests.length === 0) {
+    el.innerHTML = `<h3>📋 REQUESTS</h3><div class="empty">No active requests.</div>`;
+    return;
+  }
+  const rows = world.requests
+    .map((r) => {
+      const pct = Math.max(0, Math.min(100, (r.t / 120) * 100));
+      return (
+        `<div class="req"><span class="txt">${requestText(r)}</span>` +
+        `<span class="meta">reward ¢${r.reward} · +${r.rep} rep · ${Math.ceil(r.t)}s left</span>` +
+        `<span class="tbar"><i style="width:${pct}%"></i></span></div>`
+      );
+    })
+    .join("");
+  el.innerHTML = `<h3>📋 REQUESTS</h3>${rows}`;
+}
+
 // Alienpedia: a reference card for every species that has visited the station.
 export function renderAlienpedia(world: World): void {
   const el = document.getElementById("alienpedia");
@@ -369,9 +391,11 @@ export function renderAlienpedia(world: World): void {
           .filter(Boolean)
           .join(" · ") || "neutral to all";
       const here = present[s] || 0;
+      const rep = Math.round(getRep(world, s));
       return (
         `<div class="ent"><div class="hd"><span class="d" style="background:${SP_COLOR[s]}"></span>${d.label}` +
         `<span class="role">${d.role}${here ? ` · ${here} aboard` : ""}</span></div>` +
+        `<div class="stat">Reputation <b>${rep}</b><span class="rep"><i style="width:${rep}%"></i></span></div>` +
         `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${d.diet}</b> · Power <b>${d.power}</b></div>` +
         `<div class="stat">${rel}</div>` +
         `<div class="stat" style="color:#9fd8a0">⭐ ${d.trait}</div>` +

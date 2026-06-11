@@ -41,6 +41,9 @@ export function loadWorld(): World | null {
     if (!Array.isArray(w.seen)) w.seen = []; // older saves
     if (!Array.isArray(w.ships)) w.ships = [];
     if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
+    if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
+    if (!Array.isArray(w.requests)) w.requests = [];
+    if (typeof w.reqTimer !== "number") w.reqTimer = 0;
     // stock shape: add spores, convert meals (number) -> per-line map
     const st = w.stock as unknown as { spores?: number; meals: unknown };
     if (typeof st.spores !== "number") st.spores = 0;

@@ -12,6 +12,7 @@ import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
+import { requestsSystem } from "./requests";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
@@ -23,6 +24,7 @@ import {
   updateInfo,
   renderAdvisor,
   renderAlienpedia,
+  renderRequests,
   pushAlert,
   showTooltip,
   hideTooltip,
@@ -53,6 +55,7 @@ function simStep(world: World, dt: number): void {
   moodSystem(world, dt);
   combatSystem(world, dt);
   economySystem(world, dt);
+  requestsSystem(world, dt);
   world.tick++;
 }
 
@@ -497,6 +500,7 @@ async function boot(): Promise<void> {
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);
+      renderRequests(world);
       renderAlienpedia(world);
       renderAdvisor(world);
       needRedraw = false;

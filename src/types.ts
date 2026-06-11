@@ -132,6 +132,19 @@ export interface Ship {
   trader?: boolean; // a trade ship (buys minerals) vs a guest shuttle
 }
 
+export type RequestKind = "host" | "happy" | "amenity";
+
+export interface StationRequest {
+  id: number;
+  species: Species;
+  kind: RequestKind;
+  target: number;
+  t: number; // seconds remaining before it expires
+  reward: number; // credits paid on fulfilment
+  rep: number; // reputation gained on fulfilment
+  penalty: number; // reputation lost on expiry
+}
+
 export interface RoomInfo {
   enclosed: boolean;
   gas: RoomGas;
@@ -162,6 +175,9 @@ export interface World {
   stock: Stock;
   credits: number;
   tradeTimer: number; // accumulator for periodic mineral trades
+  reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
+  requests: StationRequest[]; // active species requests (goals)
+  reqTimer: number; // accumulator for spawning new requests
   seen: Species[]; // every species that has ever visited the station
 
   tick: number;

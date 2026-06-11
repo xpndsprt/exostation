@@ -14,6 +14,7 @@ import { agentSystem } from "../src/agents";
 import { moodSystem } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
+import { requestsSystem, getRep } from "../src/requests";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
@@ -45,6 +46,7 @@ function step(w: World) {
   moodSystem(w, DT);
   combatSystem(w, DT);
   economySystem(w, DT);
+  requestsSystem(w, DT);
 }
 
 let failures = 0;
@@ -474,14 +476,14 @@ check("A guest arrived through the dock", guestSeen);
 check("A ship parked at the dock", shipSeen);
 
 // --- M15: entertainment (Lounge) + recreation need ---
-const wq = createWorld();
-carve(wq, 5, 5, 9, 8);
-recomputeRooms(wq);
-addStructure(wq, "solar", 6, 6);
-addStructure(wq, "o2gen", 6, 7);
-addAgent(wq, 7, 7, "human");
-const hq = Object.values(wq.agents)[0];
-for (let i = 0; i < 50; i++) step(wq);
+const wreq = createWorld();
+carve(wreq, 5, 5, 9, 8);
+recomputeRooms(wreq);
+addStructure(wreq, "solar", 6, 6);
+addStructure(wreq, "o2gen", 6, 7);
+addAgent(wreq, 7, 7, "human");
+const hq = Object.values(wreq.agents)[0];
+for (let i = 0; i < 50; i++) step(wreq);
 check("Fun decays over time", hq.fun < 100);
 
 const wr = createWorld();
@@ -761,6 +763,29 @@ function synthMeals(twoFriends: boolean): number {
   return w.stock.meals.rations;
 }
 check("Harmonious room boosts production", synthMeals(true) > synthMeals(false));
+
+// --- M23: species requests + reputation ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 7, "human");
+  addAgent(w, 8, 7, "human");
+  w.seen = ["human"];
+  w.requests.push({ id: 9001, species: "human", kind: "host", target: 2, t: 100, reward: 150, rep: 12, penalty: 8 });
+  const cr0 = w.credits;
+  step(w); // fulfils (2 humans present)
+  check("Fulfilling a request pays credits", w.credits >= cr0 + 150);
+  check("Fulfilling a request raises reputation", getRep(w, "human") > 50);
+  check("Fulfilled request is cleared", w.requests.length === 0);
+
+  w.requests.push({ id: 9002, species: "human", kind: "host", target: 9, t: 0.05, reward: 100, rep: 10, penalty: 8 });
+  const repA = getRep(w, "human");
+  step(w); // unmet + expires
+  check("Expired request lowers reputation", getRep(w, "human") < repA);
+}
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

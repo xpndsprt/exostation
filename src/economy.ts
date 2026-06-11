@@ -1,6 +1,7 @@
 import { World } from "./types";
 import { addAgent, accessCell, exteriorCell } from "./world";
 import { TRAITS } from "./species";
+import { getRep } from "./requests";
 
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
@@ -36,12 +37,14 @@ export function economySystem(w: World, dt: number): void {
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
   }
 
-  // guest arrivals (need a free hotel room AND a powered dock)
+  // guest arrivals (need a free hotel room AND a powered dock). Drenn reputation
+  // shortens the interval — well-liked stations get more visitors.
+  const interval = SPAWN_INTERVAL * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;
-    if (dock.timer >= SPAWN_INTERVAL) {
-      dock.timer -= SPAWN_INTERVAL;
+    if (dock.timer >= interval) {
+      dock.timer -= interval;
       if (guests < hotels) {
         const access = accessCell(w, dock);
         if (access < 0) continue;
