@@ -1,6 +1,6 @@
 # EXOSTATION — Strategy Guide
 
-> A complete guide to every mechanic in the current build (milestones M0–M11), ordered by **importance** and by **when you first meet it**. All numbers are the live first-pass values and may be tuned.
+> A complete guide to every mechanic in the current build (milestones M0–M23), ordered by **importance** and by **when you first meet it**. All numbers are the live first-pass values and may be tuned.
 
 ## The one thing to understand first
 **Station architecture *is* politics.** You never directly command anyone. You build the environment — rooms, power, atmospheres, food, neighbors — and the crew act on their own needs. Build a station that serves everyone and they collaborate; build a bad one and mood collapses, tension rises, and it ends in skirmishes and vented rooms.
@@ -57,7 +57,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 ## 3 · Power (M2) — nothing runs without it
 - **Solar Panel** generates **+10 PU** (power units). It mounts on the **outside of a space-facing wall** and extends **3 tiles out into space** (normal to the wall) — so build your hull first, then line panels along its exterior. The ghost shows the 3-tile footprint and turns red if there's no wall to anchor to or no room to extend. **Battery Bank** stores **50 PU** of surplus for later.
-- Consumers draw power: **O₂ Generator −6**, **Methane Gen −9**, **Rations Synth −5**, **Bot Bay −4**, **Docking Port −5**, **Sleeping Pod −1**.
+- Consumers draw power: **O₂ Generator −6**, **Methane Gen −9**, **Bio Vat −6**, **Rations Synth −5**, **Docking Port −5**, **Trade Hub −5**, **Bot Bay −4**, **Lounge −4**, **Hotel Room −2**, **Crew Quarters −1**.
 - The network is **station-wide**: `net = supply − draw`. Surplus charges the battery; deficit drains it.
 - When the battery is empty and draw still exceeds supply → **BROWNOUT** (red banner). Modules are **shed by priority, life support last**: pods/docks/bays go dark before generators.
 - **Takeaway:** always keep solar above your total draw, and add batteries so a momentary spike (or the dark side of an orbit, later) doesn't kill life support. Use the **Power overlay** to spot anything unpowered.
@@ -76,7 +76,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 ### Space suits (limited venturing)
 Every species can briefly cross hostile zones — a suit dons automatically.
-- Off native air, the **suit reserve drains (~20%/s → about 5 seconds)** while keeping breath topped up. That's roughly **20 tiles of travel** — enough to cross a wing or a vented corridor.
+- Off native air, the **suit reserve drains ~14%/s** while keeping breath topped up — a full charge lasts **~7 seconds (about 28 tiles of travel)**. Crew turn back for their own air at ~30% reserve, so plan a practical one-way reach of ~20 tiles.
 - When the suit hits 0, **breath then drops ~8%/s and they die at 0** (~12.5s more).
 - Back in native air the **suit recharges fast (~40%/s)**. A suited crew member shows a **light-blue ring**.
 - **Implication:** doors + suits let you run one shared corridor past several differently-gassed wings; just keep the hostile stretch short enough that nobody's suit empties before they reach their own air.
@@ -218,14 +218,14 @@ This is the failure state the whole game is designed around.
 | Sim tick | 10 steps/s at 1× |
 | Doors | walkable but block gas (airlock); connect wings without mixing atmospheres |
 | Breath | suit protects first; once suit empty, −8%/s in wrong air; +15%/s in right air; death at 0 |
-| Space suit | drains ~20%/s off native air (~5s ≈ 20 tiles), recharges ~40%/s in native air |
+| Space suit | drains ~14%/s off native air (full ≈ 7s ≈ 28 tiles; turn back at ~30%), recharges ~40%/s in native air |
 | Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
-| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Bay 4 / Dock 5 / Pod 1 |
+| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Hotel 2 / Crew Quarters 1 |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
-| Footprints | battery/quarters/hotel-bed 1×1, synth 2×1, generators/vat/bay/lounge 2×2, solar 1×3 (wall) |
+| Footprints | battery/quarters 1×1, synth/hotel 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
 | Guests | arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
