@@ -29,8 +29,9 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
-- **Door**, modules, and crew place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth 2×1, quarters/batteries 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor.
-- **Everything costs credits.** Each build button shows its price (¢); the ghost turns red and the cursor blocks if you can't afford it. You start with **¢1000**. **Deconstructing** a module (Select → Deconstruct) refunds **50%**. Full price list: [`COSTS.md`](COSTS.md). Crew are free to add.
+- **Door** and modules place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth/hotel 2×1, quarters/batteries 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor.
+- **You don't place crew.** There is no "add a Human" tool — residents **immigrate by shuttle** once their living conditions are ready (see *Crew* below). You only ever build the *environment*.
+- **Everything costs credits.** Each build button shows its price (¢); the ghost turns red and the cursor blocks if you can't afford it. You start with **¢1000**. **Deconstructing** a module (Select → Deconstruct) refunds **50%**. Full price list: [`COSTS.md`](COSTS.md).
 
 **Inspecting**
 - **Hover** anything for a quick tooltip (no click).
@@ -84,6 +85,16 @@ Every species can briefly cross hostile zones — a suit dons automatically.
 ---
 
 ## 5 · Crew & needs (M3–M4) — keeping people alive and functional
+
+### How crew arrive (you don't place them)
+Residents **immigrate by shuttle through a Docking Port** — you never hand-place a species. A new crew member arrives only when **all four** of these are true:
+1. A **powered Docking Port** (the airlock the shuttle uses).
+2. A **free Crew Quarters** — each bunk is room for exactly one resident, so **Crew Quarters are your crew capacity** (the way Hotel Rooms are your guest capacity).
+3. A bunk sitting in **breathable air for that species** (an O₂ room for Humans/Vry'l, a CH₄ room for Thol).
+4. **Food they can eat is in stock** (Rations for Humans/Thol, Fungal Mash for Vry'l) — so power a Synth first; the shuttle waits until meals are ready.
+
+A shuttle then drops one resident roughly every **12s** while a bunk is free. **Build another Crew Quarters and a new resident shows up** to fill it. When more than one species qualifies (e.g. you run both an O₂ + Rations chain and an O₂ + Fungal chain), the station favors **whoever has the fewest aboard**, nudging you toward a diverse crew. *Drenn never reside — they only visit as guests (see §8).*
+
 Each crew member tracks four meters (see them in the info panel; a mood dot floats over their head):
 - **O₂ / breath** — from atmosphere (above).
 - **Food** — decays ~**1.5%/s**; when **< 40** they path to a **Rations Synth** and eat a meal (refills to full).
@@ -130,7 +141,8 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 ## 8 · Guests, trade & economy — the hotel and the market
 - A **Docking Port** is a **hull airlock**: place it **on a wall that faces space** (interior floor one side, open space the other). The ghost goes red anywhere that isn't a valid hull wall.
-- **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). A grey **shuttle** parks outside on arrival. Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work).
+- **Two kinds of arrival share the dock:** **resident crew** (gated by **Crew Quarters**, see §5) and **paying guests** (gated by **Hotel Rooms**). Both ride a grey **shuttle** that parks outside on arrival.
+- **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work). Higher **Drenn reputation** makes them arrive more often.
 - **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: mine asteroids → minerals → Trade Hub → credits.
 - **Takeaway:** Hotel Rooms + a dock drive lodging income; mining + a **Trade Hub** drive trade income. Spend credits to expand; deconstruct for a 50% refund.
 
@@ -139,7 +151,7 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 ## 9 · The species (who you're hosting)
 | Species | Breathes | Likes / Dislikes | Combat power | Notes |
 |---------|----------|------------------|:-----------:|-------|
-| **Human** | O₂ | likes Drenn · **dislikes Thol** | 20 | Rations diet. Your starting crew. |
+| **Human** | O₂ | likes Drenn · **dislikes Thol** | 20 | Rations diet. Your first residents — an O₂ room + Rations + a bunk + a dock brings them. |
 | **Drenn** | O₂ | likes everyone | 18 | Rations diet. Easy guests; share air & food with humans. |
 | **Thol** | **CH₄ (methane)** | likes Drenn · neutral to humans | **35** | Rations diet, but need a sealed methane wing; strong in a fight. |
 | **Vry'l** | O₂ | likes Drenn · neutral to others | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
@@ -192,13 +204,14 @@ This is the failure state the whole game is designed around.
 ## Recommended build order (a clean opening)
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
 2. **Solar Panel** ×2 along the **outside** of the hull walls (each takes 3 tiles into space) → **O₂ Generator** inside the room (air goes cyan).
-3. Add a **Human** — confirm breath holds at 100%.
-4. **Bio Vat** + **Rations Synth** + **Crew Quarters** in the room (crew can now grow food, eat & sleep).
-5. **Battery** for power headroom.
-6. **Bot Bay** near a natural **asteroid** → drone mines **minerals** (materials stockpile).
-7. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
-8. **Docking Port** on a **hull wall** (airlock to space) + **Hotel Rooms** → Drenn guests arrive by ship + lodging income; **trader ships** buy your minerals for credits.
-8. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen), **linked to the rest by a Door** so traffic flows but the gases never mix.
+3. **Rations Synth** + **Crew Quarters** in the room — the Synth turns your starting biomass into meals; the bunk is a home for one resident.
+4. **Docking Port** on a **hull wall** (airlock to space). With air + food + a bunk + a powered dock, a **shuttle brings your first Human** within ~12s. Add more Crew Quarters to grow the crew.
+5. **Bio Vat** before the starting biomass runs low, so food stays self-sustaining.
+6. **Battery** for power headroom.
+7. **Bot Bay** near a natural **asteroid** → drone mines **minerals** (materials stockpile).
+8. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
+9. **Hotel Rooms** (+ the dock you already have) → Drenn guests arrive by shuttle for lodging income; a **Trade Hub** lets **trader ships** buy your minerals for credits.
+10. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen + a bunk + Rations), **linked to the rest by a Door** so traffic flows but the gases never mix — Thol then immigrate to it.
 
 ---
 
@@ -206,8 +219,9 @@ This is the failure state the whole game is designed around.
 - **Crew suffocate.** No power → O₂ gen off, or room not sealed, or wrong/mixed gas. Fix power/seal/zoning.
 - **Brownout chain reaction.** Draw crept above supply; battery drained. Add solar/batteries; the Power overlay shows what's shedding.
 - **Starvation / stalled synth.** Out of biomass — your **Bio Vats** can't keep up (or are unpowered). Add more vats, or check power.
-- **Modules breaking down.** Machinery wore to 0 because you had too few **resident crew** to service it. Add residents (visitors don't work), or build fewer machines per crew.
-- **No guests arriving.** You have no free pods (capacity), or the dock is unpowered.
+- **Modules breaking down.** Machinery wore to 0 because you had too few **resident crew** to service it. Add **Crew Quarters** so more residents immigrate (visitors don't work), or build fewer machines per crew.
+- **No crew arriving.** Check all four gates: a **powered Docking Port**, a **free Crew Quarters**, that bunk in **their breathable air**, and **meals of their food line in stock** (power a Synth).
+- **No guests arriving.** You have no free **Hotel Room** (guest capacity), or the dock is unpowered.
 - **Skirmish vents a wing.** You crowded a disliked pair or let mood crater. Separate them, raise mood; rebuild and reseal what was vented.
 
 ---
@@ -226,7 +240,8 @@ This is the failure state the whole game is designed around.
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters 1×1, synth/hotel 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
-| Guests | arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s |
+| Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Not hand-placed |
+| Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |

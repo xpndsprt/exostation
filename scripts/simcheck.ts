@@ -787,5 +787,47 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Expired request lowers reputation", getRep(w, "human") < repA);
 }
 
+// --- M24: crew immigrate by shuttle (no hand-placing) ---
+{
+  // full station with a dock: a human should arrive on its own.
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "synth", 7, 7);
+  addStructure(w, "pod", 8, 7); // one bunk in breathable air
+  const docked = addDock(w, 9, 6); // hull-wall airlock, interior access (8,6)
+  check("Crew test: dock placed on hull wall", docked);
+  let res = 0;
+  for (let i = 0; i < 600; i++) {
+    step(w);
+    res = Object.values(w.agents).filter((a) => a.alive && !a.guest).length;
+    if (res > 0) break;
+  }
+  check("Crew arrive by shuttle when env+food+bunk+dock are ready", res >= 1);
+  const crew = Object.values(w.agents).filter((a) => a.alive && !a.guest);
+  check("Shuttled crew match the room's air + food (human)", crew.every((a) => a.species === "human"));
+  // capacity is one bunk — running longer must not exceed it
+  for (let i = 0; i < 600; i++) step(w);
+  const resCount = Object.values(w.agents).filter((a) => a.alive && !a.guest).length;
+  check("Crew count capped by Crew Quarters", resCount <= 1);
+}
+{
+  // same station but NO dock: nobody can arrive.
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "synth", 7, 7);
+  addStructure(w, "pod", 8, 7);
+  for (let i = 0; i < 600; i++) step(w);
+  const res = Object.values(w.agents).filter((a) => a.alive && !a.guest).length;
+  check("No dock ⇒ no crew arrive", res === 0);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

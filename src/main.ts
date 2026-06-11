@@ -1,6 +1,6 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
-import { createWorld, setCell, addStructureMulti, addDock, seedAsteroids, eraseAt, addAgent, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructureMulti, addDock, seedAsteroids, eraseAt, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -197,21 +197,6 @@ async function boot(): Promise<void> {
     // free actions
     if (tool === "erase") {
       eraseAt(world, tx, ty);
-      needRedraw = true;
-      return;
-    }
-    if (tool === "human") {
-      addAgent(world, tx, ty);
-      needRedraw = true;
-      return;
-    }
-    if (tool === "thol") {
-      addAgent(world, tx, ty, "thol");
-      needRedraw = true;
-      return;
-    }
-    if (tool === "vryl") {
-      addAgent(world, tx, ty, "vryl");
       needRedraw = true;
       return;
     }

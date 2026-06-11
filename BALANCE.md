@@ -94,6 +94,14 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 - **Collateral = winner TL × intensity:** high-TL combatants damage modules, and have a chance to **breach atmosphere** → cascading cross-contamination disaster (the real catastrophe — a Tier 3 feud can vent a whole wing).
 - **Security** (guards/turrets/riot response) adds defensive Combat Power and a chance to suppress before casualties.
 
+## Crew immigration (M24)
+Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.
+- **Gates (all required):** a powered Docking Port · a free Crew Quarters (capacity = pods) · a bunk located in a room of the species' gas · `stock.meals[diet] > 0`.
+- **Cadence:** one arrival per **12 s** while a slot is open; if no slot/eligible species, the timer holds at the threshold so a new resident appears within a tick of conditions becoming true.
+- **Species choice:** among eligible species (gas + food satisfied), the one with the **fewest currently aboard** is brought, nudging toward a diverse crew.
+- **Resident species:** Humans, Thol, Vry'l. **Drenn are visitors only** (hotel guests), never residents.
+- No credit cost — crew are workforce, not a purchase. Capacity growth is paid for indirectly via Crew Quarters (¢40 each).
+
 ## Reputation & requests (M23)
 - Each **seen species** holds a station **Reputation** 0–100, initialized at **50**.
 - Species post **requests** (goals): *host N aboard*, *keep us content (avg mood ≥60)*, or *build a Lounge*.

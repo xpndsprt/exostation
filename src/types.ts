@@ -26,17 +26,7 @@ export type GasKind = "o2" | "ch4";
 // lethal mix of incompatible gases.
 export type RoomGas = "none" | GasKind | "mixed";
 
-export type Tool =
-  | "floor"
-  | "wall"
-  | "door"
-  | "erase"
-  | "pan"
-  | "select"
-  | StructureKind
-  | "human"
-  | "thol"
-  | "vryl";
+export type Tool = "floor" | "wall" | "door" | "erase" | "pan" | "select" | StructureKind;
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
@@ -175,6 +165,7 @@ export interface World {
   stock: Stock;
   credits: number;
   tradeTimer: number; // accumulator for periodic mineral trades
+  crewTimer: number; // accumulator for resident-crew shuttle arrivals
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests

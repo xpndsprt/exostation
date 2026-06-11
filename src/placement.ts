@@ -99,10 +99,6 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
       return c.type !== "door";
     case "erase":
       return c.structureId >= 0 || c.type !== "space" || hasSite(w, idx(w, x, y));
-    case "human":
-    case "thol":
-    case "vryl":
-      return c.type === "floor";
     default:
       if (STRUCTURE_KINDS.has(tool)) return c.type === "floor" && c.structureId < 0;
       return false; // pan / select have no placement

@@ -1,6 +1,6 @@
-import { World } from "./types";
+import { Species, Structure, World } from "./types";
 import { addAgent, accessCell, exteriorCell } from "./world";
-import { TRAITS } from "./species";
+import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
 
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
@@ -9,6 +9,10 @@ const SHIP_TIME = 14; // seconds a ship stays parked at the dock
 const TRADE_INTERVAL = 30; // seconds between trader visits
 const TRADE_BATCH = 25; // max minerals sold per trade
 const MINERAL_PRICE = 3; // credits per mineral
+const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
+
+// Species that live aboard as resident crew (Drenn only ever visit as guests).
+const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl"];
 
 export function economySystem(w: World, dt: number): void {
   // ships depart over time
@@ -18,22 +22,36 @@ export function economySystem(w: World, dt: number): void {
   }
 
   let guests = 0;
+  let residents = 0;
   let hasDrenn = false; // Drenn merchant trait raises mineral prices
+  const resCount: Partial<Record<Species, number>> = {};
   for (const id in w.agents) {
     const a = w.agents[id];
     if (!a.alive) continue;
-    if (a.guest) guests++;
+    if (a.guest) {
+      guests++;
+    } else {
+      residents++;
+      resCount[a.species] = (resCount[a.species] || 0) + 1;
+    }
     if (a.species === "drenn") hasDrenn = true;
   }
   w.credits += guests * LODGING_RATE * dt;
 
   let hotels = 0; // guest capacity = Hotel Rooms
+  let pods = 0; // crew capacity = Crew Quarters
   let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
+  const podGases = new Set<string>(); // gases of rooms that contain a bunk
   const docks = [];
   for (const id in w.structures) {
     const s = w.structures[id];
     if (s.kind === "hotel") hotels++;
-    else if (s.kind === "dock") docks.push(s);
+    else if (s.kind === "pod") {
+      pods++;
+      const rid = w.cells[s.cell].roomId;
+      const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
+      if (gas) podGases.add(gas);
+    } else if (s.kind === "dock") docks.push(s);
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
   }
 
@@ -57,6 +75,16 @@ export function economySystem(w: World, dt: number): void {
     }
   }
 
+  // resident immigration — a shuttle brings new crew when there is a free bunk
+  // (Crew Quarters capacity), a powered dock, a bunk sitting in their breathable
+  // air, and food they can eat already stocked. One arrival per interval; if a
+  // slot opens later the shuttle comes as soon as the next interval ticks.
+  w.crewTimer += dt;
+  if (w.crewTimer >= CREW_INTERVAL) {
+    const arrived = tryCrewArrival(w, docks, residents, pods, podGases, resCount);
+    w.crewTimer = arrived ? 0 : CREW_INTERVAL; // hold ready until a slot frees
+  }
+
   // traders buy minerals — but only if you run a powered Trade Hub (your
   // trading station). A ship visibly parks at a dock if you have one.
   w.tradeTimer += dt;
@@ -73,4 +101,34 @@ export function economySystem(w: World, dt: number): void {
       }
     }
   }
+}
+
+// Returns true if a resident was brought aboard this call.
+function tryCrewArrival(
+  w: World,
+  docks: Structure[],
+  residents: number,
+  pods: number,
+  podGases: Set<string>,
+  resCount: Partial<Record<Species, number>>,
+): boolean {
+  if (residents >= pods) return false; // no free bunk
+  const dock = docks.find((d) => d.powered);
+  if (!dock) return false;
+  const access = accessCell(w, dock);
+  if (access < 0) return false;
+
+  // Who can we host right now: a bunk in their gas + food of their line stocked.
+  const eligible = RESIDENT_SPECIES.filter(
+    (sp) => podGases.has(SPECIES[sp].gas) && w.stock.meals[SPECIES[sp].diet] > 0,
+  );
+  if (eligible.length === 0) return false;
+  // Favour diversity: bring whichever eligible species has the fewest aboard.
+  eligible.sort((a, b) => (resCount[a] || 0) - (resCount[b] || 0));
+  const sp = eligible[0];
+
+  if (!addAgent(w, access % w.w, (access / w.w) | 0, sp, false)) return false;
+  const ex = exteriorCell(w, dock);
+  if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME });
+  return true;
 }

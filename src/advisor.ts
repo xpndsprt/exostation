@@ -47,24 +47,29 @@ export function advise(world: World): Advice[] {
   if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))
     out.push({ sev: "critical", text: "A module has broken down — crew (residents) must repair it." });
 
-  // crew vs upkeep: residents do the maintenance; visitors don't
+  // crew vs upkeep: residents do the maintenance; visitors don't. Crew now
+  // immigrate by shuttle, so the fix is infrastructure, not hand-placing them.
   const residents = agents.filter((a) => !a.guest).length;
   const machines = structures.filter((s) => STRUCTURES[s.kind].draw > 0).length;
   if (machines > 0 && residents === 0)
-    out.push({ sev: "warn", text: "No resident crew to maintain the station — add Humans to service modules." });
+    out.push({ sev: "warn", text: "No resident crew yet — a shuttle brings crew once you have a powered Docking Port, Crew Quarters in breathable air, and meals in stock." });
   else if (residents > 0 && machines > residents * 6)
-    out.push({ sev: "tip", text: "Lots of machinery per crew — add residents so upkeep keeps pace." });
+    out.push({ sev: "tip", text: "Lots of machinery per crew — add Crew Quarters so more residents arrive to keep upkeep pace." });
 
   // --- progression: the single next build-order gap ---
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);
+  const mealsReady = world.stock.meals.rations > 0 || world.stock.meals.fungal > 0;
   if (!sealed) out.push({ sev: "warn", text: "Seal a room: lay Floor, then enclose it with Wall." });
   else if (!has("solar")) out.push({ sev: "warn", text: "Place a Solar Panel to power the station." });
   else if (!has("o2gen")) out.push({ sev: "warn", text: "Add an O₂ Generator inside a sealed room." });
-  else if (agents.length === 0) out.push({ sev: "tip", text: "Add a Human (Crew) to start living aboard." });
-  else if (!has("vat")) out.push({ sev: "warn", text: "Build a Bio Vat to grow food base (biomass)." });
-  else if (!has("synth")) out.push({ sev: "warn", text: "Build a Rations Synth to turn biomass into meals." });
-  else if (!has("pod")) out.push({ sev: "warn", text: "Add a Sleeping Pod so crew can rest." });
-  else if (!has("dock")) out.push({ sev: "tip", text: "Build a Docking Port to attract paying Drenn guests." });
+  else if (!has("synth")) out.push({ sev: "warn", text: "Build a Rations Synth — it turns your biomass into meals." });
+  else if (!has("pod")) out.push({ sev: "warn", text: "Build Crew Quarters — each bunk is room for one resident crew member." });
+  else if (!has("dock")) out.push({ sev: "warn", text: "Build a Docking Port — a shuttle uses it to bring resident crew (and Drenn guests)." });
+  else if (residents === 0 && !mealsReady)
+    out.push({ sev: "tip", text: "Power the Rations Synth — once meals are stocked, a shuttle brings your first crew." });
+  else if (residents === 0)
+    out.push({ sev: "tip", text: "A crew shuttle is inbound — make sure the Docking Port is powered." });
+  else if (!has("vat")) out.push({ sev: "warn", text: "Build a Bio Vat to keep growing food before the starting biomass runs out." });
 
   // mining & trade (minerals economy)
   if (has("vat") && !has("bay"))
@@ -92,12 +97,17 @@ export function advise(world: World): Advice[] {
 
   // --- opportunity ---
   const pods = structures.filter((s) => s.kind === "pod").length;
+  const hotels = structures.filter((s) => s.kind === "hotel").length;
   const guests = agents.filter((a) => a.guest).length;
-  if (has("dock") && pods > 0 && guests >= pods)
-    out.push({ sev: "tip", text: "All pods occupied — add Sleeping Pods to host more guests." });
+  if (has("dock") && pods > 0 && residents >= pods)
+    out.push({ sev: "tip", text: "All Crew Quarters full — add more so the shuttle can bring extra crew." });
+  if (has("dock") && hotels > 0 && guests >= hotels)
+    out.push({ sev: "tip", text: "All Hotel Rooms occupied — add Hotel Rooms to host more paying guests." });
+  else if (has("dock") && hotels === 0 && residents > 0)
+    out.push({ sev: "tip", text: "Add Hotel Rooms to lodge paying Drenn guests for income." });
 
   if (out.length === 0)
-    out.push({ sev: "tip", text: "Station stable. Expand: more pods/guests for income, or host a new species." });
+    out.push({ sev: "tip", text: "Station stable. Expand: more Crew Quarters to grow, Hotel Rooms for income, or host a new species." });
 
   out.sort((a, b) => RANK[a.sev] - RANK[b.sev]);
   return out;
