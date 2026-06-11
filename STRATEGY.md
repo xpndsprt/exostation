@@ -78,7 +78,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 Every species can briefly cross hostile zones — a suit dons automatically.
 - Off native air, the **suit reserve drains ~14%/s** while keeping breath topped up — a full charge lasts **~7 seconds (about 28 tiles of travel)**. Crew turn back for their own air at ~30% reserve, so plan a practical one-way reach of ~20 tiles.
 - When the suit hits 0, **breath then drops ~8%/s and they die at 0** (~12.5s more).
-- Back in native air the **suit recharges fast (~40%/s)**. A suited crew member shows a **light-blue ring**.
+- Back in native air the **suit recharges fast (~40%/s)**. A suited crew member is drawn **wearing their space suit (helmet on)** and shows a **light-blue ring**.
 - **Implication:** doors + suits let you run one shared corridor past several differently-gassed wings; just keep the hostile stretch short enough that nobody's suit empties before they reach their own air.
 
 ---

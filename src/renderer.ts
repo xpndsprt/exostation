@@ -260,7 +260,12 @@ export class Renderer {
     for (const id in world.agents) {
       const a = world.agents[id];
       const [cx, cy] = this.agentCenter(world, a);
-      const state = !a.alive ? "dead" : a.path.length > 0 ? "walk" : "idle";
+      const rm = world.cells[a.cell].roomId;
+      const native = rm >= 0 && world.rooms[rm]?.gas === SPECIES[a.species].gas;
+      // Off native air a suit auto-dons — show the suited graphic (helmet on).
+      const suited = a.alive && !native;
+      const moving = a.path.length > 0;
+      const state = !a.alive ? "dead" : suited ? (moving ? "suitwalk" : "suitidle") : moving ? "walk" : "idle";
       const t = tex(a.species, state);
       if (t) {
         const sp = new Sprite(t);
@@ -273,9 +278,7 @@ export class Renderer {
       if (!a.alive) continue;
       const r = TILE * 0.32;
       if (a.guest) g.circle(cx, cy, r).stroke({ width: 2, color: COLORS.guest, alpha: 0.9 });
-      const rm = world.cells[a.cell].roomId;
-      const native = rm >= 0 && world.rooms[rm]?.gas === SPECIES[a.species].gas;
-      if (!native) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
+      if (suited) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
       if (a.food < 40 || a.rest < 40) g.circle(cx, cy, r + 3).stroke({ width: 2, color: COLORS.needLow });
       // mood dot
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;

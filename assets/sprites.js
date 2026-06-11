@@ -3,12 +3,20 @@
  * transparent) and named `states` (state -> array of pixel rows).
  * Sizes match in-game footprints: solar 1x3, generators/vat/bay/lounge/tradehub
  * 2x2, synth/hotel 2x1, tiles+crew+ships 1x1.
- * Creatures: idle/walk/dead.  Active modules: enabled/disabled (disabled just
- * switches the status light off — derived from enabled with off()).
+ * Creatures: idle/walk/dead (+ auto-generated suitidle/suitwalk worn off-air).
+ * Active modules: enabled/disabled (disabled just switches the status light off
+ * — derived from enabled with off()).
  */
 (function () {
   // disabled = enabled with the green status light (L) turned to off (o)
   const off = (rows) => rows.map((r) => r.split("L").join("o"));
+  // suited = a space-suit version of a creature frame: the bare head becomes a
+  // glass helmet (G visor + p glint), and the body is recoloured to suit fabric
+  // (U/V). The visor keeps a species-coloured tint so you can still tell who is
+  // who. Generated from the idle/walk frames after the library is built.
+  const suitUp = (rows) =>
+    rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
+  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f" };
   // build the repeating 1x3 solar array (16 wide, 48 tall)
   function solarRows() {
     const r = [
@@ -570,4 +578,12 @@
       },
     },
   ];
+
+  // Give every species a suited graphic (helmet + suit), worn when off-air.
+  for (const s of window.SPRITES) {
+    if (!SUIT_VISOR[s.name] || !s.states.idle) continue;
+    s.palette = { ...s.palette, G: SUIT_VISOR[s.name], p: "#eaffff", U: "#c4d4e6", V: "#7e93ad" };
+    s.states.suitidle = suitUp(s.states.idle);
+    s.states.suitwalk = suitUp(s.states.walk);
+  }
 })();
