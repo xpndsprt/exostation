@@ -150,7 +150,8 @@ function breach(w: World): boolean {
   if (cands.length === 0) return false;
   const cell = cands[hash(w.tick + 2) % cands.length];
   setCell(w, cell % w.w, (cell / w.w) | 0, "space");
-  w.notify.push("Hull breach! A wall blew out — reseal it before the room vents.");
+  w.breaches.push({ cell, sealer: -1, progress: 0 }); // crew will rush to reseal it
+  w.notify.push("Hull breach! Crew are scrambling to reseal the wall.");
   return true;
 }
 

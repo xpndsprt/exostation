@@ -228,7 +228,7 @@ Every resource has a **storage cap** (shown on the HUD chips as *x / cap*): biom
 ## 14 · Station incidents (M29) — pressure that tests your layout
 After the first couple of minutes, the station faces periodic **incidents** (announced by a toast; they escalate slightly over time):
 - **Power surge** — a random *non-life-support* module trips offline for ~20s. Battery headroom and not over-packing one wing help you ride it out.
-- **Hull breach** — a wall blows out and the room starts venting. **Re-seal it** (lay Wall) fast; crew suit up and flee through a Door. *Only happens once you have 2+ rooms*, so a beginner's single room is safe.
+- **Hull breach** — a wall blows out (marked by a blinking red ❌) and the room starts venting. **Crew treat it as an emergency**: a resident drops what they're doing, rushes over, and reseals the wall — but the emergency repair **costs ¢120**. You can also wall it yourself for the normal ¢3 if you're faster. *Only happens once you have 2+ rooms*, so a beginner's single room is safe.
 - **Market shock** — mineral prices **surge ×2** (sell now!) or **crash ×0.5** (hold) for ~40s.
 - **Raider** — a hostile ship (red ring) parks at your dock and **chews through modules** (never life support). A **powered Turret** (unlock *Station Security*) shoots it down on sight; otherwise crew must repair the damage.
 - **Life support is never targeted** by incidents — suffocation only ever comes from *your* power/zoning mistakes. Incidents threaten your economy, production and defenses, not a guaranteed wipe.
@@ -271,7 +271,7 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Lab 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 (Silo 0) |
 | Tech | Build a powered Research Lab, then spend credits: Methane ¢350 · Fungal ¢300 · Logistics ¢250 · Security ¢500. Locked tools are greyed in the palette |
 | Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
-| Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
+| Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters/silo/turret 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |

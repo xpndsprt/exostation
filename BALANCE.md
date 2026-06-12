@@ -120,7 +120,7 @@ First incident at **120 s**, then every **90 s** (shrinks 5 s per 10 min, floor 
 | Incident | Effect |
 |----------|--------|
 | Power surge | a random non-life-support module offline for **20 s** |
-| Hull breach | vents one hull wall of a sealed room (**only with ≥2 enclosed rooms**) — reseal it |
+| Hull breach | vents one hull wall of a sealed room (**only with ≥2 enclosed rooms**); a resident rushes to reseal it as an emergency (0.4/s ≈ 2.5s) at a cost of **¢120**. Player can also wall it manually (¢3) |
 | Market shock | mineral price ×2 or ×0.5 for **40 s** |
 | Raider | hostile ship parks at a dock, **8 condition/s** to a random non-life-support module for **18 s**; a powered **Turret** destroys it instantly |
 - **Life support (O₂/CH₄ gens) is never targeted** — incidents threaten economy/production/defense, not a guaranteed suffocation. Suffocation only comes from the player's own power/zoning failures.

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>⚙️ The Depth Epic — making the second hour earn itself</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>⚙️ The Depth Epic — making the second hour earn itself</h1>
+<blockquote><strong>Follow-up to the <a href="REVIEWER_EPIC.md">Reviewer's Epic</a>.</strong> That epic hardened the <em>first</em> hour (legibility, goals, onboarding, pressure, a tech tree). This one answers the <strong>hardcore-systems critique</strong>: the mid-game still <em>solves itself</em>. Goal: turn "watch the numbers tick up" into "manage a margin, court a real failure, and have a reason to start a different run."</blockquote>
+<h2>Where it came from</h2>
+<p>A systems-strategy reviewer (Factorio/ONI/DF/RimWorld veteran) played an hour, read the source, did the math, and scored it <strong>5/10</strong>:</p>
+<blockquote><em>"An elegant atmosphere/zoning core wrapped in a runaway economy that solves itself in under an hour and a failure-state that can't fire if you remember to feed people."</em></blockquote>
+<p>Praised (keep these intact): <strong>atmosphere zoning + doors + suits</strong>, the <strong>harmony → productivity</strong> coupling, and <strong>power priority-shedding</strong>.</p>
+<p>The verified findings:</p>
+<ol><li><strong>No recurring credit sink</strong> — sources (trade ~2.5–7.5¢/s/hub, lodging 1.5¢/s/guest, requests 150–400¢) dwarf the only sinks (one-time builds + a finite <strong>¢1,400 tech tree bought out in ~2 min</strong>). The station becomes pure profit by minute ten.</li><li><strong>The skirmish failure-state can't fire under competent play</strong> — combat needs mood &lt; 30, but the needs term alone holds mood ≈ 45–72. Feed your crew and the entire tension→skirmish→breach→cascade catastrophe is dead code.</li><li><strong>Incidents are ignorable by construction</strong> — life support immune, raider focus-fires one module at 8/s vs 15/s repair, breach reseal costs ¢3, market shock is free EV.</li><li><strong>The tech tree is a shopping list</strong> — four flat nodes, no prerequisites, no opportunity cost; you buy all of it and you're done forever.</li><li><strong>Storage caps create idle, not pressure</strong> — overproduce and you just… stop, with zero penalty.</li><li><strong>No replay hook</strong> — no seed variety, no asymmetric scenarios, no scaling threat, no mutually-exclusive choices. Mastery = memorize one 8-step opening.</li></ol>
+<p><em>(Already fixed before this epic: the "host 4 species" objective counted guests — now counts residents only, so the capstone requires a methane wing + fungal chain.)</em></p>
+<hr>
+<h2>The hitlist (M37–M43)</h2>
+<p>Priority: <strong>P0</strong> = the two cardinal sins (runaway economy, dead failure-state) · <strong>P1</strong> = make the existing systems bite · <strong>P2</strong> = depth &amp; replayability.</p>
+<table><thead><tr><th>#</th><th>Milestone</th><th>Fixes finding</th><th style="text-align:center">Pri</th><th style="text-align:center">Effort</th></tr></thead><tbody><tr><td>1</td><td><strong>M37 — Recurring credit sink</strong></td><td>#1 runaway economy</td><td style="text-align:center">P0</td><td style="text-align:center">M</td></tr><tr><td>2</td><td><strong>M39 — Live skirmishes</strong></td><td>#2 dead failure-state</td><td style="text-align:center">P0</td><td style="text-align:center">M</td></tr><tr><td>3</td><td><strong>M38 — Incidents with teeth</strong></td><td>#3 ignorable incidents</td><td style="text-align:center">P1</td><td style="text-align:center">M</td></tr><tr><td>4</td><td><strong>M40 — Branching tech tree</strong></td><td>#4 shopping-list tech</td><td style="text-align:center">P1</td><td style="text-align:center">L</td></tr><tr><td>5</td><td><strong>M41 — Overflow consequences</strong></td><td>#5 caps = idle</td><td style="text-align:center">P1</td><td style="text-align:center">S</td></tr><tr><td>6</td><td><strong>M42 — Deeper relations</strong></td><td>(coarse political web)</td><td style="text-align:center">P2</td><td style="text-align:center">M</td></tr><tr><td>7</td><td><strong>M43 — Replayability layer</strong></td><td>#6 one-and-done</td><td style="text-align:center">P2</td><td style="text-align:center">L</td></tr></tbody></table>
+<p><strong>Execution order:</strong> M37 → M39 (the two that change the <em>core loop</em>), then M38 → M41 → M40 (make pressure &amp; progression real), then M42 → M43 (depth &amp; longevity).</p>
+<hr>
+<h2>Milestone specs</h2>
+<p>Each is independently shippable: code + <code>npm run build</code> + <code>npm test</code> (add headless checks) + <code>STRATEGY.md</code>/<code>BALANCE.md</code>/<code>COSTS.md</code> sync + local commit.</p>
+<h3>M37 — Recurring credit sink · P0 · M</h3>
+<p><strong>Why:</strong> <em>"A runaway economy with no sink is the cardinal sin. Give me a burn rate I must out-earn."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li><strong>Operating upkeep in credits</strong>, scaling with station size: e.g. a small per-second cost per <strong>powered module</strong> (~0.1–0.3¢/s) and/or <strong>per resident wage</strong> (~0.2¢/s). Deducted in <code>economySystem</code>.</li><li>A <strong>net-income readout</strong> on the HUD (<code>+/−¢/s</code>), so the margin is legible — the player should always see whether they're in the black.</li><li>Early-game grace so a bootstrapping station isn't strangled (e.g. upkeep starts after objective 1, or only applies above N modules), tuned so a <em>well-run</em> station profits and a <em>bloated/idle</em> one bleeds.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>A passive station (no trade/lodging) trends <strong>negative</strong>; an active one stays positive.</li><li>HUD shows live net ¢/s. Headless test: upkeep scales with module/crew count; credits fall when income is removed.</li></ul>
+<p><strong>Files:</strong> <code>economy.ts</code>, <code>ui.ts</code> (net chip), <code>BALANCE.md</code>, <code>COSTS.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M39 — Live skirmishes · P0 · M</h3>
+<p><strong>Why:</strong> <em>"Feed your crew and the entire tension→skirmish catastrophe is dead code. The combat system is fully built and currently never fires."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li><strong>Decouple tension ignition from the mood floor.</strong> Add a tension source from <strong>sustained tense-room harmony</strong> (room harmony &lt; ~−0.3) that accrues <strong>regardless of mood</strong> — forcing rivals to share a room long enough should eventually erupt even if everyone is fed.</li><li>And/or: chronic strong friction <strong>slowly erodes mood</strong> so it can actually cross 30 over time.</li><li>Keep the existing mood-based path; separation (own wings + Door) must still fully prevent it — the cure stays <em>architecture</em>.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>A well-fed Human+Korro room left together long enough <strong>produces a skirmish</strong>; separating them prevents it. (Today it never fires.)</li><li>Headless test: fed rivals in one room → tension reaches 100 and a fight starts within a bounded time; the same crew split into two rooms never fight.</li></ul>
+<p><strong>Files:</strong> <code>combat.ts</code> (tension sources), possibly <code>mood.ts</code>, <code>BALANCE.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M38 — Incidents with teeth · P1 · M</h3>
+<p><strong>Why:</strong> <em>"Incidents are ignorable by construction… the one thing that could kill me is walled off by design."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Make incidents <strong>punish a lack of redundancy</strong> rather than be globally neutered:<ul><li>A power surge <strong>may</strong> hit life support <strong>only if</strong> there's no battery buffer / no second generator covering that gas — so the counter is <em>building redundancy</em>, not the blanket immunity.</li><li><strong>Raider damage scales with station value</strong> (module count or credits), and/or can target life support when undefended — so a fat, unturreted station is genuinely at risk.</li></ul></li><li>Telegraph clearly (existing toasts) and keep a grace period so a beginner's single room stays safe.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>An <strong>unredundant</strong> station can be meaningfully hurt (a module breaks / a wing browns out); a <strong>redundant</strong> one (battery + backup gen + Turret) shrugs it off.</li><li>Headless tests: surge browns out life support without a battery, but not with one; raider damage rises with station size.</li></ul>
+<p><strong>Files:</strong> <code>events.ts</code>, <code>power.ts</code>, <code>BALANCE.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M40 — Branching tech tree · P1 · L</h3>
+<p><strong>Why:</strong> <em>"Four nodes, no prerequisites, no opportunity cost. You buy all four and you're done forever."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Add <strong>prerequisites</strong>, <strong>tiers</strong>, and at least one <strong>mutually-exclusive fork</strong> (e.g. a station <em>specialization</em>: Industry vs Hospitality vs Security) so ¢ can't buy everything in one run.</li><li>Gate <strong>Tier-2 species/modules</strong> behind Tier-1 nodes; make the methane economy vs fungal economy vs security build a real <strong>choice</strong>, not a checklist.</li><li>Tech panel UI shows the graph (locked/available/owned, prereq lines, exclusivity).</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Not everything is unlockable in a single run; picking one fork <strong>locks</strong> its exclusive sibling.</li><li>Headless tests: a node is unbuyable until its prereq is owned; buying one exclusive node disables the other.</li></ul>
+<p><strong>Files:</strong> <code>research.ts</code> (graph + prereqs + exclusivity), <code>ui.ts</code> (tech tree panel), <code>BALANCE.md</code>, <code>COSTS.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M41 — Overflow consequences · P1 · S</h3>
+<p><strong>Why:</strong> <em>"Caps that idle production are not economic pressure; they're a screensaver."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Overproduction past a cap should <strong>cost</strong> something instead of silently idling: e.g. <strong>spoilage</strong> (meals/biomass decay faster while near cap), a small <strong>morale/efficiency hit</strong> from visible waste, or <strong>back-pressure</strong> that stalls upstream — so <em>right-sizing</em> production is a live trade-off.</li><li>Pair with the M37 economy so dumping minerals at cap (no trade capacity) actually hurts.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Overproducing has a measurable downside; sizing production to demand avoids it.</li><li>Headless test: holding a resource at cap incurs the chosen penalty; staying under it does not.</li></ul>
+<p><strong>Files:</strong> <code>food.ts</code>/<code>mining.ts</code>/<code>storage.ts</code>, <code>ui.ts</code> (cap warning), <code>BALANCE.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M42 — Deeper relations · P2 · M</h3>
+<p><strong>Why:</strong> <em>"Five species, a single ±8 matrix, social clamped at ±30 vs needs worth ±22 — the political web is a minority shareholder in mood."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Use the reserved <strong>LOVE/HATE tiers (±15)</strong> for stronger pairings, and/or <strong>raise the social weight</strong> relative to needs so neighbors matter more.</li><li>Add a few <strong>pointed rivalries/alliances</strong> across the roster so layout politics drive more decisions (not just the one Human/Korro pair).</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Neighbor relations move mood comparably to needs; at least one new strong rivalry creates a real zoning dilemma.</li><li>Headless test: a HATE pair drives mood/tension materially harder than a DISLIKE pair.</li></ul>
+<p><strong>Files:</strong> <code>relations.ts</code>, <code>mood.ts</code>, <code>BALANCE.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M43 — Replayability layer · P2 · L</h3>
+<p><strong>Why:</strong> <em>"There is zero reason to press 'new game.' Mastery = learn the 8-step opening once."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li><strong>Seeded starts:</strong> vary asteroid placement/richness (and optionally starting stock) from a seed, so the opening isn't identical every time.</li><li><strong>Asymmetric scenarios:</strong> a small menu — e.g. <em>Methane Colony</em> (Thol-only, no O₂ start), <em>No-Trade Survival</em> (lodging only), <em>Derelict</em> (start with a breach + low power) — each with its own objective ladder.</li><li><strong>Post-win escalation:</strong> after the scenario is cleared, an endless mode where the raider tier and incident frequency rise, giving the late game an actual threat.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Two new games with different seeds/scenarios play differently from the opening.</li><li>Headless test: the same seed reproduces a layout; different seeds differ; a scenario applies its distinct starting state.</li></ul>
+<p><strong>Files:</strong> <code>world.ts</code> (seeded <code>seedAsteroids</code>), new <code>scenarios.ts</code>, <code>main.ts</code> (start menu), <code>events.ts</code> (escalation), <code>persistence.ts</code> (seed/scenario in save), <code>BALANCE.md</code>, <code>STRATEGY.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h2>Definition of done (the epic)</h2>
+<p>A veteran replaying for a second hour finds:</p>
+<ul><li><strong>A margin to manage</strong> (M37) — income vs upkeep is a live decision, not a one-way ratchet.</li><li><strong>A reachable failure</strong> (M39, M38) — neglect or under-investment genuinely loses the station; the combat system actually fires.</li><li><strong>Choices, not checklists</strong> (M40) — tech and overflow force trade-offs (M41).</li><li><strong>Politics that bite</strong> (M42) and <strong>a reason to start a different run</strong> (M43).</li></ul>
+<p><strong>Re-review target:</strong> the systems reviewer replays and scores it <strong>≥ 7/10</strong> — depth and balance, not just polish.</p>
+<hr>
+<p><em>Epic owner: the EXOSTATION team. Sequenced after the Reviewer's Epic; the lone remaining Reviewer's-Epic item (M31 audio) is independent and can land any time.</em></p>
+</main>
+</body>
+</html>

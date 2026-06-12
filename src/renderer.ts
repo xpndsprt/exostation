@@ -372,6 +372,13 @@ export class Renderer {
       const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
       g.circle(cx, cy, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
     }
+    // hull breaches — a blinking red marker so the emergency is easy to spot
+    for (const b of world.breaches) {
+      const bx = (b.cell % world.w) * TILE + TILE / 2;
+      const by = ((b.cell / world.w) | 0) * TILE + TILE / 2;
+      g.rect(bx - TILE * 0.4, by - TILE * 0.4, TILE * 0.8, TILE * 0.8).stroke({ width: 2.5, color: 0xff3b3b, alpha: 0.4 + 0.5 * Math.abs(Math.sin(phase * Math.PI * 2)) });
+      g.circle(bx, by, TILE * 0.18).fill({ color: 0xff3b3b, alpha: 0.7 });
+    }
     this.drawSprites(
       this.shipsC,
       world.ships.map((ship) => ({

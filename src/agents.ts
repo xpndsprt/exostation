@@ -1,6 +1,6 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
-import { accessCell } from "./world";
+import { accessCell, idx, inBounds, setCell } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { STRUCTURES } from "./structures";
 import { productivity } from "./harmony";
@@ -21,8 +21,19 @@ const REST_LOW = 35;
 const FUN_LOW = 40;
 const REST_RATE = 12; // recovery while sleeping
 const RELAX_RATE = 20; // fun recovered while at a Lounge
+const SEAL_RATE = 0.4; // breach repair per second (~2.5s to reseal)
+const BREACH_COST = 120; // emergency-repair credits per breach sealed
 
 export function agentSystem(w: World, dt: number): void {
+  // Drop breaches already resealed (by crew or the player), and free a claim
+  // whose sealer died/left so another crew member can take over.
+  if (w.breaches.length) {
+    w.breaches = w.breaches.filter((b) => w.cells[b.cell].type === "space");
+    for (const b of w.breaches) {
+      if (b.sealer >= 0 && !w.agents[b.sealer]?.alive) b.sealer = -1;
+    }
+  }
+
   for (const id in w.agents) {
     const a = w.agents[id];
     if (!a.alive) continue;
@@ -147,6 +158,21 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
           return; // keep working until fully serviced
         }
         releaseTask(w, a);
+      } else if (a.task.type === "seal") {
+        const b = w.breaches.find((x) => x.sealer === a.id);
+        if (b && w.cells[b.cell].type === "space") {
+          b.progress += SEAL_RATE * dt;
+          if (b.progress >= 1) {
+            setCell(w, b.cell % w.w, (b.cell / w.w) | 0, "wall"); // hull restored
+            const cost = Math.min(w.credits, BREACH_COST);
+            w.credits -= cost;
+            w.notify.push(`Crew sealed a hull breach (−¢${Math.round(cost)}).`);
+            w.breaches = w.breaches.filter((x) => x !== b);
+            releaseTask(w, a);
+          }
+          return; // keep sealing
+        }
+        releaseTask(w, a); // breach already gone
       } else {
         a.task = null;
       }
@@ -155,6 +181,16 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
     }
   }
   if (a.task) return;
+
+  // EMERGENCY: residents drop everything to reseal an open hull breach.
+  if (!a.guest) {
+    const seal = claimSeal(w, a, a.cell);
+    if (seal) {
+      a.task = { type: "seal", target: seal.cell };
+      a.path = seal.path;
+      return;
+    }
+  }
 
   // Pick a new task by need (rest first, then food).
   if (a.rest < REST_LOW) {
@@ -204,9 +240,39 @@ function releaseTask(w: World, a: Agent): void {
       if (a.task.type === "service" && s.servicedBy === a.id) s.servicedBy = -1;
     }
   }
+  if (a.task && a.task.type === "seal") {
+    const b = w.breaches.find((x) => x.sealer === a.id);
+    if (b) b.sealer = -1; // unclaim so another crew member can finish it
+  }
   a.task = null;
   a.path = [];
   a.moveAcc = 0;
+}
+
+// Claim the nearest open breach: stand on a reachable interior cell next to it.
+// Only with breathable air there, or a charged suit to work in the vacuum.
+function claimSeal(w: World, a: Agent, start: number): { cell: number; path: number[] } | null {
+  const open = w.breaches.filter((b) => b.sealer < 0 && w.cells[b.cell].type === "space");
+  open.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const b of open) {
+    const bx = b.cell % w.w;
+    const by = (b.cell / w.w) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = bx + dx;
+      const ny = by + dy;
+      if (!inBounds(w, nx, ny)) continue;
+      const ci = idx(w, nx, ny);
+      const c = w.cells[ci];
+      if (c.type !== "floor" && c.type !== "door") continue;
+      if (!nativeAt(w, a, ci) && a.suit < VENTURE_SUIT) continue;
+      const path = findPath(w, start, ci);
+      if (path) {
+        b.sealer = a.id;
+        return { cell: ci, path };
+      }
+    }
+  }
+  return null;
 }
 
 interface Found {

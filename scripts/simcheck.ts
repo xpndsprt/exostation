@@ -1096,5 +1096,32 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Deleting one slot leaves others intact", loadWorld("2")!.credits === 222);
 }
 
+// --- Breach emergency repair: crew reseal a vented wall, for credits ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addAgent(w, 7, 7, "human"); // a resident to do the repair
+  for (let i = 0; i < 30; i++) step(w); // settle: room fills with O₂
+  // blow a wall that borders the room + space
+  const bcell = idx(w, 6, 8);
+  setCell(w, 6, 8, "space");
+  w.breaches.push({ cell: bcell, sealer: -1, progress: 0 });
+  const cr0 = w.credits;
+  let sealed = false;
+  for (let i = 0; i < 200; i++) {
+    step(w);
+    if (w.breaches.length === 0 && w.cells[bcell].type === "wall") {
+      sealed = true;
+      break;
+    }
+  }
+  check("Crew reseal a hull breach (wall restored)", sealed);
+  check("Emergency breach repair costs credits", w.credits < cr0);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

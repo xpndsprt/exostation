@@ -69,7 +69,14 @@ export interface Structure {
   faultT: number; // seconds remaining of a power-surge fault (offline); 0 = fine
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal";
+
+// An open hull breach (a vented wall cell) awaiting emergency repair by crew.
+export interface Breach {
+  cell: number; // the breached (now-space) wall cell
+  sealer: number; // agent id repairing it, or -1 if unclaimed
+  progress: number; // 0..1 toward resealed
+}
 
 export interface Task {
   type: TaskType;
@@ -181,6 +188,7 @@ export interface World {
   priceMult: number; // current mineral-price multiplier (market shocks)
   priceT: number; // seconds remaining of the current market shock
   notify: string[]; // transient toast queue drained by the UI each frame
+  breaches: Breach[]; // open hull breaches crew rush to reseal
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests

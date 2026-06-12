@@ -573,9 +573,22 @@ export function renderRequests(world: World): void {
 
 // Tech panel: spend credits at a powered Research Lab to unlock advanced
 // modules and species food chains. Hidden once everything is researched.
+let techOnBuy: ((id: string) => void) | null = null;
+let alienOnLocate: ((s: Species) => void) | null = null;
+
 export function renderTech(world: World, onBuy: (id: string) => void): void {
+  techOnBuy = onBuy;
   const el = document.getElementById("tech");
   if (!el) return;
+  // Delegate clicks to the stable container — the panel's innerHTML is rebuilt
+  // every redraw, so per-button handlers would be destroyed mid-click.
+  if (!el.dataset.wired) {
+    el.dataset.wired = "1";
+    el.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest("button[data-id]") as HTMLButtonElement | null;
+      if (btn && !btn.disabled && techOnBuy) techOnBuy(btn.dataset.id as string);
+    });
+  }
   const locked = UNLOCKS.filter((u) => !isUnlocked(world, u.id));
   if (locked.length === 0) {
     el.innerHTML = "";
@@ -596,9 +609,6 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
     })
     .join("");
   el.innerHTML = head + rows;
-  el.querySelectorAll("button[data-id]").forEach((b) => {
-    (b as HTMLButtonElement).onclick = () => onBuy((b as HTMLElement).dataset.id as string);
-  });
 }
 
 // Alienpedia: a reference card for every species that has visited the station.
@@ -606,6 +616,14 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
 export function renderAlienpedia(world: World, onLocate?: (s: Species) => void): void {
   const el = document.getElementById("alienpedia");
   if (!el) return;
+  alienOnLocate = onLocate ?? null;
+  if (!el.dataset.wired) {
+    el.dataset.wired = "1";
+    el.addEventListener("click", (e) => {
+      const ent = (e.target as HTMLElement).closest(".ent.locatable") as HTMLElement | null;
+      if (ent && alienOnLocate) alienOnLocate(ent.dataset.sp as Species);
+    });
+  }
   if (world.seen.length === 0) {
     el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="empty">No species encountered yet.</div>`;
     return;
@@ -650,11 +668,6 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
     })
     .join("");
   el.innerHTML = `<h3>📖 ALIENPEDIA</h3>${entries}`;
-  if (onLocate) {
-    el.querySelectorAll(".ent.locatable").forEach((e) => {
-      (e as HTMLElement).onclick = () => onLocate((e as HTMLElement).dataset.sp as Species);
-    });
-  }
 }
 
 // Lower-right advisor board: species seen so far + the AI's next-step guidance.
