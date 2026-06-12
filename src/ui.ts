@@ -670,7 +670,10 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
     });
   }
   if (world.seen.length === 0) {
-    el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="empty">No species encountered yet.</div>`;
+    if (el.dataset.sig !== "empty") {
+      el.dataset.sig = "empty";
+      el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="empty">No species encountered yet.</div>`;
+    }
     return;
   }
   const present: Record<string, number> = {};
@@ -682,6 +685,16 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
       moodSum[a.species] = (moodSum[a.species] || 0) + a.mood;
     }
   }
+  // Only rebuild the DOM when something visible actually changes — mood is
+  // quantized to steps of 5 so it doesn't thrash the panel (or reset its scroll)
+  // every tick. Keeps the card a stable, static height.
+  const moodOf = (s: Species): number => (present[s] ? Math.round(moodSum[s] / present[s] / 5) * 5 : 0);
+  const sig = world.seen
+    .map((s) => `${s}:${present[s] || 0}:${moodOf(s)}:${Math.round(getRep(world, s))}`)
+    .join("|");
+  if (el.dataset.sig === sig) return; // nothing meaningful changed
+  el.dataset.sig = sig;
+
   const entries = world.seen
     .map((s) => {
       const d = SPECIES[s];
@@ -698,7 +711,7 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
           .filter(Boolean)
           .join(" · ") || "neutral to all";
       const here = present[s] || 0;
-      const mood = here ? Math.round(moodSum[s] / here) : 0;
+      const mood = moodOf(s);
       const rep = Math.round(getRep(world, s));
       const aboard = here ? ` · ${here} aboard · 🙂${mood}%` : "";
       return (
@@ -712,7 +725,7 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
       );
     })
     .join("");
-  el.innerHTML = `<h3>📖 ALIENPEDIA</h3>${entries}`;
+  el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="ped-list">${entries}</div>`;
 }
 
 // Lower-right advisor board: species seen so far + the AI's next-step guidance.
