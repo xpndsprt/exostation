@@ -8,7 +8,7 @@ import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
-import { UNLOCKS, isUnlocked, hasPoweredLab, toolLock } from "./research";
+import { UNLOCKS, isUnlocked, toolLock } from "./research";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 
@@ -631,15 +631,25 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
     return;
   }
   el.style.display = "";
-  const lab = hasPoweredLab(world);
-  const head = `<h3>🔬 TECH${lab ? "" : ' <span class="muted">— build a Lab</span>'}</h3>`;
+  const labs = Object.values(world.structures).filter((s) => s.kind === "lab");
+  const poweredLab = labs.some((s) => s.powered);
+  const labNote = poweredLab ? "" : labs.length ? ' <span class="muted">— Lab unpowered</span>' : ' <span class="muted">— build a Lab</span>';
+  const head = `<h3>🔬 TECH${labNote}</h3>`;
   const rows = locked
     .map((u) => {
-      const can = lab && world.credits >= u.cost;
+      const afford = world.credits >= u.cost;
+      const can = poweredLab && afford;
+      const label = can
+        ? "Research"
+        : !poweredLab
+          ? labs.length
+            ? "Lab unpowered"
+            : "Needs a Lab"
+          : `Need ¢${u.cost}`;
       return (
         `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">¢${u.cost}</span></div>` +
         `<div class="ul-d">${u.desc}</div>` +
-        `<button data-id="${u.id}"${can ? "" : " disabled"}>Research</button></div>`
+        `<button data-id="${u.id}"${can ? "" : " disabled"} title="${label}">${label}</button></div>`
       );
     })
     .join("");
