@@ -20,7 +20,7 @@ import { toolLock, buyUnlock } from "../src/research";
 import { eventsSystem, forceEvent } from "../src/events";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
-import { saveWorld, loadWorld } from "../src/persistence";
+import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
 import { World } from "../src/types";
 
 // Minimal localStorage shim so persistence works under tsx/node.
@@ -1063,6 +1063,21 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   powerSystem(w, 0.1);
   eventsSystem(w, 0.1);
   check("A powered Turret destroys the raider", !w.ships.some((s) => s.hostile));
+}
+
+// --- M34: independent named save slots ---
+{
+  const a = createWorld();
+  a.credits = 111;
+  const b = createWorld();
+  b.credits = 222;
+  check("Save to slot 1", saveWorld(a, "1"));
+  check("Save to slot 2", saveWorld(b, "2"));
+  check("Slots load independently", loadWorld("1")!.credits === 111 && loadWorld("2")!.credits === 222);
+  check("listSaves reports a filled slot", listSaves().find((s) => s.slot === "1")!.savedAt !== null);
+  deleteSave("1");
+  check("Deleting a slot clears it", loadWorld("1") === null);
+  check("Deleting one slot leaves others intact", loadWorld("2")!.credits === 222);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

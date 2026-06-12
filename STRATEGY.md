@@ -33,8 +33,9 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
-- **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
-- **Door** and modules place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth/hotel 2×1, quarters/batteries 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor.
+- **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and the label shows the size **and running ¢ cost** (red if you can't afford it).
+- **Door** and modules place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth/hotel/lab 2×1, quarters/batteries/silo/turret 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor. The **Solar** ghost marks its **wall-mounted base** so you can see which way it faces before placing.
+- **Find your modules:** **double-click a build tool** in the palette to pan-cycle the camera through every instance you've placed (and select each).
 - **You don't place crew.** There is no "add a Human" tool — residents **immigrate by shuttle** once their living conditions are ready (see *Crew* below). You only ever build the *environment*.
 - **Everything costs credits.** Each build button shows its price (¢); the ghost turns red and the cursor blocks if you can't afford it. You start with **¢1000**. **Deconstructing** a module (Select → Deconstruct) refunds **50%**. Full price list: [`COSTS.md`](COSTS.md).
 
@@ -44,10 +45,13 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 **Time & saving**
 - **Pause / 1× / 2× / 3×** (`Space` pause, `[` / `]` slower/faster).
-- **Save / Load** (top bar) persist to your browser; the game also **autosaves every 30s**.
+- **Saves** (top bar) opens a panel with an **Autosave slot + 3 named slots** — each with **Save / Load / Delete** and a timestamp. The game **autosaves every 30s**; a manual save flashes **Saved ✓**.
+
+**First run**
+- A **Getting Started** checklist appears top-center on a fresh game and ticks off as you *seal → power → add O₂ → synth → quarters → dock*. It disappears once your first crew arrive (or hit **Skip**).
 
 **Alienpedia + Advisor (lower-right)**
-- The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard.
+- The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
 - The **Advisor** (below) watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 
 ---

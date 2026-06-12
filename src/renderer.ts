@@ -83,6 +83,12 @@ export class Renderer {
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
+  private speciesFlash: { sp: string; t: number } | null = null;
+
+  // Briefly ring all members of a species (Alienpedia "locate").
+  flashSpecies(sp: string): void {
+    this.speciesFlash = { sp, t: 45 };
+  }
 
   constructor(world: Container) {
     buildTextures();
@@ -101,12 +107,18 @@ export class Renderer {
     this.grid.stroke({ width: 1, color: COLORS.grid, alpha: 0.6 });
   }
 
-  drawCursor(world: World, ghostCells: number[], valid: boolean, hover: number): void {
+  drawCursor(world: World, ghostCells: number[], valid: boolean, hover: number, anchor = -1): void {
     const g = this.cursor;
     g.clear();
     const tint = valid ? 0x49d17a : 0xe24b4b;
     for (const cell of ghostCells) {
       g.rect((cell % world.w) * TILE, ((cell / world.w) | 0) * TILE, TILE, TILE).fill({ color: tint, alpha: 0.28 });
+    }
+    // facing marker (e.g. a solar panel's wall-mounted base) so orientation is clear
+    if (anchor >= 0) {
+      const ax = (anchor % world.w) * TILE;
+      const ay = ((anchor / world.w) | 0) * TILE;
+      g.rect(ax + TILE * 0.3, ay + TILE * 0.3, TILE * 0.4, TILE * 0.4).fill({ color: 0xffffff, alpha: 0.7 });
     }
     if (hover >= 0 && ghostCells.length === 0) {
       const x = (hover % world.w) * TILE;
@@ -293,6 +305,15 @@ export class Renderer {
       }
       if (a.fighting) g.circle(cx, cy, r + 5).stroke({ width: 2.5, color: 0xff3b3b });
       else if (a.tension > 50) g.circle(cx, cy, r + 5).stroke({ width: 1.5, color: 0xe8a33d, alpha: 0.8 });
+      // Alienpedia locate: pulse a ring around the chosen species
+      if (this.speciesFlash && a.species === this.speciesFlash.sp) {
+        const k = this.speciesFlash.t / 45;
+        g.circle(cx, cy, r + 6 + (1 - k) * 6).stroke({ width: 2.5, color: 0xffffff, alpha: 0.3 + 0.6 * k });
+      }
+    }
+    if (this.speciesFlash) {
+      this.speciesFlash.t -= 1;
+      if (this.speciesFlash.t <= 0) this.speciesFlash = null;
     }
   }
 

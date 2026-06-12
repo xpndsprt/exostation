@@ -10,6 +10,7 @@ import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
 import { UNLOCKS, isUnlocked, hasPoweredLab, toolLock } from "./research";
 import { storageCaps } from "./storage";
+import { listSaves, SlotId } from "./persistence";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -68,14 +69,17 @@ const OVERLAYS: { m: OverlayMode; label: string }[] = [
 ];
 
 export interface UIHandlers {
-  onSave: () => void;
-  onLoad: () => void;
+  onSaveSlot: (slot: SlotId) => void;
+  onLoadSlot: (slot: SlotId) => void;
+  onDeleteSlot: (slot: SlotId) => void;
   onDeconstruct: (id: number) => void;
   onToggle: (id: number) => void;
   onRecipe: (id: number) => void;
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
   onBuyUnlock: (id: string) => void;
+  onCycle: (kind: string) => void; // double-click a palette tool to find its instances
+  onLocateSpecies: (species: Species) => void; // click an Alienpedia entry to find them
 }
 
 const toolButtons = new Map<Tool, HTMLButtonElement>();
@@ -84,13 +88,13 @@ let overlayButtons = new Map<OverlayMode, HTMLButtonElement>();
 let saveBtn: HTMLButtonElement | null = null;
 
 export function setupUI(state: UIState, world: World, handlers: UIHandlers): void {
-  buildPalette(state);
+  buildPalette(state, handlers);
   buildTimeControls(world);
   buildOverlayControls(handlers);
-  buildSaveControls(handlers);
+  buildSaveControls(world, handlers);
 }
 
-function buildPalette(state: UIState): void {
+function buildPalette(state: UIState, handlers: UIHandlers): void {
   const bar = document.getElementById("palette");
   if (!bar) return;
   for (const entry of PALETTE) {
@@ -106,6 +110,9 @@ function buildPalette(state: UIState): void {
     b.innerHTML = `${entry.label}<span class="hk">${costStr}${entry.key}</span>`;
     if (entry.t === state.tool) b.classList.add("active");
     b.onclick = () => setActiveTool(entry.t, state);
+    // double-click a build tool to pan-cycle through its placed instances
+    if (entry.t in STRUCTURES) b.ondblclick = () => handlers.onCycle(entry.t);
+    b.title = entry.t in STRUCTURES ? "Double-click to find placed ones" : "";
     toolButtons.set(entry.t, b);
     bar.appendChild(b);
   }
@@ -192,30 +199,85 @@ function buildOverlayControls(handlers: UIHandlers): void {
   bar.appendChild(ctl);
 }
 
-function buildSaveControls(handlers: UIHandlers): void {
+let savesHandlers: UIHandlers | null = null;
+
+function buildSaveControls(world: World, handlers: UIHandlers): void {
+  void world;
+  savesHandlers = handlers;
   const bar = document.getElementById("topbar");
   if (!bar) return;
   const wrap = document.createElement("span");
   wrap.id = "savectl";
   saveBtn = document.createElement("button");
   saveBtn.className = "tbtn";
-  saveBtn.textContent = "Save";
-  saveBtn.onclick = handlers.onSave;
-  const load = document.createElement("button");
-  load.className = "tbtn";
-  load.textContent = "Load";
-  load.onclick = handlers.onLoad;
+  saveBtn.textContent = "Saves";
+  saveBtn.onclick = () => openSaves();
   wrap.appendChild(saveBtn);
-  wrap.appendChild(load);
   bar.appendChild(wrap);
+
+  // close the modal on backdrop click
+  const modal = document.getElementById("saves");
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) closeSaves();
+  });
 }
 
 export function markSaved(): void {
   if (!saveBtn) return;
   saveBtn.textContent = "Saved ✓";
   setTimeout(() => {
-    if (saveBtn) saveBtn.textContent = "Save";
+    if (saveBtn) saveBtn.textContent = "Saves";
   }, 1400);
+}
+
+function fmtAgo(ms: number): string {
+  if (!ms) return "saved";
+  const s = Math.floor((Date.now() - ms) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+export function openSaves(): void {
+  renderSaves();
+  document.getElementById("saves")?.classList.add("show");
+}
+export function closeSaves(): void {
+  document.getElementById("saves")?.classList.remove("show");
+}
+
+function renderSaves(): void {
+  const body = document.getElementById("saves-body");
+  if (!body || !savesHandlers) return;
+  const h = savesHandlers;
+  const info = listSaves();
+  const label = (s: SlotId) => (s === "auto" ? "Autosave" : `Slot ${s}`);
+  body.innerHTML = info
+    .map((si) => {
+      const empty = si.savedAt === null;
+      return (
+        `<div class="slot"><div class="slot-h"><b>${label(si.slot)}</b>` +
+        `<span class="muted">${empty ? "empty" : fmtAgo(si.savedAt as number)}</span></div>` +
+        `<div class="slot-sum">${empty ? "&mdash;" : si.summary}</div>` +
+        `<div class="slot-btns">` +
+        `<button data-act="save" data-slot="${si.slot}">Save</button>` +
+        `<button data-act="load" data-slot="${si.slot}"${empty ? " disabled" : ""}>Load</button>` +
+        `<button class="danger" data-act="del" data-slot="${si.slot}"${empty ? " disabled" : ""}>Del</button>` +
+        `</div></div>`
+      );
+    })
+    .join("");
+  body.querySelectorAll("button[data-act]").forEach((b) => {
+    const el = b as HTMLButtonElement;
+    const slot = el.dataset.slot as SlotId;
+    el.onclick = () => {
+      if (el.dataset.act === "save") h.onSaveSlot(slot);
+      else if (el.dataset.act === "load") h.onLoadSlot(slot);
+      else h.onDeleteSlot(slot);
+      renderSaves(); // refresh timestamps/summaries
+    };
+  });
 }
 
 export function pushAlert(
@@ -313,6 +375,60 @@ export function updateHud(world: World): void {
 
   const wm = document.getElementById("watermark");
   if (wm) wm.textContent = world.speed === 0 ? "❚❚ PAUSED" : `▶ ${world.speed}×`;
+}
+
+// Guided opening overlay (M33). Ticks steps off from live world state and
+// self-dismisses once the first crew arrive. Shown only until completed/skipped
+// (a localStorage flag), so returning players aren't nagged.
+const TUT_KEY = "exostation.tutorialSeen";
+function tutorialSeen(): boolean {
+  try {
+    return localStorage.getItem(TUT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function setTutorialSeen(): void {
+  try {
+    localStorage.setItem(TUT_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function renderTutorial(world: World): void {
+  const el = document.getElementById("tutorial");
+  if (!el) return;
+  let residents = 0;
+  for (const id in world.agents) if (world.agents[id].alive && !world.agents[id].guest) residents++;
+  if (tutorialSeen() || residents > 0) {
+    if (residents > 0) setTutorialSeen(); // first crew arrived — goal achieved
+    el.classList.remove("show");
+    return;
+  }
+  const has = (k: string) => Object.values(world.structures).some((s) => s.kind === k);
+  const sealed = Object.values(world.rooms).some((r) => r.enclosed);
+  const powered = world.power.supply > 0;
+  const air = Object.values(world.rooms).some((r) => r.gas === "o2" || r.gas === "ch4");
+  const steps: [string, boolean][] = [
+    ["Seal a room — Floor, then Wall around it", sealed],
+    ["Power it — a Solar Panel on the hull", powered],
+    ["Add an O₂ Generator inside", air],
+    ["Build a Rations Synth", has("synth")],
+    ["Add Crew Quarters", has("pod")],
+    ["Build a Docking Port", has("dock")],
+  ];
+  const rows = steps.map(([t, done]) => `<li class="${done ? "done" : ""}">${done ? "✓" : "○"} ${t}</li>`).join("");
+  el.innerHTML =
+    `<h3>▶ GETTING STARTED</h3><ol>${rows}</ol>` +
+    `<div class="tut-foot"><span>A shuttle brings your first crew once these are done.</span>` +
+    `<button id="tut-skip">Skip</button></div>`;
+  el.classList.add("show");
+  const skip = document.getElementById("tut-skip");
+  if (skip) skip.onclick = () => {
+    setTutorialSeen();
+    el.classList.remove("show");
+  };
 }
 
 // Topbar scenario-objective indicator with a progress bar.
@@ -486,7 +602,8 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
 }
 
 // Alienpedia: a reference card for every species that has visited the station.
-export function renderAlienpedia(world: World): void {
+// Click an entry to pan to that species and ring them; shows live count + mood.
+export function renderAlienpedia(world: World, onLocate?: (s: Species) => void): void {
   const el = document.getElementById("alienpedia");
   if (!el) return;
   if (world.seen.length === 0) {
@@ -494,9 +611,13 @@ export function renderAlienpedia(world: World): void {
     return;
   }
   const present: Record<string, number> = {};
+  const moodSum: Record<string, number> = {};
   for (const id in world.agents) {
     const a = world.agents[id];
-    if (a.alive) present[a.species] = (present[a.species] || 0) + 1;
+    if (a.alive) {
+      present[a.species] = (present[a.species] || 0) + 1;
+      moodSum[a.species] = (moodSum[a.species] || 0) + a.mood;
+    }
   }
   const entries = world.seen
     .map((s) => {
@@ -514,10 +635,12 @@ export function renderAlienpedia(world: World): void {
           .filter(Boolean)
           .join(" · ") || "neutral to all";
       const here = present[s] || 0;
+      const mood = here ? Math.round(moodSum[s] / here) : 0;
       const rep = Math.round(getRep(world, s));
+      const aboard = here ? ` · ${here} aboard · 🙂${mood}%` : "";
       return (
-        `<div class="ent"><div class="hd"><span class="d" style="background:${SP_COLOR[s]}"></span>${d.label}` +
-        `<span class="role">${d.role}${here ? ` · ${here} aboard` : ""}</span></div>` +
+        `<div class="ent${here ? " locatable" : ""}"${here ? ` data-sp="${s}"` : ""}><div class="hd"><span class="d" style="background:${SP_COLOR[s]}"></span>${d.label}` +
+        `<span class="role">${d.role}${aboard}</span></div>` +
         `<div class="stat">Reputation <b>${rep}</b><span class="rep"><i style="width:${rep}%"></i></span></div>` +
         `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${d.diet}</b> · Power <b>${d.power}</b></div>` +
         `<div class="stat">${rel}</div>` +
@@ -527,6 +650,11 @@ export function renderAlienpedia(world: World): void {
     })
     .join("");
   el.innerHTML = `<h3>📖 ALIENPEDIA</h3>${entries}`;
+  if (onLocate) {
+    el.querySelectorAll(".ent.locatable").forEach((e) => {
+      (e as HTMLElement).onclick = () => onLocate((e as HTMLElement).dataset.sp as Species);
+    });
+  }
 }
 
 // Lower-right advisor board: species seen so far + the AI's next-step guidance.
@@ -551,10 +679,11 @@ export function renderAdvisor(world: World): void {
     `<ul class="advice">${advice}</ul>`;
 }
 
-export function showDragLabel(text: string, x: number, y: number): void {
+export function showDragLabel(text: string, x: number, y: number, bad = false): void {
   const el = document.getElementById("draglabel");
   if (!el) return;
   el.textContent = text;
+  el.style.color = bad ? "#ff6a6a" : "#d7dbe2";
   el.style.left = `${x + 14}px`;
   el.style.top = `${y - 22}px`;
   el.classList.add("show");

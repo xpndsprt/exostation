@@ -17,7 +17,7 @@ import { requestsSystem } from "./requests";
 import { objectivesSystem } from "./objectives";
 import { buyUnlock, toolLock, isUnlocked, UNLOCKS } from "./research";
 import { updateSeen } from "./advisor";
-import { saveWorld, loadWorld } from "./persistence";
+import { saveWorld, loadWorld, deleteSave } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
@@ -29,6 +29,7 @@ import {
   renderAlienpedia,
   renderRequests,
   renderObjective,
+  renderTutorial,
   renderTech,
   refreshPalette,
   showEndBanner,
@@ -163,23 +164,31 @@ async function boot(): Promise<void> {
   };
 
   const handlers: UIHandlers = {
-    onSave: () => {
-      const ok = saveWorld(world);
-      if (ok) markSaved();
-      else pushAlert("Save failed.", "bad");
+    onSaveSlot: (slot) => {
+      if (saveWorld(world, slot)) {
+        markSaved();
+        pushAlert(slot === "auto" ? "Autosaved ✓" : `Saved to Slot ${slot} ✓`, "info");
+      } else pushAlert("Save failed.", "bad");
     },
-    onLoad: () => {
-      const loaded = loadWorld();
+    onLoadSlot: (slot) => {
+      const loaded = loadWorld(slot);
       if (!loaded) {
-        pushAlert("No save found.", "warn");
+        pushAlert("That slot is empty.", "warn");
         return;
       }
       Object.assign(world, loaded);
       world.dirtyRooms = true;
       sel = null;
+      overlay = "none";
       rememberAgents();
+      prevPhase = world.phase;
+      hideEndBanner();
       needRedraw = true;
       pushAlert("Station loaded.", "info");
+    },
+    onDeleteSlot: (slot) => {
+      deleteSave(slot);
+      pushAlert(`Deleted ${slot === "auto" ? "autosave" : "Slot " + slot}.`, "info");
     },
     onDeconstruct: (id) => {
       const s = world.structures[id];
@@ -219,7 +228,35 @@ async function boot(): Promise<void> {
         needRedraw = true;
       }
     },
+    onCycle: (kind) => {
+      const list = Object.values(world.structures).filter((s) => s.kind === kind);
+      if (list.length === 0) {
+        pushAlert(`No ${kind} built yet.`, "warn");
+        return;
+      }
+      const next = ((cycleIx[kind] ?? -1) + 1) % list.length;
+      cycleIx[kind] = next;
+      const s = list[next];
+      sel = { kind: "structure", id: s.id };
+      centerOnCell(s.cell);
+      needRedraw = true;
+    },
+    onLocateSpecies: (sp) => {
+      let target = -1;
+      for (const id in world.agents) {
+        const a = world.agents[id];
+        if (a.alive && a.species === sp) {
+          target = a.cell;
+          break;
+        }
+      }
+      if (target < 0) return;
+      renderer.flashSpecies(sp);
+      centerOnCell(target);
+      needRedraw = true;
+    },
   };
+  const cycleIx: Record<string, number> = {};
 
   setupUI(state, world, handlers);
   applyCam();
@@ -308,16 +345,24 @@ async function boot(): Promise<void> {
     // ghost cells
     let ghost: number[] = [];
     let valid = true;
+    let anchor = -1; // facing marker (e.g. a solar panel's wall-mounted base)
     if (dragging && dragStart >= 0 && hover >= 0) {
       ghost = rectCells(world, dragStart, hover);
       valid = canPlace(world, tool, tx, ty);
       const w = Math.abs((dragStart % world.w) - tx) + 1;
       const h = Math.abs(((dragStart / world.w) | 0) - ty) + 1;
-      showDragLabel(`${w}×${h}`, clientX, clientY);
+      // live running cost: only empties actually get built, so count placeable cells
+      const unit = costOf(tool);
+      let buildable = 0;
+      for (const cell of ghost) if (canPlace(world, tool, cell % world.w, (cell / world.w) | 0)) buildable++;
+      const total = unit * buildable;
+      const label = unit > 0 ? `${w}×${h} · ¢${total}` : `${w}×${h}`;
+      showDragLabel(label, clientX, clientY, total > world.credits);
     } else if (hover >= 0 && tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       ghost = fp ?? [hover];
       valid = fp !== null;
+      if (fp) anchor = fp[0]; // the wall-mounted base, so the facing is unmistakable
     } else if (hover >= 0 && tool in STRUCTURES && tool !== "dock") {
       const fp = footprintCells(world, tool as StructureKind, tx, ty);
       ghost = fp ?? [hover];
@@ -326,7 +371,7 @@ async function boot(): Promise<void> {
       ghost = [hover];
       valid = canPlace(world, tool, tx, ty);
     }
-    renderer.drawCursor(world, ghost, valid, hover);
+    renderer.drawCursor(world, ghost, valid, hover, anchor);
 
     // cursor style
     let cursor = "default";
@@ -548,9 +593,10 @@ async function boot(): Promise<void> {
       renderTech(world, handlers.onBuyUnlock);
       refreshPalette(world);
       renderRequests(world);
-      renderAlienpedia(world);
+      renderAlienpedia(world, handlers.onLocateSpecies);
       renderAdvisor(world);
       renderObjective(world);
+      renderTutorial(world);
       needRedraw = false;
     }
   });

@@ -179,6 +179,43 @@
       background: rgba(20,26,36,.96); border: 1px solid #2c3445; border-radius: 6px;
       padding: 3px 8px; font-size: 12px; color: #d7dbe2; font-variant-numeric: tabular-nums; }
     #draglabel.show { display: block; }
+    /* Alienpedia: clickable entries */
+    #alienpedia .ent.locatable { cursor: pointer; border-radius: 6px; }
+    #alienpedia .ent.locatable:hover { background: rgba(110,168,255,.08); }
+    /* guided opening overlay */
+    #tutorial { position: fixed; left: 50%; top: 48px; transform: translateX(-50%); z-index: 14;
+      display: none; width: 320px; background: rgba(16,20,28,.95); border: 1px solid #2c3445;
+      border-radius: 10px; padding: 10px 14px; font-size: 12.5px; box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+    #tutorial.show { display: block; }
+    #tutorial h3 { margin: 0 0 6px; font-size: 12px; color: #6ea8ff; letter-spacing: .06em; }
+    #tutorial ol { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+    #tutorial li { color: #aab2c4; }
+    #tutorial li.done { color: #6fdc97; }
+    #tutorial .tut-foot { display: flex; align-items: center; gap: 8px; justify-content: space-between;
+      color: #8b93a6; font-size: 11px; border-top: 1px solid #232b3a; padding-top: 6px; }
+    #tutorial .tut-foot button { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
+    #tutorial .tut-foot button:hover { background: #232c3d; }
+    /* saves modal */
+    #saves { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,14,.6); backdrop-filter: blur(3px); }
+    #saves.show { display: flex; }
+    #saves .card { background: #141a24; border: 1px solid #2c3445; border-radius: 14px; padding: 20px 22px;
+      width: 360px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+    #saves h3 { margin: 0 0 12px; font-size: 14px; color: #6ea8ff; letter-spacing: .04em; }
+    #saves .slot { border: 1px solid #232b3a; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+    #saves .slot-h { display: flex; justify-content: space-between; align-items: baseline; }
+    #saves .slot-h b { color: #e3e7ef; }
+    #saves .slot-sum { color: #aab2c4; font-size: 11.5px; margin: 2px 0 6px; }
+    #saves .slot-btns { display: flex; gap: 6px; }
+    #saves .slot-btns button { flex: 1; background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445;
+      border-radius: 6px; padding: 5px; font-size: 11.5px; cursor: pointer; }
+    #saves .slot-btns button:hover:not(:disabled) { background: #232c3d; }
+    #saves .slot-btns button:disabled { opacity: .35; cursor: default; }
+    #saves .slot-btns button.danger:hover:not(:disabled) { background: #5a2330; border-color: #8a3548; }
+    #saves .muted { color: #6b7488; }
+    #saves .close { margin-top: 4px; width: 100%; background: #2d6cdf; color: #fff; border: none;
+      border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -195,6 +232,12 @@
   <div id="tooltip"></div>
   <div id="draglabel"></div>
   <div id="banner">⚠ BROWNOUT — shedding power</div>
+  <div id="tutorial"></div>
+  <div id="saves"><div class="card">
+    <h3>💾 Saves</h3>
+    <div id="saves-body"></div>
+    <button class="close" type="button" onclick="document.getElementById('saves').classList.remove('show')">Close</button>
+  </div></div>
   <div id="endbanner"><div class="card">
     <div class="title"></div>
     <div class="sub"></div>
