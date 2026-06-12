@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎙️ The Reviewer's Epic — a detour to harden the first hour</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>🎙️ The Reviewer's Epic — a detour to harden the first hour</h1>
+<blockquote><strong>This is a deliberate detour from the main game roadmap.</strong> Instead of adding new species/systems (Security, Research-as-content, more roster), we pause to act on a critical one-hour playtest review. The goal of this epic is to take the verdict from <strong>6.5/10 → 8/10</strong>: make the smart systems core <em>teach itself</em>, <em>give feedback</em>, and <em>earn the second hour</em>.</blockquote>
+<h2>Who reviewed it</h2>
+<p><strong>Mara Voss</strong> — 12-year management-sim critic (RimWorld, Prison Architect, Oxygen Not Included, Factorio). Plays cold, no manual. Verdict on the current build:</p>
+<blockquote><em>"A genuinely smart systems core wrapped in almost no game. The architecture-is-politics thesis is real and the Korro friction proves it. But the first hour is all tutorial-by-Advisor and no stakes: nothing threatens you, nothing pulls you forward, and the most original mechanics (shuttle immigration, harmony) are under-communicated."</em></blockquote>
+<p>Her three headline problems:</p>
+<ol><li><strong>No goal</strong> — no objective, no win/lose, a total crew wipe just leaves an empty husk running.</li><li><strong>Core mechanics are invisible</strong> — crew arrival has no fanfare; mood/harmony are qualitative.</li><li><strong>The mid-game runs itself</strong> — no threat, no credit sink, abundance kills decisions.</li></ol>
+<hr>
+<h2>The hitlist (all 11 suggestions → milestones M26–M36)</h2>
+<p>Priority mirrors the review: <strong>P0</strong> = the game feels unfinished without it · <strong>P1</strong> = turns "runs itself" into "can't stop" · <strong>P2</strong> = noticeable polish.</p>
+<table><thead><tr><th>#</th><th>Milestone</th><th>Suggestion</th><th style="text-align:center">Pri</th><th style="text-align:center">Effort</th></tr></thead><tbody><tr><td>1</td><td><strong>M26 — Arrival &amp; capacity legibility</strong></td><td>Make crew arrival visible (toast, shuttle, "why none") + Crew/Hotel capacity HUD chips</td><td style="text-align:center">P0</td><td style="text-align:center">M</td></tr><tr><td>2</td><td><strong>M27 — Goals &amp; game-over</strong></td><td>Scenario objective(s) + proper defeat/victory + restart</td><td style="text-align:center">P0</td><td style="text-align:center">M</td></tr><tr><td>3</td><td><strong>M28 — Numbers behind mood/harmony</strong></td><td>Hover breakdown of mood terms + room productivity multiplier</td><td style="text-align:center">P0</td><td style="text-align:center">S</td></tr><tr><td>4</td><td><strong>M29 — Pressure source</strong></td><td>Recurring threat events (surges, micro-breaches, raiders, price shocks)</td><td style="text-align:center">P1</td><td style="text-align:center">L</td></tr><tr><td>5</td><td><strong>M30 — Credit sink / tech tree</strong></td><td>Tiered unlocks or a research tree so expansion has a spine</td><td style="text-align:center">P1</td><td style="text-align:center">L</td></tr><tr><td>6</td><td><strong>M31 — Audio pass</strong></td><td>Build click, brownout alarm, arrival chime, skirmish sting, ambient hum</td><td style="text-align:center">P1</td><td style="text-align:center">M</td></tr><tr><td>7</td><td><strong>M32 — Curb abundance</strong></td><td>Spoilage / storage caps / scaling demand so food stays a decision</td><td style="text-align:center">P1</td><td style="text-align:center">M</td></tr><tr><td>8</td><td><strong>M33 — Guided opening</strong></td><td>20-second "seal → power → air" first-build overlay (beyond Advisor text)</td><td style="text-align:center">P2</td><td style="text-align:center">M</td></tr><tr><td>9</td><td><strong>M34 — Save slots &amp; feedback</strong></td><td>Named save slots + "Saved ✓" confirmation</td><td style="text-align:center">P2</td><td style="text-align:center">S</td></tr><tr><td>10</td><td><strong>M35 — Camera / QoL</strong></td><td>Find/cycle a module type · live build-cost total while dragging · solar rotate confirm</td><td style="text-align:center">P2</td><td style="text-align:center">M</td></tr><tr><td>11</td><td><strong>M36 — Actionable Alienpedia</strong></td><td>Click a species to locate them + show live mood/count</td><td style="text-align:center">P2</td><td style="text-align:center">S</td></tr></tbody></table>
+<p><strong>Suggested execution order:</strong> M26 → M28 → M27 (the P0 legibility-then-goal spine), then M31 (audio is the cheapest juice-per-hour) → M32 → M30 → M29, then the P2 polish (M33–M36) as time allows. Audio (M31) can slot in anywhere.</p>
+<hr>
+<h2>Milestone specs</h2>
+<p>Each milestone is independently shippable: code + <code>npm run build</code> + <code>npm test</code> (add headless checks) + <code>STRATEGY.md</code>/<code>BALANCE.md</code> sync + local commit.</p>
+<h3>M26 — Arrival &amp; capacity legibility  · P0 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"A core, novel mechanic is nearly invisible. No chime, no toast, the shuttle is a tiny grey sprite I didn't notice. And I had no idea why crew took so long."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>HUD chips: <strong>Crew N/Quarters</strong> and <strong>Guests N/Hotel</strong> (capacity always visible), next to the existing credits/power/mood chips.</li><li><strong>Arrival toast + flash</strong> when a resident or guest docks (e.g. "A Korro is docking"), reusing the existing <code>pushAlert</code> toast channel.</li><li>Make the shuttle obvious: larger sprite and/or a short approach trail and an arrival pulse at the dock.</li><li><strong>"Why no crew" surfacing:</strong> when quarters are free but nobody comes, the Advisor states the missing gate ("Waiting: no meals in stock" / "dock unpowered" / "no bunk in their air").</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Capacity chips update live as pods/hotels/residents/guests change.</li><li>A toast fires exactly once per arrival; no spam.</li><li>Headless test: with all gates but no meals, the "waiting on food" reason is produced; once meals exist, a crew arrives.</li></ul>
+<p><strong>Files:</strong> <code>ui.ts</code> (chips, toast wiring), <code>renderer.ts</code> (shuttle/flash), <code>advisor.ts</code> (waiting reason), <code>main.ts</code> (arrival hook), <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M27 — Goals &amp; game-over  · P0 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"There is no win/lose/objective layer at all. A total wipe just leaves an empty husk running."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>A small <strong>objective system</strong>: one active scenario goal with progress (e.g. "Reach ¢10,000", "Host all 5 species at once", "Keep ≥6 crew alive for 10 minutes"). Shown in the topbar with a progress bar.</li><li><strong>Victory</strong> state on completion (banner + offer next goal / free-play).</li><li><strong>Defeat</strong> state when the station is non-viable: zero living residents <em>and</em> no means to recover (no powered dock, or sustained for N seconds). Banner + <strong>Restart</strong>.</li><li><strong>Restart/new-game</strong> path that resets <code>World</code> cleanly (and clears/keeps save by choice).</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Objective progress is serializable (save/load mid-goal works).</li><li>Reaching the target triggers victory exactly once; a wipe triggers defeat, not an empty running sim.</li><li>Headless tests: objective completes when its metric is met; defeat fires on a crewless, dock-less station.</li></ul>
+<p><strong>Files:</strong> <code>types.ts</code> (Objective/GameState), new <code>objectives.ts</code>, <code>world.ts</code> (reset), <code>ui.ts</code> (topbar + banners), <code>persistence.ts</code> (migrate), <code>main.ts</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M28 — Numbers behind mood &amp; harmony  · P0 · S</h3>
+<p><strong>Why (Mara):</strong> <em>"'Tense' and the red ring are qualitative. Players can't optimize what they can't see."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Agent hover tooltip shows the <strong>mood breakdown</strong>: base 50, needs (+/−), neighbor opinions (+/−), room harmony (+/−) → resulting mood.</li><li>Cell/room hover shows the room's <strong>harmony value and productivity multiplier</strong> (e.g. "Tense −0.53 → ×0.6 production").</li><li>Reuse existing <code>showTooltip</code>; no new panels.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Numbers in the tooltip match what <code>moodSystem</code>/<code>harmony.ts</code> actually compute (single source of truth — export the term calc).</li><li>Headless test: a known human+korro room reports the expected harmony/productivity.</li></ul>
+<p><strong>Files:</strong> <code>mood.ts</code>/<code>harmony.ts</code> (export a breakdown helper), <code>ui.ts</code> (tooltip), <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M29 — Pressure source  · P1 · L</h3>
+<p><strong>Why (Mara):</strong> <em>"The mid-game is frictionless. Give me something that makes batteries, security, and layout matter under duress."</em></p>
+<p><strong>Scope (pick a starter set, expandable)</strong></p>
+<ul><li>A lightweight <strong>event scheduler</strong> that fires periodic, escalating incidents:<ul><li><strong>Power surge / generator fault</strong> — a module trips offline for a while (battery headroom matters).</li><li><strong>Hull micro-breach</strong> — a random hull wall springs a slow leak (a room vents unless repaired/sealed).</li><li><strong>Raider dock event</strong> — a hostile ship; ties directly into a later <strong>Security</strong> module (guard post / turret) as the counter.</li><li><strong>Market shock</strong> — mineral price spikes/crashes for a window.</li></ul></li><li>Telegraphed by toast + (M31) sound; severity scales with station size / time.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Events are deterministic from <code>tick</code> (replay/test-friendly), serializable, and never unrecoverable on turn one (grace period before the first event).</li><li>Headless tests: a breach vents a room; a surge sheds a module; recovery restores normal.</li></ul>
+<p><strong>Files:</strong> new <code>events.ts</code>, <code>types.ts</code>, <code>world.ts</code>, <code>renderer.ts</code>/<code>ui.ts</code> (telegraph), <code>simcheck.ts</code>. <em>(Security counter may be its own sub-milestone.)</em></p>
+<hr>
+<h3>M30 — Credit sink / tech tree  · P1 · L</h3>
+<p><strong>Why (Mara):</strong> <em>"Money accrues with nothing meaningful to buy."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>A <strong>Research/Lab module</strong> generating research points, <strong>or</strong> wealth+research <strong>tiered unlocks</strong> (start locked: advanced generators, Security, new species life-support, larger storage).</li><li>A small <strong>tech panel</strong> showing what's unlocked / next, with credit (and/or research) costs — the destination Mara wanted.</li><li>Gates some existing content (e.g. Thol methane wing, Vry'l fungal chain, Korro) behind unlocks so the roster becomes a <em>progression</em>, matching the original design doc's "wealth + research" intent.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Unlock state serializes; locked tools are visibly disabled with their requirement shown.</li><li>Headless tests: a tool is unbuildable until its unlock condition is met, buildable after.</li></ul>
+<p><strong>Files:</strong> <code>types.ts</code>, new <code>research.ts</code>, <code>structures.ts</code> (unlock flags), <code>ui.ts</code> (tech panel + disabled tools), <code>persistence.ts</code>, <code>simcheck.ts</code>. Update <code>BALANCE.md</code> unlock table (already drafted there).</p>
+<hr>
+<h3>M31 — Audio pass  · P1 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"Zero sound. The cheapest juice-per-hour on this list."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>A tiny audio module (WebAudio or a tested lib) with: build click, place/deny blip, <strong>brownout alarm</strong>, <strong>arrival chime</strong>, <strong>skirmish sting</strong>, low <strong>ambient hum</strong>, UI clicks.</li><li>A <strong>mute toggle</strong> + volume in the topbar; respect it in save/localStorage.</li><li>Keep assets small; generate simple tones if needed to avoid binary bloat.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>No audio plays before first user gesture (browser autoplay policy).</li><li>Mute persists; no errors in the headless build (audio guarded behind <code>window</code>).</li></ul>
+<p><strong>Files:</strong> new <code>audio.ts</code>, <code>main.ts</code> (event hooks), <code>ui.ts</code> (mute), <code>config.ts</code>.</p>
+<hr>
+<h3>M32 — Curb abundance  · P1 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"Meals piled to 200+ and biomass kept climbing — food becomes a non-decision after minute 15."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Pick a lever (or combine, lightly): <strong>storage caps</strong> per resource (a Storage/Silo module raises the cap), <strong>spoilage</strong> (meals/biomass decay slowly above a threshold), and/or <strong>scaling demand</strong> (more crew eat proportionally more).</li><li>Production idles or slows when at cap (no infinite stockpiles), nudging the player to size production to population.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Stockpiles plateau at the cap instead of climbing forever; food stays a periodic decision in a 30-min sim.</li><li>Headless test: with default storage, biomass/meals stop growing at the cap.</li></ul>
+<p><strong>Files:</strong> <code>types.ts</code> (caps), <code>food.ts</code>, <code>structures.ts</code> (Storage module), <code>ui.ts</code> (chip shows X/cap), <code>BALANCE.md</code>, <code>simcheck.ts</code>.</p>
+<hr>
+<h3>M33 — Guided opening  · P2 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"A 20-second guided first-build would onboard without a wiki."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>A dismissible <strong>first-run overlay</strong> that highlights the literal steps: <em>seal a room → solar → O₂ gen → synth + bunk + dock</em>, advancing as each is satisfied (reads real world state, not a script).</li><li>Only shows on a fresh game; skippable; never blocks input.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Steps tick off from actual state changes; overlay self-dismisses when the first crew arrives.</li><li>Doesn't reappear after completion (flag in save).</li></ul>
+<p><strong>Files:</strong> <code>ui.ts</code> (overlay), <code>main.ts</code> (state checks), <code>persistence.ts</code> (seen flag).</p>
+<hr>
+<h3>M34 — Save slots &amp; feedback  · P2 · S</h3>
+<p><strong>Why (Mara):</strong> <em>"One unnamed slot feels fragile for a sim."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li><strong>Named save slots</strong> (e.g. 3 slots) with timestamp; load/delete per slot.</li><li><strong>"Saved ✓"</strong> toast on manual save; autosave indicator.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Multiple independent saves round-trip; deleting one leaves others intact.</li><li>Headless test: two slots store distinct worlds.</li></ul>
+<p><strong>Files:</strong> <code>persistence.ts</code> (keyed slots), <code>ui.ts</code> (slot UI + toast).</p>
+<hr>
+<h3>M35 — Camera / QoL  · P2 · M</h3>
+<p><strong>Why (Mara):</strong> <em>"Small frictions: finding modules, cost while dragging, rotation."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li><strong>Find/cycle a module type</strong> (double-click a palette entry to pan-cycle instances).</li><li><strong>Live build-cost total</strong> while drag-placing floor/wall (extend the existing drag-size label).</li><li><strong>Solar rotation confirmation</strong> in the ghost (clear facing indicator).</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Drag label shows running ¢ cost and turns red when unaffordable.</li><li>Cycle visits each instance of the chosen kind.</li></ul>
+<p><strong>Files:</strong> <code>main.ts</code> (input), <code>ui.ts</code>/<code>renderer.ts</code> (labels/ghost).</p>
+<hr>
+<h3>M36 — Actionable Alienpedia  · P2 · S</h3>
+<p><strong>Why (Mara):</strong> <em>"Turn the reference card into a management tool."</em></p>
+<p><strong>Scope</strong></p>
+<ul><li>Click a species entry to <strong>pan to / highlight</strong> its members and show <strong>live average mood + count</strong>.</li><li>Optional: a per-species mood sparkline.</li></ul>
+<p><strong>Acceptance</strong></p>
+<ul><li>Clicking an entry centers the camera on a member and rings that species briefly.</li></ul>
+<p><strong>Files:</strong> <code>ui.ts</code> (click handler), <code>renderer.ts</code> (highlight), <code>main.ts</code> (camera).</p>
+<hr>
+<h2>Definition of done (the epic)</h2>
+<p>A cold player, no manual, in their first hour:</p>
+<ul><li><strong>Always knows the goal</strong> and can win or lose it (M27).</li><li><strong>Sees crew arrive</strong> and reads capacity at a glance (M26).</li><li><strong>Understands why</strong> a room is tense and what it costs (M28).</li><li><strong>Faces at least one real threat</strong> and has a reason to expand (M29, M30).</li><li><strong>Hears the station</strong> react (M31), and <strong>food stays a decision</strong> (M32).</li><li>Onboards smoothly, saves safely, and isn't nagged by small frictions (M33–M36).</li></ul>
+<p><strong>Re-review target:</strong> Mara replays for a second hour and scores it <strong>≥ 8/10</strong>.</p>
+<hr>
+<p><em>Detour owner: the EXOSTATION team. When this epic lands, we return to the main roadmap (Security as content, Research-gated species, the wider roster).</em></p>
+</main>
+</body>
+</html>
