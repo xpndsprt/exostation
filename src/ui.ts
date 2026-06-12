@@ -92,6 +92,39 @@ export function setupUI(state: UIState, world: World, handlers: UIHandlers): voi
   buildTimeControls(world);
   buildOverlayControls(handlers);
   buildSaveControls(world, handlers);
+  setupCollapse();
+}
+
+// Lower-right panels (Tech, Requests, Alienpedia, Advisor) fold/unfold when you
+// click their header. State persists in localStorage and rides on the panel's
+// container class, so the per-frame innerHTML rebuilds don't disturb it.
+const COLLAPSE_KEY = "exostation.collapsed";
+function loadCollapsed(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+function setupCollapse(): void {
+  const col = document.getElementById("rightcol");
+  if (!col) return;
+  const collapsed = loadCollapsed();
+  for (const id of collapsed) document.getElementById(id)?.classList.add("collapsed");
+  col.addEventListener("click", (e) => {
+    const h = (e.target as HTMLElement).closest("h3");
+    const panel = h?.parentElement as HTMLElement | null;
+    if (!h || !panel || panel.parentElement?.id !== "rightcol") return;
+    panel.classList.toggle("collapsed");
+    const set = loadCollapsed();
+    if (panel.classList.contains("collapsed")) set.add(panel.id);
+    else set.delete(panel.id);
+    try {
+      localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set]));
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 function buildPalette(state: UIState, handlers: UIHandlers): void {

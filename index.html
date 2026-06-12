@@ -125,6 +125,12 @@
       display: flex; flex-direction: column; gap: 8px; }
     #tech, #requests, #alienpedia, #advisor { background: rgba(16,20,28,.93); border: 1px solid #232b3a;
       border-radius: 10px; padding: 10px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+    /* collapsible panels: click the header to fold/unfold */
+    .panel > h3 { cursor: pointer; user-select: none; }
+    .panel > h3::before { content: "▾"; display: inline-block; width: 12px; opacity: .55; font-size: 10px; }
+    .panel.collapsed > h3::before { content: "▸"; }
+    .panel.collapsed > h3 { margin-bottom: 0; }
+    .panel.collapsed > *:not(h3) { display: none; }
     #tech h3 { margin: 0 0 7px; font-size: 12px; color: #b39cff; letter-spacing: .06em; }
     #tech .unlock { padding: 6px 0; border-top: 1px solid #232b3a; }
     #tech .unlock:first-of-type { border-top: none; }
@@ -245,10 +251,10 @@
   </div></div>
   <div id="watermark"></div>
   <div id="rightcol">
-    <div id="tech"></div>
-    <div id="requests"></div>
-    <div id="alienpedia"></div>
-    <div id="advisor"></div>
+    <div id="tech" class="panel"></div>
+    <div id="requests" class="panel"></div>
+    <div id="alienpedia" class="panel"></div>
+    <div id="advisor" class="panel"></div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
