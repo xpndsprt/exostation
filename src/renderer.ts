@@ -133,13 +133,14 @@ export class Renderer {
   }
 
   // simple sprite-list helper: place fresh Sprites in a container (textures cached)
-  private drawSprites(box: Container, items: { t: Texture | null; x: number; y: number; c: boolean }[]): void {
+  private drawSprites(box: Container, items: { t: Texture | null; x: number; y: number; c: boolean; tint?: number }[]): void {
     box.removeChildren();
     for (const it of items) {
       if (!it.t) continue;
       const sp = new Sprite(it.t);
       sp.scale.set(SCALE);
       if (it.c) sp.anchor.set(0.5);
+      if (it.tint !== undefined) sp.tint = it.tint;
       sp.x = it.x;
       sp.y = it.y;
       box.addChild(sp);
@@ -347,16 +348,17 @@ export class Renderer {
     for (const ship of world.ships) {
       const cx = (ship.cell % world.w) * TILE + TILE / 2;
       const cy = ((ship.cell / world.w) | 0) * TILE + TILE / 2;
-      const col = ship.trader ? 0x6fcf97 : 0x9fd8ff;
-      g.circle(cx, cy, r).stroke({ width: 2, color: col, alpha: 0.55 });
+      const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
+      g.circle(cx, cy, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
     }
     this.drawSprites(
       this.shipsC,
       world.ships.map((ship) => ({
-        t: tex(ship.trader ? "trader" : "shuttle", "default"),
+        t: tex(ship.hostile ? "trader" : ship.trader ? "trader" : "shuttle", "default"),
         x: (ship.cell % world.w) * TILE + TILE / 2,
         y: ((ship.cell / world.w) | 0) * TILE + TILE / 2,
         c: true,
+        tint: ship.hostile ? 0xff5555 : undefined,
       })),
     );
   }

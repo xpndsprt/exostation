@@ -101,6 +101,30 @@ Scenario goals completed in order; clearing the list = victory, after which play
 3. **Host different species aboard** — **4** distinct species alive at once (forces a methane wing for Thol or a fungal chain for Vry'l beyond the natural human/korro/Drenn three).
 - **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
 
+## Tech tree (M30)
+Credits are the sink; a **powered Research Lab** (¢150, draw 6) is the gate.
+| Unlock | ¢ | Enables |
+|--------|:--:|---------|
+| Methane Life-Support | 350 | `ch4gen` (Thol) |
+| Fungal Synthesis | 300 | vat *spores* / synth *fungal* recipes (Vry'l) |
+| Cargo Logistics | 250 | `silo` (storage) |
+| Station Security | 500 | `turret` (raider defense) |
+- Starter tools (floor/wall/door, solar, battery, o2gen, synth, pod, dock, vat, bay, rec, hotel, tradehub, lab) are never locked — onboarding is unchanged.
+- Locked tools are disabled in the palette; `applyTool` and the recipe toggle also refuse them.
+
+## Storage caps (M32)
+Base caps: biomass **400**, spores **250**, rations **50**, fungal **50**, minerals **200**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
+
+## Station incidents (M29)
+First incident at **120 s**, then every **90 s** (shrinks 5 s per 10 min, floor **60 s**); type chosen by a deterministic tick hash.
+| Incident | Effect |
+|----------|--------|
+| Power surge | a random non-life-support module offline for **20 s** |
+| Hull breach | vents one hull wall of a sealed room (**only with ≥2 enclosed rooms**) — reseal it |
+| Market shock | mineral price ×2 or ×0.5 for **40 s** |
+| Raider | hostile ship parks at a dock, **8 condition/s** to a random non-life-support module for **18 s**; a powered **Turret** destroys it instantly |
+- **Life support (O₂/CH₄ gens) is never targeted** — incidents threaten economy/production/defense, not a guaranteed suffocation. Suffocation only comes from the player's own power/zoning failures.
+
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).

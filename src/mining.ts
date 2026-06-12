@@ -1,5 +1,6 @@
 import { Site, World } from "./types";
 import { TRAITS } from "./species";
+import { storageCaps } from "./storage";
 
 const DRONE_SPEED = 6; // tiles / second
 const CARGO_CAP = 10;
@@ -98,7 +99,7 @@ export function miningSystem(w: World, dt: number): void {
         d.t += dt / dur;
         if (d.t >= 1) {
           d.t = 0;
-          w.stock.minerals += d.cargo;
+          w.stock.minerals = Math.min(storageCaps(w).minerals, w.stock.minerals + d.cargo);
           d.cargo = 0;
           d.state = "docked";
         }

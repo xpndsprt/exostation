@@ -8,6 +8,8 @@ import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
+import { UNLOCKS, isUnlocked, hasPoweredLab, toolLock } from "./research";
+import { storageCaps } from "./storage";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -41,6 +43,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "bay", label: "Bot Bay", key: "0" },
   { t: "dock", label: "Docking Port", key: "-" },
   { t: "tradehub", label: "Trade Hub", key: "M" },
+  { t: "lab", label: "Research Lab", key: "R" },
+  { t: "silo", label: "Storage Silo", key: "G" },
+  { t: "turret", label: "Turret", key: "U" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -70,6 +75,7 @@ export interface UIHandlers {
   onRecipe: (id: number) => void;
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
+  onBuyUnlock: (id: string) => void;
 }
 
 const toolButtons = new Map<Tool, HTMLButtonElement>();
@@ -115,10 +121,24 @@ function buildPalette(state: UIState): void {
   bar.appendChild(legend);
 }
 
+const lockedTools = new Set<string>();
+
 export function setActiveTool(tool: Tool, state: UIState): void {
+  if (lockedTools.has(tool)) return; // can't select tech that isn't researched yet
   state.tool = tool;
   for (const [, b] of toolButtons) b.classList.remove("active");
   toolButtons.get(tool)?.classList.add("active");
+}
+
+// Grey out and disable build tools whose tech isn't unlocked yet.
+export function refreshPalette(world: World): void {
+  lockedTools.clear();
+  for (const [tool, btn] of toolButtons) {
+    const lock = toolLock(world, tool);
+    if (lock) lockedTools.add(tool);
+    btn.classList.toggle("locked", !!lock);
+    btn.title = lock ? `Locked — research “${lock.label}” at a Research Lab` : "";
+  }
 }
 
 function buildTimeControls(world: World): void {
@@ -269,6 +289,7 @@ export function updateHud(world: World): void {
   }
 
   const st = world.stock;
+  const caps = storageCaps(world);
   const status = document.getElementById("status");
   if (status) {
     status.innerHTML =
@@ -282,8 +303,8 @@ export function updateHud(world: World): void {
       chip("🏨", `${guests}/${hotels}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
       chip("🍱", `${st.meals.rations}/${st.meals.fungal}`) +
-      chip("🌱", `${Math.floor(st.biomass)}/${Math.floor(st.spores)}`) +
-      chip("⛏", `${Math.floor(st.minerals)}`) +
+      chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}`) +
+      chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`) +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
 
@@ -432,6 +453,36 @@ export function renderRequests(world: World): void {
     })
     .join("");
   el.innerHTML = `<h3>📋 REQUESTS</h3>${rows}`;
+}
+
+// Tech panel: spend credits at a powered Research Lab to unlock advanced
+// modules and species food chains. Hidden once everything is researched.
+export function renderTech(world: World, onBuy: (id: string) => void): void {
+  const el = document.getElementById("tech");
+  if (!el) return;
+  const locked = UNLOCKS.filter((u) => !isUnlocked(world, u.id));
+  if (locked.length === 0) {
+    el.innerHTML = "";
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "";
+  const lab = hasPoweredLab(world);
+  const head = `<h3>🔬 TECH${lab ? "" : ' <span class="muted">— build a Lab</span>'}</h3>`;
+  const rows = locked
+    .map((u) => {
+      const can = lab && world.credits >= u.cost;
+      return (
+        `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">¢${u.cost}</span></div>` +
+        `<div class="ul-d">${u.desc}</div>` +
+        `<button data-id="${u.id}"${can ? "" : " disabled"}>Research</button></div>`
+      );
+    })
+    .join("");
+  el.innerHTML = head + rows;
+  el.querySelectorAll("button[data-id]").forEach((b) => {
+    (b as HTMLButtonElement).onclick = () => onBuy((b as HTMLElement).dataset.id as string);
+  });
 }
 
 // Alienpedia: a reference card for every species that has visited the station.

@@ -29,6 +29,11 @@ export function createWorld(): World {
     phase: "playing",
     objectiveIx: 0,
     loseTimer: 0,
+    unlocked: {},
+    eventTimer: 0,
+    priceMult: 1,
+    priceT: 0,
+    notify: [],
     reputation: {},
     requests: [],
     reqTimer: 0,
@@ -77,6 +82,7 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
     condition: 100,
     servicedBy: -1,
     recipe: defaultRecipe(kind),
+    faultT: 0,
   };
   w.structures[id] = s;
   c.structureId = id;
@@ -106,6 +112,7 @@ export function addStructureMulti(w: World, kind: StructureKind, cells: number[]
     condition: 100,
     servicedBy: -1,
     recipe: defaultRecipe(kind),
+    faultT: 0,
   };
   w.structures[id] = s;
   for (const c of cells) w.cells[c].structureId = id;
@@ -197,6 +204,7 @@ export function addDock(w: World, x: number, y: number): boolean {
     condition: 100,
     servicedBy: -1,
     recipe: "",
+    faultT: 0,
   };
   w.cells[i].structureId = id;
   return true;

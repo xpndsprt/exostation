@@ -93,7 +93,7 @@ export function economySystem(w: World, dt: number): void {
     if (hasTradeHub && w.stock.minerals > 0) {
       const amount = Math.min(w.stock.minerals, TRADE_BATCH);
       w.stock.minerals -= amount;
-      w.credits += amount * MINERAL_PRICE * (hasDrenn ? TRAITS.drennTrade : 1);
+      w.credits += amount * MINERAL_PRICE * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered);
       if (dock) {
         const ex = exteriorCell(w, dock);

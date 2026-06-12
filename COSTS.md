@@ -2,7 +2,7 @@
 
 > **Source of truth for prices.** These mirror the `cost` values in `src/structures.ts` (`STRUCTURES[*].cost` and `TILE_COST`). Code is authoritative; this file is kept in sync as the game is designed. Credits = ¢.
 
-You start a new game with **¢1000**. Building deducts the cost up front; you can't place something you can't afford (its ghost turns red). **Deconstructing** a module refunds **50%** of its cost. Crew (Human/Thol) are free to add. Income comes from **lodging** (guests in Hotel Rooms) and **trade** (a Trade Hub selling minerals).
+You start a new game with **¢1000**. Building deducts the cost up front; you can't place something you can't afford (its ghost turns red). **Deconstructing** a module refunds **50%** of its cost. Crew aren't bought — they **immigrate by shuttle** once you've built their living conditions. Income comes from **lodging** (guests in Hotel Rooms) and **trade** (a Trade Hub selling minerals); spend it at a **Research Lab** on tech unlocks.
 
 ## Structural tiles
 | Tile | Cost ¢ |
@@ -26,6 +26,17 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Bot Bay | 120 | 2×2 | Mining drone (minerals) |
 | Docking Port | 150 | wall | Hull airlock; guests + ship berth |
 | Trade Hub | 120 | 2×2 | Lets traders buy your minerals |
+| Research Lab | 150 | 2×1 | Enables the Tech panel (spend credits to research unlocks) |
+| Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
+| Turret | 200 | 1×1 | Shoots down raiders. Unlock: Station Security |
+
+## Tech unlocks (researched at a powered Lab, paid in credits)
+| Unlock | Cost ¢ | Enables |
+|--------|:------:|---------|
+| Methane Life-Support | 350 | Methane Gen (host Thol) |
+| Fungal Synthesis | 300 | Spores/Fungal recipes (feed Vry'l) |
+| Cargo Logistics | 250 | Storage Silo |
+| Station Security | 500 | Turret |
 
 ## Income (for reference)
 | Source | Rate |

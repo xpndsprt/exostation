@@ -12,8 +12,10 @@ import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
+import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
 import { objectivesSystem } from "./objectives";
+import { buyUnlock, toolLock, isUnlocked, UNLOCKS } from "./research";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
@@ -27,6 +29,8 @@ import {
   renderAlienpedia,
   renderRequests,
   renderObjective,
+  renderTech,
+  refreshPalette,
   showEndBanner,
   hideEndBanner,
   pushAlert,
@@ -59,6 +63,7 @@ function simStep(world: World, dt: number): void {
   moodSystem(world, dt);
   combatSystem(world, dt);
   economySystem(world, dt);
+  eventsSystem(world, dt);
   requestsSystem(world, dt);
   objectivesSystem(world, dt);
   world.tick++;
@@ -192,8 +197,13 @@ async function boot(): Promise<void> {
     onRecipe: (id) => {
       const s = world.structures[id];
       if (!s) return;
-      if (s.kind === "synth") s.recipe = s.recipe === "fungal" ? "rations" : "fungal";
-      else if (s.kind === "vat") s.recipe = s.recipe === "spores" ? "biomass" : "spores";
+      const next = s.kind === "synth" ? (s.recipe === "fungal" ? "rations" : "fungal") : s.kind === "vat" ? (s.recipe === "spores" ? "biomass" : "spores") : null;
+      if (next === null) return;
+      if ((next === "fungal" || next === "spores") && !isUnlocked(world, "fungal")) {
+        pushAlert("Research Fungal Synthesis at a Lab first.", "warn");
+        return;
+      }
+      s.recipe = next;
       needRedraw = true;
     },
     onOverlay: (m) => {
@@ -201,6 +211,14 @@ async function boot(): Promise<void> {
       needRedraw = true;
     },
     onRecenter: recenter,
+    onBuyUnlock: (id) => {
+      if (buyUnlock(world, id)) {
+        const u = UNLOCKS.find((x) => x.id === id);
+        pushAlert(`Researched: ${u?.label ?? id}.`, "info");
+        refreshPalette(world);
+        needRedraw = true;
+      }
+    },
   };
 
   setupUI(state, world, handlers);
@@ -221,6 +239,7 @@ async function boot(): Promise<void> {
       return;
     }
     // paid actions — only charge on a successful placement
+    if (toolLock(world, tool)) return; // tech not researched yet
     const cost = costOf(tool);
     if (world.credits < cost) return;
     let ok = false;
@@ -418,6 +437,9 @@ async function boot(): Promise<void> {
   let prevBrownout = false;
   let prevFighting = false;
   const detectAlerts = (): void => {
+    // drain transient station-incident messages (M29 events)
+    while (world.notify.length) pushAlert(world.notify.shift() as string, "warn");
+
     if (world.power.brownout && !prevBrownout) pushAlert("Brownout — shedding power.", "warn");
     prevBrownout = world.power.brownout;
 
@@ -523,6 +545,8 @@ async function boot(): Promise<void> {
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);
+      renderTech(world, handlers.onBuyUnlock);
+      refreshPalette(world);
       renderRequests(world);
       renderAlienpedia(world);
       renderAdvisor(world);

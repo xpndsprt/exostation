@@ -292,6 +292,66 @@
     "kkkkkkkkkkkkkkkk",
   ];
 
+  // Research Lab (2x1) — a console screen with a graph + a bubbling flask
+  const LAB = [
+    "kkkkkkkkkkkkkkk.kkkkkkkkkkkk.kkk.",
+    "kbhhhhhhhhhhhbk.kbhhhhhhhhbk.kLk.",
+    "kbhwwwwwwwwwhbk.kbhbbgbbbbhbk.kkk",
+    "kbhwgggggggwhbk.kbhbbggbbbhbk....",
+    "kbhwgwgwgggwhbk.kbhbbggbbbhbk....",
+    "kbhwggggwggwhbk.kbhbgggggbhbk....",
+    "kbhwgggggggwhbk.kbhbggwwgggbk....",
+    "kbhwwwwwwwwwhbk.kbhbgwwwwggbk....",
+    "kbhbbbbbbbbbhbk.kbhbgwwwwggbk....",
+    "kbhgbgbgbgbbhbk.kbhbggwwgggbk....",
+    "kbbbbbbbbbbbbbk.kbbbggggggbbk....",
+    "kbbkbbbbbbbkbbk.kbbkbbbbbbkbbk...",
+    "kbbkbbbbbbbkbbk.kbbkbbbbbbkbbk...",
+    "kbbbbbbbbbbbbbk.kbbbbbbbbbbbbk...",
+    "kkkkkkkkkkkkkkk.kkkkkkkkkkkkkk...",
+    "................................",
+  ];
+
+  // Storage Silo (1x1) — a banded tank with a hatch
+  const SILO = [
+    "................",
+    "....kkkkkkkk....",
+    "...khhhhhhhhk...",
+    "...khdddddhhk...",
+    "...khddddddhk...",
+    "...khhhhhhhhk...",
+    "...khddddddhk...",
+    "...khddddddhk...",
+    "...khhhhhhhhk...",
+    "...khddddddhk...",
+    "...khddddddhk...",
+    "...khhhhhhhhk...",
+    "...khdddddhhk...",
+    "...kkkkkkkkkk...",
+    "....kbbbbbbk....",
+    "................",
+  ];
+
+  // Turret (1x1) — a swivel base with a twin barrel and a status light
+  const TURRET = [
+    "................",
+    ".......LL.......",
+    ".......bb.......",
+    ".......bb.......",
+    "......kbbk......",
+    "....kkbbbbkk....",
+    "...khhhhhhhhk...",
+    "...khddddddhk...",
+    "...khdkbbkdhk...",
+    "...khhhhhhhhk...",
+    "..kkhhhhhhhhkk..",
+    "..khhhhhhhhhhk..",
+    "..khdddddddhk...",
+    "..kkkkkkkkkkk...",
+    "...kbbbbbbbbk...",
+    "................",
+  ];
+
   // Hotel Room — a made bed with pillow, headboard and a bedside lamp
   const HOTEL = [
     "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk...",
@@ -415,6 +475,21 @@
       name: "dock", tileW: 1, tileH: 1,
       palette: { k: "#11151c", b: "#2a4a78", h: "#3a5f9a", a: "#7fb0e8", y: "#e8c349", L: "#49d17a", o: "#3a4350" },
       states: { enabled: DOCK, disabled: off(DOCK) },
+    },
+    {
+      name: "lab", tileW: 2, tileH: 1,
+      palette: { k: "#11151c", b: "#241d44", h: "#4f3f8f", w: "#bfe9ff", d: "#3a2f6b", g: "#9b7bff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: LAB, disabled: off(LAB) },
+    },
+    {
+      name: "silo", tileW: 1, tileH: 1,
+      palette: { k: "#11151c", h: "#7c8596", d: "#4a5160", b: "#3a4150" },
+      states: { default: SILO },
+    },
+    {
+      name: "turret", tileW: 1, tileH: 1,
+      palette: { k: "#11151c", h: "#c0564a", d: "#7a2f28", b: "#3a2520", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: TURRET, disabled: off(TURRET) },
     },
 
     /* ---------- habitation (1x1) ---------- */

@@ -45,6 +45,11 @@ export function loadWorld(): World | null {
     if (w.phase !== "won" && w.phase !== "lost") w.phase = "playing";
     if (typeof w.objectiveIx !== "number") w.objectiveIx = 0;
     if (typeof w.loseTimer !== "number") w.loseTimer = 0;
+    if (!w.unlocked || typeof w.unlocked !== "object") w.unlocked = {};
+    if (typeof w.eventTimer !== "number") w.eventTimer = 0;
+    if (typeof w.priceMult !== "number") w.priceMult = 1;
+    if (typeof w.priceT !== "number") w.priceT = 0;
+    if (!Array.isArray(w.notify)) w.notify = [];
     if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
     if (!Array.isArray(w.requests)) w.requests = [];
     if (typeof w.reqTimer !== "number") w.reqTimer = 0;
@@ -63,6 +68,7 @@ export function loadWorld(): World | null {
       if (typeof s.condition !== "number") s.condition = 100;
       if (typeof s.servicedBy !== "number") s.servicedBy = -1;
       if (typeof s.recipe !== "string") s.recipe = defaultRecipe(s.kind);
+      if (typeof s.faultT !== "number") s.faultT = 0;
     }
     w.dirtyRooms = true;
     return w;

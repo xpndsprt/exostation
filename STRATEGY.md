@@ -208,6 +208,27 @@ This is the failure state the whole game is designed around.
 
 ---
 
+## 12 · Research & tech (M30) — where your credits go
+Banked credits aren't just a score — they buy **tech unlocks** that gate the advanced content.
+- Build a **Research Lab** (¢150, 2×1) and keep it **powered**. A 🔬 **TECH** panel (top of the right column) then lets you spend **credits** to research upgrades.
+- Unlocks: **Methane Life-Support** (¢350 → Methane Gen, to host Thol) · **Fungal Synthesis** (¢300 → Spores/Fungal recipes, to feed Vry'l) · **Cargo Logistics** (¢250 → Storage Silo) · **Station Security** (¢500 → Turret).
+- Locked build tools are **greyed out** in the palette (hover for the requirement). So Thol and Vry'l are no longer free for the taking — they're a goal you research toward.
+- **Takeaway:** the trade/lodging economy now has a purpose — pour profit into the Lab and unlock the species and defenses you want.
+
+## 13 · Storage & abundance (M32) — production is finite
+Every resource has a **storage cap** (shown on the HUD chips as *x / cap*): biomass **400**, spores 250, each meal line **50**, minerals **200**. Production **idles at the cap** — vats stop growing, synths stop cooking, drones stop hauling once full.
+- This keeps food a live decision: size production to your population, and **trade minerals** to keep room for more.
+- Build a **Storage Silo** (¢70, 1×1; unlock *Cargo Logistics*) to raise **every** cap by **+250**.
+- **Takeaway:** if a chip reads *400/400*, that production is wasted — consume it, sell it, or build Silos.
+
+## 14 · Station incidents (M29) — pressure that tests your layout
+After the first couple of minutes, the station faces periodic **incidents** (announced by a toast; they escalate slightly over time):
+- **Power surge** — a random *non-life-support* module trips offline for ~20s. Battery headroom and not over-packing one wing help you ride it out.
+- **Hull breach** — a wall blows out and the room starts venting. **Re-seal it** (lay Wall) fast; crew suit up and flee through a Door. *Only happens once you have 2+ rooms*, so a beginner's single room is safe.
+- **Market shock** — mineral prices **surge ×2** (sell now!) or **crash ×0.5** (hold) for ~40s.
+- **Raider** — a hostile ship (red ring) parks at your dock and **chews through modules** (never life support). A **powered Turret** (unlock *Station Security*) shoots it down on sight; otherwise crew must repair the damage.
+- **Life support is never targeted** by incidents — suffocation only ever comes from *your* power/zoning mistakes. Incidents threaten your economy, production and defenses, not a guaranteed wipe.
+
 ## Recommended build order (a clean opening)
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
 2. **Solar Panel** ×2 along the **outside** of the hull walls (each takes 3 tiles into space) → **O₂ Generator** inside the room (air goes cyan).
@@ -243,10 +264,13 @@ This is the failure state the whole game is designed around.
 | Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
-| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Hotel 2 / Crew Quarters 1 |
+| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Lab 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 (Silo 0) |
+| Tech | Build a powered Research Lab, then spend credits: Methane ¢350 · Fungal ¢300 · Logistics ¢250 · Security ¢500. Locked tools are greyed in the palette |
+| Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
+| Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
-| Footprints | battery/quarters 1×1, synth/hotel 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
+| Footprints | battery/quarters/silo/turret 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
 | Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 species); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |

@@ -18,6 +18,11 @@ export function powerSystem(w: World, dt: number): void {
       s.powered = false;
       continue;
     }
+    // a power-surge fault takes a module fully offline (no gen, no draw)
+    if (s.faultT > 0) {
+      s.powered = false;
+      continue;
+    }
     supply += def.gen;
     batteryMax += def.battery;
     if (def.draw > 0 && s.on) {

@@ -14,7 +14,10 @@ export type StructureKind =
   | "dock"
   | "rec"
   | "hotel"
-  | "tradehub";
+  | "tradehub"
+  | "lab"
+  | "silo"
+  | "turret";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
 
@@ -63,6 +66,7 @@ export interface Structure {
   condition: number; // 0..100 upkeep; machinery wears down and breaks at 0
   servicedBy: number; // crew currently servicing this; -1 if none
   recipe: string; // synth: food line ("rations"/"fungal"); vat: base ("biomass"/"spores")
+  faultT: number; // seconds remaining of a power-surge fault (offline); 0 = fine
 }
 
 export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax";
@@ -122,6 +126,7 @@ export interface Ship {
   cell: number; // exterior space tile it's parked at (next to a dock)
   t: number; // seconds remaining before it departs
   trader?: boolean; // a trade ship (buys minerals) vs a guest shuttle
+  hostile?: boolean; // a raider — damages modules until destroyed by a Turret
 }
 
 export type RequestKind = "host" | "happy" | "amenity";
@@ -171,6 +176,11 @@ export interface World {
   phase: Phase; // playing / won / lost
   objectiveIx: number; // index into the scenario objective list
   loseTimer: number; // seconds the station has been non-viable (toward defeat)
+  unlocked: Record<string, boolean>; // researched tech unlocks (see research.ts)
+  eventTimer: number; // accumulator toward the next station incident (M29)
+  priceMult: number; // current mineral-price multiplier (market shocks)
+  priceT: number; // seconds remaining of the current market shock
+  notify: string[]; // transient toast queue drained by the UI each frame
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests

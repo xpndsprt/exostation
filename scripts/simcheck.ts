@@ -16,6 +16,9 @@ import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { objectivesSystem, currentObjective } from "../src/objectives";
+import { toolLock, buyUnlock } from "../src/research";
+import { eventsSystem, forceEvent } from "../src/events";
+import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
@@ -942,6 +945,124 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   recomputeRooms(w);
   for (let i = 0; i < 260; i++) objectivesSystem(w, 0.1);
   check("Fresh station with no deaths is never auto-lost", w.phase === "playing");
+}
+
+// --- M30: tech tree (credit-funded unlocks gated by a powered Lab) ---
+{
+  const w = createWorld();
+  check("ch4gen is locked at the start", toolLock(w, "ch4gen")?.id === "methane");
+  check("o2gen is never locked", toolLock(w, "o2gen") === null);
+  check("Cannot research without a powered Lab", buyUnlock(w, "methane") === false);
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "lab", 7, 6);
+  powerSystem(w, 0.1);
+  w.credits = 1000;
+  check("Research succeeds with a powered Lab + credits", buyUnlock(w, "methane") === true);
+  check("Methane Life-Support unlocks ch4gen", toolLock(w, "ch4gen") === null);
+  check("Researching spent the credits", w.credits === 650);
+}
+
+// --- M32: storage caps curb abundance ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "vat", 7, 6); // grows biomass, no synth consuming
+  w.stock.biomass = 395;
+  for (let i = 0; i < 600; i++) step(w);
+  check("Biomass plateaus at the storage cap", w.stock.biomass === BASE_CAPS.biomass);
+  const before = storageCaps(w).biomass;
+  addStructure(w, "silo", 8, 7);
+  check("A Storage Silo raises the cap", storageCaps(w).biomass === before + SILO_BONUS);
+}
+
+// --- M29: station incidents ---
+{
+  // power surge faults a running (non-life-support) module offline, then recovers
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "synth", 8, 6);
+  powerSystem(w, 0.1);
+  const o2 = Object.values(w.structures).find((s) => s.kind === "o2gen")!;
+  const synth = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  check("Surge precondition: synth powered", synth.powered);
+  forceEvent(w, "surge");
+  check("Surge faults a running module", synth.faultT > 0);
+  check("Surge never targets life support", o2.faultT === 0);
+  powerSystem(w, 0.1);
+  check("A faulted module is offline", synth.powered === false);
+  for (let i = 0; i < 220; i++) eventsSystem(w, 0.1); // fault decays (20s)
+  powerSystem(w, 0.1);
+  check("Module recovers after the fault clears", synth.faultT === 0 && synth.powered);
+}
+{
+  // hull breach needs 2+ rooms (so crew can flee) and vents one wall
+  const one = createWorld();
+  carve(one, 5, 5, 9, 8);
+  recomputeRooms(one);
+  check("Breach is suppressed on a single-room station", forceEvent(one, "breach") === false);
+
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  carve(w, 11, 5, 15, 8);
+  recomputeRooms(w);
+  const wallsBefore = w.cells.filter((c) => c.type === "wall").length;
+  check("Breach fires once there are 2+ rooms", forceEvent(w, "breach"));
+  check("Breach vents one wall to space", w.cells.filter((c) => c.type === "wall").length === wallsBefore - 1);
+}
+{
+  // market shock multiplies trade income, then decays
+  const w = createWorld();
+  forceEvent(w, "shock");
+  check("Shock changes the price multiplier", w.priceMult !== 1 && w.priceT > 0);
+  w.priceT = 0.05;
+  eventsSystem(w, 0.1);
+  check("Shock decays back to normal price", w.priceMult === 1 && w.priceT === 0);
+
+  const trade = (mult: number): number => {
+    const t = createWorld();
+    carve(t, 5, 5, 9, 8);
+    recomputeRooms(t);
+    addStructure(t, "solar", 6, 6);
+    addStructure(t, "tradehub", 7, 6);
+    powerSystem(t, 0.1);
+    t.stock.minerals = 25;
+    t.priceMult = mult;
+    t.tradeTimer = 30; // force a trade this tick
+    const c0 = t.credits;
+    economySystem(t, 0.1);
+    return t.credits - c0;
+  };
+  check("A price surge doubles trade income", Math.round(trade(2)) === Math.round(trade(1) * 2));
+}
+{
+  // a raider damages modules; a powered Turret destroys it
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "bay", 7, 7);
+  addDock(w, 9, 6);
+  powerSystem(w, 0.1);
+  check("Raider spawns at a powered dock", forceEvent(w, "raid") && w.ships.some((s) => s.hostile));
+  const o2 = Object.values(w.structures).find((s) => s.kind === "o2gen")!;
+  const bay = Object.values(w.structures).find((s) => s.kind === "bay")!;
+  for (let i = 0; i < 50; i++) eventsSystem(w, 0.1);
+  check("Raider damages modules without a Turret", bay.condition < 100);
+  check("Raider never targets life support", o2.condition === 100);
+  addStructure(w, "turret", 8, 7);
+  powerSystem(w, 0.1);
+  eventsSystem(w, 0.1);
+  check("A powered Turret destroys the raider", !w.ships.some((s) => s.hostile));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

@@ -123,8 +123,21 @@
     /* lower-right column: Alienpedia stacked above the Advisor */
     #rightcol { position: fixed; right: 12px; bottom: 12px; z-index: 12; width: 244px;
       display: flex; flex-direction: column; gap: 8px; }
-    #requests, #alienpedia, #advisor { background: rgba(16,20,28,.93); border: 1px solid #232b3a;
+    #tech, #requests, #alienpedia, #advisor { background: rgba(16,20,28,.93); border: 1px solid #232b3a;
       border-radius: 10px; padding: 10px 12px; font-size: 12px; backdrop-filter: blur(4px); }
+    #tech h3 { margin: 0 0 7px; font-size: 12px; color: #b39cff; letter-spacing: .06em; }
+    #tech .unlock { padding: 6px 0; border-top: 1px solid #232b3a; }
+    #tech .unlock:first-of-type { border-top: none; }
+    #tech .ul-h { display: flex; justify-content: space-between; align-items: baseline; }
+    #tech .ul-h .goal { font-weight: 600; color: #e3e7ef; }
+    #tech .ul-h .num { color: #aab2c4; font-variant-numeric: tabular-nums; }
+    #tech .ul-d { color: #8b93a6; font-size: 11px; line-height: 1.4; margin: 2px 0 5px; }
+    #tech button { width: 100%; background: #2d2a55; color: #cdb6ee; border: 1px solid #4a3f7a;
+      border-radius: 6px; padding: 5px; font-size: 11.5px; cursor: pointer; }
+    #tech button:hover:not(:disabled) { background: #3a3570; }
+    #tech button:disabled { opacity: .4; cursor: default; }
+    /* locked palette tools */
+    #palette button.locked { opacity: .4; cursor: not-allowed; }
     #requests h3 { margin: 0 0 7px; font-size: 12px; color: #e8c349; letter-spacing: .06em; }
     #requests .req { display: flex; flex-direction: column; gap: 2px; padding: 5px 0; border-top: 1px solid #232b3a; }
     #requests .req:first-of-type { border-top: none; }
@@ -189,6 +202,7 @@
   </div></div>
   <div id="watermark"></div>
   <div id="rightcol">
+    <div id="tech"></div>
     <div id="requests"></div>
     <div id="alienpedia"></div>
     <div id="advisor"></div>

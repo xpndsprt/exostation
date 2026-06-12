@@ -29,6 +29,9 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   rec: { label: "Lounge", color: 0xc05fa8, gen: 0, draw: 4, battery: 0, priority: 2, w: 2, h: 2, cost: 80 },
   hotel: { label: "Hotel Room", color: 0xc99bd5, gen: 0, draw: 2, battery: 0, priority: 2, w: 2, h: 1, cost: 60 },
   tradehub: { label: "Trade Hub", color: 0x6fcf97, gen: 0, draw: 5, battery: 0, priority: 1, w: 2, h: 2, cost: 120 },
+  lab: { label: "Research Lab", color: 0x8a6cf0, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 1, cost: 150 },
+  silo: { label: "Storage Silo", color: 0x7c8596, gen: 0, draw: 0, battery: 0, priority: 0, w: 1, h: 1, cost: 70 },
+  turret: { label: "Turret", color: 0xd0564a, gen: 0, draw: 4, battery: 0, priority: 1, w: 1, h: 1, cost: 200 },
 };
 
 // Build cost of the basic structural tiles (credits).
