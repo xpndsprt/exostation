@@ -5,6 +5,9 @@ import { SPECIES } from "./species";
 import { RELATIONS } from "./relations";
 import { advise } from "./advisor";
 import { getRep, requestText } from "./requests";
+import { moodBreakdown } from "./mood";
+import { productivity } from "./harmony";
+import { OBJECTIVES, currentObjective } from "./objectives";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -246,6 +249,14 @@ export function updateHud(world: World): void {
       if (a.guest) guests++;
     } else dead++;
   }
+  const residents = alive - guests;
+  let pods = 0;
+  let hotels = 0;
+  for (const id in world.structures) {
+    const k = world.structures[id].kind;
+    if (k === "pod") pods++;
+    else if (k === "hotel") hotels++;
+  }
   const avgMood = alive > 0 ? Math.round(moodSum / alive) : 0;
   const seen = new Set<number>();
   let breathable = 0;
@@ -267,7 +278,8 @@ export function updateHud(world: World): void {
         `${p.supply}/${p.draw}<span class="pbar"><i style="width:${pct}%"></i></span>`,
         p.brownout,
       ) +
-      chip("👥", `${alive}${guests ? ` <span class="muted">(${guests}g)</span>` : ""}${dead ? `, ${dead}✕` : ""}`) +
+      chip("👥", `${residents}/${pods}${dead ? ` <span class="muted">${dead}✕</span>` : ""}`, residents > pods) +
+      chip("🏨", `${guests}/${hotels}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
       chip("🍱", `${st.meals.rations}/${st.meals.fungal}`) +
       chip("🌱", `${Math.floor(st.biomass)}/${Math.floor(st.spores)}`) +
@@ -282,6 +294,55 @@ export function updateHud(world: World): void {
   if (wm) wm.textContent = world.speed === 0 ? "❚❚ PAUSED" : `▶ ${world.speed}×`;
 }
 
+// Topbar scenario-objective indicator with a progress bar.
+export function renderObjective(world: World): void {
+  const el = document.getElementById("objective");
+  if (!el) return;
+  const obj = world.phase === "playing" ? currentObjective(world) : null;
+  if (!obj) {
+    el.innerHTML = "";
+    return;
+  }
+  const cur = Math.min(obj.target, Math.floor(obj.progress(world)));
+  const pct = Math.round((cur / obj.target) * 100);
+  const u = obj.unit || "";
+  el.innerHTML =
+    `<span class="muted">🎯 ${world.objectiveIx + 1}/${OBJECTIVES.length}</span>` +
+    `<span class="goal">${obj.label}</span>` +
+    `<span class="ob"><i style="width:${pct}%"></i></span>` +
+    `<span class="num">${u}${cur} / ${u}${obj.target}</span>`;
+}
+
+// Victory / defeat modal. The primary button's action is supplied by the caller
+// (continue in free play on a win; start a fresh station on a loss).
+export function showEndBanner(phase: "won" | "lost", label: string, onAction: () => void): void {
+  const el = document.getElementById("endbanner");
+  if (!el) return;
+  const title = el.querySelector(".title") as HTMLElement | null;
+  const sub = el.querySelector(".sub") as HTMLElement | null;
+  const btn = el.querySelector("button") as HTMLButtonElement | null;
+  el.classList.toggle("win", phase === "won");
+  el.classList.toggle("lose", phase === "lost");
+  if (title) title.textContent = phase === "won" ? "STATION SECURED" : "STATION LOST";
+  if (sub)
+    sub.textContent =
+      phase === "won"
+        ? "You cleared every objective. Keep building in free play."
+        : "Your crew are gone and the station can no longer draw new arrivals.";
+  if (btn) {
+    btn.textContent = label;
+    btn.onclick = () => {
+      hideEndBanner();
+      onAction();
+    };
+  }
+  el.classList.add("show");
+}
+
+export function hideEndBanner(): void {
+  document.getElementById("endbanner")?.classList.remove("show");
+}
+
 // Compact hover tooltip.
 export function showTooltip(world: World, target: HoverTarget, x: number, y: number): void {
   const tip = document.getElementById("tooltip");
@@ -294,10 +355,18 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const a = world.agents[target.id];
     if (!a) return hideTooltip();
     const name = SPECIES[a.species].label;
+    const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(Math.round(n))}`;
+    let moodLine = `<div>Mood ${Math.round(a.mood)}%</div>`;
+    if (a.alive) {
+      const b = moodBreakdown(world, a);
+      moodLine =
+        `<div>Mood ${Math.round(a.mood)}% <span class="muted">→ ${Math.round(b.target)}</span></div>` +
+        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}</div>`;
+    }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
       `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
-      `<div>Mood ${Math.round(a.mood)}%</div>` +
+      moodLine +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {
     const s = world.structures[target.id];
@@ -324,8 +393,13 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const room = c.roomId >= 0 ? world.rooms[c.roomId] : undefined;
     const gas = room?.gas || "none";
     const air = gas === "none" ? "no air" : gas === "mixed" ? "MIXED ☠" : gas;
-    const harm = room ? (room.harmony > 0.2 ? " · harmonious" : room.harmony < -0.2 ? " · tense" : "") : "";
-    html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}${harm}` : ""}</div>`;
+    html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}` : ""}</div>`;
+    if (room && c.type === "floor") {
+      const mult = productivity(room.harmony);
+      const word = room.harmony > 0.2 ? "harmonious" : room.harmony < -0.2 ? "tense" : "neutral";
+      const col = room.harmony > 0.2 ? "#49d17a" : room.harmony < -0.2 ? "#e8a33d" : "#8b93a6";
+      html += `<div>Room <span style="color:${col}">${word} ${room.harmony >= 0 ? "+" : "−"}${Math.abs(room.harmony).toFixed(2)}</span> → ×${mult.toFixed(2)} production</div>`;
+    }
   }
   tip.innerHTML = html;
   tip.style.left = `${x + 14}px`;

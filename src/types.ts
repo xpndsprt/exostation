@@ -42,6 +42,8 @@ export type CellType = "space" | "floor" | "wall" | "door";
 
 export type Speed = 0 | 1 | 2 | 3;
 
+export type Phase = "playing" | "won" | "lost";
+
 export interface Cell {
   type: CellType;
   roomId: number; // -1 if not part of a floor room
@@ -166,6 +168,9 @@ export interface World {
   credits: number;
   tradeTimer: number; // accumulator for periodic mineral trades
   crewTimer: number; // accumulator for resident-crew shuttle arrivals
+  phase: Phase; // playing / won / lost
+  objectiveIx: number; // index into the scenario objective list
+  loseTimer: number; // seconds the station has been non-viable (toward defeat)
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests

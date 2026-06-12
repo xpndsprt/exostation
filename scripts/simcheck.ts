@@ -11,10 +11,11 @@ import { foodSystem } from "../src/food";
 import { atmosphereSystem } from "../src/atmosphere";
 import { harmonySystem } from "../src/harmony";
 import { agentSystem } from "../src/agents";
-import { moodSystem } from "../src/mood";
+import { moodSystem, moodBreakdown } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
+import { objectivesSystem, currentObjective } from "../src/objectives";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld } from "../src/persistence";
 import { World } from "../src/types";
@@ -47,6 +48,7 @@ function step(w: World) {
   combatSystem(w, DT);
   economySystem(w, DT);
   requestsSystem(w, DT);
+  objectivesSystem(w, DT);
 }
 
 let failures = 0;
@@ -884,6 +886,62 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
     return w.stock.minerals;
   }
   check("Korro Hauler trait boosts mining throughput", mineRun(true) > mineRun(false));
+}
+
+// --- M28: mood breakdown is the single source of truth ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 8, 6, "korro");
+  step(w);
+  const h = Object.values(w.agents).find((a) => a.species === "human")!;
+  const b = moodBreakdown(w, h);
+  check("Mood breakdown: a nearby rival gives negative social + room terms", b.social < 0 && b.harmony < 0);
+  check("Mood breakdown: the rival drags target below the needs-only level", b.target < b.base + b.needs);
+  check("Mood breakdown: base is 50", b.base === 50);
+}
+
+// --- M27: scenario objectives + victory / defeat ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  check("First objective is grow-crew", currentObjective(w)?.id === "grow");
+  addAgent(w, 6, 6, "human");
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 8, 6, "human");
+  objectivesSystem(w, 0.1);
+  check("Reaching 3 crew advances to the credit goal", currentObjective(w)?.id === "bank");
+  w.credits = 3000;
+  objectivesSystem(w, 0.1);
+  check("Banking the target advances to the diversity goal", currentObjective(w)?.id === "diverse");
+  addAgent(w, 9, 6, "drenn");
+  addAgent(w, 10, 6, "korro");
+  addAgent(w, 11, 6, "thol"); // species aboard: human, drenn, korro, thol = 4
+  objectivesSystem(w, 0.1);
+  check("Clearing all objectives wins the scenario", w.phase === "won");
+}
+{
+  // a dead, unrecoverable station (no dock/pod/meals) is declared lost
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 6, 6, "human");
+  Object.values(w.agents)[0].alive = false;
+  for (let i = 0; i < 220; i++) objectivesSystem(w, 0.1); // > 20s grace
+  check("A dead, unrecoverable station is declared lost", w.phase === "lost");
+}
+{
+  // a fresh station that has never had a death must never auto-lose
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  for (let i = 0; i < 260; i++) objectivesSystem(w, 0.1);
+  check("Fresh station with no deaths is never auto-lost", w.phase === "playing");
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

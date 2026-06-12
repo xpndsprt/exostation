@@ -42,6 +42,9 @@ export function loadWorld(): World | null {
     if (!Array.isArray(w.ships)) w.ships = [];
     if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
     if (typeof w.crewTimer !== "number") w.crewTimer = 0;
+    if (w.phase !== "won" && w.phase !== "lost") w.phase = "playing";
+    if (typeof w.objectiveIx !== "number") w.objectiveIx = 0;
+    if (typeof w.loseTimer !== "number") w.loseTimer = 0;
     if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
     if (!Array.isArray(w.requests)) w.requests = [];
     if (typeof w.reqTimer !== "number") w.reqTimer = 0;

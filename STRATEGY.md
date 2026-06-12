@@ -26,6 +26,11 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - **Right-drag** = pan · **mouse wheel** = zoom · **Recenter** button snaps back to your station.
 - **Overlay** buttons (top bar): **Power** (powered/unpowered modules) and **Rooms** (per-room tint). Atmosphere is always shown as a colored fill.
 
+**Your objective & the HUD**
+- The **top bar** shows a 🎯 **scenario objective** with a progress bar — your current goal (e.g. *grow your crew → bank credits → host different species*). Clear them all to **win**; you can then keep building in free play.
+- **Capacity chips:** 👥 **crew / Crew Quarters** and 🏨 **guests / Hotel Rooms** show population vs capacity at a glance (the crew chip turns red if you somehow exceed it). 🙂 is station-average mood.
+- If your **whole crew dies and the station can no longer attract anyone** (no powered dock / no bunk in air / no food), you **lose** after a short grace period — a banner offers a fresh start.
+
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and read the live size label.
@@ -34,7 +39,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - **Everything costs credits.** Each build button shows its price (¢); the ghost turns red and the cursor blocks if you can't afford it. You start with **¢1000**. **Deconstructing** a module (Select → Deconstruct) refunds **50%**. Full price list: [`COSTS.md`](COSTS.md).
 
 **Inspecting**
-- **Hover** anything for a quick tooltip (no click).
+- **Hover** anything for a quick tooltip (no click). **Hover a crew member** to see the **mood breakdown** — *base 50 · needs ± · neighbors ± · room ±* → the value their mood is pulled toward. **Hover a room tile** to read its **harmony value and production multiplier** (e.g. *tense −0.53 → ×0.6 production*), so you can see exactly what a bad pairing costs.
 - The **Select** tool (S) opens the right-hand **info panel** with live stats and **Deconstruct** / **toggle on-off** buttons.
 
 **Time & saving**
@@ -242,7 +247,8 @@ This is the failure state the whole game is designed around.
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters 1×1, synth/hotel 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
-| Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Not hand-placed |
+| Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 species); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
+| Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |

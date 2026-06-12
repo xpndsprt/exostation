@@ -13,6 +13,7 @@ import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { economySystem } from "./economy";
 import { requestsSystem } from "./requests";
+import { objectivesSystem } from "./objectives";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
@@ -25,6 +26,9 @@ import {
   renderAdvisor,
   renderAlienpedia,
   renderRequests,
+  renderObjective,
+  showEndBanner,
+  hideEndBanner,
   pushAlert,
   showTooltip,
   hideTooltip,
@@ -39,7 +43,7 @@ import {
 import { TILE, COLORS, SIM_HZ } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
-import { HoverTarget, OverlayMode, Selection, Speed, StructureKind, UIState, World } from "./types";
+import { HoverTarget, OverlayMode, Phase, Selection, Speed, StructureKind, UIState, World } from "./types";
 
 const STEP = 1 / SIM_HZ;
 
@@ -56,6 +60,7 @@ function simStep(world: World, dt: number): void {
   combatSystem(world, dt);
   economySystem(world, dt);
   requestsSystem(world, dt);
+  objectivesSystem(world, dt);
   world.tick++;
 }
 
@@ -135,6 +140,21 @@ async function boot(): Promise<void> {
       const a = world.agents[id];
       if (a.alive) known.set(+id, a.guest);
     }
+  };
+
+  let prevPhase: Phase = "playing";
+  const restart = (): void => {
+    const fresh = createWorld();
+    seedAsteroids(fresh);
+    Object.assign(world, fresh);
+    world.dirtyRooms = true;
+    sel = null;
+    overlay = "none";
+    known.clear();
+    prevPhase = "playing";
+    setSpeed(world, 1);
+    recenter();
+    needRedraw = true;
   };
 
   const handlers: UIHandlers = {
@@ -412,9 +432,12 @@ async function boot(): Promise<void> {
       if (a.alive) curAlive.set(+id, a.guest);
     }
     for (const [id, guest] of curAlive) {
-      if (!known.has(id) && guest) {
-        const cell = world.agents[id].cell;
-        pushAlert("A Drenn guest docked.", "info", () => {
+      if (!known.has(id)) {
+        const a = world.agents[id];
+        const cell = a.cell;
+        const label = SPECIES[a.species].label;
+        const msg = guest ? `A ${label} guest docked.` : `${label} crew arrived by shuttle.`;
+        pushAlert(msg, "info", () => {
           sel = { kind: "agent", id };
           centerOnCell(cell);
           needRedraw = true;
@@ -478,6 +501,21 @@ async function boot(): Promise<void> {
       refresh(world);
     }
 
+    // victory / defeat transitions — pause and surface the end banner
+    if (world.phase !== prevPhase) {
+      prevPhase = world.phase;
+      if (world.phase === "won") {
+        setSpeed(world, 0);
+        showEndBanner("won", "Keep building", () => setSpeed(world, 1));
+      } else if (world.phase === "lost") {
+        setSpeed(world, 0);
+        showEndBanner("lost", "New station", restart);
+      } else {
+        hideEndBanner();
+      }
+      needRedraw = true;
+    }
+
     if (needRedraw) {
       const sc = selCell();
       if (sc < 0 && sel) sel = null;
@@ -488,6 +526,7 @@ async function boot(): Promise<void> {
       renderRequests(world);
       renderAlienpedia(world);
       renderAdvisor(world);
+      renderObjective(world);
       needRedraw = false;
     }
   });

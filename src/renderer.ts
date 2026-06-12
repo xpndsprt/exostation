@@ -78,6 +78,7 @@ export class Renderer {
   private agentFx = new Graphics();
   private dronesFx = new Graphics(); // route lines
   private dronesC = new Container();
+  private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
   private overlay = new Graphics();
   private selection = new Graphics();
@@ -87,7 +88,7 @@ export class Renderer {
     buildTextures();
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.structsC, this.structFx,
-      this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsC,
+      this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC,
       this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
@@ -338,6 +339,17 @@ export class Renderer {
   }
 
   private drawShips(world: World): void {
+    // pulsing ring so an arriving/parked shuttle is easy to spot
+    const g = this.shipsFx;
+    g.clear();
+    const phase = (world.tick % 12) / 12; // 0..1 loop at 10Hz ≈ 1.2s
+    const r = TILE * (0.55 + 0.22 * Math.sin(phase * Math.PI * 2));
+    for (const ship of world.ships) {
+      const cx = (ship.cell % world.w) * TILE + TILE / 2;
+      const cy = ((ship.cell / world.w) | 0) * TILE + TILE / 2;
+      const col = ship.trader ? 0x6fcf97 : 0x9fd8ff;
+      g.circle(cx, cy, r).stroke({ width: 2, color: col, alpha: 0.55 });
+    }
     this.drawSprites(
       this.shipsC,
       world.ships.map((ship) => ({

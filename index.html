@@ -18,6 +18,27 @@
     }
     #topbar .brand { font-weight: 700; letter-spacing: .08em; color: #6ea8ff; }
     #topbar .hint { color: #6b7488; margin-left: auto; }
+    /* objective indicator */
+    #objective { display: inline-flex; align-items: center; gap: 7px; color: #c3cbdc;
+      background: rgba(28,34,48,.7); border: 1px solid #2c3445; border-radius: 7px; padding: 3px 9px; }
+    #objective .goal { font-weight: 600; color: #e3e7ef; }
+    #objective .ob { width: 70px; height: 6px; border-radius: 3px; background: #2a3142; overflow: hidden; }
+    #objective .ob > i { display: block; height: 100%; background: #6ea8ff; }
+    #objective .num { font-variant-numeric: tabular-nums; color: #aab2c4; }
+    #objective.done .goal { color: #49d17a; }
+    /* victory / defeat banner */
+    #endbanner { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,14,.72); backdrop-filter: blur(3px); }
+    #endbanner.show { display: flex; }
+    #endbanner .card { background: #141a24; border: 1px solid #2c3445; border-radius: 14px; padding: 28px 34px;
+      text-align: center; max-width: 420px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+    #endbanner .title { font-size: 28px; font-weight: 800; letter-spacing: .04em; margin-bottom: 6px; }
+    #endbanner.win .title { color: #5fdc8c; }
+    #endbanner.lose .title { color: #ff6a6a; }
+    #endbanner .sub { color: #aab2c4; font-size: 14px; line-height: 1.5; margin-bottom: 18px; }
+    #endbanner button { background: #2d6cdf; color: #fff; border: none; border-radius: 8px;
+      padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #endbanner button:hover { background: #3a78ec; }
     #palette {
       position: fixed; left: 12px; top: 52px; z-index: 10;
       display: flex; flex-direction: column; gap: 6px;
@@ -152,6 +173,7 @@
   <div id="topbar">
     <span class="brand">EXOSTATION</span>
     <span id="status">grid ready</span>
+    <span id="objective"></span>
     <span class="hint">left-drag: build · right-drag: pan · wheel: zoom</span>
   </div>
   <div id="palette"></div>
@@ -160,6 +182,11 @@
   <div id="tooltip"></div>
   <div id="draglabel"></div>
   <div id="banner">⚠ BROWNOUT — shedding power</div>
+  <div id="endbanner"><div class="card">
+    <div class="title"></div>
+    <div class="sub"></div>
+    <button type="button">New station</button>
+  </div></div>
   <div id="watermark"></div>
   <div id="rightcol">
     <div id="requests"></div>

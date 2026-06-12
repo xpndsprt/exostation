@@ -94,6 +94,13 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 - **Collateral = winner TL × intensity:** high-TL combatants damage modules, and have a chance to **breach atmosphere** → cascading cross-contamination disaster (the real catastrophe — a Tier 3 feud can vent a whole wing).
 - **Security** (guards/turrets/riot response) adds defensive Combat Power and a chance to suppress before casualties.
 
+## Objectives & game-over (M27)
+Scenario goals completed in order; clearing the list = victory, after which play continues freely.
+1. **Grow your crew** — reach **3** resident crew.
+2. **Bank credits** — hold **¢3,000**.
+3. **Host different species aboard** — **4** distinct species alive at once (forces a methane wing for Thol or a fungal chain for Vry'l beyond the natural human/korro/Drenn three).
+- **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
+
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).

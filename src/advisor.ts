@@ -58,18 +58,34 @@ export function advise(world: World): Advice[] {
 
   // --- progression: the single next build-order gap ---
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);
-  const mealsReady = world.stock.meals.rations > 0 || world.stock.meals.fungal > 0;
   if (!sealed) out.push({ sev: "warn", text: "Seal a room: lay Floor, then enclose it with Wall." });
   else if (!has("solar")) out.push({ sev: "warn", text: "Place a Solar Panel to power the station." });
   else if (!has("o2gen")) out.push({ sev: "warn", text: "Add an O₂ Generator inside a sealed room." });
   else if (!has("synth")) out.push({ sev: "warn", text: "Build a Rations Synth — it turns your biomass into meals." });
   else if (!has("pod")) out.push({ sev: "warn", text: "Build Crew Quarters — each bunk is room for one resident crew member." });
   else if (!has("dock")) out.push({ sev: "warn", text: "Build a Docking Port — a shuttle uses it to bring resident crew (and Drenn guests)." });
-  else if (residents === 0 && !mealsReady)
-    out.push({ sev: "tip", text: "Power the Rations Synth — once meals are stocked, a shuttle brings your first crew." });
-  else if (residents === 0)
-    out.push({ sev: "tip", text: "A crew shuttle is inbound — make sure the Docking Port is powered." });
   else if (!has("vat")) out.push({ sev: "warn", text: "Build a Bio Vat to keep growing food before the starting biomass runs out." });
+
+  // crew capacity is free but nobody is coming — name the blocking gate (or
+  // confirm a shuttle is inbound). Mirrors the immigration gates in economy.ts.
+  const podCount = structures.filter((s) => s.kind === "pod").length;
+  if (has("dock") && podCount > residents) {
+    const dockPowered = structures.some((s) => s.kind === "dock" && s.powered);
+    const podGases = new Set<string>();
+    for (const s of structures) {
+      if (s.kind !== "pod") continue;
+      const rid = world.cells[s.cell].roomId;
+      const g = rid >= 0 ? world.rooms[rid]?.gas : undefined;
+      if (g && g !== "none" && g !== "mixed") podGases.add(g);
+    }
+    const m = world.stock.meals;
+    const fed = (g: string) => (g === "o2" ? m.rations > 0 || m.fungal > 0 : g === "ch4" ? m.rations > 0 : false);
+    const canArrive = dockPowered && [...podGases].some(fed);
+    if (canArrive) out.push({ sev: "tip", text: "A crew shuttle is inbound to your free quarters." });
+    else if (!dockPowered) out.push({ sev: "warn", text: "Crew can't arrive — the Docking Port is unpowered." });
+    else if (podGases.size === 0) out.push({ sev: "warn", text: "Put Crew Quarters in a room with breathable air — crew won't bunk in vacuum." });
+    else out.push({ sev: "warn", text: "No meals in stock — power a Synth and a shuttle will bring crew to your free quarters." });
+  }
 
   // mining & trade (minerals economy)
   if (has("vat") && !has("bay"))
