@@ -275,7 +275,7 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters/silo/turret 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
-| Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 species); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
+| Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 **resident** species; guests don't count, so the capstone needs a methane wing + fungal chain); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |

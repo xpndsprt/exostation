@@ -98,7 +98,7 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 Scenario goals completed in order; clearing the list = victory, after which play continues freely.
 1. **Grow your crew** — reach **3** resident crew.
 2. **Bank credits** — hold **¢3,000**.
-3. **Host different species aboard** — **4** distinct species alive at once (forces a methane wing for Thol or a fungal chain for Vry'l beyond the natural human/korro/Drenn three).
+3. **Host different resident species** — **4** distinct *resident* species alive at once (**guests don't count**). The resident roster is Human/Thol/Vry'l/Korro, so this requires all four — forcing both a methane wing (Thol) and a fungal chain (Vry'l), i.e. researching Methane Life-Support **and** Fungal Synthesis.
 - **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
 
 ## Tech tree (M30)

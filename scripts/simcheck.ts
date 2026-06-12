@@ -929,6 +929,22 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Clearing all objectives wins the scenario", w.phase === "won");
 }
 {
+  // the species objective counts RESIDENTS only — a guest must not complete it
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  w.objectiveIx = 2; // the "diverse" objective (4 species)
+  addAgent(w, 6, 6, "human");
+  addAgent(w, 7, 6, "korro");
+  addAgent(w, 8, 6, "vryl");
+  addAgent(w, 9, 6, "drenn", true); // a GUEST — must not count
+  objectivesSystem(w, 0.1);
+  check("Guests don't count toward the species objective", w.phase === "playing");
+  addAgent(w, 10, 6, "thol"); // a 4th RESIDENT species
+  objectivesSystem(w, 0.1);
+  check("Four resident species clears it", w.phase === "won");
+}
+{
   // a dead, unrecoverable station (no dock/pod/meals) is declared lost
   const w = createWorld();
   carve(w, 5, 5, 9, 8);

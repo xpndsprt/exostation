@@ -19,11 +19,14 @@ function residentCount(w: World): number {
   return n;
 }
 
-function distinctAliveSpecies(w: World): number {
+// Distinct species living aboard as RESIDENT crew. Guests (passing Drenn
+// tourists) do not count — hosting a species means giving it a home, which for
+// the off-air species forces a methane wing (Thol) and a fungal chain (Vry'l).
+function distinctResidentSpecies(w: World): number {
   const s = new Set<Species>();
   for (const id in w.agents) {
     const a = w.agents[id];
-    if (a.alive) s.add(a.species);
+    if (a.alive && !a.guest) s.add(a.species);
   }
   return s.size;
 }
@@ -31,7 +34,7 @@ function distinctAliveSpecies(w: World): number {
 export const OBJECTIVES: ObjectiveDef[] = [
   { id: "grow", label: "Grow your crew", target: 3, progress: residentCount },
   { id: "bank", label: "Bank credits", target: 3000, unit: "¢", progress: (w) => Math.floor(w.credits) },
-  { id: "diverse", label: "Host different species aboard", target: 4, progress: distinctAliveSpecies },
+  { id: "diverse", label: "Host different resident species", target: 4, progress: distinctResidentSpecies },
 ];
 
 export function currentObjective(w: World): ObjectiveDef | null {
