@@ -44,7 +44,11 @@ export function powerSystem(w: World, dt: number): void {
     w.power.battery = Math.min(batteryMax, w.power.battery + (supply - draw) * dt);
   } else {
     const need = (draw - supply) * dt;
-    if (dt > 0 && w.power.battery >= need) {
+    // Coast on the battery. At dt=0 (paused / a refresh redraw) `need` is 0, so
+    // a charged battery sustains the station without draining — without this the
+    // pause path would force a brownout and zero the battery every redraw.
+    const coast = dt > 0 ? w.power.battery >= need : w.power.battery > 0;
+    if (coast) {
       for (const s of consumers) s.powered = true;
       w.power.battery -= need;
     } else {

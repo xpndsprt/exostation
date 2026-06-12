@@ -1174,5 +1174,25 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Rivals split into separate rooms never fight", fight(true) === false);
 }
 
+// --- Pausing a battery-coasting station must not brown out or wipe the battery ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6); // +10 supply
+  addStructure(w, "battery", 6, 7); // 50 storage
+  addStructure(w, "o2gen", 7, 6); // -6
+  addStructure(w, "lab", 8, 6); // -6  → draw 12 > supply 10, coasts on battery
+  w.power.battery = 30;
+  powerSystem(w, 0.1); // running: coasting on battery
+  const lab = Object.values(w.structures).find((s) => s.kind === "lab")!;
+  check("Lab is powered while coasting on battery (running)", lab.powered);
+  const batBefore = w.power.battery;
+  powerSystem(w, 0); // PAUSED / redraw refresh
+  check("Pausing keeps the Lab powered (no false brownout)", lab.powered);
+  check("Pausing does not drain/zero the battery", w.power.battery === batBefore);
+  check("Pausing does not flag a brownout while battery has charge", w.power.brownout === false);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
