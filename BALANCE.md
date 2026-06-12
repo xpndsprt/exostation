@@ -94,6 +94,13 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 - **Collateral = winner TL × intensity:** high-TL combatants damage modules, and have a chance to **breach atmosphere** → cascading cross-contamination disaster (the real catastrophe — a Tier 3 feud can vent a whole wing).
 - **Security** (guards/turrets/riot response) adds defensive Combat Power and a chance to suppress before casualties.
 
+## Korro — same-air rival (M25)
+The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
+- **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).
+- **Trait — Hauler:** mining drone cargo ×**1.5** (10 → 15) while any Korro is aboard.
+- **Relations:** Korro→Human **−8**, Korro→Vry'l **−8**, Human→Korro **−8** (mutual), Korro↔Drenn/Thol 0, Korro→Korro +4. Drenn→Korro +8 (Drenn like everyone).
+- **Net effect:** a mixed Human/Korro O₂ room sits at harmony ≈ **−0.53** → −40% productivity and a mood drag (observed ~45 vs ~70). Survivable indefinitely if needs are met; only crosses into a skirmish when mood < 30. Fix = give Korro their own O₂ wing (separate room + Door).
+
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.
 - **Gates (all required):** a powered Docking Port · a free Crew Quarters (capacity = pods) · a bunk located in a room of the species' gas · `stock.meals[diet] > 0`.

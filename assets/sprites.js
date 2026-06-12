@@ -16,7 +16,7 @@
   // who. Generated from the idle/walk frames after the library is built.
   const suitUp = (rows) =>
     rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
-  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f" };
+  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a" };
   // build the repeating 1x3 solar array (16 wide, 48 tall)
   function solarRows() {
     const r = [
@@ -523,6 +523,31 @@
           "................","................","................","................",
           "................","................","...kkk..........","..ksssssk.kkkk.",
           ".ksseseskccccck.",".ksssssccccccbk.","..kkkkkbbbbbk...","...kkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
+
+    {
+      name: "korro", tileW: 1, tileH: 1,
+      palette: { k: "#11151c", s: "#c0453a", c: "#8f2f28", b: "#5e1f1a", e: "#ffd27a" },
+      states: {
+        idle: [
+          "................",".....kkkkkk.....","....kssssssk....","....kseesesk....",
+          "....kssssssk....","....kkssssk.....","...kccccccck....","..kcccccccck....",
+          "..kcccccccck....","...kccccccck....","...kccccccck....","....kbbbbbk.....",
+          "....kbb.bbk.....","....kbb.bbk.....","....kkk.kkk.....","................",
+        ],
+        walk: [
+          "................",".....kkkkkk.....","....kssssssk....","....kseesesk....",
+          "....kssssssk....","....kkssssk.....","...kccccccck....","..kccccccckk....",
+          ".kcccccccck.....","..kccccccck.....","...kccccccck....","....kbbbbbk.....",
+          "...kbb.bbbk.....","..kbb...kbk.....",".kk......kk.....","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","...kkk..........","..kssssk.kkkkk..",".kssseskcccccck.",
+          ".ksssssccccccck.",".kkssskcccccbbk.","..kkkkkbbbbbbk..","...kkkkkkkkkk...",
           "................","................","................","................",
         ],
       },

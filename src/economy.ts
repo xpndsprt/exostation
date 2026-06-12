@@ -12,7 +12,7 @@ const MINERAL_PRICE = 3; // credits per mineral
 const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
 // Species that live aboard as resident crew (Drenn only ever visit as guests).
-const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl"];
+const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
 
 export function economySystem(w: World, dt: number): void {
   // ships depart over time

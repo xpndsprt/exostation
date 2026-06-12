@@ -16,7 +16,7 @@ export type StructureKind =
   | "hotel"
   | "tradehub";
 
-export type Species = "human" | "drenn" | "thol" | "vryl";
+export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
 
 export type FoodLine = "rations" | "fungal";
 

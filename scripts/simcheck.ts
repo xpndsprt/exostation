@@ -829,5 +829,62 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("No dock ⇒ no crew arrive", res === 0);
 }
 
+// --- M25: Korro — the first same-air (O₂) rival ---
+{
+  // Korro immigrate as residents; with a human already aboard the diversity
+  // rule (fewest first) brings a Korro into the free bunk.
+  const w = createWorld();
+  carve(w, 5, 5, 11, 8); // interior x6-10
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 8, 6);
+  addStructure(w, "synth", 8, 7);
+  addStructure(w, "pod", 9, 7);
+  addStructure(w, "pod", 10, 7); // capacity 2
+  addDock(w, 11, 6);
+  addAgent(w, 6, 7, "human"); // one human already aboard
+  let korro = 0;
+  for (let i = 0; i < 1000; i++) {
+    step(w);
+    korro = Object.values(w.agents).filter((a) => a.alive && a.species === "korro").length;
+    if (korro > 0) break;
+  }
+  check("Korro immigrate as O₂ residents (fewest-aboard pick)", korro >= 1);
+}
+{
+  // The headline: a Human + Korro sharing an O₂ room makes harmony go negative,
+  // so the room-harmony / tension systems finally bite for same-air species.
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 8, 6, "korro");
+  step(w);
+  const rid = w.cells[idx(w, 7, 6)].roomId;
+  check("Human + Korro share O₂ → room turns tense (harmony < 0)", rid >= 0 && w.rooms[rid].harmony < 0);
+}
+{
+  // Korro's Hauler trait lets mining drones carry more, so a station with a
+  // Korro out-mines an identical one without (more uptime per trip).
+  function mineRun(withKorro: boolean): number {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 7, 6); // power for o2gen + bay
+    addStructure(w, "o2gen", 6, 7);
+    addStructure(w, "bay", 8, 6); // one drone
+    addSite(w, 40, 30); // a distant asteroid so trip count matters
+    if (withKorro) addAgent(w, 8, 7, "korro");
+    for (let i = 0; i < 2500; i++) step(w);
+    return w.stock.minerals;
+  }
+  check("Korro Hauler trait boosts mining throughput", mineRun(true) > mineRun(false));
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

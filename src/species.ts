@@ -16,6 +16,7 @@ export const TRAITS = {
   tholRepair: 1.5, // Thol service machinery 50% faster
   vrylVat: 1.5, // Vry'l boost Bio Vat output in their room by 50%
   drennTrade: 1.5, // Drenn raise mineral sale price 50% while aboard
+  korroHaul: 1.5, // Korro muscle lets mining drones carry 50% more
 } as const;
 
 export const SPECIES: Record<Species, SpeciesDef> = {
@@ -58,5 +59,15 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     role: "Resident crew",
     trait: "Botanist — Bio Vats in their room grow +50% faster.",
     blurb: "Oxygen breathers, but they eat only Fungal Mash — they need a Spore vat + a Synth set to Fungal. Beloved by the Drenn.",
+  },
+  korro: {
+    label: "Korro",
+    gas: "o2",
+    diet: "rations",
+    accent: 0xc0453a,
+    power: 25,
+    role: "Resident crew",
+    trait: "Hauler — their muscle lets mining drones carry +50% while a Korro is aboard.",
+    blurb: "Oxygen-breathing brawlers who share humans' air and rations — but they have no love for Humans or Vry'l. Give them their OWN O₂ wing or the shared room turns tense.",
   },
 };

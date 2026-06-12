@@ -9,8 +9,9 @@ const DISLIKE = -8;
 const KIN = 4; // mild comfort around one's own kind
 
 export const RELATIONS: Record<Species, Record<Species, number>> = {
-  human: { human: KIN, drenn: LIKE, thol: DISLIKE, vryl: NEUTRAL },
-  drenn: { human: LIKE, drenn: KIN, thol: LIKE, vryl: LIKE },
-  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: NEUTRAL },
-  vryl: { human: NEUTRAL, drenn: LIKE, thol: NEUTRAL, vryl: KIN },
+  human: { human: KIN, drenn: LIKE, thol: DISLIKE, vryl: NEUTRAL, korro: DISLIKE },
+  drenn: { human: LIKE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE },
+  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: NEUTRAL, korro: NEUTRAL },
+  vryl: { human: NEUTRAL, drenn: LIKE, thol: NEUTRAL, vryl: KIN, korro: NEUTRAL },
+  korro: { human: DISLIKE, drenn: NEUTRAL, thol: NEUTRAL, vryl: DISLIKE, korro: KIN },
 };

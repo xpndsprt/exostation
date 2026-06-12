@@ -155,22 +155,24 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 | **Drenn** | O₂ | likes everyone | 18 | Rations diet. Easy guests; share air & food with humans. |
 | **Thol** | **CH₄ (methane)** | likes Drenn · neutral to humans | **35** | Rations diet, but need a sealed methane wing; strong in a fight. |
 | **Vry'l** | O₂ | likes Drenn · neutral to others | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
+| **Korro** | O₂ | **dislikes Humans & Vry'l** (mutual with Humans) · neutral to Drenn/Thol | **25** | Rations diet, **shares humans' air** — the first rival you can't separate by gas alone. Strong haulers (see traits). |
 
-Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them, which matters next.
+Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them. **Korro are the twist:** they breathe the *same* O₂ as your humans and eat the *same* Rations, so you **can't keep them apart with gas zoning** — you must give them their **own O₂ wing** (separate room, linked by a Door) or the shared room turns tense.
 
 ### Room harmony — who you put together matters
 Beyond the proximity mood effect, each enclosed room has a **harmony** from how the species sharing it get along (Select-hover a tile to see *harmonious* / *tense*):
 - **Harmonious room** (compatible/friendly species together): up to **+40% work & production** in that room (faster Vats, Synths, repairs) and a **mood lift**.
-- **Tense room** (rivals together): down to **−40%** and a mood hit. (With the current roster, rivals breathe different gases so they rarely share a room — friction matters more as same‑air rivals are added.)
-- **Takeaway:** group friends (e.g. Drenn with anyone) in your production/work rooms for a real throughput boost. The Advisor warns if a room turns tense.
+- **Tense room** (rivals together): down to **−40%** and a mood hit. **This now bites for real:** because **Korro share O₂ and Rations with Humans**, the two immigrate into the same wings and clash — a mixed Human/Korro room runs at a lasting mood penalty (~45 vs ~70) even if nobody fights. Left unmanaged with low mood, it escalates to a skirmish.
+- **Takeaway:** group friends (e.g. Drenn with anyone) for a throughput boost, and **split same-air rivals into their own rooms** (Human wing ↔ Korro wing, joined by a Door). The Advisor warns if a room turns tense.
 
 ### Species traits — diversity pays off
 Each species (except generalist Humans) brings a **bonus**, so a mixed station out‑produces a uniform one:
 - **Thol — Engineer:** service/repair machinery **+50% faster**. Park them near your busiest modules.
 - **Vry'l — Botanist:** Bio Vats **in their room grow +50% faster**. Keep one beside your vats.
 - **Drenn — Merchant:** traders pay **+50% for minerals** while a Drenn is aboard. A docked Drenn pays for itself.
+- **Korro — Hauler:** mining drones carry **+50% more** while a Korro is aboard — a real boost to your minerals economy, *if* you can house them without wrecking morale.
 - **Human — Generalist:** no bonus, no penalty.
-Traits show in the **Alienpedia** (⭐ line). The catch is always the cost: Thol need a methane wing, Vry'l need a fungal food chain — weigh the bonus against the infrastructure.
+Traits show in the **Alienpedia** (⭐ line). The catch is always the cost: Thol need a methane wing, Vry'l need a fungal food chain, **Korro need their own O₂ wing away from Humans** — weigh the bonus against the infrastructure.
 
 ### Reputation & requests (M23) — keep each species happy with you
 Every species you've hosted holds a **reputation** of your station (0–100, starts at **50**), shown as a bar in the **Alienpedia**. It rises and falls through **requests** — short goals each species posts in the **📋 REQUESTS** panel (top-right):

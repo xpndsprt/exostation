@@ -1,8 +1,18 @@
 import { Site, World } from "./types";
+import { TRAITS } from "./species";
 
 const DRONE_SPEED = 6; // tiles / second
 const CARGO_CAP = 10;
 const MINE_RATE = 5; // minerals / second
+
+// Korro muscle (Hauler trait) lets every drone carry more while one is aboard.
+function cargoCap(w: World): number {
+  for (const id in w.agents) {
+    const a = w.agents[id];
+    if (a.alive && !a.guest && a.species === "korro") return CARGO_CAP * TRAITS.korroHaul;
+  }
+  return CARGO_CAP;
+}
 
 function tileDist(w: World, a: number, b: number): number {
   const ax = a % w.w;
@@ -31,6 +41,7 @@ function nearestSite(w: World, cell: number): Site | null {
 // Auto-dispatches to the nearest non-empty site (per-site/standing-order
 // assignment is a post-MVP radar feature).
 export function miningSystem(w: World, dt: number): void {
+  const cap = cargoCap(w);
   for (const id in w.drones) {
     const d = w.drones[id];
     const bay = w.structures[d.bayId];
@@ -71,10 +82,10 @@ export function miningSystem(w: World, dt: number): void {
           d.t = 0;
           break;
         }
-        const want = Math.min(MINE_RATE * dt, CARGO_CAP - d.cargo, site.richness);
+        const want = Math.min(MINE_RATE * dt, cap - d.cargo, site.richness);
         d.cargo += want;
         site.richness -= want;
-        if (d.cargo >= CARGO_CAP || site.richness <= 0) {
+        if (d.cargo >= cap || site.richness <= 0) {
           d.state = "inbound";
           d.t = 0;
         }

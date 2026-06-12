@@ -11,6 +11,7 @@ const SP_COLOR: Record<Species, string> = {
   drenn: "#e8c349",
   thol: "#d98a3a",
   vryl: "#8fd14f",
+  korro: "#d65a4e",
 };
 
 interface PaletteEntry {
