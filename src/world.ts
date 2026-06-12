@@ -26,6 +26,8 @@ export function createWorld(): World {
     credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
     crewTimer: 0,
+    creditRate: 0,
+    prevCredits: 1000,
     phase: "playing",
     objectiveIx: 0,
     loseTimer: 0,

@@ -86,6 +86,7 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 - Each **species-pair present on the station** accrues a Tension value (0–100).
 - Tension rises from: shared zones/corridors between Disliked (+2/min) or Hated (+5/min) pairs; deaths/grievances (+25 instant); resource shortages station-wide (+1/min to all hostile pairs).
 - Tension falls when rivals are kept apart (−3/min) and when overall mood is high.
+- **Live skirmishes (M39):** in the implemented model tension rises **fast (12/s)** when an agent's mood < 30 near a disliked species, **or slow (4/s)** whenever it shares a chronically tense room (harmony < −0.3) **regardless of mood** — so cohabiting rivals erupt even when fed. Tension falls 15/s otherwise. Separation (own wings + Door) fully prevents it.
 - **Skirmish triggers at Tension 100.** Outcome scales with each side's Combat Power × headcount, minus Security.
 
 ### Skirmish resolution (first-pass)
@@ -100,6 +101,13 @@ Scenario goals completed in order; clearing the list = victory, after which play
 2. **Bank credits** — hold **¢3,000**.
 3. **Host different resident species** — **4** distinct *resident* species alive at once (**guests don't count**). The resident roster is Human/Thol/Vry'l/Korro, so this requires all four — forcing both a methane wing (Thol) and a fungal chain (Vry'l), i.e. researching Methane Life-Support **and** Fungal Synthesis.
 - **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
+
+## Operating economy / credit sink (M37)
+Recurring costs give the economy an equilibrium instead of a one-way ratchet.
+- **Module upkeep:** **0.15¢/s** per *powered, operating* module (draw > 0; passive solar/battery/silo are free).
+- **Crew wages:** **0.2¢/s** per resident.
+- Credits can't go below 0. A **net ¢/s** readout (≈20s-smoothed) sits on the credits chip, red when negative.
+- Result: an idle station (no trade/lodging) **bleeds**; a typical active mid-game station nets roughly **+7–8¢/s**. The player now manages a margin and must keep income running, but competent play still profits.
 
 ## Tech tree (M30)
 Credits are the sink; a **powered Research Lab** (¢150, draw 6) is the gate.

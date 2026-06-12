@@ -2,6 +2,10 @@ import { Species, Structure, World } from "./types";
 import { addAgent, accessCell, exteriorCell } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
+import { STRUCTURES } from "./structures";
+
+const MODULE_UPKEEP = 0.15; // credits/s per powered, operating module
+const WAGE = 0.2; // credits/s per resident crew member
 
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
@@ -15,6 +19,13 @@ const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
 
 export function economySystem(w: World, dt: number): void {
+  // smoothed net ¢/s for the HUD: an exponential filter with a ~20s time
+  // constant so lumpy trade/request payouts average into a steady trend rather
+  // than spiking the readout each time a trader visits.
+  const instant = (w.credits - w.prevCredits) / dt;
+  w.creditRate += (instant - w.creditRate) * (dt / 20);
+  w.prevCredits = w.credits;
+
   // ships depart over time
   for (let i = w.ships.length - 1; i >= 0; i--) {
     w.ships[i].t -= dt;
@@ -43,8 +54,10 @@ export function economySystem(w: World, dt: number): void {
   let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
   const podGases = new Set<string>(); // gases of rooms that contain a bunk
   const docks = [];
+  let operating = 0; // powered, running modules — they cost upkeep
   for (const id in w.structures) {
     const s = w.structures[id];
+    if (STRUCTURES[s.kind].draw > 0 && s.powered) operating++;
     if (s.kind === "hotel") hotels++;
     else if (s.kind === "pod") {
       pods++;
@@ -54,6 +67,11 @@ export function economySystem(w: World, dt: number): void {
     } else if (s.kind === "dock") docks.push(s);
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
   }
+
+  // recurring upkeep — the credit sink: crew wages + operating-module cost. An
+  // idle station bleeds; only an active economy (trade/lodging) stays in the black.
+  const upkeep = residents * WAGE + operating * MODULE_UPKEEP;
+  w.credits = Math.max(0, w.credits - upkeep * dt);
 
   // guest arrivals (need a free hotel room AND a powered dock). Drenn reputation
   // shortens the interval — well-liked stations get more visitors.

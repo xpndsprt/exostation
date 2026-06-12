@@ -6,7 +6,9 @@ import { eraseAt } from "./world";
 const ANGRY = 30; // mood below which resentment festers
 const PROXIMITY = 4; // tiles that count as "living next to"
 const FIGHT_RANGE = 2; // tiles within which blows land
-const TENSION_RISE = 12; // per second while angry near a disliked neighbor
+const TENSION_RISE = 12; // per second while angry near a disliked neighbor (fast)
+const FRICTION_RISE = 4; // per second in a chronically tense room — fires even when fed (slow burn)
+const ROOM_TENSE = -0.3; // room harmony below this counts as chronic friction
 const TENSION_FALL = 15; // per second otherwise
 const DMG = 0.4; // health lost per second = attacker power * DMG
 
@@ -31,7 +33,14 @@ export function combatSystem(w: World, dt: number): void {
         break;
       }
     }
-    if (a.mood < ANGRY && hostileNear) a.tension = Math.min(100, a.tension + TENSION_RISE * dt);
+    // Tension builds from a disliked neighbor either way: fast when morale has
+    // cratered, or a slow burn from a chronically tense room even if everyone is
+    // fed — so forcing rivals to cohabit eventually erupts. Separation stops it.
+    const rid = w.cells[a.cell].roomId;
+    const roomTense = rid >= 0 && w.rooms[rid] ? w.rooms[rid].harmony < ROOM_TENSE : false;
+    let rise = 0;
+    if (hostileNear) rise = a.mood < ANGRY ? TENSION_RISE : roomTense ? FRICTION_RISE : 0;
+    if (rise > 0) a.tension = Math.min(100, a.tension + rise * dt);
     else a.tension = Math.max(0, a.tension - TENSION_FALL * dt);
   }
 

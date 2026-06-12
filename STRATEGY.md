@@ -153,7 +153,8 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 - **Two kinds of arrival share the dock:** **resident crew** (gated by **Crew Quarters**, see §5) and **paying guests** (gated by **Hotel Rooms**). Both ride a grey **shuttle** that parks outside on arrival.
 - **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work). Higher **Drenn reputation** makes them arrive more often.
 - **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: mine asteroids → minerals → Trade Hub → credits.
-- **Takeaway:** Hotel Rooms + a dock drive lodging income; mining + a **Trade Hub** drive trade income. Spend credits to expand; deconstruct for a 50% refund.
+- **Running costs (M37):** the station has **upkeep** — every operating module costs **~0.15¢/s** and every resident draws a **wage of ~0.2¢/s**. The credit chip shows your **net ¢/s** next to the balance (red when negative). So an *idle* station slowly **bleeds**; only an active economy (lodging + trade) stays in the black. Watch the net rate — if it's red, you're shrinking.
+- **Takeaway:** Hotel Rooms + a dock drive lodging income; mining + a **Trade Hub** drive trade income. Keep net income positive, then spend the surplus on expansion and **research** (a Lab); deconstruct for a 50% refund.
 
 ---
 
@@ -204,7 +205,8 @@ Each request shows its **reward (credits)**, **rep gain**, and a **countdown** (
 
 ## 11 · Tension & skirmishes (M11) — when architecture fails
 This is the failure state the whole game is designed around.
-- When a crew member's **mood is low (< ~30)** *and* a **disliked species is nearby**, their **tension** climbs (orange ring). Fix the cause (feed them, separate them) and it falls.
+- When a crew member's **mood is low (< ~30)** *and* a **disliked species is nearby**, their **tension** climbs fast (orange ring). Fix the cause (feed them, separate them) and it falls.
+- **Even with everyone fed**, forcing rivals to **share a tense room** (harmony below ~−0.3) builds tension on a **slow burn** — a mixed Human/Korro wing left together long enough will eventually erupt no matter how happy they are. Keeping morale high buys time; it doesn't make cohabiting rivals safe. The only real fix is **separate wings**.
 - At **100 tension** a **skirmish** erupts (red ring): they attack the nearest resented neighbor within ~2 tiles. Attacks are **one-sided by who resents whom** (e.g., a furious Human strikes a Thol; the Thol doesn't strike back unless *it* resents *them*).
 - Damage scales with **combat power**, so high-power species (Thol = 35) are dangerous if *they* ever turn hostile.
 - **A death wrecks a module in that room — which can vent it**, cascading into suffocation. One feud can gut a wing.
@@ -282,6 +284,7 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
 | Reputation | per-species 0–100, starts 50; requests give +10–15 / expiry −6–10; ≤2 active, new ~every 50s, 120s to fulfil; Drenn rep scales guest arrival rate |
-| Skirmish | tension rises when mood <30 near a disliked species; fights at 100 |
+| Upkeep | operating modules ~0.15¢/s each + resident wages ~0.2¢/s; net ¢/s shown by the credits chip. Idle stations bleed |
+| Skirmish | tension rises fast when mood <30 near a disliked species, **or slow-burn (4/s) when sharing a tense room (harmony <−0.3) even if fed**; fights at 100. Separate rivals to stop it |
 
 *Build for everyone's needs, and the politics take care of themselves.*

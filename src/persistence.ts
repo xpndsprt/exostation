@@ -114,6 +114,8 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.ships)) w.ships = [];
   if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
   if (typeof w.crewTimer !== "number") w.crewTimer = 0;
+  if (typeof w.creditRate !== "number") w.creditRate = 0;
+  if (typeof w.prevCredits !== "number") w.prevCredits = w.credits;
   if (w.phase !== "won" && w.phase !== "lost") w.phase = "playing";
   if (typeof w.objectiveIx !== "number") w.objectiveIx = 0;
   if (typeof w.loseTimer !== "number") w.loseTimer = 0;

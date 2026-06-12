@@ -354,8 +354,10 @@ export function updateHud(world: World): void {
   const caps = storageCaps(world);
   const status = document.getElementById("status");
   if (status) {
+    const rate = world.creditRate;
+    const rateStr = `${rate >= 0 ? "+" : "−"}${Math.abs(rate).toFixed(1)}/s`;
     status.innerHTML =
-      chip("¢", `<b>${Math.floor(world.credits)}</b>`) +
+      chip("¢", `<b>${Math.floor(world.credits)}</b> <span class="muted">${rateStr}</span>`, rate < -0.05) +
       chip(
         "⚡",
         `${p.supply}/${p.draw}<span class="pbar"><i style="width:${pct}%"></i></span>`,

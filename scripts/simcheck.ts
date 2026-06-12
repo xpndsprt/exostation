@@ -782,7 +782,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   w.requests.push({ id: 9001, species: "human", kind: "host", target: 2, t: 100, reward: 150, rep: 12, penalty: 8 });
   const cr0 = w.credits;
   step(w); // fulfils (2 humans present)
-  check("Fulfilling a request pays credits", w.credits >= cr0 + 150);
+  check("Fulfilling a request pays credits", w.credits >= cr0 + 149); // ~150 reward minus a tick of upkeep
   check("Fulfilling a request raises reputation", getRep(w, "human") > 50);
   check("Fulfilled request is cleared", w.requests.length === 0);
 
@@ -1121,6 +1121,57 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   }
   check("Crew reseal a hull breach (wall restored)", sealed);
   check("Emergency breach repair costs credits", w.credits < cr0);
+}
+
+// --- M37: recurring credit sink (wages + module upkeep) ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "synth", 8, 6);
+  addAgent(w, 7, 7, "human"); // a wage-earning resident, no trade/lodging income
+  const c0 = w.credits;
+  for (let i = 0; i < 300; i++) step(w); // 30s of pure upkeep
+  check("Upkeep bleeds an idle station", w.credits < c0);
+  check("Net-income readout reads negative when idle", w.creditRate < 0);
+}
+
+// --- M39: live skirmishes — fed rivals in a shared room still erupt ---
+{
+  const fight = (separate: boolean): boolean => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    if (separate) carve(w, 15, 5, 19, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "o2gen", 6, 7);
+    if (separate) {
+      addStructure(w, "solar", 16, 6);
+      addStructure(w, "o2gen", 16, 7);
+    }
+    addAgent(w, 7, 6, "human");
+    addAgent(w, separate ? 17 : 8, 6, "korro");
+    let fought = false;
+    for (let i = 0; i < 500; i++) {
+      for (const id in w.agents) {
+        const a = w.agents[id];
+        a.food = 100; // keep everyone fed so mood stays well above the anger floor
+        a.rest = 100;
+        a.fun = 100;
+      }
+      step(w);
+      if (Object.values(w.agents).some((a) => a.fighting)) {
+        fought = true;
+        break;
+      }
+    }
+    return fought;
+  };
+  check("Fed rivals sharing a room still erupt (slow-burn friction)", fight(false));
+  check("Rivals split into separate rooms never fight", fight(true) === false);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

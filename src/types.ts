@@ -180,6 +180,8 @@ export interface World {
   credits: number;
   tradeTimer: number; // accumulator for periodic mineral trades
   crewTimer: number; // accumulator for resident-crew shuttle arrivals
+  creditRate: number; // smoothed net ¢/s (income − upkeep) shown on the HUD
+  prevCredits: number; // last tick's credits, for the rate calc
   phase: Phase; // playing / won / lost
   objectiveIx: number; // index into the scenario objective list
   loseTimer: number; // seconds the station has been non-viable (toward defeat)
