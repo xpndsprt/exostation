@@ -1,6 +1,6 @@
 # EXOSTATION — Strategy Guide
 
-> A complete guide to every mechanic in the current build (milestones M0–M23), ordered by **importance** and by **when you first meet it**. All numbers are the live first-pass values and may be tuned.
+> A complete guide to every mechanic in the current build (milestones M0–M39), ordered by **importance** and by **when you first meet it**. All numbers are the live first-pass values and may be tuned.
 
 ## The one thing to understand first
 **Station architecture *is* politics.** You never directly command anyone. You build the environment — rooms, power, atmospheres, food, neighbors — and the crew act on their own needs. Build a station that serves everyone and they collaborate; build a bad one and mood collapses, tension rises, and it ends in skirmishes and vented rooms.

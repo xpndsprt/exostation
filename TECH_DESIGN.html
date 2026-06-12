@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EXOSTATION — Technical Design (MVP)</title>
+<title>EXOSTATION — Technical Design</title>
 <style>
 :root { color-scheme: light dark; }
 * { box-sizing: border-box; }
@@ -68,83 +68,153 @@ tr:hover td { background: #eef3ff; }
 </head>
 <body>
 <main>
-<h1>EXOSTATION — Technical Design (MVP)</h1>
-<blockquote>How the <a href="MVP_SCOPE.md"><code>MVP_SCOPE.md</code></a> slice is actually built. Stack: <strong>TypeScript + Vite + PixiJS</strong>. Bias: simplest model that's correct; simplify hard systems (atmosphere, power) to room/station-level zones rather than per-tile physics.</blockquote>
+<h1>EXOSTATION — Technical Design</h1>
+<blockquote>How the shipped game is actually built (roughly milestone M39 — well past the original <a href="MVP_SCOPE.md"><code>MVP_SCOPE.md</code></a> slice). Stack: <strong>TypeScript + Vite + PixiJS</strong>. Bias: the simplest model that's <em>correct</em> and stays plain-JSON serializable, so save/load and the headless tests keep working. Some systems deliberately stay zone-level rather than per-tile (atmosphere, power) — see the <em>Risks / deferred refinements</em> section. Tuning numbers live in code and are mirrored by <a href="BALANCE.md"><code>BALANCE.md</code></a> / <a href="COSTS.md"><code>COSTS.md</code></a>; this doc references them rather than duplicating them.</blockquote>
 <h2>Stack &amp; tooling</h2>
-<ul><li><strong>Vite</strong> dev server + build; <strong>TypeScript</strong> strict; <strong>PixiJS</strong> (WebGL 2D) for the world canvas.</li><li><strong>UI</strong> as plain HTML/CSS DOM overlay (top bar, build palette, info panel) above the Pixi canvas — far easier than drawing UI in Pixi for an MVP.</li><li>No game framework, no ECS library — a hand-rolled <strong>state + systems</strong> model (below). Vitest for a few pure-logic unit tests (power, room detection, pathfinding).</li></ul>
+<ul><li><strong>Vite</strong> dev server + build; <strong>TypeScript</strong> strict; <strong>PixiJS 8</strong> (WebGL 2D) for the world canvas.</li><li><strong>UI</strong> is a plain HTML/CSS DOM overlay (top bar, build palette, info panel, tech/requests/advisor panels, banners, toasts) above the Pixi canvas — far simpler than drawing UI in Pixi.</li><li>No game framework, no ECS library — a hand-rolled <strong>state + systems</strong> model (below).</li><li><strong>Build:</strong> <code>npm run build</code> = strict <code>tsc</code> then <code>vite build</code>.</li><li><strong>Tests:</strong> <code>npm test</code> runs <code>scripts/simcheck.ts</code> via <strong><code>tsx</code></strong> (not Vitest) — a headless harness that drives the real systems with a fixed <code>DT</code> and a <code>localStorage</code> shim, asserting ~160+ checks across power, rooms, pathfinding, atmosphere, food, mining, agents, mood, harmony, combat, economy, requests, objectives, research, events and persistence. Add checks here for new systems.</li><li><strong>Sprite art</strong> lives in <code>assets/sprites.js</code> (populates <code>window.SPRITES</code>), shared with <code>editor.html</code> — a standalone in-repo sprite editor.</li></ul>
 <h2>Architecture: state + systems</h2>
-<p>A single serializable <strong><code>World</code></strong> state object, mutated each tick by a fixed, ordered list of pure-ish <strong>system</strong> functions. Rendering reads <code>World</code> and is fully decoupled from simulation.</p>
-<pre><code>tick(world, dt):
-  powerSystem(world)        // 1. compute supply/draw, set brownout, gate consumers
-  atmosphereSystem(world)   // 2. recompute room breathability
-  needsSystem(world)        // 3. decay needs, mark urgencies
-  aiSystem(world)           // 4. pick actions, advance pathfinding/tasks
-  miningSystem(world)       // 5. advance drone shuttle loop
-  economySystem(world)      // 6. accrue lodging credits, spawn guests
-  cleanupSystem(world)      // 7. deaths, removals, dirty-flag resets</code></pre>
+<p>A single serializable <strong><code>World</code></strong> state object (<code>src/types.ts</code>), mutated each tick by a fixed, ordered list of <strong>system</strong> functions. Rendering reads <code>World</code> and is fully decoupled from the simulation.</p>
+<pre><code>simStep(world, dt):              // src/main.ts
+  if (dirtyRooms) recomputeRooms // flood-fill room/enclosure detection
+  powerSystem        // 1.  supply/draw, battery, brownout priority-shedding, faults
+  maintenanceSystem  // 2.  machinery wears down while running
+  miningSystem       // 3.  drone shuttle loop -&gt; minerals
+  foodSystem         // 4.  Vats grow base resources; Synths -&gt; meals
+  atmosphereSystem   // 5.  per-room gas (o2 / ch4 / mixed / none)
+  harmonySystem      // 6.  per-room relations -&gt; harmony (productivity + mood)
+  agentSystem        // 7.  needs decay, suit/o2, utility task selection, movement
+  moodSystem         // 8.  ease mood toward needs+social+harmony target
+  combatSystem       // 9.  tension -&gt; skirmishes, deaths, collateral
+  economySystem      // 10. upkeep sink, lodging, trade, immigration shuttles
+  eventsSystem       // 11. periodic incidents (surge/breach/shock/raid)
+  requestsSystem     // 12. species requests/goals, reputation
+  objectivesSystem   // 13. scenario goal progression, win/lose
+  world.tick++</code></pre>
 <h3>Tick / time model</h3>
-<ul><li>Fixed simulation step: <strong>10 ticks/sec at 1×</strong> (accumulator pattern; render via <code>requestAnimationFrame</code>, decoupled).</li><li>Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s).</li><li>Determinism: no <code>Math.random()</code> in render; sim randomness via a small seeded PRNG stored in <code>World</code> (keeps save/load reproducible).</li></ul>
-<h2>Data model (sketch)</h2>
-<pre><code>type CellType = 'space' | 'floor';
+<ul><li>Fixed simulation step: <strong>10 ticks/sec at 1×</strong> (<code>SIM_HZ</code>), driven by an accumulator inside PixiJS's <code>app.ticker</code>; rendering is decoupled and happens on the same RAF, gated by a <code>needRedraw</code> flag.</li><li>Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s). The accumulator caps catch-up at 120 steps/frame to avoid spiral-of-death.</li><li>While paused, a lightweight <code>refresh()</code> still recomputes rooms / power / atmosphere so edits show their effect immediately.</li></ul>
+<h3>Determinism</h3>
+<p>There is <strong>no stored seeded PRNG</strong>. The sim avoids <code>Math.random</code> in the per-tick path: incidents and requests choose deterministically by <strong>hashing <code>world.tick</code></strong> (<code>(tick * 2654435761) &gt;&gt;&gt; 0</code>), so a given save replays identically. The one exception is <code>seedAsteroids()</code>, which uses <code>Math.random</code> <em>once</em> at new-game time to scatter asteroids — but the result is baked into the saved <code>World</code>, so it stays reproducible thereafter.</p>
+<h2>Data model (real shapes — see <code>src/types.ts</code>)</h2>
+<pre><code>type CellType = "space" | "floor" | "wall" | "door"; // tile-based; "door" walks but blocks gas
+type GasKind  = "o2" | "ch4";
+type RoomGas  = "none" | GasKind | "mixed";           // mixed = lethal to everyone
+type Species  = "human" | "drenn" | "thol" | "vryl" | "korro";
+type FoodLine = "rations" | "fungal";
+
 interface Cell {
   type: CellType;
-  walls: number;        // bitmask N/E/S/W edges
-  structureId?: ID;     // module occupying this cell
-  roomId?: ID;          // assigned by room detection
+  roomId: number;       // -1 if not a floor room
+  enclosed: boolean;    // floor sealed from open space (would hold atmosphere)
+  structureId: number;  // -1 if none
 }
+
+interface Structure {
+  id: number; kind: StructureKind;
+  cell: number; cells: number[];   // anchor + all occupied cells (multi-tile)
+  on: boolean; powered: boolean;   // player toggle / receiving power this tick
+  occupantId: number;              // agent using a pod/hotel; -1 free
+  timer: number;                   // production progress (vat/synth) or dock spawn accumulator
+  condition: number;               // 0..100 upkeep; breaks (dead) at 0
+  servicedBy: number;              // crew currently repairing it; -1
+  recipe: string;                  // synth: "rations"/"fungal"; vat: "biomass"/"spores"
+  faultT: number;                  // seconds of a power-surge fault left (offline); 0 = fine
+}
+
+interface Agent {
+  id: number; species: Species; guest: boolean; stay: number; // Infinity for residents
+  cell: number;
+  o2: number; suit: number;        // suit auto-dons off native air, then depletes
+  food: number; rest: number; fun: number;
+  mood: number; health: number; tension: number; fighting: boolean;
+  alive: boolean;
+  task: Task | null; path: number[]; moveAcc: number;  // remaining cells; sub-cell progress
+}
+
+interface Stock { minerals: number; biomass: number; spores: number; meals: Record&lt;FoodLine, number&gt;; }
+// NB: there is NO water resource. Food chain is base resource -&gt; meal line.
+
 interface World {
-  tick: number; speed: 0|1|2|3; seed: number;
-  grid: { w: number; h: number; cells: Cell[] };   // flat array, idx = y*w+x
-  rooms: Record&lt;ID, Room&gt;;
-  structures: Record&lt;ID, Structure&gt;;
-  agents: Record&lt;ID, Agent&gt;;
-  drones: Record&lt;ID, Drone&gt;;
-  sites: Record&lt;ID, Site&gt;;       // MVP: one asteroid
-  power: { supply: number; draw: number; battery: number; batteryMax: number; brownout: boolean };
-  stock: { biomass: number; water: number; meals: number };  // station inventory (Silo)
-  credits: number;
-  dirty: { rooms: boolean };
-}
-interface Room { id: ID; cells: number[]; enclosed: boolean; breathable: boolean; o2: boolean; }
-interface Structure { id: ID; kind: StructureKind; cell: number; on: boolean; powered: boolean; integrity: number; }
-interface Agent { id: ID; species: 'human'|'drenn'; cell: number; path?: number[];
-  needs: { o2: number; food: number; rest: number }; mood: number; task?: Task; alive: boolean; guest: boolean; }
-interface Drone { id: ID; state: 'docked'|'outbound'|'mining'|'inbound'; progress: number; cargo: {biomass:number;water:number}; bayId: ID; }
-interface Site { id: ID; resource: 'mixed'; richness: number; distance: number; }</code></pre>
+  w, h: number; cells: Cell[];     // flat, index = y*w + x
+  dirtyRooms: boolean;
+  structures, agents, drones, sites: Record&lt;number, ...&gt;;
+  ships: Ship[]; rooms: Record&lt;number, RoomInfo&gt;;
+  power: PowerState; stock: Stock; credits: number;
+  tradeTimer, crewTimer, reqTimer, eventTimer: number; // system accumulators
+  creditRate, prevCredits: number; // smoothed net ¢/s HUD readout
+  phase: "playing"|"won"|"lost"; objectiveIx, loseTimer: number;
+  unlocked: Record&lt;string, boolean&gt;;          // researched tech
+  priceMult, priceT: number;                  // market shock multiplier + remaining time
+  notify: string[];                           // toast queue drained by the UI
+  breaches: Breach[];                         // open hull breaches crew rush to reseal
+  reputation: Partial&lt;Record&lt;Species, number&gt;&gt;; requests: StationRequest[]; seen: Species[];
+  tick: number; speed: 0|1|2|3; nextId: number;
+}</code></pre>
 <h2>Key systems</h2>
-<h3>Room detection (atmosphere boundaries)</h3>
-<ul><li>Triggered when structures/walls change (<code>dirty.rooms</code>).</li><li><strong>Flood fill</strong> over <code>floor</code> cells, not crossing walls/closed doors, to partition the grid into rooms.</li><li>A room is <strong>enclosed</strong> if its flood fill never touches a <code>space</code> cell or the map edge. Open airlocks/doors connect rooms (merge or link for traversal).</li></ul>
-<h3>Atmosphere (per-room zone — <em>not</em> per-tile physics)</h3>
-<ul><li>For each room: <code>o2 = enclosed &amp;&amp; hasPoweredO2Generator(room)</code>; <code>breathable = o2</code>.</li><li>A breach (a wall removed/destroyed exposing the room to <code>space</code>) flips <code>enclosed=false</code> → not breathable. MVP skips gradual diffusion and decompression spread (deferred).</li></ul>
-<h3>Power (station-wide single network)</h3>
-<ul><li><code>supply = Σ solar (× lit factor)</code>; <code>draw = Σ on&amp;powered consumers</code>.</li><li>If <code>draw &gt; supply + availableBattery</code>: <strong>brownout</strong> — shed consumers in ascending <strong>priority</strong> (Life Support last to die), recompute, set <code>powered=false</code> on shed modules.</li><li>Battery integrates <code>supply − draw</code> each tick, clamped <code>[0, batteryMax]</code>. (MVP ignores conduit routing; adjacency/route graph is a post-MVP refinement.)</li></ul>
-<h3>Needs + AI (autonomy)</h3>
-<ul><li>Each tick needs decay: <code>o2</code> only while in a non-breathable room (fast), <code>food</code> and <code>rest</code> slowly. Mood derives from need satisfaction.</li><li><strong>Utility selection:</strong> score candidate actions (FleeToBreathableRoom, Eat if meals&gt;0, Rest if tired, Wander) by urgency; pick the highest <strong>achievable</strong> one.</li><li><strong>Pathfinding:</strong> A\* over walkable cells (floor, passable wall edge / open door), 4-directional, Manhattan heuristic. Cache paths; invalidate on grid change.</li><li>Death: <code>o2</code> hits 0 → suffocate; prolonged <code>food</code> 0 → starve. Removes agent (guests just leave/are lost).</li></ul>
-<h3>Mining loop</h3>
-<ul><li>One Site at a <code>distance</code>. Drone FSM: <code>docked → outbound (progress to 1) → mining (fill cargo) → inbound → unload to stock → repeat</code>. Round-trip time scales with <code>distance</code> and bot tier.</li><li>Synthesizer: when it has power + inputs, consume <code>biomass+water</code> → produce <code>meals</code> into stock on a timer.</li></ul>
-<h3>Economy</h3>
-<ul><li>Each occupied Sleeping Pod accrues lodging <code>¢/day</code> (scaled by tick). Docking Port periodically spawns a <strong>Drenn</strong> guest (seeded) up to capacity; guest seeks a vacant pod, lodges, pays, eventually departs.</li></ul>
-<h2>Rendering (PixiJS)</h2>
-<ul><li>Root <strong>world <code>Container</code></strong> holds: a tile layer, a structure layer, an agent/drone layer, an overlay layer (room tint / power / breathable heatmap toggles).</li><li><strong>Camera</strong> = world container transform: drag to pan, wheel to zoom (clamp scale). Tiles ~24px world units.</li><li>Sprites are placeholder graphics (colored <code>Graphics</code> rects/circles) — no art pipeline in MVP.</li><li>Render pass diff-updates only changed cells/entities; full redraw only on big changes.</li></ul>
-<h2>UI (DOM overlay)</h2>
-<ul><li><strong>Top bar:</strong> credits, power balance (supply/draw/battery), tick clock, Pause/1×/2×/3×.</li><li><strong>Build palette:</strong> pick a tile/module; ghost preview; click/drag to place, right-click to remove; cost validated against credits.</li><li><strong>Info panel:</strong> on selecting a structure/agent, show kind, state flags (powered/on/breathable/needs), and actions (toggle on/off, deconstruct).</li><li><strong>Alerts:</strong> toast feed for brownout / suffocation / starvation / guest arrival.</li></ul>
-<h2>Persistence</h2>
-<ul><li><code>World</code> is plain JSON-serializable → <strong>localStorage</strong> save/load (single slot for MVP). Version field for forward migration.</li></ul>
+<h3>Room / enclosure detection (<code>rooms.ts</code>)</h3>
+<p>Triggered when cells change (<code>dirtyRooms</code>). Two passes over the flat grid:</p>
+<ol><li><strong>Enclosure</strong> — flood-fill <em>inward</em> from every border cell through any non-blocking cell (walls <em>and</em> doors block). Floor cells the fill never reaches are <code>enclosed</code> (they'd hold pressure); reachable floors are exposed.</li><li><strong>Rooms</strong> — flood-fill groups connected <code>floor</code> cells (floor-to-floor only, 4-dir) into numbered <code>roomId</code>s. A door does <strong>not</strong> merge two rooms — it's a pressure boundary — but it <em>is</em> walkable for pathfinding.</li></ol>
+<h3>Atmosphere (per-room zone — not per-tile physics) (<code>atmosphere.ts</code>)</h3>
+<p>Each enclosed room takes on the gas of the <strong>powered atmosphere generator(s) inside it</strong>: one gas type → that gas (breathable only for the matching species); two or more <em>different</em> gases → <code>"mixed"</code> (lethal to everyone); no generator or not enclosed → <code>"none"</code> (vacuum). O₂ Generators emit <code>o2</code>; Methane Generators emit <code>ch4</code>. No diffusion/decompression spread — a vented room flips instantly.</p>
+<h3>Power (station-wide single network) (<code>power.ts</code>)</h3>
+<p><code>supply = Σ gen</code> (solar), <code>batteryMax = Σ battery</code>. Consumers are modules with <code>draw &gt; 0</code> that are switched <code>on</code>. Broken (<code>condition ≤ 0</code>) and faulted (<code>faultT &gt; 0</code>) modules are skipped entirely (no gen, no draw, <code>powered = false</code>).</p>
+<ul><li>If <code>supply ≥ draw</code>: everyone powered; battery integrates the surplus, clamped.</li><li>If short but the battery can cover the deficit this tick: drain it, stay up.</li><li>Otherwise <strong>brownout</strong>: battery to 0, then shed consumers in <strong>ascending priority</strong> (Life Support has the highest priority, so it's shed last) until <code>draw ≤ supply</code>. Per-module <code>priority</code> lives in <code>STRUCTURES</code>.</li></ul>
+<p>No conduit routing — adjacency/route graph is a deferred refinement.</p>
+<h3>Maintenance (<code>maintenance.ts</code>)</h3>
+<p>Any module that draws power <strong>wears down</strong> (<code>condition</code> falls) while running. Passive infrastructure (solar/battery, <code>draw = 0</code>) never wears. Below a service threshold, crew pick it up as a <code>service</code> task and repair it; at <code>condition 0</code> the machine is dead until repaired. Thol crew repair faster (trait).</p>
+<h3>Needs + AI (autonomy) (<code>agents.ts</code>)</h3>
+<p>Per tick, <code>food</code>/<code>rest</code>/<code>fun</code> decay; guests' <code>stay</code> counts down. Air handling: in <strong>native</strong> air (room gas == species gas) <code>o2</code> and the suit recharge; off native air the <strong>suit auto-dons</strong> and depletes (covers brief transits, e.g. crossing a door, which is itself a vacuum airlock tile); once the suit is empty <code>o2</code> drains and at 0 the agent dies.</p>
+<p>Task selection is <strong>utility-by-priority</strong> from the agent's <em>current</em> cell each tick, in order:</p>
+<ol><li><strong>Emergency flee</strong> to the nearest breathable room when off-air and the suit is running low (<code>nearestBreathable</code> BFS).</li><li>Departing <strong>guest</strong> heads to the nearest dock to <code>leave</code>.</li><li>Residents drop everything to <strong><code>seal</code></strong> an open hull breach (claim the nearest one, work from an adjacent interior cell; needs native air or a charged suit).</li><li><strong><code>sleep</code></strong> when tired (crew in Crew Quarters, guests in Hotel Rooms).</li><li><strong><code>eat</code></strong> when hungry <em>and</em> a meal of their food line is stocked.</li><li><strong><code>relax</code></strong> at a Lounge when bored (also where socializing happens).</li><li>Residents <strong><code>service</code></strong> worn machinery; guests never take jobs.</li></ol>
+<p>Movement steps cell-to-cell at a fixed speed using <code>moveAcc</code> sub-cell accumulation; <code>path</code> is recomputed via A\* on demand.</p>
+<p><strong>Crew are not hand-placed.</strong> Residents arrive by <strong>immigration shuttle</strong> when a free bunk, a powered dock, a bunk in their breathable air, and stocked food they can eat all line up (<code>economy.ts</code>); the system favours species diversity.</p>
+<h3>Pathfinding (<code>pathfind.ts</code>)</h3>
+<p><strong>A\</strong>* over walkable cells (<code>floor</code> + <code>door</code>), 4-directional, Manhattan heuristic, linear-scan open set (fine at this grid size). Returns the cell list to step onto (excludes start), <code>[]</code> if already there, <code>null</code> if unreachable. <code>nearestBreathable</code> is a separate BFS to the closest room of a given gas.</p>
+<h3>Mood, harmony &amp; relations (<code>mood.ts</code>, <code>harmony.ts</code>, <code>relations.ts</code>)</h3>
+<p><code>RELATIONS</code> is an asymmetric per-species opinion matrix. <strong>Harmony</strong> is computed per room from the pairwise relations of its current occupants and maps to a <strong>productivity multiplier</strong> (≈0.6–1.4) applied to food production and repair speed. <strong>Mood</strong> eases toward a target of <code>base + needs + nearby-neighbour social opinion + room harmony</code>. The same <code>moodBreakdown</code> feeds the UI tooltip.</p>
+<h3>Combat: tension → skirmishes (<code>combat.ts</code>)</h3>
+<p>Tension rises while a disliked neighbour is in proximity — <strong>fast</strong> when morale has cratered, or a <strong>slow burn</strong> in a chronically tense room even when everyone is fed (so forcing rivals to cohabit eventually erupts). Separation bleeds it off. At 100 tension an agent strikes the nearest disliked target (one-sided by relation, damage scales with species <code>power</code>). A death can wreck a module in the room as collateral — which may vent it into a breach.</p>
+<h3>Mining (<code>mining.ts</code>)</h3>
+<p>Asteroids (<code>sites</code>) are scattered in open space. Each Bot Bay spawns a drone with a shuttle FSM: <code>docked → outbound → mining → inbound → unload</code>. It auto-dispatches to the nearest non-empty site; travel time scales with distance. Unloaded minerals are added to stock up to the storage cap. Korro crew raise cargo capacity (trait). Per-site standing orders are a deferred radar feature.</p>
+<h3>Food (<code>food.ts</code>)</h3>
+<p><strong>Bio Vats</strong> grow a base resource on a timer by recipe (<code>biomass</code> or <code>spores</code>); <strong>Rations Synths</strong> convert a base resource into a <strong>meal line</strong> (<code>rations</code> from biomass, <code>fungal</code> from spores). Crew eat the line their species eats. Production idles at the storage cap, scaled by room productivity; Vry'l botanists boost vats in their room (trait).</p>
+<h3>Storage (<code>storage.ts</code>)</h3>
+<p>Per-resource <strong>caps</strong> (biomass / spores / rations / fungal / minerals). Production plateaus at the cap, so sizing production to population (and trading ore to make room) is an ongoing decision. Each <strong>Storage Silo</strong> raises every cap (gated behind the Cargo Logistics tech).</p>
+<h3>Economy (<code>economy.ts</code>)</h3>
+<ul><li><strong>Upkeep sink:</strong> crew <strong>wages</strong> + per-<strong>operating-module</strong> cost each tick. An idle station bleeds credits; only an active economy stays in the black.</li><li><strong>Net-income readout:</strong> <code>creditRate</code> is an exponentially-smoothed ¢/s shown on the HUD so lumpy payouts read as a trend.</li><li><strong>Lodging:</strong> living guests pay per second.</li><li><strong>Guest arrivals:</strong> a powered dock spawns Drenn visitors when a Hotel Room is free; Drenn reputation shortens the interval. A ship sprite parks at the dock.</li><li><strong>Crew immigration:</strong> the shuttle path above.</li><li><strong>Trade:</strong> with a powered Trade Hub and minerals in stock, a trader periodically buys a batch at the current <code>priceMult</code> (Drenn aboard raise the price).</li></ul>
+<h3>Tech tree (<code>research.ts</code>)</h3>
+<p>Credits spent at a <strong>powered Research Lab</strong> buy unlocks (<code>unlocked</code> map): Methane Life-Support (CH₄ gen → host Thol), Fungal Synthesis (spore/fungal chain → host Vry'l), Cargo Logistics (Storage Silos), Station Security (Turrets). Gated build tools are locked out of the palette until purchased.</p>
+<h3>Incidents (<code>events.ts</code>)</h3>
+<p>After a grace period, periodic escalating incidents fire, chosen deterministically by tick hash: <strong>power surge</strong> (a module trips offline for a while), <strong>hull breach</strong> (only with 2+ enclosed rooms so crew can flee — vents a wall, crew rush to reseal), <strong>market shock</strong> (mineral price ×2 or ×0.5 for a window), <strong>raider</strong> (a hostile ship chews modules until a powered Turret drives it off). Incidents never target life-support generators, so suffocation only ever comes from the player's own power/zoning mistakes.</p>
+<h3>Requests &amp; reputation (<code>requests.ts</code>)</h3>
+<p>Seen species post time-limited <strong>requests</strong> (host N of us / keep us content / build a Lounge). Fulfilling pays credits + <strong>reputation</strong>; letting one expire costs reputation. Reputation (0..100, default 50) feeds back into guest arrival frequency and trade.</p>
+<h3>Objectives &amp; win/lose (<code>objectives.ts</code>)</h3>
+<p>An ordered scenario goal list (grow crew → bank credits → host distinct resident species). Clearing the list = <strong>won</strong>. <strong>Lost</strong> if the station has died, no residents remain, and it can no longer attract crew — after a short grace timer to avoid flicker during a recoverable wipe. <code>main.ts</code> pauses and shows an end banner on the transition.</p>
+<h2>Rendering (PixiJS) (<code>renderer.ts</code>, <code>camera.ts</code>)</h2>
+<ul><li>A single world <code>Container</code> holds the tile/structure/agent/drone/overlay layers; the camera is just that container's transform.</li><li><strong>Camera:</strong> drag (or right-drag) to pan, wheel to zoom toward the cursor (clamped <code>ZOOM_MIN..ZOOM_MAX</code>); <code>TILE = 24</code> world px/cell.</li><li>Sprites come from <code>assets/sprites.js</code>; the renderer also draws overlays (power / rooms), a build ghost/cursor with validity tint, and species flashes for the locator.</li><li>Draws are gated by <code>needRedraw</code>; the sim sets it whenever a step or edit changes state.</li></ul>
+<h2>UI (DOM overlay) (<code>ui.ts</code>)</h2>
+<ul><li><strong>Top bar:</strong> credits + smoothed net ¢/s, power balance, sim clock, speed controls, save/load menu.</li><li><strong>Build palette:</strong> tools (floor/wall/door/erase/pan/select + every module); cost shown; locked tools greyed until researched; keyboard shortcuts (<code>TOOL_KEYS</code>, <code>[</code>/<code>]</code>/space for speed, Esc → select).</li><li><strong>Info panel:</strong> selected agent/structure detail + actions (toggle on/off, cycle recipe, deconstruct for a 50% salvage refund).</li><li><strong>Side panels:</strong> tech tree, active requests, Alienpedia (with species locator), rule-based <strong>advisor</strong> (<code>advisor.ts</code> surfaces the most urgent next steps), current objective, onboarding tutorial.</li><li><strong>Feedback:</strong> toast alerts (drained from <code>world.notify</code> plus client-side transition detection — brownout, skirmish, arrivals/deaths, hunger/air hints) and the win/lose end banner.</li></ul>
+<h2>Persistence (<code>persistence.ts</code>)</h2>
+<p><code>World</code> is plain JSON → <strong>localStorage</strong>, across <strong>named save slots</strong>: an <strong>autosave</strong> (every 30 s) plus <strong>3 manual slots</strong>. Each payload wraps the world with a timestamp and a one-line summary for the load menu. <strong><code>loadWorld</code> runs a <code>sanitize()</code> migration</strong> that backfills fields missing from older saves (including the legacy single-slot save and the old scalar <code>meals</code>/no-<code>spores</code> stock shape), so old saves keep loading. Keeping <code>World</code> strictly JSON-serializable (no class instances / functions) is a hard rule.</p>
 <h2>Project layout</h2>
-<pre><code>index.html
+<pre><code>index.html  editor.html        // game + standalone sprite editor
 package.json  tsconfig.json  vite.config.ts
-src/
-  main.ts            // boot: create app, world, loops
-  sim/               // world.ts, systems/*.ts, pathfind.ts, rooms.ts, rng.ts
-  render/            // renderer.ts, camera.ts, layers.ts
-  ui/                // topbar, palette, infopanel, alerts (DOM)
-  data/              // structures.ts (catalog stats), species.ts, config.ts
-  types.ts
-test/                // power, rooms, pathfind unit tests</code></pre>
-<h2>Performance targets</h2>
-<p>~80×80 grid, dozens of agents/drones, stable at 3× — comfortably within Canvas/WebGL budget given the zone-level (not per-tile) atmosphere and power models.</p>
-<h2>Risks / watch-list</h2>
-<ul><li><strong>Atmosphere creep:</strong> resist per-tile gas sim in MVP; room zones are enough to prove the loop.</li><li><strong>Pathfinding churn:</strong> invalidate caches narrowly on grid edits, not globally.</li><li><strong>Power priority bugs:</strong> unit-test brownout shedding order (life support must never be shed before commerce).</li><li><strong>Save/load drift:</strong> keep <code>World</code> strictly JSON-serializable (no class instances / functions in state).</li></ul>
+assets/sprites.js              // window.SPRITES (shared with the editor)
+scripts/simcheck.ts            // headless `npm test` harness (tsx)
+src/                           // FLAT — no sim/ render/ ui/ data/ split
+  types.ts  config.ts
+  world.ts                     // World state + create/place/erase helpers
+  main.ts                      // boot, fixed-step loop, simStep, input, camera/UI wiring
+  power.ts maintenance.ts mining.ts food.ts atmosphere.ts harmony.ts
+  agents.ts mood.ts combat.ts economy.ts events.ts requests.ts objectives.ts
+  research.ts storage.ts
+  rooms.ts pathfind.ts placement.ts
+  structures.ts species.ts relations.ts advisor.ts
+  renderer.ts camera.ts ui.ts persistence.ts</code></pre>
+<h2>Performance</h2>
+<p>80×60 grid, dozens of agents/drones, stable at 3×. The zone-level (not per-tile) atmosphere and power models, the <code>needRedraw</code>-gated renderer, and typed-array A\* scratch buffers keep it comfortably within budget. The A\* open set is a linear scan — fine at this scale, a binary heap is the obvious upgrade if grids grow.</p>
+<h2>Risks / deferred refinements</h2>
+<ul><li><strong>Atmosphere creep:</strong> per-room zones (no per-tile gas diffusion) are intentional; resist a full gas sim unless a mechanic demands it.</li><li><strong>Edge walls:</strong> the live model is tile-based (<code>space|floor|wall|door</code>); a per-edge wall bitmask was sketched in earlier docs and is a deferred refinement.</li><li><strong>Power routing:</strong> single station-wide network; conduit/adjacency routing deferred.</li><li><strong>Pathfinding churn:</strong> paths are recomputed on demand rather than globally cached; watch this if agent counts climb.</li><li><strong>Save/load drift:</strong> keep <code>World</code> strictly JSON-serializable, and extend <code>sanitize()</code> whenever the shape changes so old saves keep loading.</li><li><strong>Determinism:</strong> keep <code>Math.random</code> out of the per-tick path — hash <code>world.tick</code> for any new stochastic incident/choice so replays stay reproducible.</li></ul>
+<pre><code></code></pre>
 </main>
 </body>
 </html>

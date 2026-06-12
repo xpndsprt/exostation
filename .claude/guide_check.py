@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Stop hook: nudge to keep STRATEGY.md in sync with gameplay code.
+"""Stop hook: nudge to keep the docs in sync with gameplay code.
 
 If the working tree has changes under src/*.ts but STRATEGY.md hasn't been
-touched, emit a systemMessage reminder. Best-effort and silent otherwise;
-never blocks. The real rule lives in CLAUDE.md.
+touched, emit a systemMessage reminder (which also points at the milestone-level
+design docs: GAME_DESIGN / TECH_DESIGN / BUILDINGS / MVP_SCOPE). Best-effort and
+silent otherwise; never blocks. The real rule lives in CLAUDE.md.
 """
 import json
 import subprocess
@@ -41,7 +42,9 @@ def main():
                 {
                     "systemMessage": "Reminder: gameplay code in src/ changed but STRATEGY.md "
                     "was not updated. Update the strategy guide to match (it auto-renders to "
-                    "STRATEGY.html).",
+                    "STRATEGY.html). If a module/species/system shipped or the architecture "
+                    "changed, also update the design docs' implementation status "
+                    "(GAME_DESIGN / TECH_DESIGN / BUILDINGS / MVP_SCOPE) per CLAUDE.md.",
                 }
             )
         )

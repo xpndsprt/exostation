@@ -22,6 +22,20 @@ hook — don't hand-edit it. A `Stop` hook reminds you if `src/` changed without
 `TILE_COST` in `src/structures.ts`). `COSTS.md` mirrors them as the human-readable
 source of truth — update it whenever you change a cost.
 
+### Keep the design docs' status current
+`GAME_DESIGN.md`, `TECH_DESIGN.md`, `BUILDINGS.md`, and `MVP_SCOPE.md` are also kept
+in sync — but at the **milestone/system level**, not per-number. They each carry an
+**implementation-status** view (⚙️ shipped vs 🔭 planned). When you **ship a feature,
+add/remove a module or species, or change the architecture**, update the relevant doc:
+- `MVP_SCOPE.md` — append the milestone to its history/changelog and move items out of "planned".
+- `GAME_DESIGN.md` — flip the affected ⚙️/🔭 markers (species, systems, political web).
+- `TECH_DESIGN.md` — reflect new systems/files, `simStep` order, and data-model changes.
+- `BUILDINGS.md` — add the module to the **Implemented** section (and out of the backlog).
+
+**Do NOT duplicate tunable numbers** in these four docs — the live numbers live only in
+`STRATEGY.md` / `BALANCE.md` / `COSTS.md`; the design docs reference those. (This avoids
+the drift that previously left a stale embedded balance copy in `GAME_DESIGN.md`.)
+
 ### Markdown → HTML
 Every `.md` in this repo has a generated `.html` sibling (PostToolUse hook runs
 `.claude/md2html.py`). Don't edit the `.html` files by hand.

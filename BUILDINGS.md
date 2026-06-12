@@ -1,24 +1,74 @@
 # EXOSTATION — Buildable & Interactive Items Catalog
 
-> Master list of everything the player can place or interact with, what it achieves, its **power draw**, footprint, cost, and runtime **states**. First-pass values for prototyping — tune against [`BALANCE.md`](BALANCE.md). Credits = ¢. Power measured in **PU (power units)**.
+> **Status:** This file is split into two parts. **§ Implemented modules** is authoritative for the current build — it mirrors `src/structures.ts` (the `STRUCTURES` table + `TILE_COST`) and the prices in [`COSTS.md`](COSTS.md); **code is the source of truth**. **§ Design backlog** preserves the original aspirational catalog as a north-star — those items are **NOT in the current build**. Behaviour is documented in [`STRATEGY.md`](STRATEGY.md); tune values against [`BALANCE.md`](BALANCE.md). Credits = ¢. Power measured in **PU (power units)**.
 
 ## Power economy convention
-- **Generators** show power as **`+N`** (supply). **Consumers** show **`N`** (draw when operating; most draw ~0 when toggled off or idle).
-- Net power = Σ generation − Σ draw. Batteries buffer the surplus for the dark side of an orbit.
-- **Brownout:** when draw exceeds supply + battery, modules drop offline by **priority** (Life Support > Security > Food > Commerce > everything else). Losing power to life support is how a brownout becomes a body count.
+- **Generators** show power as **`+N`** (supply). **Consumers** show **`N`** (draw when powered).
+- Net power is station-wide: `net = supply − draw`. Surplus charges the battery; deficit drains it.
+- **Brownout:** when the battery is empty and draw still exceeds supply, modules are **shed by priority** (higher `priority` is shed last). Life support (O₂/CH₄ gen, priority 10) is shed last; pods/docks/bays/turrets go dark first. Losing power to life support is how a brownout becomes a body count.
 - See the **[State glossary](#state-glossary)** at the bottom for what each runtime state means.
 
 ---
 
-## 1 · Structure & Connectivity
-The skeleton. Mostly unpowered; defines rooms, atmosphere boundaries, and the traversal graph.
+# Implemented modules (current build)
 
+Exactly the 15 modules in `STRUCTURES` plus the three structural tiles. Footprint is `w×h` from the code; cost mirrors [`COSTS.md`](COSTS.md). Deconstructing a module refunds **50%** of its cost.
+
+## Structural tiles
+Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmosphere boundaries, and the traversal graph.
+
+| Tile | Achieves | Power | Footprint | Cost ¢ | States |
+|------|----------|:-----:|:---------:|:------:|--------|
+| Floor | Buildable deck; defines a room's extent. Drag-rectangle fill. | 0 | 1×1 | 2 | built |
+| Wall | Blocks movement & gas; structural hull. Drag-rectangle fill. | 0 | 1×1 | 3 | intact / breached |
+| Door | Walkable passage that **blocks gas** — links wings without mixing their atmospheres; crew cross on suit. Single click. | 0 | 1×1 | 25 | walkable airlock |
+
+## Modules
+| Module | Kind | Achieves | Power | Footprint | Cost ¢ | Tech gate | States |
+|--------|------|----------|:-----:|:---------:|:------:|-----------|--------|
+| Solar Panel | `solar` | Generates power from starlight. **Mounts on a space-facing wall and extends 3 tiles out into space.** | +10 | 1×3 (wall) | 60 | — | placed (lit) |
+| Battery | `battery` | Stores **50 PU** of surplus for when draw exceeds supply. | 0 | 1×1 | 80 | — | charging / discharging |
+| O₂ Generator | `o2gen` | Emits **oxygen** life support into its room (O₂ species). Top brownout priority (10). | 6 | 2×2 | 90 | — | on / off / unpowered |
+| Methane Gen | `ch4gen` | Emits **methane (CH₄)** life support — a sealed CH₄ wing to host **Thol**. Top brownout priority (10). | 9 | 2×2 | 140 | **Methane Life-Support** (¢350) | on / off / unpowered |
+| Rations Synth | `synth` | Converts a base resource → a food line: **Rations** (from biomass) or **Fungal Mash** (from spores). Recipe: 2 base → 4 meals / 10s (`SYNTH`). | 5 | 2×1 | 70 | — (Fungal recipe needs **Fungal Synthesis**, ¢300) | producing / idle / input-short |
+| Bio Vat | `vat` | Grows a food base from power: **Biomass** or **Spores** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores recipe needs **Fungal Synthesis**, ¢300) | growing / unpowered |
+| Crew Quarters | `pod` | Where **resident crew** sleep. | 1 | 1×1 | 40 | — | assigned / vacant |
+| Bot Bay | `bay` | Launches / docks / recharges a **mining drone** that gathers minerals. | 4 | 2×2 | 120 | — | cycling / occupied / free |
+| Docking Port | `dock` | **Hull airlock placed on a space-facing wall.** Ships park outside and bring guests; the berth for arrivals. | 5 | 1×1 (wall) | 150 | — | guests arrive / free |
+| Lounge | `rec` | Entertainment: crew **and** visitors path here to relax (restore **Fun**) and socialize when fun runs low. | 4 | 2×2 | 80 | — | busy / empty |
+| Hotel Room | `hotel` | Where **visitors** lodge; total Hotel Rooms set guest capacity and drive lodging income. | 2 | 2×1 | 60 | — | assigned / vacant |
+| Trade Hub | `tradehub` | Lets **traders dock and buy your minerals** for credits — the trade-income engine. | 5 | 2×2 | 120 | — | active / unpowered |
+| Research Lab | `lab` | Enables the **TECH** panel: spend credits to research unlocks. Must stay powered to research. | 6 | 2×1 | 150 | — | powered / unpowered |
+| Storage Silo | `silo` | Raises **every** resource cap by **+250**. Unpowered (no draw). | 0 | 1×1 | 70 | **Cargo Logistics** (¢250) | placed |
+| Turret | `turret` | Auto-fires on a **raider** ship parked at the dock, shooting it down before it wrecks modules. | 4 | 1×1 | 200 | **Station Security** (¢500) | idle / firing / unpowered |
+
+### Recipe / cap constants (from `src/structures.ts`)
+- **Bio Vat** (`VAT`): produces **+3** base every **8s**.
+- **Rations Synth** (`SYNTH`): consumes **2** base → **4** meals every **10s**.
+- Resource caps (see `STRATEGY.md`): biomass 400 · spores 250 · meals 50/line · minerals 200. Each **Storage Silo** adds **+250** to all caps.
+
+### Tech unlocks (researched at a powered Lab, paid in credits — from `src/research.ts`)
+| Unlock | Cost ¢ | Enables |
+|--------|:------:|---------|
+| Methane Life-Support | 350 | **Methane Gen** build tool (host Thol) |
+| Fungal Synthesis | 300 | **Spores** recipe on Vats + **Fungal Mash** recipe on Synths (feed Vry'l) |
+| Cargo Logistics | 250 | **Storage Silo** build tool |
+| Station Security | 500 | **Turret** build tool |
+
+Starter modules (everything except Methane Gen, Storage Silo, Turret, and the fungal recipes) are unlocked from the start.
+
+---
+
+# Design backlog (planned, not yet built)
+
+> Everything below is the original **design vision** — the north-star catalog. **None of it is in the current build** except where it overlaps a shipped module above (which is the authoritative version). Prices/sizes here are first-pass aspirational values, not the shipped numbers.
+
+## 1 · Structure & Connectivity
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Deck Tile | Buildable floor; defines a room's extent | 0 | 1 | 5 | built / damaged |
 | Wall | Blocks movement & gas; structural | 0 | 1 | 10 | intact / breached |
 | Door | Passage; holds atmosphere when closed | 1 | 1 | 40 | open / closed / locked |
-| Door *(implemented, M12)* | Walkable but **blocks gas** — links wings without mixing atmospheres; crew cross on suit | 0 | 1 | — | walkable airlock |
 | Airlock (internal) | Passage **between different atmospheres** without mixing | 2 | 1 | 120 | cycling / sealed / open |
 | Space-facing Airlock | EVA egress to vacuum; spacewalk point | 2 | 1 | 150 | cycling / sealed / suited-transit |
 | Corridor | Traversal + atmosphere conduit (deck + walls) | 0 | n | 5/tile | pressurized / vented |
@@ -29,7 +79,6 @@ The skeleton. Mostly unpowered; defines rooms, atmosphere boundaries, and the tr
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Solar Panel I | Generates power from starlight | +10 | 2×1 | 200 | lit / shaded / damaged |
-| Solar Panel *(implemented)* | +10 PU; **mounts on a space-facing wall, extends 3 tiles into space** | +10 | 1×3 | — | placed on hull exterior |
 | Solar Panel II | Higher-yield array | +18 | 2×1 | 450 | lit / shaded / damaged |
 | Solar Panel III | Top-tier array | +30 | 2×2 | 900 | lit / shaded / damaged |
 | Battery Bank | Stores surplus power (50 PU) for dark side | 0 | 1×1 | 250 | charging / discharging / full / empty |
@@ -64,8 +113,6 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Cryo-Gel Feed Synthesizer | Food for Naaz | 8 | 2×1 | 1,200 | producing / idle / input-short · quality:B/R/G |
 | Plasma Feed Emitter | "Food" (energy) for Voltaar | 10 | 2×1 | 1,500 | producing / idle / power-starved |
 | Hydroponics Bay | Grows Biomass/Spores on-station (less mining) | 6 | 3×2 | 700 | growing / harvest-ready / unlit |
-| Bio Vat *(implemented)* | Grows a base from power: **Biomass or Spores** (recipe), +3 / 8s | 6 | 2×2 | — | growing / unpowered |
-| Rations Synth *(implemented)* | Converts base → food line: **Rations (biomass) or Fungal Mash (spores)**, 2→4 / 10s | 5 | 2×1 | — | producing / idle |
 | Water Reclaimer | Recovers Water from waste | 3 | 1×1 | 300 | reclaiming / idle |
 | Resource Silo | Stores raw resources & food | 0 | 2×2 | 200 | stocked / full / empty |
 
@@ -75,11 +122,6 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Sleeping Pod | Rest (species-appropriate); restores mood | 1 | 1×1 | 150 | assigned / vacant / comfort:tier |
 | Quarters (suite) | Higher-comfort lodging; premium fees | 2 | 2×2 | 500 | assigned / vacant / comfort:tier |
 | Recreation Module | Social space — **where relations play out** | 4 | 3×2 | 600 | busy / empty |
-| Lounge *(implemented)* | Entertainment: crew & visitors relax (restore Fun) and socialize | 4 | 1×1 | — | busy / empty |
-| Crew Quarters *(implemented)* | Where **resident crew** sleep | 1 | 1×1 | — | assigned / vacant |
-| Hotel Room *(implemented)* | Where **visitors** lodge; sets guest capacity | 2 | 1×1 | — | assigned / vacant |
-| Trade Hub *(implemented)* | Trading station — lets **traders buy your minerals** for credits | 5 | 2×2 | 120 | active / unpowered |
-| Trader ship *(implemented)* | Docks periodically (needs a Trade Hub) and **buys minerals** for credits | — | — | — | trading / departed |
 | Sanitation Unit | Hygiene need; prevents mood penalty | 2 | 1×1 | 200 | available / occupied / dirty |
 | Decor / Fixture | Ambient mood boost | 0–1 | 1×1 | 50+ | placed |
 
@@ -87,15 +129,14 @@ One Synthesizer per food line. Quality tier (Basic/Refined/Gourmet) raises draw 
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Market Stall | Per-transaction trade income | 2 | 1×1 | 300 | staffed / unstaffed · stocked / empty |
-| Trade Hub | Bulk trade, better prices (unlock: Commerce) | 6 | 3×2 | 1,500 | open / closed |
+| Trade Hub (bulk) | Bulk trade, better prices (unlock: Commerce) | 6 | 3×2 | 1,500 | open / closed |
 | Exotic Exchange | Trades rare Tier 3 goods (×3.5–×5) | 8 | 3×2 | 3,500 | open / closed |
 | Reception / Concierge | Raises lodging throughput & guest quality | 3 | 2×1 | 500 | staffed / unstaffed |
 
 ## 7 · Docking & Fuel
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
-| Docking Port | Ships arrive (guests, trade, fuel demand) | 5 | 3×3 | 1,200 | occupied / free / reserved |
-| Docking Port *(implemented)* | **Hull airlock — placed on a space-facing wall**; ships park outside and bring Drenn guests | 5 | wall | — | guests arrive by ship |
+| Docking Port (large) | Ships arrive (guests, trade, fuel demand) | 5 | 3×3 | 1,200 | occupied / free / reserved |
 | Fuel Pump | Sells refined fuel to docked ships | 4 | 1×1 | 400 | pumping / idle / dry |
 | Refinery Unit | Converts Ice/Gas → fuel | 10 | 3×2 | 1,800 | running / idle / input-short |
 
@@ -104,7 +145,6 @@ The space-ops fleet (see *Resource Gathering* in [`GAME_DESIGN.md`](GAME_DESIGN.
 
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
-| Bot Bay | Launch / dock / recharge mining drones | 4 | 2×2 | 800 | cycling / occupied / free |
 | Repair Bay | Restores drone integrity (hazard sites) | 6 | 2×2 | 1,100 | repairing / idle |
 | Sensor Array I | Radar detect range 1 ring | 3 | 1×1 | 500 | scanning / off |
 | Sensor Array II | Detect 2 rings, auto-ID common resources | 5 | 1×1 | 1,200 | scanning / off |
@@ -119,7 +159,7 @@ Backstop for when politics break down (see *The Escalation Ladder*). Adds defens
 | Item | Achieves | Power | Size | Cost ¢ | Key states |
 |------|----------|:-----:|:----:|:------:|------------|
 | Guard Post | Stations guards; +defensive CP (Security I) | 2 | 1×1 | 1,500 | staffed / unstaffed |
-| Turret | Auto-fires on skirmish combatants (Security II) | 3 | 1×1 | 1,200 | idle / firing / disabled |
+| Turret (tiered) | Auto-fires on skirmish combatants (Security II) | 3 | 1×1 | 1,200 | idle / firing / disabled |
 | Holding Cell | Detains instigators after a skirmish | 1 | 1×1 | 800 | empty / occupied |
 | Riot Control Station | Suppression + breach containment (Security III) | 5 | 2×2 | 4,000 | ready / deployed |
 
