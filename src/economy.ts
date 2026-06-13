@@ -114,13 +114,13 @@ export function economySystem(w: World, dt: number): void {
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;
-    if (dock.timer >= interval) {
-      dock.timer -= interval;
-      if (freeCap >= 1 && exteriorCell(w, dock) >= 0) {
-        const k = Math.min(MAX_GUESTS, freeCap);
-        spawnShip(w, dock, { guests: k });
-        freeCap -= k;
-      }
+    if (dock.timer < interval) continue;
+    if (dockBusy(w, dock)) continue; // pad still occupied — hold ready, don't reset
+    dock.timer -= interval;
+    if (freeCap >= 1 && exteriorCell(w, dock) >= 0) {
+      const k = Math.min(MAX_GUESTS, freeCap);
+      spawnShip(w, dock, { guests: k });
+      freeCap -= k;
     }
   }
 
@@ -147,7 +147,7 @@ export function economySystem(w: World, dt: number): void {
       const amount = Math.min(w.stock.minerals, batch);
       w.stock.minerals -= amount;
       w.credits += amount * MINERAL_PRICE * exBonus * nexus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
-      const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0);
+      const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0 && !dockBusy(w, d));
       if (dock) spawnShip(w, dock, { trader: true });
     }
   }
@@ -163,7 +163,8 @@ function tryCrewArrival(
   resCount: Partial<Record<Species, number>>,
 ): boolean {
   if (residents >= pods) return false; // no free bunk
-  const dock = docks.find((d) => d.powered);
+  // need a powered dock whose landing pad is free right now (one ship per pad)
+  const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0 && !dockBusy(w, d));
   if (!dock) return false;
   const access = accessCell(w, dock);
   if (access < 0) return false;
@@ -180,6 +181,14 @@ function tryCrewArrival(
   if (!addAgent(w, access % w.w, (access / w.w) | 0, sp, false)) return false;
   if (exteriorCell(w, dock) >= 0) spawnShip(w, dock, {});
   return true;
+}
+
+// A dock's landing pad is occupied while any ship sits on its exterior cell —
+// from approach through departure — so only one ship uses a pad at a time.
+function dockBusy(w: World, dock: Structure): boolean {
+  const ex = exteriorCell(w, dock);
+  if (ex < 0) return false;
+  return w.ships.some((s) => s.cell === ex);
 }
 
 // Push a cinematic ship onto a dock's landing pad: it flies in along the dock's
