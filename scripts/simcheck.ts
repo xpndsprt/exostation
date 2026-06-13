@@ -184,7 +184,7 @@ addStructure(w4, "solar", 6, 6);
 addStructure(w4, "solar", 7, 6); // plenty of power
 addStructure(w4, "o2gen", 6, 7);
 addStructure(w4, "synth", 7, 7);
-addStructure(w4, "dock", 11, 8);
+addDock(w4, 12, 8); // hull-wall airlock facing space (a shuttle can fly in)
 addStructure(w4, "hotel", 8, 6);
 addStructure(w4, "hotel", 9, 6); // guest capacity 2 (hotel rooms)
 

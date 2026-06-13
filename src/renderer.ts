@@ -2,6 +2,7 @@ import { Container, Graphics, Sprite, Texture, RenderTexture, Renderer as PixiRe
 import { World, Structure, StructureKind } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES } from "./structures";
+import { exteriorCell } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
 
@@ -517,37 +518,61 @@ export class Renderer {
     this.dronesC.removeChildren();
     const g = this.dronesFx;
     g.clear();
+    const phase = (world.tick % 12) / 12;
     const center = (i: number): [number, number] => [
       (i % world.w) * TILE + TILE / 2,
       ((i / world.w) | 0) * TILE + TILE / 2,
     ];
+    // each Bot Bay gets a 1x1 launch pad on the hull exterior, with a blink light
+    const padCell = new Map<number, number>();
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      if (s.kind !== "bay") continue;
+      const ex = exteriorCell(world, s);
+      const pc = ex >= 0 ? ex : s.cell;
+      padCell.set(s.id, pc);
+      if (!s.powered) continue;
+      const [px, py] = center(pc);
+      g.rect(px - TILE * 0.42, py - TILE * 0.42, TILE * 0.84, TILE * 0.84).fill({ color: 0x141a24, alpha: 0.5 }).stroke({ width: 1, color: 0x3a4a63, alpha: 0.7 });
+      const on = phase < 0.5;
+      g.circle(px, py - TILE * 0.28, 1.6).fill({ color: on ? 0xffd27a : 0x4a3a1e, alpha: on ? 0.95 : 0.6 });
+    }
+    // drone flight: accelerate off the pad (ease-in) and decelerate onto the
+    // site / back home (ease-out), rising mid-flight (lift) for a 3D feel.
+    const easeIn = (t: number) => t * t;
+    const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
     for (const id in world.drones) {
       const d = world.drones[id];
       const bay = world.structures[d.bayId];
       if (!bay) continue;
-      const [bx, by] = center(bay.cell);
+      const [bx, by] = center(padCell.get(bay.id) ?? bay.cell);
       const site = world.sites[d.siteId];
       let x = bx;
       let y = by;
+      let lift = 0;
       if (site) {
         const [sx, sy] = center(site.cell);
         if (d.state === "outbound") {
-          x = bx + (sx - bx) * d.t;
-          y = by + (sy - by) * d.t;
+          const te = easeIn(d.t);
+          x = bx + (sx - bx) * te;
+          y = by + (sy - by) * te;
+          lift = Math.sin(d.t * Math.PI);
         } else if (d.state === "mining") {
           x = sx;
           y = sy;
         } else if (d.state === "inbound") {
-          x = sx + (bx - sx) * d.t;
-          y = sy + (by - sy) * d.t;
+          const te = easeOut(d.t);
+          x = sx + (bx - sx) * te;
+          y = sy + (by - sy) * te;
+          lift = Math.sin(d.t * Math.PI);
         }
         if (d.state !== "docked")
-          g.moveTo(bx, by).lineTo(sx, sy).stroke({ width: 1, color: COLORS.route, alpha: 0.5 });
+          g.moveTo(bx, by).lineTo(sx, sy).stroke({ width: 1, color: COLORS.route, alpha: 0.4 });
       }
       const t = tex("drone", d.cargo > 0 ? "laden" : "empty");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(SCALE * (1 + 0.3 * lift));
         sp.anchor.set(0.5);
         sp.x = x;
         sp.y = y;
@@ -557,34 +582,87 @@ export class Renderer {
   }
 
   private drawShips(world: World): void {
-    // pulsing ring so an arriving/parked shuttle is easy to spot
     const g = this.shipsFx;
     g.clear();
     const phase = (world.tick % 12) / 12; // 0..1 loop at 10Hz ≈ 1.2s
-    const r = TILE * (0.55 + 0.22 * Math.sin(phase * Math.PI * 2));
-    for (const ship of world.ships) {
-      const cx = (ship.cell % world.w) * TILE + TILE / 2;
-      const cy = ((ship.cell / world.w) | 0) * TILE + TILE / 2;
-      const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
-      g.circle(cx, cy, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
+    const blink = 0.4 + 0.6 * Math.abs(Math.sin(phase * Math.PI * 2));
+
+    // landing pads: a 3x3 deck extending outward from every powered Docking Port,
+    // with blinking guide lights at the corners (occupied while a shuttle sits).
+    const padOf = (s: Structure): { cx: number; cy: number; dx: number; dy: number } | null => {
+      const ex = exteriorCell(world, s);
+      if (ex < 0) return null;
+      const d = ex - s.cell;
+      const dx = d === 1 ? 1 : d === -1 ? -1 : 0;
+      const dy = d === world.w ? 1 : d === -world.w ? -1 : 0;
+      const pc = ex + d; // pad centre = one tile further out than the access cell
+      return { cx: (pc % world.w) * TILE + TILE / 2, cy: ((pc / world.w) | 0) * TILE + TILE / 2, dx, dy };
+    };
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      if (s.kind !== "dock" || !s.powered) continue;
+      const p = padOf(s);
+      if (!p) continue;
+      const half = TILE * 1.5;
+      g.rect(p.cx - half, p.cy - half, half * 2, half * 2).fill({ color: 0x11161f, alpha: 0.55 }).stroke({ width: 1.5, color: 0x3a4a63, alpha: 0.8 });
+      g.rect(p.cx - half * 0.55, p.cy - half * 0.55, half * 1.1, half * 1.1).stroke({ width: 1, color: 0x2d3a50, alpha: 0.7 });
+      // corner guide lights — alternate the diagonals so the pad appears to chase
+      for (let i = 0; i < 4; i++) {
+        const ox = i & 1 ? half - 3 : -(half - 3);
+        const oy = i & 2 ? half - 3 : -(half - 3);
+        const on = (i % 2 === 0) === phase < 0.5;
+        g.circle(p.cx + ox, p.cy + oy, 2).fill({ color: on ? 0x7fffa0 : 0x244a2e, alpha: on ? 0.95 : 0.6 });
+      }
     }
+
+    // ship positions: shuttles fly along the dock's outward axis. "in" eases out
+    // toward the pad from off-screen, "out" eases away; legacy/raiders just sit.
+    const ease = (p: number) => 1 - Math.pow(1 - p, 3); // decelerate
+    const FAR = TILE * 16; // off-screen approach distance
+    const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number }[] = [];
+    for (const ship of world.ships) {
+      const padX = (ship.cell % world.w) * TILE + TILE / 2 + (ship.dx ?? 0) * TILE;
+      const padY = ((ship.cell / world.w) | 0) * TILE + TILE / 2 + (ship.dy ?? 0) * TILE;
+      let dist = 0;
+      if (ship.phase === "in") dist = FAR * (1 - ease(ship.prog ?? 0));
+      else if (ship.phase === "out") dist = FAR * (1 - ease(1 - (ship.prog ?? 0)));
+      const x = padX + (ship.dx ?? 0) * dist;
+      const y = padY + (ship.dy ?? 0) * dist;
+      // nose points inward (toward the hull): -dir. Sprite art faces up (-y).
+      const rot = ship.dx || ship.dy ? Math.atan2(-(ship.dy ?? 0), -(ship.dx ?? 0)) + Math.PI / 2 : 0;
+      // arrival ring around a parked shuttle
+      if (ship.phase === "wait" || ship.phase === undefined) {
+        const r = TILE * (0.55 + 0.22 * Math.sin(phase * Math.PI * 2));
+        const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
+        g.circle(x, y, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
+      }
+      sprites.push({
+        t: tex(ship.hostile ? "trader" : ship.trader ? "trader" : "shuttle", "default"),
+        x, y, c: true, rot,
+        tint: ship.hostile ? 0xff5555 : undefined,
+      });
+    }
+
     // hull breaches — a blinking red marker so the emergency is easy to spot
     for (const b of world.breaches) {
       const bx = (b.cell % world.w) * TILE + TILE / 2;
       const by = ((b.cell / world.w) | 0) * TILE + TILE / 2;
-      g.rect(bx - TILE * 0.4, by - TILE * 0.4, TILE * 0.8, TILE * 0.8).stroke({ width: 2.5, color: 0xff3b3b, alpha: 0.4 + 0.5 * Math.abs(Math.sin(phase * Math.PI * 2)) });
+      g.rect(bx - TILE * 0.4, by - TILE * 0.4, TILE * 0.8, TILE * 0.8).stroke({ width: 2.5, color: 0xff3b3b, alpha: blink });
       g.circle(bx, by, TILE * 0.18).fill({ color: 0xff3b3b, alpha: 0.7 });
     }
-    this.drawSprites(
-      this.shipsC,
-      world.ships.map((ship) => ({
-        t: tex(ship.hostile ? "trader" : ship.trader ? "trader" : "shuttle", "default"),
-        x: (ship.cell % world.w) * TILE + TILE / 2,
-        y: ((ship.cell / world.w) | 0) * TILE + TILE / 2,
-        c: true,
-        tint: ship.hostile ? 0xff5555 : undefined,
-      })),
-    );
+
+    this.shipsC.removeChildren();
+    for (const it of sprites) {
+      if (!it.t) continue;
+      const sp = new Sprite(it.t);
+      sp.scale.set(SCALE);
+      sp.anchor.set(0.5);
+      if (it.rot) sp.rotation = it.rot;
+      if (it.tint !== undefined) sp.tint = it.tint;
+      sp.x = it.x;
+      sp.y = it.y;
+      this.shipsC.addChild(sp);
+    }
   }
 
   private drawOverlay(world: World, mode: "none" | "power" | "rooms"): void {

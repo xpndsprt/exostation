@@ -94,6 +94,56 @@
     return r;
   }
 
+  // A 3x3 (48x48) top-down shuttle, nose pointing UP (-y). Procedurally shaped:
+  // a tapered fuselage, swept wings, a glass cockpit and two engine nozzles with
+  // an exhaust glow — then a 1px black outline traced around the whole hull. The
+  // renderer rotates it to point its nose at the dock and slides it along the
+  // approach axis. h=hull, d=hull shadow, g=cockpit glass, f=engine glow, k=edge.
+  function shuttle3() {
+    const W = 48, H = 48, cx = 23.5;
+    const g = Array.from({ length: H }, () => Array(W).fill("."));
+    const fill = (x0, x1, y, ch) => {
+      for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W) g[y][x] = ch;
+    };
+    // fuselage: narrow nose → full mid → tapered tail
+    for (let y = 5; y <= 43; y++) {
+      let half;
+      if (y < 15) half = 1 + (y - 5) * 0.7;
+      else if (y < 34) half = 8;
+      else half = 8 - (y - 34) * 0.5;
+      half = Math.max(1, half);
+      fill(cx - half, cx + half, y, "h");
+    }
+    // swept wings: leading edge near the body, trailing edge flaring out at y=34
+    for (let y = 23; y <= 34; y++) {
+      const outer = 8 + ((y - 23) / 11) * 12; // 8 → 20
+      fill(cx - outer, cx - 8, y, "h");
+      fill(cx + 8, cx + outer, y, "h");
+    }
+    // cockpit glass near the nose
+    for (let y = 12; y <= 20; y++) fill(cx - 3, cx + 3, y, "g");
+    // hull shadow on the rear half
+    for (let y = 34; y <= 43; y++) fill(cx - 7, cx + 7, y, "d");
+    // engine nozzles + exhaust glow at the tail
+    for (let y = 41; y <= 45; y++) {
+      fill(cx - 6, cx - 3, y, "d");
+      fill(cx + 3, cx + 6, y, "d");
+    }
+    for (let y = 44; y <= 47; y++) {
+      fill(cx - 6, cx - 3, y, "f");
+      fill(cx + 3, cx + 6, y, "f");
+    }
+    // trace a 1px outline: any empty cell touching the hull becomes an edge
+    const isBody = (x, y) => x >= 0 && x < W && y >= 0 && y < H && g[y][x] !== "." && g[y][x] !== "k";
+    const out = g.map((row) => row.slice());
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        if (g[y][x] === "." && (isBody(x - 1, y) || isBody(x + 1, y) || isBody(x, y - 1) || isBody(x, y + 1)))
+          out[y][x] = "k";
+    return out.map((row) => row.join(""));
+  }
+  const SHUTTLE_ART = shuttle3();
+
   /* ===== unique 32x32 module art (enabled) ===== */
 
   // O2 Generator — cyan twin oxygen tanks, manifold, "O2" gauge, status light
@@ -867,24 +917,14 @@
       ] },
     },
     {
-      name: "shuttle", tileW: 1, tileH: 1,
-      palette: { k: "#11151c", h: "#b9c2d0", d: "#8a93a6", g: "#6ea8ff", f: "#e8a33d" },
-      states: { default: [
-        "................","................","......kk........",".....khhk.......",
-        ".....khhk.......","....khhhhk......","...khhhhhhk.....","..khhhhgghhk....",
-        "..khhhhgghhk....","..khddddddhk....",".kfk.kdd.kfk....",".kfk.kkk.kfk....",
-        "................","................","................","................",
-      ] },
+      name: "shuttle", tileW: 3, tileH: 3,
+      palette: { k: "#11151c", h: "#b9c2d0", d: "#7a8395", g: "#6ea8ff", f: "#ffb347" },
+      states: { default: SHUTTLE_ART },
     },
     {
-      name: "trader", tileW: 1, tileH: 1,
-      palette: { k: "#11151c", h: "#6fcf97", d: "#3f8a64", g: "#bdf0d2", y: "#e8c349" },
-      states: { default: [
-        "................","................","...kk....kk.....","..khhk..khhk....",
-        "..khhkkkkhhk....","..khhhhhhhhk....",".khhhggghhhhk...",".khhhggghhhhk...",
-        ".khhhhhhhhhhk...",".khddddddddhk...",".kyk.kddk.kyk...",".kyk.kkkk.kyk...",
-        "................","................","................","................",
-      ] },
+      name: "trader", tileW: 3, tileH: 3,
+      palette: { k: "#11151c", h: "#6fcf97", d: "#3f8a64", g: "#bdf0d2", f: "#ffd27a" },
+      states: { default: SHUTTLE_ART },
     },
     {
       name: "drone", tileW: 1, tileH: 1,

@@ -142,7 +142,7 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 ## 7 · Mining (minerals) — the materials economy
 - **Asteroids occur naturally** — they're scattered around the map in open space at the start (you don't place them). Build a **Bot Bay** inside the station near some, and each bay comes with **one mining drone**.
-- The drone auto-runs the loop: **dock → fly out → mine → fly back → unload**, delivering **minerals** to stock (the ⛏ chip; cargo 10/trip). Drone color shows its state (outbound/mining/inbound); a pip shows it's carrying cargo.
+- The drone auto-runs the loop: **lift off its pad → fly out → mine → fly back → land & unload**, delivering **minerals** to stock (the ⛏ chip; cargo 10/trip). Each Bot Bay projects a small **1×1 launch pad** (blinking light) on the hull; the drone accelerates off it, rises mid-flight, and decelerates back down to land. Drone color shows its state (outbound/mining/inbound); a pip shows it's carrying cargo.
 - A site has **richness** (starts at 1000) that **depletes** as it's mined.
 - **Takeaway:** mining is **not tied to food** — it builds your **minerals** stockpile (for trade/construction as those systems land). Food comes from Vats; minerals come from asteroids. Place the asteroid close to cut round-trip time.
 
@@ -150,8 +150,8 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 ## 8 · Guests, trade & economy — the hotel and the market
 - A **Docking Port** is a **hull airlock**: place it **on a wall that faces space** (interior floor one side, open space the other). The ghost goes red anywhere that isn't a valid hull wall.
-- **Two kinds of arrival share the dock:** **resident crew** (gated by **Crew Quarters**, see §5) and **paying guests** (gated by **Hotel Rooms**). Both ride a grey **shuttle** that parks outside on arrival.
-- **Guests:** the dock periodically (~20s) brings a **Drenn** visitor — **but only if you have a free Hotel Room**. **Hotel Rooms are your guest capacity** (separate from Crew Quarters). Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work). Higher **Drenn reputation** makes them arrive more often.
+- **Two kinds of arrival share the dock:** **resident crew** (gated by **Crew Quarters**, see §5) and **paying guests** (gated by **Hotel Rooms**). A powered dock projects a **3×3 landing pad** out into space (blinking guide lights); a **shuttle flies in from off-screen**, decelerates, settles onto the pad, and **stays docked the whole visit** before lifting off again. Trader ships use the same pad.
+- **Guests:** the dock periodically (~20s) sends a shuttle of **Drenn** visitors — **up to 3 at a time, capped by your free Hotel Rooms** (a shuttle carries only as many as you can house, and they disembark when it lands). **Hotel Rooms are your guest capacity** (separate from Crew Quarters). Guests enter the interior, use the hotel (eat, sleep, relax), **pay lodging (~1.5¢/s)**, and **depart after ~90s** (gold ring; they never work). Higher **Drenn reputation** makes them arrive more often.
 - **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: mine asteroids → minerals → Trade Hub → credits.
 - **Running costs (M37):** the station has **upkeep** — every operating module costs **~0.15¢/s** and every resident draws a **wage of ~0.2¢/s**. The credit chip shows your **net ¢/s** next to the balance (red when negative). So an *idle* station slowly **bleeds**; only an active economy (lodging + trade) stays in the black. Watch the net rate — if it's red, you're shrinking.
 - **Takeaway:** Hotel Rooms + a dock drive lodging income; mining + a **Trade Hub** drive trade income. Keep net income positive, then spend the surplus on expansion and **research** (a Lab); deconstruct for a 50% refund.
@@ -298,7 +298,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Objectives | grow to 3 crew → bank ¢3000 → host 4 resident species → **bring the Sector Beacon online** (charge all 5 species signature modules). Clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Sector Beacon | 5 researched signature modules (one per species); each charges 0→100% only while powered + its species is in its room, and grants a unique perk (mood / trade / repair / food / mining). All 5 charged = victory |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
-| Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |
+| Guests | Drenn arrive by shuttle ~20s, **up to 3 per shuttle** (≤ free Hotel Rooms), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation. Shuttle flies in to a 3×3 dock landing pad and stays docked the whole visit |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
 | Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |

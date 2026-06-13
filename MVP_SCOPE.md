@@ -101,6 +101,11 @@ From a hardcore-systems review (see [`DEPTH_EPIC.md`](DEPTH_EPIC.md)):
   to win. See [`src/beacon.ts`].
 - **UI:** compact 2-column build palette; Advisor moved to a prominent bottom-centre bar;
   collapsible right-column panels; stabilized Alienpedia.
+- **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
+  guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
+  pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**
+  at once (capped by free Hotel Rooms). Mining drones get the same treatment on a **1×1
+  bay pad** (ease-in lift-off → mine → ease-out landing). Traders reuse the dock pad.
 
 ---
 

@@ -1,5 +1,5 @@
-import { Species, Structure, World } from "./types";
-import { addAgent, accessCell, exteriorCell } from "./world";
+import { Ship, Species, Structure, World } from "./types";
+import { addAgent, accessCell, exteriorCell, GUEST_STAY } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
 import { STRUCTURES } from "./structures";
@@ -10,7 +10,10 @@ const WAGE = 0.2; // credits/s per resident crew member
 
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
-const SHIP_TIME = 14; // seconds a ship stays parked at the dock
+const SHIP_TIME = 14; // seconds a trader/crew shuttle stays parked
+const IN_TIME = 4.5; // seconds for the cinematic approach
+const OUT_TIME = 3; // seconds for the cinematic departure
+const MAX_GUESTS = 3; // most passengers a shuttle brings at once
 const TRADE_INTERVAL = 30; // seconds between trader visits
 const TRADE_BATCH = 25; // max minerals sold per trade
 const MINERAL_PRICE = 3; // credits per mineral
@@ -27,10 +30,34 @@ export function economySystem(w: World, dt: number): void {
   w.creditRate += (instant - w.creditRate) * (dt / 20);
   w.prevCredits = w.credits;
 
-  // ships depart over time
+  // ship lifecycle — cinematic flight for shuttles/traders (approach → land →
+  // wait → depart); raiders and any legacy phase-less ship use the simple timer.
   for (let i = w.ships.length - 1; i >= 0; i--) {
-    w.ships[i].t -= dt;
-    if (w.ships[i].t <= 0) w.ships.splice(i, 1);
+    const sh = w.ships[i];
+    if (sh.hostile || sh.phase === undefined) {
+      sh.t -= dt;
+      if (sh.t <= 0) w.ships.splice(i, 1);
+      continue;
+    }
+    if (sh.phase === "in") {
+      sh.prog = Math.min(1, (sh.prog ?? 0) + dt / IN_TIME);
+      if (sh.prog >= 1) {
+        sh.phase = "wait";
+        // a passenger shuttle stays docked for the whole guest visit; trader and
+        // crew shuttles just unload and go.
+        sh.t = !sh.trader && sh.guests ? GUEST_STAY : SHIP_TIME;
+        if (!sh.trader && sh.guests) dropGuests(w, sh); // passengers disembark
+      }
+    } else if (sh.phase === "wait") {
+      sh.t -= dt;
+      if (sh.t <= 0) {
+        sh.phase = "out";
+        sh.prog = 0;
+      }
+    } else {
+      sh.prog = Math.min(1, (sh.prog ?? 0) + dt / OUT_TIME);
+      if (sh.prog >= 1) w.ships.splice(i, 1);
+    }
   }
 
   let guests = 0;
@@ -76,22 +103,23 @@ export function economySystem(w: World, dt: number): void {
   const upkeep = residents * WAGE + operating * MODULE_UPKEEP;
   w.credits = Math.max(0, w.credits - upkeep * dt);
 
-  // guest arrivals (need a free hotel room AND a powered dock). Drenn reputation
-  // shortens the interval — well-liked stations get more visitors.
+  // guest arrivals (need free hotel rooms AND a powered dock). A shuttle carries
+  // up to MAX_GUESTS, who disembark only once it lands; free capacity therefore
+  // discounts guests already inbound on a shuttle. Drenn reputation shortens the
+  // interval — well-liked stations get more visitors.
+  let inbound = 0;
+  for (const sh of w.ships) if (!sh.trader && !sh.hostile && sh.phase === "in") inbound += sh.guests ?? 0;
+  let freeCap = hotels - guests - inbound;
   const interval = SPAWN_INTERVAL * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;
     if (dock.timer >= interval) {
       dock.timer -= interval;
-      if (guests < hotels) {
-        const access = accessCell(w, dock);
-        if (access < 0) continue;
-        if (addAgent(w, access % w.w, (access / w.w) | 0, "drenn", true)) {
-          guests++;
-          const ex = exteriorCell(w, dock);
-          if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME });
-        }
+      if (freeCap >= 1 && exteriorCell(w, dock) >= 0) {
+        const k = Math.min(MAX_GUESTS, freeCap);
+        spawnShip(w, dock, { guests: k });
+        freeCap -= k;
       }
     }
   }
@@ -119,11 +147,8 @@ export function economySystem(w: World, dt: number): void {
       const amount = Math.min(w.stock.minerals, batch);
       w.stock.minerals -= amount;
       w.credits += amount * MINERAL_PRICE * exBonus * nexus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
-      const dock = docks.find((d) => d.powered);
-      if (dock) {
-        const ex = exteriorCell(w, dock);
-        if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME, trader: true });
-      }
+      const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0);
+      if (dock) spawnShip(w, dock, { trader: true });
     }
   }
 }
@@ -153,7 +178,43 @@ function tryCrewArrival(
   const sp = eligible[0];
 
   if (!addAgent(w, access % w.w, (access / w.w) | 0, sp, false)) return false;
-  const ex = exteriorCell(w, dock);
-  if (ex >= 0) w.ships.push({ cell: ex, t: SHIP_TIME });
+  if (exteriorCell(w, dock) >= 0) spawnShip(w, dock, {});
   return true;
+}
+
+// Push a cinematic ship onto a dock's landing pad: it flies in along the dock's
+// outward axis (dx,dy), parks, then departs the same way.
+function spawnShip(w: World, dock: Structure, opts: Partial<Ship>): void {
+  const ex = exteriorCell(w, dock);
+  if (ex < 0) return;
+  const d = ex - dock.cell;
+  const dx = d === 1 ? 1 : d === -1 ? -1 : 0;
+  const dy = d === w.w ? 1 : d === -w.w ? -1 : 0;
+  w.ships.push({ cell: ex, t: 0, dx, dy, prog: 0, phase: "in", ...opts });
+}
+
+// A landed passenger shuttle disgorges its guests at the dock's interior access
+// cell, capped by hotel rooms actually free right now (in case one was removed).
+function dropGuests(w: World, sh: Ship): void {
+  let dock: Structure | undefined;
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    if (s.kind === "dock" && exteriorCell(w, s) === sh.cell) {
+      dock = s;
+      break;
+    }
+  }
+  if (!dock) return;
+  const access = accessCell(w, dock);
+  if (access < 0) return;
+  let hotels = 0;
+  let guests = 0;
+  for (const id in w.structures) if (w.structures[id].kind === "hotel") hotels++;
+  for (const id in w.agents) {
+    const a = w.agents[id];
+    if (a.alive && a.guest) guests++;
+  }
+  const room = Math.max(0, hotels - guests);
+  const n = Math.min(sh.guests ?? 0, room);
+  for (let i = 0; i < n; i++) addAgent(w, access % w.w, (access / w.w) | 0, "drenn", true);
 }

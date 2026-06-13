@@ -139,10 +139,15 @@ export interface Site {
 }
 
 export interface Ship {
-  cell: number; // exterior space tile it's parked at (next to a dock)
-  t: number; // seconds remaining before it departs
+  cell: number; // the landing-pad centre tile (exterior, next to a dock)
+  t: number; // seconds remaining while landed (or legacy depart timer)
   trader?: boolean; // a trade ship (buys minerals) vs a guest shuttle
   hostile?: boolean; // a raider — damages modules until destroyed by a Turret
+  phase?: "in" | "wait" | "out"; // cinematic flight: approach → landed → depart
+  prog?: number; // 0..1 progress within the in/out flight
+  guests?: number; // passengers a shuttle drops on landing
+  dx?: number; // outward unit direction from the hull (the approach axis)
+  dy?: number;
 }
 
 export type RequestKind = "host" | "happy" | "amenity";
