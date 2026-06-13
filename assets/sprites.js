@@ -352,6 +352,26 @@
     "................",
   ];
 
+  // Light Fixture (1x1) — a ceiling lamp glowing warm
+  const LAMP = [
+    "................",
+    "................",
+    ".....kkkkkk.....",
+    "....kbbbbbbk....",
+    "...kbwwwwwwbk...",
+    "...kwLLLLLLwk...",
+    "...kwLLLLLLwk...",
+    "...kbwwwwwwbk...",
+    "....kbbbbbbk....",
+    ".....kkkkkk.....",
+    ".......LL.......",
+    "......LLLL......",
+    ".......LL.......",
+    "................",
+    "................",
+    "................",
+  ];
+
   // Hotel Room — a made bed with pillow, headboard and a bedside lamp
   const HOTEL = [
     "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkk...",
@@ -490,6 +510,11 @@
       name: "turret", tileW: 1, tileH: 1,
       palette: { k: "#11151c", h: "#c0564a", d: "#7a2f28", b: "#3a2520", L: "#49d17a", o: "#3a4350" },
       states: { enabled: TURRET, disabled: off(TURRET) },
+    },
+    {
+      name: "lamp", tileW: 1, tileH: 1,
+      palette: { k: "#11151c", b: "#8a7320", w: "#ffe9a8", L: "#fff6d8", o: "#4a4530" },
+      states: { enabled: LAMP, disabled: off(LAMP) },
     },
 
     /* ---------- habitation (1x1) ---------- */

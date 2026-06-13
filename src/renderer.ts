@@ -1,11 +1,52 @@
-import { Container, Graphics, Sprite, Texture } from "pixi.js";
-import { World } from "./types";
+import { Container, Graphics, Sprite, Texture, RenderTexture, Renderer as PixiRenderer } from "pixi.js";
+import { World, Structure, StructureKind } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES } from "./structures";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
 
 const SCALE = TILE / 16; // sprites are authored at 16px/tile
+
+// --- lighting / shadows ---
+const AMBIENT = 0xbfc4cf; // interior multiply tint when unlit (subtle dim, ~25%)
+// per-kind "height" → drop-shadow length (a pragmatic stand-in for a height map)
+const HEIGHT: Partial<Record<StructureKind, number>> = {
+  o2gen: 1, ch4gen: 1, vat: 1, silo: 1, bay: 0.9, tradehub: 0.9, lab: 0.9,
+  rec: 0.8, turret: 0.8, battery: 0.8, pod: 0.7, hotel: 0.6, synth: 0.6, lamp: 0.35,
+};
+// modules that emit light while powered: [radius in tiles, color, intensity]
+const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
+  lamp: [4.2, 0xfff0cf, 1.0],
+  o2gen: [2.4, 0xcfe6ff, 0.45],
+  ch4gen: [2.4, 0xffcf9a, 0.5],
+  rec: [2.8, 0xffd9f2, 0.5],
+  lab: [2.4, 0xc9b8ff, 0.5],
+  tradehub: [2.2, 0xcfeecf, 0.4],
+  vat: [2.0, 0xbfeccb, 0.35],
+  bay: [2.0, 0xbfe3e3, 0.35],
+};
+
+function makeRadialTex(): Texture {
+  const s = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = s;
+  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.45, "rgba(255,255,255,0.5)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, s, s);
+  return Texture.from(c);
+}
+
+interface Light {
+  x: number;
+  y: number;
+  r: number;
+  color: number;
+  a: number;
+}
 
 function hslToHex(h: number, s: number, l: number): number {
   s /= 100;
@@ -72,6 +113,7 @@ export class Renderer {
   private atmo = new Graphics();
   private grid = new Graphics();
   private sitesC = new Container();
+  private shadowsC = new Container(); // module drop-shadows (below structures)
   private structsC = new Container();
   private structFx = new Graphics();
   private agentsC = new Container();
@@ -80,22 +122,31 @@ export class Renderer {
   private dronesC = new Container();
   private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
+  private lighting = new Sprite(); // lightmap, multiply-blended over the interior
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
   private speciesFlash: { sp: string; t: number } | null = null;
+  // lighting/shadow build cache
+  private pixi: PixiRenderer;
+  private lightRT: RenderTexture | null = null;
+  private lightScene = new Container(); // scratch, rendered into lightRT
+  private gradTex = makeRadialTex();
+  private lightSig = "";
 
   // Briefly ring all members of a species (Alienpedia "locate").
   flashSpecies(sp: string): void {
     this.speciesFlash = { sp, t: 45 };
   }
 
-  constructor(world: Container) {
+  constructor(world: Container, pixi: PixiRenderer) {
     buildTextures();
+    this.pixi = pixi;
+    this.lighting.blendMode = "multiply";
     for (const layer of [
-      this.cellsC, this.atmo, this.grid, this.sitesC, this.structsC, this.structFx,
+      this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC,
-      this.overlay, this.selection, this.cursor,
+      this.lighting, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
   }
@@ -140,8 +191,108 @@ export class Renderer {
     this.drawAgents(world);
     this.drawDrones(world);
     this.drawShips(world);
+    this.updateLighting(world);
     this.drawOverlay(world, overlay);
     this.drawSelection(world, selCell);
+  }
+
+  // Center of a structure's footprint, in world pixels.
+  private structCenter(world: World, s: Structure): [number, number] {
+    let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+    for (const cc of s.cells) {
+      const cx = cc % world.w, cy = (cc / world.w) | 0;
+      minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
+      miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
+    }
+    return [((minx + maxx + 1) / 2) * TILE, ((miny + maxy + 1) / 2) * TILE];
+  }
+
+  private gatherLights(world: World): Light[] {
+    const out: Light[] = [];
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      const g = GLOW[s.kind];
+      if (!g || !s.powered) continue; // only powered emitters glow
+      const [cx, cy] = this.structCenter(world, s);
+      out.push({ x: cx, y: cy, r: g[0] * TILE, color: g[1], a: g[2] });
+    }
+    return out;
+  }
+
+  // Lightmap (multiply) + module drop-shadows. Rebuilt only when the interior
+  // shape, structures, or powered-light states change — cheap to keep static.
+  private updateLighting(world: World): void {
+    const lights = this.gatherLights(world);
+    // signature: interior cells + structures + light states
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < world.cells.length; i++) {
+      const t = world.cells[i].type;
+      h = (Math.imul(h ^ (t === "space" ? 0 : t === "wall" ? 1 : t === "door" ? 2 : 3), 16777619)) >>> 0;
+    }
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      h = (Math.imul(h ^ s.cell ^ (s.powered ? 0x40000 : 0), 16777619)) >>> 0;
+    }
+    const sig = String(h);
+    if (sig === this.lightSig && this.lightRT) return;
+    this.lightSig = sig;
+
+    if (!this.lightRT) {
+      this.lightRT = RenderTexture.create({ width: world.w * TILE, height: world.h * TILE });
+      this.lighting.texture = this.lightRT;
+    }
+
+    // --- build the lightmap scene ---
+    this.lightScene.removeChildren();
+    const base = new Graphics();
+    for (let i = 0; i < world.cells.length; i++) {
+      if (world.cells[i].type === "space") continue; // only the built interior is lit/dimmed
+      base.rect((i % world.w) * TILE, ((i / world.w) | 0) * TILE, TILE, TILE);
+    }
+    base.fill({ color: AMBIENT });
+    this.lightScene.addChild(base);
+    for (const L of lights) {
+      const sp = new Sprite(this.gradTex);
+      sp.anchor.set(0.5);
+      sp.x = L.x;
+      sp.y = L.y;
+      sp.width = sp.height = L.r * 2;
+      sp.tint = L.color;
+      sp.alpha = L.a;
+      sp.blendMode = "add";
+      this.lightScene.addChild(sp);
+    }
+    this.pixi.render({ container: this.lightScene, target: this.lightRT, clear: true });
+
+    // --- module drop-shadows, cast away from the nearest light ---
+    this.shadowsC.removeChildren();
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      if (s.kind === "solar" || s.kind === "dock") continue; // wall-mounted; skip
+      const def = STRUCTURES[s.kind];
+      const state = def.draw > 0 ? (s.powered ? "enabled" : "disabled") : "default";
+      const t = tex(s.kind, state);
+      if (!t) continue;
+      const [cx, cy] = this.structCenter(world, s);
+      let dx = 0.6, dy = 0.6; // default grounding direction when unlit
+      let best = Infinity;
+      for (const L of lights) {
+        const d = Math.hypot(cx - L.x, cy - L.y);
+        if (d < best && d > 0.001) {
+          best = d;
+          dx = (cx - L.x) / d;
+          dy = (cy - L.y) / d;
+        }
+      }
+      const len = TILE * (0.16 + (HEIGHT[s.kind] ?? 0.7) * 0.22);
+      const sp = new Sprite(t);
+      sp.scale.set(SCALE);
+      sp.tint = 0x05070a;
+      sp.alpha = 0.34;
+      sp.x = (s.cell % world.w) * TILE + dx * len;
+      sp.y = ((s.cell / world.w) | 0) * TILE + dy * len;
+      this.shadowsC.addChild(sp);
+    }
   }
 
   // simple sprite-list helper: place fresh Sprites in a container (textures cached)

@@ -47,6 +47,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "lab", label: "Research Lab", key: "R" },
   { t: "silo", label: "Storage Silo", key: "G" },
   { t: "turret", label: "Turret", key: "U" },
+  { t: "lamp", label: "Light Fixture", key: "L" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -537,7 +538,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
-      `<div>O₂ ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
+      `<div>${SPECIES[a.species].gas === "ch4" ? "CH₄" : "O₂"} ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
       moodLine +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {

@@ -270,7 +270,8 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
-| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Lab 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 (Silo 0) |
+| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Lab 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
+| Lighting | the interior is gently dimmed; powered **Light Fixtures** (¢30) and glowing modules cast warm light pools, and modules drop soft shadows away from the nearest light — visual only |
 | Tech | Build a powered Research Lab, then spend credits: Methane ¢350 · Fungal ¢300 · Logistics ¢250 · Security ¢500. Locked tools are greyed in the palette |
 | Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
 | Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |

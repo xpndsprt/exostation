@@ -41,6 +41,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Research Lab | `lab` | Enables the **TECH** panel: spend credits to research unlocks. Must stay powered to research. | 6 | 2×1 | 150 | — | powered / unpowered |
 | Storage Silo | `silo` | Raises **every** resource cap by **+250**. Unpowered (no draw). | 0 | 1×1 | 70 | **Cargo Logistics** (¢250) | placed |
 | Turret | `turret` | Auto-fires on a **raider** ship parked at the dock, shooting it down before it wrecks modules. | 4 | 1×1 | 200 | **Station Security** (¢500) | idle / firing / unpowered |
+| Light Fixture | `lamp` | Emits a warm **light pool**; modules cast soft shadows away from the nearest light (visual fidelity layer). | 1 | 1×1 | 30 | — | on / off |
 
 ### Recipe / cap constants (from `src/structures.ts`)
 - **Bio Vat** (`VAT`): produces **+3** base every **8s**.

@@ -29,6 +29,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Research Lab | 150 | 2×1 | Enables the Tech panel (spend credits to research unlocks) |
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
 | Turret | 200 | 1×1 | Shoots down raiders. Unlock: Station Security |
+| Light Fixture | 30 | 1×1 | Emits a light pool (visual lighting/shadows); cheap ambiance |
 
 ## Tech unlocks (researched at a powered Lab, paid in credits)
 | Unlock | Cost ¢ | Enables |

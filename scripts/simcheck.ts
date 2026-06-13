@@ -1194,5 +1194,32 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Pausing does not flag a brownout while battery has charge", w.power.brownout === false);
 }
 
+// --- Off-air crew drift home to their own gas instead of loitering on suit ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8); // room A (O2), interior x6-8
+  carve(w, 9, 5, 13, 8); // room B (CH4), interior x10-12, shares wall x9
+  setCell(w, 9, 6, "door"); // connect A <-> B (blocks gas, passes crew)
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 7);
+  addStructure(w, "o2gen", 6, 7); // room A → O2
+  addStructure(w, "ch4gen", 11, 7); // room B → CH4
+  for (let i = 0; i < 20; i++) step(w); // settle atmospheres
+  addAgent(w, 8, 6, "thol"); // a Thol standing in the O2 room
+  const thol = Object.values(w.agents).find((a) => a.species === "thol")!;
+  let home = false;
+  for (let i = 0; i < 400; i++) {
+    step(w);
+    const rid = w.cells[thol.cell].roomId;
+    if (rid >= 0 && w.rooms[rid]?.gas === "ch4") {
+      home = true;
+      break;
+    }
+  }
+  check("Thol idle in O2 heads home to its methane wing", home);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

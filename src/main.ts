@@ -89,7 +89,7 @@ async function boot(): Promise<void> {
   const world = createWorld();
   seedAsteroids(world); // scatter natural asteroids to mine
   const cam = createCamera();
-  const renderer = new Renderer(worldContainer);
+  const renderer = new Renderer(worldContainer, app.renderer);
   renderer.drawGrid(world.w, world.h);
 
   const state: UIState = { tool: "floor" };

@@ -17,7 +17,8 @@ export type StructureKind =
   | "tradehub"
   | "lab"
   | "silo"
-  | "turret";
+  | "turret"
+  | "lamp";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
 

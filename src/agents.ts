@@ -229,6 +229,20 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       return;
     }
   }
+
+  // Nothing to do and standing in the wrong air? Head home to your own gas
+  // rather than loitering on suit (keeps Thol in their methane wing, etc.)
+  // until it runs low. This is a calm return, not the suit-panic emergency flee.
+  if (!breathable) {
+    const air = nearestBreathable(w, a.cell, SPECIES[a.species].gas);
+    if (air >= 0 && air !== a.cell) {
+      const p = findPath(w, a.cell, air);
+      if (p) {
+        a.task = { type: "flee", target: air };
+        a.path = p;
+      }
+    }
+  }
   // else: idle (stand)
 }
 
