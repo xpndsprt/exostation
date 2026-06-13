@@ -31,12 +31,23 @@
     "k".repeat(16), "h".repeat(16), "m".repeat(16), "m".repeat(16), "m".repeat(16), "k".repeat(16),
     ...Array(5).fill(D(16)),
   ];
-  const WALL_CORNER = [ // connects N + E (rounded elbow)
-    WROW, WROW, WROW, WROW, WROW,
-    D(5) + "k".repeat(11), D(5) + "h".repeat(11), D(5) + "m".repeat(11),
-    D(5) + "m".repeat(11), D(5) + "m".repeat(11), D(5) + "k".repeat(11),
-    ...Array(5).fill(D(16)),
-  ];
+  // Connects N + E as a TRUE quarter-circle arc: an annulus band centred on the
+  // top-right corner (16,0), radii 5..11, so its top/right openings land on
+  // cols/rows 5-10 and meet the straight struts cleanly. (k edges, h highlight, m body.)
+  const arcCorner = (cx, cy) => {
+    const rows = [];
+    for (let y = 0; y < 16; y++) {
+      let s = "";
+      for (let x = 0; x < 16; x++) {
+        const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        s += r < 5 || r > 11 ? "d" : r < 6 ? "k" : r < 7 ? "h" : r < 10 ? "m" : "k";
+      }
+      rows.push(s);
+    }
+    return rows;
+  };
+  const WALL_CORNER = arcCorner(16, 0); // base = N + E (renderer rotates for the others)
   const WALL_T = [ // connects N + E + S
     WROW, WROW, WROW, WROW, WROW,
     D(5) + "k".repeat(11), D(5) + "h".repeat(11), D(5) + "m".repeat(11),
