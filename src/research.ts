@@ -12,6 +12,35 @@ export interface UnlockDef {
 }
 
 export const UNLOCKS: UnlockDef[] = [
+  // --- early expansion (cheap; build a Lab and these open up) ---
+  {
+    id: "powerstorage",
+    label: "Energy Storage",
+    desc: "Build Battery Banks to buffer power for spikes and the dark side.",
+    cost: 100,
+    tool: "battery",
+  },
+  {
+    id: "recreation",
+    label: "Recreation",
+    desc: "Build Lounges where crew and guests relax and socialize.",
+    cost: 120,
+    tool: "rec",
+  },
+  {
+    id: "robotics",
+    label: "Robotics",
+    desc: "Build Bot Bays — each comes with a mining drone for the minerals economy.",
+    cost: 150,
+    tool: "bay",
+  },
+  {
+    id: "commerce",
+    label: "Commerce",
+    desc: "Build a Trade Hub so traders buy your minerals for credits.",
+    cost: 150,
+    tool: "tradehub",
+  },
   {
     id: "methane",
     label: "Methane Life-Support",
@@ -38,6 +67,27 @@ export const UNLOCKS: UnlockDef[] = [
     desc: "Build Turrets that shoot down raiders before they wreck your modules.",
     cost: 500,
     tool: "turret",
+  },
+  {
+    id: "fusion",
+    label: "Fusion Power",
+    desc: "Build a Fusion Reactor (+150 PU) — one unit powers a whole station.",
+    cost: 600,
+    tool: "fusion",
+  },
+  {
+    id: "bulktrade",
+    label: "Bulk Trade",
+    desc: "Build a Cargo Exchange — bigger, faster mineral trades at better prices.",
+    cost: 600,
+    tool: "cargoex",
+  },
+  {
+    id: "cybernetics",
+    label: "Cybernetics",
+    desc: "Build an AI Core — +25% to all production, repair and mining.",
+    cost: 800,
+    tool: "aicore",
   },
 ];
 

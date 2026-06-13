@@ -102,6 +102,31 @@ Scenario goals completed in order; clearing the list = victory, after which play
 3. **Host different resident species** — **4** distinct *resident* species alive at once (**guests don't count**). The resident roster is Human/Thol/Vry'l/Korro, so this requires all four — forcing both a methane wing (Thol) and a fungal chain (Vry'l), i.e. researching Methane Life-Support **and** Fungal Synthesis.
 - **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
 
+## Tech tree (current unlocks)
+A powered Research Lab (¢150) gates most of the catalog; unlocks are bought with credits.
+| Unlock | ¢ | Enables |
+|--------|:--:|---------|
+| Energy Storage | 100 | Battery Bank |
+| Recreation | 120 | Lounge |
+| Robotics | 150 | Bot Bay |
+| Commerce | 150 | Trade Hub |
+| Cargo Logistics | 250 | Storage Silo |
+| Fungal Synthesis | 300 | Vry'l food recipes |
+| Methane Life-Support | 350 | Methane Gen (Thol) |
+| Station Security | 500 | Turret |
+| Fusion Power | 600 | Fusion Reactor |
+| Bulk Trade | 600 | Cargo Exchange |
+| Cybernetics | 800 | AI Core |
+Only the survival core (floor/wall/door, solar, O₂ gen, synth, vat, crew quarters, dock, hotel, lab, light) is unlocked from the start.
+
+## Big-ticket modules (high-end credit sinks)
+For stations earning in the thousands. All 2×2.
+| Module | ¢ | Power | Effect |
+|--------|:--:|:-----:|--------|
+| **Fusion Reactor** | 2000 | **+150** | One reactor powers a whole station (vs +10/solar) |
+| **Cargo Exchange** | 1500 | −6 | Trades **60** ore every **20 s** at **×1.5** price (vs 25/30s/×1 for a Trade Hub) and **+500 mineral cap**. Works standalone |
+| **AI Core** | 2500 | −10 | **×1.25** to all food production, mining and repair while powered |
+
 ## Operating economy / credit sink (M37)
 Recurring costs give the economy an equilibrium instead of a one-way ratchet.
 - **Module upkeep:** **0.15¢/s** per *powered, operating* module (draw > 0; passive solar/battery/silo are free).

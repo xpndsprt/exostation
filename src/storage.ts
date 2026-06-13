@@ -15,15 +15,22 @@ export interface Caps {
   minerals: number;
 }
 
+export const CARGOEX_MINERAL_BONUS = 500; // a Cargo Exchange holds far more ore
+
 export function storageCaps(w: World): Caps {
   let silos = 0;
-  for (const id in w.structures) if (w.structures[id].kind === "silo") silos++;
+  let cargoex = 0;
+  for (const id in w.structures) {
+    const k = w.structures[id].kind;
+    if (k === "silo") silos++;
+    else if (k === "cargoex") cargoex++;
+  }
   const add = silos * SILO_BONUS;
   return {
     biomass: BASE_CAPS.biomass + add,
     spores: BASE_CAPS.spores + add,
     rations: BASE_CAPS.rations + add,
     fungal: BASE_CAPS.fungal + add,
-    minerals: BASE_CAPS.minerals + add,
+    minerals: BASE_CAPS.minerals + add + cargoex * CARGOEX_MINERAL_BONUS,
   };
 }

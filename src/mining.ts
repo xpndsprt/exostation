@@ -1,6 +1,7 @@
 import { Site, World } from "./types";
 import { TRAITS } from "./species";
 import { storageCaps } from "./storage";
+import { aiBoost } from "./structures";
 
 const DRONE_SPEED = 6; // tiles / second
 const CARGO_CAP = 10;
@@ -43,6 +44,7 @@ function nearestSite(w: World, cell: number): Site | null {
 // assignment is a post-MVP radar feature).
 export function miningSystem(w: World, dt: number): void {
   const cap = cargoCap(w);
+  const rate = MINE_RATE * aiBoost(w); // AI Core speeds extraction
   for (const id in w.drones) {
     const d = w.drones[id];
     const bay = w.structures[d.bayId];
@@ -83,7 +85,7 @@ export function miningSystem(w: World, dt: number): void {
           d.t = 0;
           break;
         }
-        const want = Math.min(MINE_RATE * dt, cap - d.cargo, site.richness);
+        const want = Math.min(rate * dt, cap - d.cargo, site.richness);
         d.cargo += want;
         site.richness -= want;
         if (d.cargo >= cap || site.richness <= 0) {

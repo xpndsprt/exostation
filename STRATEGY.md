@@ -215,11 +215,12 @@ This is the failure state the whole game is designed around.
 ---
 
 ## 12 · Research & tech (M30) — where your credits go
-Banked credits aren't just a score — they buy **tech unlocks** that gate the advanced content.
-- Build a **Research Lab** (¢150, 2×1) and keep it **powered**. A 🔬 **TECH** panel (top of the right column) then lets you spend **credits** to research upgrades.
-- Unlocks: **Methane Life-Support** (¢350 → Methane Gen, to host Thol) · **Fungal Synthesis** (¢300 → Spores/Fungal recipes, to feed Vry'l) · **Cargo Logistics** (¢250 → Storage Silo) · **Station Security** (¢500 → Turret).
-- Locked build tools are **greyed out** in the palette (hover for the requirement). So Thol and Vry'l are no longer free for the taking — they're a goal you research toward.
-- **Takeaway:** the trade/lodging economy now has a purpose — pour profit into the Lab and unlock the species and defenses you want.
+Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools are **greyed in the palette** (hover for the requirement).
+- **Early expansion (cheap):** **Energy Storage** (¢100 → Battery) · **Recreation** (¢120 → Lounge) · **Robotics** (¢150 → Bot Bay) · **Commerce** (¢150 → Trade Hub). *These four are now research-gated — past the bare survival core, you build a Lab and research outward.*
+- **Mid:** **Cargo Logistics** (¢250 → Storage Silo) · **Fungal Synthesis** (¢300 → Vry'l food) · **Methane Life-Support** (¢350 → Thol wing) · **Station Security** (¢500 → Turret).
+- **Late, big-ticket:** **Fusion Power** (¢600 → **Fusion Reactor**, +150 PU) · **Bulk Trade** (¢600 → **Cargo Exchange**, far better mineral trade + bigger ore cap) · **Cybernetics** (¢800 → **AI Core**, +25% to all production, repair & mining).
+- **Big modules to spend thousands on:** Fusion Reactor (¢2000) frees you from tiling solar; Cargo Exchange (¢1500) trades 60 ore every 20s at ×1.5 price; AI Core (¢2500) boosts the whole station.
+- **Takeaway:** lodging income funds your first Lab; from there you research the species, economy and power scaling you want. Only the bare survival chain (sealed room → solar → O₂ → synth → bunk → dock) is free from the start.
 
 ## 13 · Storage & abundance (M32) — production is finite
 Every resource has a **storage cap** (shown on the HUD chips as *x / cap*): biomass **400**, spores 250, each meal line **50**, minerals **200**. Production **idles at the cap** — vats stop growing, synths stop cooking, drones stop hauling once full.
@@ -270,14 +271,14 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
-| Power | Solar +10, Battery 50; draws O₂ 6 / CH₄ 9 / Vat 6 / Lab 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
+| Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
 | Lighting | the interior is gently dimmed; powered **Light Fixtures** (¢30) and glowing modules cast warm light pools, and modules drop soft shadows away from the nearest light — visual only |
-| Tech | Build a powered Research Lab, then spend credits: Methane ¢350 · Fungal ¢300 · Logistics ¢250 · Security ¢500. Locked tools are greyed in the palette |
+| Tech | Build a powered Research Lab, then spend credits. Gated now: Battery (¢100) · Lounge (¢120) · Bot Bay (¢150) · Trade Hub (¢150) · Silo (¢250) · Fungal (¢300) · Methane (¢350) · Turret (¢500) · Fusion Reactor (¢600) · Cargo Exchange (¢600) · AI Core (¢800). Locked tools greyed in the palette |
 | Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
 | Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
-| Footprints | battery/quarters/silo/turret 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub 2×2, solar 1×3 (wall) |
+| Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core 2×2, solar 1×3 (wall) |
 | Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 **resident** species; guests don't count, so the capstone needs a methane wing + fungal chain); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |

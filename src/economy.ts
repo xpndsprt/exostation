@@ -52,6 +52,7 @@ export function economySystem(w: World, dt: number): void {
   let hotels = 0; // guest capacity = Hotel Rooms
   let pods = 0; // crew capacity = Crew Quarters
   let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
+  let hasCargoEx = false; // a Cargo Exchange: bigger/faster/better trades
   const podGases = new Set<string>(); // gases of rooms that contain a bunk
   const docks = [];
   let operating = 0; // powered, running modules — they cost upkeep
@@ -66,6 +67,7 @@ export function economySystem(w: World, dt: number): void {
       if (gas) podGases.add(gas);
     } else if (s.kind === "dock") docks.push(s);
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
+    else if (s.kind === "cargoex" && s.powered) hasCargoEx = true;
   }
 
   // recurring upkeep — the credit sink: crew wages + operating-module cost. An
@@ -103,15 +105,18 @@ export function economySystem(w: World, dt: number): void {
     w.crewTimer = arrived ? 0 : CREW_INTERVAL; // hold ready until a slot frees
   }
 
-  // traders buy minerals — but only if you run a powered Trade Hub (your
-  // trading station). A ship visibly parks at a dock if you have one.
+  // traders buy minerals — needs a powered Trade Hub, or a Cargo Exchange which
+  // trades bigger batches, more often, at a better price. A ship parks at a dock.
+  const tradeEvery = hasCargoEx ? 20 : TRADE_INTERVAL;
   w.tradeTimer += dt;
-  if (w.tradeTimer >= TRADE_INTERVAL) {
-    w.tradeTimer -= TRADE_INTERVAL;
-    if (hasTradeHub && w.stock.minerals > 0) {
-      const amount = Math.min(w.stock.minerals, TRADE_BATCH);
+  if (w.tradeTimer >= tradeEvery) {
+    w.tradeTimer -= tradeEvery;
+    if ((hasTradeHub || hasCargoEx) && w.stock.minerals > 0) {
+      const batch = hasCargoEx ? 60 : TRADE_BATCH;
+      const exBonus = hasCargoEx ? 1.5 : 1;
+      const amount = Math.min(w.stock.minerals, batch);
       w.stock.minerals -= amount;
-      w.credits += amount * MINERAL_PRICE * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
+      w.credits += amount * MINERAL_PRICE * exBonus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered);
       if (dock) {
         const ex = exteriorCell(w, dock);

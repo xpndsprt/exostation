@@ -33,7 +33,19 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   silo: { label: "Storage Silo", color: 0x7c8596, gen: 0, draw: 0, battery: 0, priority: 0, w: 1, h: 1, cost: 70 },
   turret: { label: "Turret", color: 0xd0564a, gen: 0, draw: 4, battery: 0, priority: 1, w: 1, h: 1, cost: 200 },
   lamp: { label: "Light Fixture", color: 0xffe9a8, gen: 0, draw: 1, battery: 0, priority: 2, w: 1, h: 1, cost: 30 },
+  fusion: { label: "Fusion Reactor", color: 0x7fe9ff, gen: 150, draw: 0, battery: 0, priority: 0, w: 2, h: 2, cost: 2000 },
+  cargoex: { label: "Cargo Exchange", color: 0x6fcf97, gen: 0, draw: 6, battery: 0, priority: 1, w: 2, h: 2, cost: 1500 },
+  aicore: { label: "AI Core", color: 0x8a6cf0, gen: 0, draw: 10, battery: 0, priority: 3, w: 2, h: 2, cost: 2500 },
 };
+
+// Station-wide ×1.25 to production, repair and mining while a powered AI Core runs.
+export function aiBoost(w: { structures: Record<number, { kind: StructureKind; powered: boolean }> }): number {
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    if (s.kind === "aicore" && s.powered) return 1.25;
+  }
+  return 1;
+}
 
 // Build cost of the basic structural tiles (credits).
 export const TILE_COST: Record<string, number> = { floor: 2, wall: 3, door: 25 };

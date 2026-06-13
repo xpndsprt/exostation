@@ -18,7 +18,10 @@ export type StructureKind =
   | "lab"
   | "silo"
   | "turret"
-  | "lamp";
+  | "lamp"
+  | "fusion"
+  | "cargoex"
+  | "aicore";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
 

@@ -48,6 +48,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "silo", label: "Storage Silo", key: "G" },
   { t: "turret", label: "Turret", key: "U" },
   { t: "lamp", label: "Light Fixture", key: "L" },
+  { t: "fusion", label: "Fusion Reactor", key: "X" },
+  { t: "cargoex", label: "Cargo Exchange", key: "C" },
+  { t: "aicore", label: "AI Core", key: "I" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -695,14 +698,18 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
     }
   }
   // Only rebuild the DOM when something visible actually changes — mood is
-  // quantized to steps of 5 so it doesn't thrash the panel (or reset its scroll)
-  // every tick. Keeps the card a stable, static height.
-  const moodOf = (s: Species): number => (present[s] ? Math.round(moodSum[s] / present[s] / 5) * 5 : 0);
+  // quantized to steps of 10 so a drifting average doesn't thrash the panel
+  // every second. Keeps the card stable so you can scroll it.
+  const moodOf = (s: Species): number => (present[s] ? Math.round(moodSum[s] / present[s] / 10) * 10 : 0);
   const sig = world.seen
     .map((s) => `${s}:${present[s] || 0}:${moodOf(s)}:${Math.round(getRep(world, s))}`)
     .join("|");
   if (el.dataset.sig === sig) return; // nothing meaningful changed
   el.dataset.sig = sig;
+  // Preserve scroll position across the (now-rare) rebuilds so a scrolled-down
+  // reader isn't snapped back to the top.
+  const prevList = el.querySelector(".ped-list") as HTMLElement | null;
+  const prevScroll = prevList ? prevList.scrollTop : 0;
 
   const entries = world.seen
     .map((s) => {
@@ -735,6 +742,8 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
     })
     .join("");
   el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="ped-list">${entries}</div>`;
+  const newList = el.querySelector(".ped-list") as HTMLElement | null;
+  if (newList) newList.scrollTop = prevScroll;
 }
 
 // Lower-right advisor board: species seen so far + the AI's next-step guidance.

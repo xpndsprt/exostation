@@ -17,6 +17,18 @@
   const suitUp = (rows) =>
     rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
   const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a" };
+
+  // Helpers for new 2x2 modules: wrap 27 content rows (each 26 chars) in a
+  // bordered 32x32 box. Using .repeat() guarantees exact widths.
+  const B = (n) => "b".repeat(n);
+  const box2 = (rows) => [
+    "................................",
+    ".." + "k".repeat(28) + "..",
+    ...rows.map((r) => ".." + "k" + r + "k" + ".."),
+    ".." + "k".repeat(28) + "..",
+    "................................",
+    "................................",
+  ];
   // build the repeating 1x3 solar array (16 wide, 48 tall)
   function solarRows() {
     const r = [
@@ -352,6 +364,49 @@
     "................",
   ];
 
+  // Fusion Reactor (2x2) — a contained plasma core, cyan glow
+  const FUSION = box2([
+    B(26), B(26), B(26),
+    ...Array(7).fill(B(10) + "chwwhc" + B(10)),
+    ...Array(3).fill(B(8) + "cchwwwwhcc" + B(8)),
+    ...Array(9).fill(B(10) + "chwwhc" + B(10)),
+    B(26), B(26), B(26), B(26), B(26),
+  ]);
+
+  // Cargo Exchange (2x2) — stacked crates and a big trade coin
+  const CRATE = "b" + "dddh".repeat(6) + "b";
+  const CARGOEX = box2([
+    B(25) + "L", B(26),
+    CRATE, CRATE, B(26), CRATE, CRATE, B(26), B(26),
+    B(9) + "yyyyyyyy" + B(9),
+    B(9) + "yhwwwwhy" + B(9),
+    B(9) + "yhwccwhy" + B(9),
+    B(9) + "yhwwwwhy" + B(9),
+    B(9) + "yyyyyyyy" + B(9),
+    B(26), CRATE, CRATE, B(26),
+    B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
+  ]);
+
+  // AI Core (2x2) — a server/brain core laced with circuitry
+  const AICORE = box2([
+    B(25) + "L", B(26),
+    B(4) + "h".repeat(18) + B(4),
+    B(4) + "h" + B(16) + "h" + B(4),
+    B(4) + "h" + B(16) + "h" + B(4),
+    B(7) + "c".repeat(12) + B(7),
+    B(7) + "c" + "h".repeat(10) + "c" + B(7),
+    B(7) + "c" + "h".repeat(4) + "ww" + "h".repeat(4) + "c" + B(7),
+    B(7) + "c" + "h".repeat(3) + "wwww" + "h".repeat(3) + "c" + B(7),
+    B(7) + "c" + "h".repeat(3) + "wwww" + "h".repeat(3) + "c" + B(7),
+    B(7) + "c" + "h".repeat(4) + "ww" + "h".repeat(4) + "c" + B(7),
+    B(7) + "c" + "h".repeat(10) + "c" + B(7),
+    B(7) + "c".repeat(12) + B(7),
+    B(4) + "h" + B(16) + "h" + B(4),
+    B(4) + "h" + B(16) + "h" + B(4),
+    B(4) + "h".repeat(18) + B(4),
+    B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
+  ]);
+
   // Light Fixture (1x1) — a ceiling lamp glowing warm
   const LAMP = [
     "................",
@@ -515,6 +570,21 @@
       name: "lamp", tileW: 1, tileH: 1,
       palette: { k: "#11151c", b: "#8a7320", w: "#ffe9a8", L: "#fff6d8", o: "#4a4530" },
       states: { enabled: LAMP, disabled: off(LAMP) },
+    },
+    {
+      name: "fusion", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#123038", h: "#2e7d99", c: "#7fe9ff", w: "#e6ffff" },
+      states: { default: FUSION },
+    },
+    {
+      name: "cargoex", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#234a36", d: "#3a6b4a", h: "#5a8f68", y: "#caa23a", c: "#ffd86a", w: "#f2e4a8", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: CARGOEX, disabled: off(CARGOEX) },
+    },
+    {
+      name: "aicore", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#241d44", h: "#4a3f7a", c: "#8a6cf0", w: "#cfe8ff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: AICORE, disabled: off(AICORE) },
     },
 
     /* ---------- habitation (1x1) ---------- */

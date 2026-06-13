@@ -30,14 +30,26 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
 | Turret | 200 | 1×1 | Shoots down raiders. Unlock: Station Security |
 | Light Fixture | 30 | 1×1 | Emits a light pool (visual lighting/shadows); cheap ambiance |
+| Fusion Reactor | 2000 | 2×2 | +150 PU — one reactor powers a whole station. Unlock: Fusion Power |
+| Cargo Exchange | 1500 | 2×2 | Bigger/faster/better mineral trade + raises mineral cap. Unlock: Bulk Trade |
+| AI Core | 2500 | 2×2 | +25% to all production, repair & mining. Unlock: Cybernetics |
 
 ## Tech unlocks (researched at a powered Lab, paid in credits)
 | Unlock | Cost ¢ | Enables |
 |--------|:------:|---------|
-| Methane Life-Support | 350 | Methane Gen (host Thol) |
-| Fungal Synthesis | 300 | Spores/Fungal recipes (feed Vry'l) |
+| Energy Storage | 100 | Battery Bank |
+| Recreation | 120 | Lounge |
+| Robotics | 150 | Bot Bay |
+| Commerce | 150 | Trade Hub |
 | Cargo Logistics | 250 | Storage Silo |
+| Fungal Synthesis | 300 | Spores/Fungal recipes (feed Vry'l) |
+| Methane Life-Support | 350 | Methane Gen (host Thol) |
 | Station Security | 500 | Turret |
+| Fusion Power | 600 | Fusion Reactor |
+| Bulk Trade | 600 | Cargo Exchange |
+| Cybernetics | 800 | AI Core |
+
+*(Battery, Lounge, Bot Bay and Trade Hub are now research-gated — build a Lab first.)*
 
 ## Income (for reference)
 | Source | Rate |

@@ -42,21 +42,31 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Storage Silo | `silo` | Raises **every** resource cap by **+250**. Unpowered (no draw). | 0 | 1×1 | 70 | **Cargo Logistics** (¢250) | placed |
 | Turret | `turret` | Auto-fires on a **raider** ship parked at the dock, shooting it down before it wrecks modules. | 4 | 1×1 | 200 | **Station Security** (¢500) | idle / firing / unpowered |
 | Light Fixture | `lamp` | Emits a warm **light pool**; modules cast soft shadows away from the nearest light (visual fidelity layer). | 1 | 1×1 | 30 | — | on / off |
+| Fusion Reactor | `fusion` | **+150 PU** generator — one reactor powers a whole station. | +150 | 2×2 | 2000 | **Fusion Power** (¢600) | placed |
+| Cargo Exchange | `cargoex` | Upgraded trade: **60 ore / 20 s at ×1.5 price** + **+500 mineral cap**. Works standalone. | 6 | 2×2 | 1500 | **Bulk Trade** (¢600) | active / unpowered |
+| AI Core | `aicore` | Station-wide **×1.25** to food production, mining and repair while powered. | 10 | 2×2 | 2500 | **Cybernetics** (¢800) | active / unpowered |
 
 ### Recipe / cap constants (from `src/structures.ts`)
 - **Bio Vat** (`VAT`): produces **+3** base every **8s**.
 - **Rations Synth** (`SYNTH`): consumes **2** base → **4** meals every **10s**.
-- Resource caps (see `STRATEGY.md`): biomass 400 · spores 250 · meals 50/line · minerals 200. Each **Storage Silo** adds **+250** to all caps.
+- Resource caps (see `STRATEGY.md`): biomass 400 · spores 250 · meals 50/line · minerals 200. Each **Storage Silo** adds **+250** to all caps; each **Cargo Exchange** adds **+500** to the mineral cap.
 
 ### Tech unlocks (researched at a powered Lab, paid in credits — from `src/research.ts`)
 | Unlock | Cost ¢ | Enables |
 |--------|:------:|---------|
-| Methane Life-Support | 350 | **Methane Gen** build tool (host Thol) |
-| Fungal Synthesis | 300 | **Spores** recipe on Vats + **Fungal Mash** recipe on Synths (feed Vry'l) |
-| Cargo Logistics | 250 | **Storage Silo** build tool |
-| Station Security | 500 | **Turret** build tool |
+| Energy Storage | 100 | **Battery Bank** |
+| Recreation | 120 | **Lounge** |
+| Robotics | 150 | **Bot Bay** |
+| Commerce | 150 | **Trade Hub** |
+| Cargo Logistics | 250 | **Storage Silo** |
+| Fungal Synthesis | 300 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
+| Methane Life-Support | 350 | **Methane Gen** (host Thol) |
+| Station Security | 500 | **Turret** |
+| Fusion Power | 600 | **Fusion Reactor** |
+| Bulk Trade | 600 | **Cargo Exchange** |
+| Cybernetics | 800 | **AI Core** |
 
-Starter modules (everything except Methane Gen, Storage Silo, Turret, and the fungal recipes) are unlocked from the start.
+Only the survival core is free from the start: floor/wall/door, Solar Panel, O₂ Generator, Rations Synth, Bio Vat, Crew Quarters, Docking Port, Hotel Room, Research Lab, Light Fixture. Everything else is researched.
 
 ---
 

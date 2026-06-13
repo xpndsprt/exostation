@@ -2,7 +2,7 @@ import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
 import { accessCell, idx, inBounds, setCell } from "./world";
 import { SPECIES, TRAITS } from "./species";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, aiBoost } from "./structures";
 import { productivity } from "./harmony";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 
@@ -152,7 +152,7 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
         if (s) {
           const room = w.cells[a.cell].roomId;
           const prod = room >= 0 && w.rooms[room] ? productivity(w.rooms[room].harmony) : 1;
-          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod;
+          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod * aiBoost(w);
           s.condition = Math.min(100, s.condition + rate * dt);
           if (s.condition >= 100) releaseTask(w, a);
           return; // keep working until fully serviced

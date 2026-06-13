@@ -1,5 +1,5 @@
 import { FoodLine, World } from "./types";
-import { SYNTH, VAT } from "./structures";
+import { SYNTH, VAT, aiBoost } from "./structures";
 import { TRAITS } from "./species";
 import { productivity } from "./harmony";
 import { storageCaps } from "./storage";
@@ -25,10 +25,11 @@ function botanistIn(w: World, roomId: number): boolean {
 // spores). Meals are stored per food line; crew eat the line their species eats.
 export function foodSystem(w: World, dt: number): void {
   const caps = storageCaps(w);
+  const boost = aiBoost(w); // AI Core speeds production
   for (const id in w.structures) {
     const s = w.structures[id];
     if (!s.powered) continue;
-    const dtp = dt * roomProd(w, s.cell); // harmonious rooms produce faster
+    const dtp = dt * roomProd(w, s.cell) * boost; // harmonious rooms (and an AI Core) produce faster
 
     if (s.kind === "vat") {
       const full = s.recipe === "spores" ? w.stock.spores >= caps.spores : w.stock.biomass >= caps.biomass;

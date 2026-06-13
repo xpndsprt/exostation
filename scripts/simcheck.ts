@@ -1221,5 +1221,68 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Thol idle in O2 heads home to its methane wing", home);
 }
 
+// --- Big-ticket modules (Fusion / Cargo Exchange / AI Core) + new tech gates ---
+{
+  const w = createWorld();
+  check("Battery is now researchable", toolLock(w, "battery")?.id === "powerstorage");
+  check("Bot Bay is now researchable", toolLock(w, "bay")?.id === "robotics");
+  check("Lounge is now researchable", toolLock(w, "rec")?.id === "recreation");
+  check("Trade Hub is now researchable", toolLock(w, "tradehub")?.id === "commerce");
+  check("Fusion / Cargo Exchange / AI Core are researchable",
+    !!toolLock(w, "fusion") && !!toolLock(w, "cargoex") && !!toolLock(w, "aicore"));
+  check("Core starter tools stay unlocked",
+    toolLock(w, "solar") === null && toolLock(w, "o2gen") === null && toolLock(w, "synth") === null &&
+    toolLock(w, "pod") === null && toolLock(w, "dock") === null && toolLock(w, "lab") === null);
+}
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "fusion", 6, 6);
+  powerSystem(w, 0.1);
+  check("Fusion Reactor supplies +150 PU", w.power.supply >= 150);
+}
+{
+  const tradeGain = (mod: "tradehub" | "cargoex"): number => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 6, 7);
+    addStructure(w, mod, 7, 6);
+    powerSystem(w, 0.1);
+    w.stock.minerals = 200;
+    w.tradeTimer = 30;
+    const c0 = w.credits;
+    economySystem(w, 0.1);
+    return w.credits - c0;
+  };
+  check("Cargo Exchange out-earns a Trade Hub per trade", tradeGain("cargoex") > tradeGain("tradehub") * 1.5);
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  const base = storageCaps(w).minerals;
+  addStructure(w, "cargoex", 6, 6);
+  check("Cargo Exchange raises the mineral cap", storageCaps(w).minerals === base + 500);
+}
+{
+  const grow = (ai: boolean): number => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 6, 7);
+    addStructure(w, "vat", 7, 6);
+    if (ai) {
+      addStructure(w, "solar", 8, 6);
+      addStructure(w, "aicore", 8, 7);
+    }
+    w.stock.biomass = 0;
+    for (let i = 0; i < 300; i++) step(w);
+    return w.stock.biomass;
+  };
+  check("AI Core speeds production (×1.25)", grow(true) > grow(false));
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
