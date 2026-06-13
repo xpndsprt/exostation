@@ -134,24 +134,29 @@ function setupCollapse(): void {
 function buildPalette(state: UIState, handlers: UIHandlers): void {
   const bar = document.getElementById("palette");
   if (!bar) return;
+  let grid: HTMLDivElement | null = null;
   for (const entry of PALETTE) {
     if (entry.group) {
       const h = document.createElement("div");
       h.className = "group";
       h.textContent = entry.group;
       bar.appendChild(h);
+      grid = document.createElement("div");
+      grid.className = "pal-grid";
+      bar.appendChild(grid);
     }
     const b = document.createElement("button");
     const cost = costOf(entry.t);
-    const costStr = cost > 0 ? `¢${cost} ` : "";
-    b.innerHTML = `${entry.label}<span class="hk">${costStr}${entry.key}</span>`;
+    const costStr = cost > 0 ? `¢${cost}` : "";
+    b.dataset.label = entry.label;
+    b.innerHTML = `<span class="nm">${entry.label}</span><span class="hk">${costStr ? costStr + " · " : ""}${entry.key}</span>`;
     if (entry.t === state.tool) b.classList.add("active");
     b.onclick = () => setActiveTool(entry.t, state);
     // double-click a build tool to pan-cycle through its placed instances
     if (entry.t in STRUCTURES) b.ondblclick = () => handlers.onCycle(entry.t);
     b.title = entry.t in STRUCTURES ? "Double-click to find placed ones" : "";
     toolButtons.set(entry.t, b);
-    bar.appendChild(b);
+    (grid ?? bar).appendChild(b);
   }
 
   const legend = document.createElement("div");
@@ -174,14 +179,28 @@ export function setActiveTool(tool: Tool, state: UIState): void {
   toolButtons.get(tool)?.classList.add("active");
 }
 
-// Grey out and disable build tools whose tech isn't unlocked yet.
+// Lock un-researched tools: show their name as "???" (keep the price), and
+// flash a tool the moment it's unlocked so you see which button lit up.
 export function refreshPalette(world: World): void {
+  const prevLocked = new Set(lockedTools);
   lockedTools.clear();
   for (const [tool, btn] of toolButtons) {
     const lock = toolLock(world, tool);
-    if (lock) lockedTools.add(tool);
-    btn.classList.toggle("locked", !!lock);
-    btn.title = lock ? `Locked — research “${lock.label}” at a Research Lab` : "";
+    const nm = btn.querySelector(".nm") as HTMLElement | null;
+    if (lock) {
+      lockedTools.add(tool);
+      btn.classList.add("locked");
+      if (nm) nm.textContent = "???";
+      btn.title = `Locked — research “${lock.label}” at a Research Lab`;
+    } else {
+      btn.classList.remove("locked");
+      if (nm) nm.textContent = btn.dataset.label || "";
+      btn.title = tool in STRUCTURES ? "Double-click to find placed ones" : "";
+      if (prevLocked.has(tool)) {
+        btn.classList.add("revealed"); // just researched — light it up
+        setTimeout(() => btn.classList.remove("revealed"), 1100);
+      }
+    }
   }
 }
 

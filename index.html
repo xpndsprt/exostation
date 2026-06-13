@@ -40,18 +40,28 @@
       padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer; }
     #endbanner button:hover { background: #3a78ec; }
     #palette {
-      position: fixed; left: 12px; top: 52px; z-index: 10;
-      display: flex; flex-direction: column; gap: 6px;
+      position: fixed; left: 12px; top: 52px; z-index: 10; width: 188px;
+      max-height: calc(100vh - 64px); overflow-y: auto;
+      display: flex; flex-direction: column;
       background: rgba(16,20,28,.85); border: 1px solid #232b3a; border-radius: 10px; padding: 8px;
     }
+    #palette .pal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     #palette button {
-      background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445; border-radius: 7px;
-      padding: 8px 14px; font-size: 13px; cursor: pointer; text-align: left; min-width: 92px;
+      background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445; border-radius: 6px;
+      padding: 4px 7px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden;
     }
     #palette button:hover { background: #232c3d; }
     #palette button.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
-    #palette .group { font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
-      color: #6b7488; margin: 6px 2px 0; }
+    #palette button .nm { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #palette button.locked .nm { color: #7a8296; letter-spacing: 2px; }
+    #palette button.revealed { animation: reveal 1.05s ease-out; }
+    @keyframes reveal {
+      0% { background: #2d6cdf; border-color: #6ea8ff; box-shadow: 0 0 14px #2d6cdf; }
+      100% { background: #1c2230; border-color: #2c3445; box-shadow: none; }
+    }
+    #palette .group { font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+      color: #6b7488; margin: 7px 2px 3px; }
+    #palette .group:first-child { margin-top: 0; }
     #legend { margin-top: 8px; font-size: 11px; color: #8b93a6; line-height: 1.6; }
     #legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
     #power { font-variant-numeric: tabular-nums; color: #c3cbdc; }
@@ -93,7 +103,7 @@
     .pbar { width: 46px; height: 7px; border-radius: 4px; background: #2a3142; overflow: hidden; display: inline-block; vertical-align: middle; }
     .pbar > i { display: block; height: 100%; background: #49d17a; }
     /* palette hotkey badge */
-    #palette button .hk { float: right; opacity: .5; font-size: 10px; margin-left: 8px; }
+    #palette button .hk { display: block; opacity: .45; font-size: 9px; margin-top: 1px; }
     /* overlay toggle */
     #overlayctl { display: inline-flex; gap: 4px; }
     #overlayctl .tbtn { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445;
@@ -144,7 +154,7 @@
     #tech button:hover { background: #3a3570; }
     #tech button.cant { opacity: .5; }
     /* locked palette tools */
-    #palette button.locked { opacity: .4; cursor: not-allowed; }
+    #palette button.locked { opacity: .8; cursor: help; border-style: dashed; }
     #requests h3 { margin: 0 0 7px; font-size: 12px; color: #e8c349; letter-spacing: .06em; }
     #requests .req { display: flex; flex-direction: column; gap: 2px; padding: 5px 0; border-top: 1px solid #232b3a; }
     #requests .req:first-of-type { border-top: none; }
