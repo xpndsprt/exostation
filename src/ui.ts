@@ -626,13 +626,21 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
   }
   const locked = UNLOCKS.filter((u) => !isUnlocked(world, u.id));
   if (locked.length === 0) {
-    el.innerHTML = "";
-    el.style.display = "none";
+    if (el.dataset.sig !== "none") {
+      el.dataset.sig = "none";
+      el.innerHTML = "";
+      el.style.display = "none";
+    }
     return;
   }
-  el.style.display = "";
   const labs = Object.values(world.structures).filter((s) => s.kind === "lab");
   const poweredLab = labs.some((s) => s.powered);
+  // Only rebuild when something visible changes. Rebuilding the panel's HTML
+  // every frame would destroy a button mid-click, so the click never registers.
+  const sig = `${poweredLab}|${labs.length}|${locked.map((u) => `${u.id}:${world.credits >= u.cost ? 1 : 0}`).join(",")}`;
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  el.style.display = "";
   const labNote = poweredLab ? "" : labs.length ? ' <span class="muted">— Lab unpowered</span>' : ' <span class="muted">— build a Lab</span>';
   const head = `<h3>🔬 TECH${labNote}</h3>`;
   const rows = locked
