@@ -1,6 +1,8 @@
 import { Structure, World } from "./types";
 import { STRUCTURES } from "./structures";
 
+const FUSION_FUEL = 0.6; // minerals/s burned by a running Fusion Reactor
+
 // Station-wide single power network (MVP simplification — no conduit routing).
 // Supply vs draw; battery buffers surplus; brownouts shed consumers by
 // ascending priority so Life Support (high priority) stays on the longest.
@@ -21,6 +23,18 @@ export function powerSystem(w: World, dt: number): void {
     // a power-surge fault takes a module fully offline (no gen, no draw)
     if (s.faultT > 0) {
       s.powered = false;
+      continue;
+    }
+    // Fusion Reactor burns minerals — out of fuel, it produces nothing, so you
+    // need a Bot Bay mining to keep it lit.
+    if (s.kind === "fusion") {
+      if (w.stock.minerals > 0) {
+        supply += def.gen;
+        s.powered = true;
+        if (dt > 0) w.stock.minerals = Math.max(0, w.stock.minerals - FUSION_FUEL * dt);
+      } else {
+        s.powered = false;
+      }
       continue;
     }
     supply += def.gen;

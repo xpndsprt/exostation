@@ -219,7 +219,7 @@ Banked credits aren't just a score — they buy **tech unlocks** that gate most 
 - **Early expansion (cheap):** **Energy Storage** (¢100 → Battery) · **Recreation** (¢120 → Lounge) · **Robotics** (¢150 → Bot Bay) · **Commerce** (¢150 → Trade Hub). *These four are now research-gated — past the bare survival core, you build a Lab and research outward.*
 - **Mid:** **Cargo Logistics** (¢250 → Storage Silo) · **Fungal Synthesis** (¢300 → Vry'l food) · **Methane Life-Support** (¢350 → Thol wing) · **Station Security** (¢500 → Turret).
 - **Late, big-ticket:** **Fusion Power** (¢600 → **Fusion Reactor**, +150 PU) · **Bulk Trade** (¢600 → **Cargo Exchange**, far better mineral trade + bigger ore cap) · **Cybernetics** (¢800 → **AI Core**, +25% to all production, repair & mining).
-- **Big modules to spend thousands on:** Fusion Reactor (¢2000) frees you from tiling solar; Cargo Exchange (¢1500) trades 60 ore every 20s at ×1.5 price; AI Core (¢2500) boosts the whole station.
+- **Big modules to spend thousands on:** Fusion Reactor (¢2000) frees you from tiling solar — but it **burns minerals as fuel** (~0.6/s), so you need a Bot Bay mining or it goes dark; Cargo Exchange (¢1500) trades 60 ore every 20s at ×1.5 price; AI Core (¢2500) boosts the whole station.
 - **Takeaway:** lodging income funds your first Lab; from there you research the species, economy and power scaling you want. Only the bare survival chain (sealed room → solar → O₂ → synth → bunk → dock) is free from the start.
 
 ## 13 · Storage & abundance (M32) — production is finite

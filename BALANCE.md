@@ -123,7 +123,7 @@ Only the survival core (floor/wall/door, solar, O₂ gen, synth, vat, crew quart
 For stations earning in the thousands. All 2×2.
 | Module | ¢ | Power | Effect |
 |--------|:--:|:-----:|--------|
-| **Fusion Reactor** | 2000 | **+150** | One reactor powers a whole station (vs +10/solar) |
+| **Fusion Reactor** | 2000 | **+150** | One reactor powers a whole station (vs +10/solar). **Burns 0.6 minerals/s** while running — out of fuel it produces nothing, so it needs a Bot Bay feeding it |
 | **Cargo Exchange** | 1500 | −6 | Trades **60** ore every **20 s** at **×1.5** price (vs 25/30s/×1 for a Trade Hub) and **+500 mineral cap**. Works standalone |
 | **AI Core** | 2500 | −10 | **×1.25** to all food production, mining and repair while powered |
 

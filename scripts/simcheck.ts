@@ -1239,8 +1239,16 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   carve(w, 5, 5, 9, 8);
   recomputeRooms(w);
   addStructure(w, "fusion", 6, 6);
+  const fus = Object.values(w.structures).find((s) => s.kind === "fusion")!;
+  // no minerals → no fuel → no power
+  w.stock.minerals = 0;
   powerSystem(w, 0.1);
-  check("Fusion Reactor supplies +150 PU", w.power.supply >= 150);
+  check("Fusion Reactor produces nothing without mineral fuel", w.power.supply < 150 && !fus.powered);
+  // with minerals → +150 and it burns fuel
+  w.stock.minerals = 100;
+  powerSystem(w, 0.1);
+  check("Fusion Reactor supplies +150 PU when fuelled", w.power.supply >= 150 && fus.powered);
+  check("Fusion Reactor burns minerals as fuel", w.stock.minerals < 100);
 }
 {
   const tradeGain = (mod: "tradehub" | "cargoex"): number => {

@@ -42,7 +42,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Storage Silo | `silo` | Raises **every** resource cap by **+250**. Unpowered (no draw). | 0 | 1×1 | 70 | **Cargo Logistics** (¢250) | placed |
 | Turret | `turret` | Auto-fires on a **raider** ship parked at the dock, shooting it down before it wrecks modules. | 4 | 1×1 | 200 | **Station Security** (¢500) | idle / firing / unpowered |
 | Light Fixture | `lamp` | Emits a warm **light pool**; modules cast soft shadows away from the nearest light (visual fidelity layer). | 1 | 1×1 | 30 | — | on / off |
-| Fusion Reactor | `fusion` | **+150 PU** generator — one reactor powers a whole station. | +150 | 2×2 | 2000 | **Fusion Power** (¢600) | placed |
+| Fusion Reactor | `fusion` | **+150 PU** generator — but **burns ~0.6 minerals/s** as fuel; out of fuel it produces nothing (needs a Bot Bay mining). | +150 | 2×2 | 2000 | **Fusion Power** (¢600) | fuelled / out-of-fuel |
 | Cargo Exchange | `cargoex` | Upgraded trade: **60 ore / 20 s at ×1.5 price** + **+500 mineral cap**. Works standalone. | 6 | 2×2 | 1500 | **Bulk Trade** (¢600) | active / unpowered |
 | AI Core | `aicore` | Station-wide **×1.25** to food production, mining and repair while powered. | 10 | 2×2 | 2500 | **Cybernetics** (¢800) | active / unpowered |
 

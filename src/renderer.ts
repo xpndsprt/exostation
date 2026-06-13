@@ -395,6 +395,7 @@ export class Renderer {
         sp.scale.set(SCALE);
         sp.x = x;
         sp.y = y;
+        if (s.kind === "fusion" && !s.powered) sp.tint = 0x55617a; // out of fuel — dimmed
         this.structsC.addChild(sp);
       }
       // wear bar on worn-but-running machinery

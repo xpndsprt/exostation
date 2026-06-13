@@ -572,6 +572,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       `<h4>${def.label}</h4>` +
       `<div>${def.gen ? `+${def.gen}` : def.draw ? `−${def.draw}` : "0"} PU` +
       (def.draw > 0 ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "powered" : s.condition <= 0 ? "broken" : "unpowered"}</span>` : "") +
+      (s.kind === "fusion" ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "fueled" : "OUT OF FUEL — needs minerals"}</span>` : "") +
       `</div>` +
       (def.draw > 0
         ? `<div>Condition <span style="color:${cc}">${Math.round(s.condition)}%</span>${s.servicedBy >= 0 ? " · being serviced" : ""}</div>`
