@@ -48,6 +48,30 @@ interface Light {
   a: number;
 }
 
+// Wall autotile: map a 4-bit neighbour mask (N=1,E=2,S=4,W=8) to a sprite name
+// and a clockwise quarter-turn rotation. Base sprites: straight = E+W, corner =
+// N+E, T = N+E+S, end stub = N.
+function wallTile(mask: number): [string, number] {
+  switch (mask) {
+    case 0: return ["wallnode", 0];
+    case 1: return ["wallend", 0]; // N
+    case 2: return ["wallend", 1]; // E
+    case 4: return ["wallend", 2]; // S
+    case 8: return ["wallend", 3]; // W
+    case 10: return ["wall", 0]; // E+W
+    case 5: return ["wall", 1]; // N+S
+    case 3: return ["wallcorner", 0]; // N+E
+    case 6: return ["wallcorner", 1]; // E+S
+    case 12: return ["wallcorner", 2]; // S+W
+    case 9: return ["wallcorner", 3]; // W+N
+    case 7: return ["wallt", 0]; // N+E+S
+    case 14: return ["wallt", 1]; // E+S+W
+    case 13: return ["wallt", 2]; // S+W+N
+    case 11: return ["wallt", 3]; // W+N+E
+    default: return ["wallcross", 0]; // 15
+  }
+}
+
 function hslToHex(h: number, s: number, l: number): number {
   s /= 100;
   l /= 100;
@@ -322,11 +346,31 @@ export class Renderer {
     if (h === this.lastTileSig) return;
     this.lastTileSig = h;
     this.cellsC.removeChildren();
+    const isLink = (x: number, y: number): boolean => {
+      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return false;
+      const t = world.cells[y * world.w + x].type;
+      return t === "wall" || t === "door"; // walls connect to walls and doors
+    };
     for (let y = 0; y < world.h; y++)
       for (let x = 0; x < world.w; x++) {
         const c = world.cells[y * world.w + x];
         if (c.type === "space") continue;
-        const t = c.type === "floor" ? tex("floor", "default") : c.type === "wall" ? tex("wall", "default") : tex("door", "closed");
+        if (c.type === "wall") {
+          // autotile: pick a sprite + rotation from the N/E/S/W neighbour mask
+          const mask = (isLink(x, y - 1) ? 1 : 0) | (isLink(x + 1, y) ? 2 : 0) | (isLink(x, y + 1) ? 4 : 0) | (isLink(x - 1, y) ? 8 : 0);
+          const [name, quarters] = wallTile(mask);
+          const wt = tex(name, "default");
+          if (!wt) continue;
+          const sp = new Sprite(wt);
+          sp.scale.set(SCALE);
+          sp.anchor.set(0.5);
+          sp.x = x * TILE + TILE / 2;
+          sp.y = y * TILE + TILE / 2;
+          sp.rotation = (quarters * Math.PI) / 2;
+          this.cellsC.addChild(sp);
+          continue;
+        }
+        const t = c.type === "floor" ? tex("floor", "default") : tex("door", "closed");
         if (!t) continue;
         const sp = new Sprite(t);
         sp.scale.set(SCALE);

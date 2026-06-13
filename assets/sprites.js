@@ -21,6 +21,45 @@
   // Helpers for new 2x2 modules: wrap 27 content rows (each 26 chars) in a
   // bordered 32x32 box. Using .repeat() guarantees exact widths.
   const B = (n) => "b".repeat(n);
+  const D = (n) => "d".repeat(n);
+
+  // --- wall autotile set: thin directional bulkheads (d = recessed hull,
+  // k edge, m body, h highlight). The renderer picks one by neighbour mask. ---
+  const WROW = D(5) + "khmmmk" + D(5); // vertical strut segment
+  const WALL_STRAIGHT = [
+    ...Array(5).fill(D(16)),
+    "k".repeat(16), "h".repeat(16), "m".repeat(16), "m".repeat(16), "m".repeat(16), "k".repeat(16),
+    ...Array(5).fill(D(16)),
+  ];
+  const WALL_CORNER = [ // connects N + E (rounded elbow)
+    WROW, WROW, WROW, WROW, WROW,
+    D(5) + "k".repeat(11), D(5) + "h".repeat(11), D(5) + "m".repeat(11),
+    D(5) + "m".repeat(11), D(5) + "m".repeat(11), D(5) + "k".repeat(11),
+    ...Array(5).fill(D(16)),
+  ];
+  const WALL_T = [ // connects N + E + S
+    WROW, WROW, WROW, WROW, WROW,
+    D(5) + "k".repeat(11), D(5) + "h".repeat(11), D(5) + "m".repeat(11),
+    D(5) + "m".repeat(11), D(5) + "m".repeat(11), D(5) + "k".repeat(11),
+    WROW, WROW, WROW, WROW, WROW,
+  ];
+  const WALL_CROSS = [
+    WROW, WROW, WROW, WROW, WROW,
+    "k".repeat(16), "h".repeat(16), "m".repeat(16), "m".repeat(16), "m".repeat(16), "k".repeat(16),
+    WROW, WROW, WROW, WROW, WROW,
+  ];
+  const WALL_END = [ // a capped stub pointing N
+    WROW, WROW, WROW, WROW, WROW, WROW, WROW, WROW, WROW,
+    D(5) + "khhhhk" + D(5), D(5) + "kkkkkk" + D(5),
+    ...Array(5).fill(D(16)),
+  ];
+  const WALL_NODE = [ // isolated post
+    ...Array(5).fill(D(16)),
+    D(5) + "kkkkkk" + D(5), D(5) + "khhhhk" + D(5), D(5) + "khmmhk" + D(5),
+    D(5) + "khmmhk" + D(5), D(5) + "khhhhk" + D(5), D(5) + "kkkkkk" + D(5),
+    ...Array(5).fill(D(16)),
+  ];
+  const WALL_PAL = { d: "#1b212b", k: "#3a4250", m: "#8a93a6", h: "#b4bcca" };
   const box2 = (rows) => [
     "................................",
     ".." + "k".repeat(28) + "..",
@@ -519,15 +558,13 @@
       ] },
     },
     {
-      name: "wall", tileW: 1, tileH: 1,
-      palette: { h: "#aab3c2", m: "#8a93a6", e: "#5b6373" },
-      states: { default: [
-        "hhhhhhhhhhhhhhhh","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme",
-        "hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme",
-        "hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme",
-        "hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","hmmmmmmmmmmmmmme","eeeeeeeeeeeeeeee",
-      ] },
+      name: "wall", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_STRAIGHT },
     },
+    { name: "wallcorner", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_CORNER } },
+    { name: "wallt", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_T } },
+    { name: "wallcross", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_CROSS } },
+    { name: "wallend", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_END } },
+    { name: "wallnode", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_NODE } },
     {
       name: "door", tileW: 1, tileH: 1,
       palette: { k: "#11151c", b: "#33506e", g: "#1a2230", y: "#e8c349" },
