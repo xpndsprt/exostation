@@ -15,7 +15,7 @@ import { economySystem } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
 import { objectivesSystem } from "./objectives";
-import { buyUnlock, toolLock, isUnlocked, UNLOCKS } from "./research";
+import { buyUnlock, toolLock, isUnlocked, hasPoweredLab, UNLOCKS } from "./research";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
@@ -221,9 +221,19 @@ async function boot(): Promise<void> {
     },
     onRecenter: recenter,
     onBuyUnlock: (id) => {
+      const u = UNLOCKS.find((x) => x.id === id);
+      if (!u || isUnlocked(world, id)) return;
+      // Always give feedback — never an inert click.
+      if (!hasPoweredLab(world)) {
+        pushAlert("Research needs a powered Research Lab.", "warn");
+        return;
+      }
+      if (world.credits < u.cost) {
+        pushAlert(`Not enough credits — ${u.label} costs ¢${u.cost}.`, "warn");
+        return;
+      }
       if (buyUnlock(world, id)) {
-        const u = UNLOCKS.find((x) => x.id === id);
-        pushAlert(`Researched: ${u?.label ?? id}.`, "info");
+        pushAlert(`Researched: ${u.label}.`, "info");
         refreshPalette(world);
         needRedraw = true;
       }

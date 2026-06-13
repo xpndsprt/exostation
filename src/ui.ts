@@ -621,7 +621,7 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
     el.dataset.wired = "1";
     el.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest("button[data-id]") as HTMLButtonElement | null;
-      if (btn && !btn.disabled && techOnBuy) techOnBuy(btn.dataset.id as string);
+      if (btn && techOnBuy) techOnBuy(btn.dataset.id as string); // always fire — the handler explains any block
     });
   }
   const locked = UNLOCKS.filter((u) => !isUnlocked(world, u.id));
@@ -649,7 +649,7 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
       return (
         `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">¢${u.cost}</span></div>` +
         `<div class="ul-d">${u.desc}</div>` +
-        `<button data-id="${u.id}"${can ? "" : " disabled"} title="${label}">${label}</button></div>`
+        `<button data-id="${u.id}" class="${can ? "" : "cant"}" title="${label}">${label}</button></div>`
       );
     })
     .join("");
