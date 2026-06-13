@@ -86,6 +86,22 @@ From a hardcore-systems review (see [`DEPTH_EPIC.md`](DEPTH_EPIC.md)):
   erupt, and the cure stays *architecture* (separate wings + Door). Previously the combat
   system effectively never fired.
 
+### Content & polish wave *(shipped ✓)*
+- **Lighting & shadows:** a world-space lightmap dims the interior; powered emitters
+  (a new **Light Fixture** + generators/lounge/etc.) cast warm light pools, and modules
+  drop soft shadows away from the nearest light.
+- **Big-ticket modules** (thousands-credit sinks): **Fusion Reactor** (+150 PU, burns
+  minerals — needs a Bot Bay), **Cargo Exchange** (far better trade), **AI Core** (×1.25
+  to all production/mining/repair).
+- **Multi-Lab tech tree:** Battery/Lounge/Bot Bay/Trade Hub are now research-gated, and
+  higher tiers require **more powered Labs** (1 → 2 → 3); locked tools show "???".
+- **The Sector Beacon (win finale):** one researched **signature module per species**
+  (Command Hub/Trade Nexus/Auto-Forge/Bloom Garden/Ore Refinery), each active only while
+  its species is aboard, granting a unique perk and charging the Beacon — charge all five
+  to win. See [`src/beacon.ts`].
+- **UI:** compact 2-column build palette; Advisor moved to a prominent bottom-centre bar;
+  collapsible right-column panels; stabilized Alienpedia.
+
 ---
 
 ## Out of scope / planned (not yet shipped)

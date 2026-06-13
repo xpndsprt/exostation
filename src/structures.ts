@@ -36,6 +36,12 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   fusion: { label: "Fusion Reactor", color: 0x7fe9ff, gen: 150, draw: 0, battery: 0, priority: 0, w: 2, h: 2, cost: 2000 },
   cargoex: { label: "Cargo Exchange", color: 0x6fcf97, gen: 0, draw: 6, battery: 0, priority: 1, w: 2, h: 2, cost: 1500 },
   aicore: { label: "AI Core", color: 0x8a6cf0, gen: 0, draw: 10, battery: 0, priority: 3, w: 2, h: 2, cost: 2500 },
+  // Sector Beacon: one signature module per species (each only works with its species aboard).
+  cmdhub: { label: "Command Hub", color: 0x6ea8ff, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 2, cost: 800 },
+  tradenexus: { label: "Trade Nexus", color: 0xffd86a, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 2, cost: 800 },
+  autoforge: { label: "Auto-Forge", color: 0xef6b3a, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 2, cost: 800 },
+  bloomgarden: { label: "Bloom Garden", color: 0x7fd08f, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 2, cost: 800 },
+  orerefinery: { label: "Ore Refinery", color: 0xe8a55a, gen: 0, draw: 6, battery: 0, priority: 3, w: 2, h: 2, cost: 800 },
 };
 
 // Station-wide ×1.25 to production, repair and mining while a powered AI Core runs.

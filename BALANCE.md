@@ -99,25 +99,38 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 Scenario goals completed in order; clearing the list = victory, after which play continues freely.
 1. **Grow your crew** — reach **3** resident crew.
 2. **Bank credits** — hold **¢3,000**.
-3. **Host different resident species** — **4** distinct *resident* species alive at once (**guests don't count**). The resident roster is Human/Thol/Vry'l/Korro, so this requires all four — forcing both a methane wing (Thol) and a fungal chain (Vry'l), i.e. researching Methane Life-Support **and** Fungal Synthesis.
+3. **Host different resident species** — **4** distinct *resident* species alive at once (**guests don't count**). Requires both a methane wing (Thol) and a fungal chain (Vry'l).
+4. **Bring the Sector Beacon online** — charge all **5** species signature modules to 100% (see *The Sector Beacon* above). Victory.
 - **Defeat:** a death has occurred **and** no resident crew remain **and** the station can't attract crew (no powered dock / no bunk in breathable air / no matching meals), sustained **20 s** (grace against recoverable wipes). A fresh, never-populated station never auto-loses.
 
 ## Tech tree (current unlocks)
-A powered Research Lab (¢150) gates most of the catalog; unlocks are bought with credits.
-| Unlock | ¢ | Enables |
-|--------|:--:|---------|
-| Energy Storage | 100 | Battery Bank |
-| Recreation | 120 | Lounge |
-| Robotics | 150 | Bot Bay |
-| Commerce | 150 | Trade Hub |
-| Cargo Logistics | 250 | Storage Silo |
-| Fungal Synthesis | 300 | Vry'l food recipes |
-| Methane Life-Support | 350 | Methane Gen (Thol) |
-| Station Security | 500 | Turret |
-| Fusion Power | 600 | Fusion Reactor |
-| Bulk Trade | 600 | Cargo Exchange |
-| Cybernetics | 800 | AI Core |
+Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, and **higher tiers require more powered Labs**.
+| Unlock | ¢ | Labs | Enables |
+|--------|:--:|:--:|---------|
+| Energy Storage | 100 | 1 | Battery Bank |
+| Recreation | 120 | 1 | Lounge |
+| Robotics | 150 | 1 | Bot Bay |
+| Commerce | 150 | 1 | Trade Hub |
+| Cargo Logistics | 250 | 2 | Storage Silo |
+| Fungal Synthesis | 300 | 2 | Vry'l food recipes |
+| Methane Life-Support | 350 | 2 | Methane Gen (Thol) |
+| Station Security | 500 | 2 | Turret |
+| Fusion Power | 600 | 3 | Fusion Reactor |
+| Bulk Trade | 600 | 3 | Cargo Exchange |
+| Cybernetics | 800 | 3 | AI Core |
+| Command Hub / Trade Nexus / Auto-Forge / Bloom Garden / Ore Refinery | 700 ea | 3 | the 5 Beacon modules |
 Only the survival core (floor/wall/door, solar, O₂ gen, synth, vat, crew quarters, dock, hotel, lab, light) is unlocked from the start.
+
+## The Sector Beacon — win finale (one signature module per species)
+Each species has a researched signature module (¢800 build, Tier-4 tech). A module is **active** only while **powered AND its species is in the module's room**; while active it grants a unique perk and charges its `timer` 0→100 at **2%/s** (charge persists). Charging all five = the final objective "Bring the Sector Beacon online" → victory.
+| Module | Species | Perk while active |
+|--------|---------|-------------------|
+| Command Hub | Human | +8 station-wide mood (a `command` term in the mood breakdown) |
+| Trade Nexus | Drenn | ×1.5 mineral-trade income |
+| Auto-Forge | Thol | +6 condition/s to every powered module station-wide |
+| Bloom Garden | Vry'l | ×1.5 food production |
+| Ore Refinery | Korro | ×1.5 mining yield |
+This forces hosting the whole roster (methane Thol wing, fungal Vry'l chain, same-air Korro, Drenn guests) and the full tech tree.
 
 ## Big-ticket modules (high-end credit sinks)
 For stations earning in the thousands. All 2×2.

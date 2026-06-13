@@ -33,23 +33,29 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Fusion Reactor | 2000 | 2×2 | +150 PU — but **burns minerals as fuel** (needs a Bot Bay mining). Unlock: Fusion Power |
 | Cargo Exchange | 1500 | 2×2 | Bigger/faster/better mineral trade + raises mineral cap. Unlock: Bulk Trade |
 | AI Core | 2500 | 2×2 | +25% to all production, repair & mining. Unlock: Cybernetics |
+| Command Hub | 800 | 2×2 | Beacon module (Human): station-wide mood lift. Unlock: Command Hub |
+| Trade Nexus | 800 | 2×2 | Beacon module (Drenn): +50% trade income. Unlock: Trade Nexus |
+| Auto-Forge | 800 | 2×2 | Beacon module (Thol): repairs every module station-wide. Unlock: Auto-Forge |
+| Bloom Garden | 800 | 2×2 | Beacon module (Vry'l): +50% food production. Unlock: Bloom Garden |
+| Ore Refinery | 800 | 2×2 | Beacon module (Korro): +50% mining yield. Unlock: Ore Refinery |
 
-## Tech unlocks (researched at a powered Lab, paid in credits)
-| Unlock | Cost ¢ | Enables |
-|--------|:------:|---------|
-| Energy Storage | 100 | Battery Bank |
-| Recreation | 120 | Lounge |
-| Robotics | 150 | Bot Bay |
-| Commerce | 150 | Trade Hub |
-| Cargo Logistics | 250 | Storage Silo |
-| Fungal Synthesis | 300 | Spores/Fungal recipes (feed Vry'l) |
-| Methane Life-Support | 350 | Methane Gen (host Thol) |
-| Station Security | 500 | Turret |
-| Fusion Power | 600 | Fusion Reactor |
-| Bulk Trade | 600 | Cargo Exchange |
-| Cybernetics | 800 | AI Core |
+## Tech unlocks (researched at powered Labs; higher tiers need more Labs)
+| Unlock | Cost ¢ | Labs | Enables |
+|--------|:------:|:----:|---------|
+| Energy Storage | 100 | 1 | Battery Bank |
+| Recreation | 120 | 1 | Lounge |
+| Robotics | 150 | 1 | Bot Bay |
+| Commerce | 150 | 1 | Trade Hub |
+| Cargo Logistics | 250 | 2 | Storage Silo |
+| Fungal Synthesis | 300 | 2 | Spores/Fungal recipes (feed Vry'l) |
+| Methane Life-Support | 350 | 2 | Methane Gen (host Thol) |
+| Station Security | 500 | 2 | Turret |
+| Fusion Power | 600 | 3 | Fusion Reactor |
+| Bulk Trade | 600 | 3 | Cargo Exchange |
+| Cybernetics | 800 | 3 | AI Core |
+| Command Hub / Trade Nexus / Auto-Forge / Bloom Garden / Ore Refinery | 700 ea | 3 | the 5 Beacon signature modules (the win) |
 
-*(Battery, Lounge, Bot Bay and Trade Hub are now research-gated — build a Lab first.)*
+*(Battery, Lounge, Bot Bay and Trade Hub are research-gated — build a Lab first. The unlock cost is separate from the build cost above.)*
 
 ## Income (for reference)
 | Source | Rate |

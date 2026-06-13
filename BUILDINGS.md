@@ -45,26 +45,34 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Fusion Reactor | `fusion` | **+150 PU** generator — but **burns ~0.6 minerals/s** as fuel; out of fuel it produces nothing (needs a Bot Bay mining). | +150 | 2×2 | 2000 | **Fusion Power** (¢600) | fuelled / out-of-fuel |
 | Cargo Exchange | `cargoex` | Upgraded trade: **60 ore / 20 s at ×1.5 price** + **+500 mineral cap**. Works standalone. | 6 | 2×2 | 1500 | **Bulk Trade** (¢600) | active / unpowered |
 | AI Core | `aicore` | Station-wide **×1.25** to food production, mining and repair while powered. | 10 | 2×2 | 2500 | **Cybernetics** (¢800) | active / unpowered |
+| Command Hub | `cmdhub` | **Beacon (Human):** +8 station-wide mood while a Human is in its room. Charges the Beacon. | 6 | 2×2 | 800 | **Command Hub** (¢700, 3 Labs) | charging / idle |
+| Trade Nexus | `tradenexus` | **Beacon (Drenn):** ×1.5 trade income while a Drenn is aboard. Charges the Beacon. | 6 | 2×2 | 800 | **Trade Nexus** (¢700, 3 Labs) | charging / idle |
+| Auto-Forge | `autoforge` | **Beacon (Thol):** repairs every module station-wide while a Thol is in its room. Charges the Beacon. | 6 | 2×2 | 800 | **Auto-Forge** (¢700, 3 Labs) | charging / idle |
+| Bloom Garden | `bloomgarden` | **Beacon (Vry'l):** ×1.5 food production while a Vry'l is in its room. Charges the Beacon. | 6 | 2×2 | 800 | **Bloom Garden** (¢700, 3 Labs) | charging / idle |
+| Ore Refinery | `orerefinery` | **Beacon (Korro):** ×1.5 mining yield while a Korro is in its room. Charges the Beacon. | 6 | 2×2 | 800 | **Ore Refinery** (¢700, 3 Labs) | charging / idle |
+
+**The Sector Beacon (win):** each signature module only operates while powered *and* its species is present in its room; it charges 0→100% at 2%/s. Charging all five completes the final objective. (See `src/beacon.ts`.)
 
 ### Recipe / cap constants (from `src/structures.ts`)
 - **Bio Vat** (`VAT`): produces **+3** base every **8s**.
 - **Rations Synth** (`SYNTH`): consumes **2** base → **4** meals every **10s**.
 - Resource caps (see `STRATEGY.md`): biomass 400 · spores 250 · meals 50/line · minerals 200. Each **Storage Silo** adds **+250** to all caps; each **Cargo Exchange** adds **+500** to the mineral cap.
 
-### Tech unlocks (researched at a powered Lab, paid in credits — from `src/research.ts`)
-| Unlock | Cost ¢ | Enables |
-|--------|:------:|---------|
-| Energy Storage | 100 | **Battery Bank** |
-| Recreation | 120 | **Lounge** |
-| Robotics | 150 | **Bot Bay** |
-| Commerce | 150 | **Trade Hub** |
-| Cargo Logistics | 250 | **Storage Silo** |
-| Fungal Synthesis | 300 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
-| Methane Life-Support | 350 | **Methane Gen** (host Thol) |
-| Station Security | 500 | **Turret** |
-| Fusion Power | 600 | **Fusion Reactor** |
-| Bulk Trade | 600 | **Cargo Exchange** |
-| Cybernetics | 800 | **AI Core** |
+### Tech unlocks (researched at powered Labs — higher tiers need more Labs; from `src/research.ts`)
+| Unlock | Cost ¢ | Labs | Enables |
+|--------|:------:|:----:|---------|
+| Energy Storage | 100 | 1 | **Battery Bank** |
+| Recreation | 120 | 1 | **Lounge** |
+| Robotics | 150 | 1 | **Bot Bay** |
+| Commerce | 150 | 1 | **Trade Hub** |
+| Cargo Logistics | 250 | 2 | **Storage Silo** |
+| Fungal Synthesis | 300 | 2 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
+| Methane Life-Support | 350 | 2 | **Methane Gen** (host Thol) |
+| Station Security | 500 | 2 | **Turret** |
+| Fusion Power | 600 | 3 | **Fusion Reactor** |
+| Bulk Trade | 600 | 3 | **Cargo Exchange** |
+| Cybernetics | 800 | 3 | **AI Core** |
+| Command Hub · Trade Nexus · Auto-Forge · Bloom Garden · Ore Refinery | 700 ea | 3 | the 5 **Beacon** signature modules (the win) |
 
 Only the survival core is free from the start: floor/wall/door, Solar Panel, O₂ Generator, Rations Synth, Bio Vat, Crew Quarters, Docking Port, Hotel Room, Research Lab, Light Fixture. Everything else is researched.
 

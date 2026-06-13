@@ -3,6 +3,7 @@ import { addAgent, accessCell, exteriorCell } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
 import { STRUCTURES } from "./structures";
+import { beaconActive } from "./beacon";
 
 const MODULE_UPKEEP = 0.15; // credits/s per powered, operating module
 const WAGE = 0.2; // credits/s per resident crew member
@@ -114,9 +115,10 @@ export function economySystem(w: World, dt: number): void {
     if ((hasTradeHub || hasCargoEx) && w.stock.minerals > 0) {
       const batch = hasCargoEx ? 60 : TRADE_BATCH;
       const exBonus = hasCargoEx ? 1.5 : 1;
+      const nexus = beaconActive(w, "tradenexus") ? 1.5 : 1; // Drenn Trade Nexus
       const amount = Math.min(w.stock.minerals, batch);
       w.stock.minerals -= amount;
-      w.credits += amount * MINERAL_PRICE * exBonus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
+      w.credits += amount * MINERAL_PRICE * exBonus * nexus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered);
       if (dock) {
         const ex = exteriorCell(w, dock);

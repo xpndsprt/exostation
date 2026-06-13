@@ -21,7 +21,12 @@ export type StructureKind =
   | "lamp"
   | "fusion"
   | "cargoex"
-  | "aicore";
+  | "aicore"
+  | "cmdhub"
+  | "tradenexus"
+  | "autoforge"
+  | "bloomgarden"
+  | "orerefinery";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
 

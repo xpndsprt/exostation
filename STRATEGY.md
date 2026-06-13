@@ -215,10 +215,11 @@ This is the failure state the whole game is designed around.
 ---
 
 ## 12 · Research & tech (M30) — where your credits go
-Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools are **greyed in the palette** (hover for the requirement).
-- **Early expansion (cheap):** **Energy Storage** (¢100 → Battery) · **Recreation** (¢120 → Lounge) · **Robotics** (¢150 → Bot Bay) · **Commerce** (¢150 → Trade Hub). *These four are now research-gated — past the bare survival core, you build a Lab and research outward.*
-- **Mid:** **Cargo Logistics** (¢250 → Storage Silo) · **Fungal Synthesis** (¢300 → Vry'l food) · **Methane Life-Support** (¢350 → Thol wing) · **Station Security** (¢500 → Turret).
-- **Late, big-ticket:** **Fusion Power** (¢600 → **Fusion Reactor**, +150 PU) · **Bulk Trade** (¢600 → **Cargo Exchange**, far better mineral trade + bigger ore cap) · **Cybernetics** (¢800 → **AI Core**, +25% to all production, repair & mining).
+Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
+- **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub).
+- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · Station Security (¢500 → Turret).
+- **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor) · Bulk Trade (¢600 → Cargo Exchange) · Cybernetics (¢800 → AI Core).
+- **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
 - **Big modules to spend thousands on:** Fusion Reactor (¢2000) frees you from tiling solar — but it **burns minerals as fuel** (~0.6/s), so you need a Bot Bay mining or it goes dark; Cargo Exchange (¢1500) trades 60 ore every 20s at ×1.5 price; AI Core (¢2500) boosts the whole station.
 - **Takeaway:** lodging income funds your first Lab; from there you research the species, economy and power scaling you want. Only the bare survival chain (sealed room → solar → O₂ → synth → bunk → dock) is free from the start.
 
@@ -235,6 +236,21 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 - **Market shock** — mineral prices **surge ×2** (sell now!) or **crash ×0.5** (hold) for ~40s.
 - **Raider** — a hostile ship (red ring) parks at your dock and **chews through modules** (never life support). A **powered Turret** (unlock *Station Security*) shoots it down on sight; otherwise crew must repair the damage.
 - **Life support is never targeted** by incidents — suffocation only ever comes from *your* power/zoning mistakes. Incidents threaten your economy, production and defenses, not a guaranteed wipe.
+
+## 15 · The Sector Beacon — how you win
+The finale (the last objective) is **bringing the Sector Beacon online**, which means building and charging **one signature module per species**. Each is **researched** (Tier 4 tech), **only operates while its species is aboard in its room**, gives a **perk no other species provides**, and **charges 0→100%** while running. Charge all five to win.
+
+| Module *(research)* | Species needed | Unique perk while operating | 
+|---|---|---|
+| **Command Hub** | a **Human** in its room | station-wide **mood lift** (+8) |
+| **Trade Nexus** | a **Drenn** aboard | **+50% trade income** |
+| **Auto-Forge** | a **Thol** in its room | passively **repairs every module** station-wide |
+| **Bloom Garden** | a **Vry'l** in its room | **+50% food production** |
+| **Ore Refinery** | a **Korro** in its room | **+50% mining yield** |
+
+- Each module charges at ~2%/s **only when powered and its species is present** — hover/Select it to see its charge and whether it's "charging" or "needs a {species}". Charge persists once gained.
+- This forces you to host the **whole roster** — the methane Thol wing, the fungal Vry'l chain, the same-air Korro, and a steady flow of Drenn guests — and to research the full Tier-4 tree. The ultimate "architecture is politics" capstone.
+- **Takeaway:** the Beacon is the reason to build everything else. Each species you struggled to host becomes a permanent perk *and* a step toward the win.
 
 ## Recommended build order (a clean opening)
 1. **Floor** a small box and **Wall** it shut (watch it turn "sealed").
@@ -273,13 +289,14 @@ After the first couple of minutes, the station faces periodic **incidents** (ann
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
 | Lighting | the interior is gently dimmed; powered **Light Fixtures** (¢30) and glowing modules cast warm light pools, and modules drop soft shadows away from the nearest light — visual only |
-| Tech | Build a powered Research Lab, then spend credits. Gated now: Battery (¢100) · Lounge (¢120) · Bot Bay (¢150) · Trade Hub (¢150) · Silo (¢250) · Fungal (¢300) · Methane (¢350) · Turret (¢500) · Fusion Reactor (¢600) · Cargo Exchange (¢600) · AI Core (¢800). Locked tools greyed in the palette |
+| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
 | Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
 | Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core 2×2, solar 1×3 (wall) |
-| Objectives | scenario goals in order (grow to 3 crew → bank ¢3000 → host 4 **resident** species; guests don't count, so the capstone needs a methane wing + fungal chain); clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
+| Objectives | grow to 3 crew → bank ¢3000 → host 4 resident species → **bring the Sector Beacon online** (charge all 5 species signature modules). Clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
+| Sector Beacon | 5 researched signature modules (one per species); each charges 0→100% only while powered + its species is in its room, and grants a unique perk (mood / trade / repair / food / mining). All 5 charged = victory |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | Drenn arrive ~20s (≤ Hotel Room count), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |

@@ -15,6 +15,7 @@ import { moodSystem, moodBreakdown } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
+import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
 import { toolLock, buyUnlock } from "../src/research";
 import { eventsSystem, forceEvent } from "../src/events";
@@ -51,6 +52,7 @@ function step(w: World) {
   combatSystem(w, DT);
   economySystem(w, DT);
   requestsSystem(w, DT);
+  beaconSystem(w, DT);
   objectivesSystem(w, DT);
 }
 
@@ -926,7 +928,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   addAgent(w, 10, 6, "korro");
   addAgent(w, 11, 6, "thol"); // species aboard: human, drenn, korro, thol = 4
   objectivesSystem(w, 0.1);
-  check("Clearing all objectives wins the scenario", w.phase === "won");
+  check("Hosting 4 species advances to the Beacon finale", currentObjective(w)?.id === "beacon");
 }
 {
   // the species objective counts RESIDENTS only — a guest must not complete it
@@ -942,7 +944,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Guests don't count toward the species objective", w.phase === "playing");
   addAgent(w, 10, 6, "thol"); // a 4th RESIDENT species
   objectivesSystem(w, 0.1);
-  check("Four resident species clears it", w.phase === "won");
+  check("Four resident species clears the species goal", currentObjective(w)?.id === "beacon");
 }
 {
   // a dead, unrecoverable station (no dock/pod/meals) is declared lost
@@ -972,10 +974,14 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   carve(w, 5, 5, 9, 8);
   recomputeRooms(w);
   addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
   addStructure(w, "lab", 7, 6);
   powerSystem(w, 0.1);
   w.credits = 1000;
-  check("Research succeeds with a powered Lab + credits", buyUnlock(w, "methane") === true);
+  check("One Lab can't research a 2-Lab tech", buyUnlock(w, "methane") === false);
+  addStructure(w, "lab", 8, 6); // 2nd lab
+  powerSystem(w, 0.1);
+  check("Research succeeds with enough Labs + credits", buyUnlock(w, "methane") === true);
   check("Methane Life-Support unlocks ch4gen", toolLock(w, "ch4gen") === null);
   check("Researching spent the credits", w.credits === 650);
 }
@@ -1290,6 +1296,41 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
     return w.stock.biomass;
   };
   check("AI Core speeds production (×1.25)", grow(true) > grow(false));
+}
+
+// --- Sector Beacon: per-species signature modules + the win finale ---
+{
+  // A signature module only charges/activates while its species is in its room.
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "orerefinery", 7, 6); // Korro module
+  const m = Object.values(w.structures).find((s) => s.kind === "orerefinery")!;
+  powerSystem(w, 0.1);
+  beaconSystem(w, 0.5);
+  check("Beacon module idle without its species", m.timer === 0 && !beaconActive(w, "orerefinery"));
+  addAgent(w, 8, 7, "korro"); // a Korro in the room
+  beaconSystem(w, 0.5);
+  check("Beacon module charges with its species present", m.timer > 0 && beaconActive(w, "orerefinery"));
+}
+{
+  // Charging all five wins the scenario via the final objective.
+  const w = createWorld();
+  carve(w, 5, 5, 14, 12);
+  recomputeRooms(w);
+  w.objectiveIx = 3; // the beacon objective
+  const kinds: [string, string][] = [
+    ["cmdhub", "human"], ["tradenexus", "drenn"], ["autoforge", "thol"],
+    ["bloomgarden", "vryl"], ["orerefinery", "korro"],
+  ];
+  kinds.forEach(([kind], i) => addStructure(w, kind as never, 6 + i, 6));
+  // pre-charge them all (simulating each species having operated its module)
+  for (const id in w.structures) if (w.structures[id].kind in { cmdhub: 1, tradenexus: 1, autoforge: 1, bloomgarden: 1, orerefinery: 1 }) w.structures[id].timer = 100;
+  check("All five modules charged = beacon complete", beaconCharged(w) === 5);
+  objectivesSystem(w, 0.1);
+  check("Bringing the Beacon online wins the scenario", w.phase === "won");
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

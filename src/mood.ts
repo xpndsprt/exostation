@@ -1,5 +1,6 @@
 import { Agent, World } from "./types";
 import { RELATIONS } from "./relations";
+import { beaconActive } from "./beacon";
 
 const PROXIMITY = 4; // Manhattan tiles — "living next to each other"
 const SOCIAL_CLAMP = 30;
@@ -11,8 +12,11 @@ export interface MoodBreakdown {
   needs: number; // contribution from food/rest/fun
   social: number; // summed neighbor opinions (clamped)
   harmony: number; // contribution from the room's harmony
+  command: number; // station-wide lift from an active Command Hub
   target: number; // resulting target mood (0..100)
 }
+
+const COMMAND_LIFT = 8; // mood bonus while a Human-staffed Command Hub runs
 
 // Single source of truth for what an agent's mood is pulled toward. The system
 // eases actual mood toward this; the UI reads the same breakdown for tooltips.
@@ -33,8 +37,9 @@ export function moodBreakdown(w: World, a: Agent): MoodBreakdown {
   const needs = (a.food - 50) * 0.15 + (a.rest - 50) * 0.15 + (a.fun - 50) * 0.15;
   const rid = w.cells[a.cell].roomId;
   const harmony = rid >= 0 && w.rooms[rid] ? w.rooms[rid].harmony * 10 : 0;
-  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony));
-  return { base: BASE, needs, social, harmony, target };
+  const command = beaconActive(w, "cmdhub") ? COMMAND_LIFT : 0;
+  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command));
+  return { base: BASE, needs, social, harmony, command, target };
 }
 
 // Mood blends need-satisfaction with how an agent feels about nearby neighbors

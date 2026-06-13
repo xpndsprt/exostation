@@ -1,4 +1,5 @@
 import { Species, World } from "./types";
+import { beaconCharged } from "./beacon";
 
 // Scenario goals, completed in order. Each reports a current value toward its
 // target; reaching the target advances to the next. Clearing the list wins.
@@ -35,6 +36,7 @@ export const OBJECTIVES: ObjectiveDef[] = [
   { id: "grow", label: "Grow your crew", target: 3, progress: residentCount },
   { id: "bank", label: "Bank credits", target: 3000, unit: "¢", progress: (w) => Math.floor(w.credits) },
   { id: "diverse", label: "Host different resident species", target: 4, progress: distinctResidentSpecies },
+  { id: "beacon", label: "Bring the Sector Beacon online", target: 5, progress: beaconCharged },
 ];
 
 export function currentObjective(w: World): ObjectiveDef | null {

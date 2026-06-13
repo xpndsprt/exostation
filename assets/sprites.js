@@ -407,6 +407,65 @@
     B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
   ]);
 
+  // --- Sector Beacon: one signature module per species (2x2) ---
+  // Human — Command Hub: a wide console screen with a data graph
+  const CMDHUB = box2([
+    B(25) + "L", ...Array(5).fill(B(26)),
+    B(2) + "h".repeat(22) + B(2),
+    B(2) + "h" + "w".repeat(20) + "h" + B(2),
+    B(2) + "h" + "w".repeat(8) + "c".repeat(4) + "w".repeat(8) + "h" + B(2),
+    B(2) + "h" + "w".repeat(4) + "c".repeat(4) + "w".repeat(12) + "h" + B(2),
+    B(2) + "h" + "w".repeat(20) + "h" + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    ...Array(15).fill(B(26)),
+  ]);
+  // Drenn — Trade Nexus: a stamped coin
+  const TRADENEXUS = box2([
+    B(25) + "L", ...Array(7).fill(B(26)),
+    B(8) + "h".repeat(10) + B(8),
+    B(8) + "h" + "y".repeat(8) + "h" + B(8),
+    B(8) + "h" + "y".repeat(2) + "c".repeat(4) + "y".repeat(2) + "h" + B(8),
+    B(8) + "h" + "y".repeat(2) + "c".repeat(4) + "y".repeat(2) + "h" + B(8),
+    B(8) + "h" + "y".repeat(8) + "h" + B(8),
+    B(8) + "h".repeat(10) + B(8),
+    ...Array(13).fill(B(26)),
+  ]);
+  // Thol — Auto-Forge: a tiered anvil throwing a spark
+  const AUTOFORGE = box2([
+    B(25) + "L", ...Array(6).fill(B(26)),
+    B(11) + "c".repeat(4) + B(11),
+    B(11) + "w".repeat(4) + B(11),
+    B(5) + "h".repeat(16) + B(5),
+    B(7) + "h".repeat(12) + B(7),
+    B(9) + "h".repeat(8) + B(9),
+    B(6) + "h".repeat(14) + B(6),
+    ...Array(14).fill(B(26)),
+  ]);
+  // Vry'l — Bloom Garden: a sprouting plant
+  const BLOOMGARDEN = box2([
+    B(25) + "L", ...Array(4).fill(B(26)),
+    B(12) + "g".repeat(2) + B(12),
+    B(9) + "g".repeat(8) + B(9),
+    B(7) + "g".repeat(12) + B(7),
+    B(12) + "h".repeat(2) + B(12),
+    B(12) + "h".repeat(2) + B(12),
+    B(7) + "g".repeat(12) + B(7),
+    B(9) + "g".repeat(8) + B(9),
+    B(11) + "w".repeat(4) + B(11),
+    ...Array(14).fill(B(26)),
+  ]);
+  // Korro — Ore Refinery: stacked smelting ore
+  const OREREFINERY = box2([
+    B(25) + "L", ...Array(6).fill(B(26)),
+    B(5) + "h".repeat(6) + B(4) + "h".repeat(6) + B(5),
+    B(5) + "c".repeat(6) + B(4) + "c".repeat(6) + B(5),
+    B(5) + "h".repeat(6) + B(4) + "h".repeat(6) + B(5),
+    B(10) + "h".repeat(6) + B(10),
+    B(10) + "c".repeat(6) + B(10),
+    B(10) + "h".repeat(6) + B(10),
+    ...Array(14).fill(B(26)),
+  ]);
+
   // Light Fixture (1x1) — a ceiling lamp glowing warm
   const LAMP = [
     "................",
@@ -585,6 +644,31 @@
       name: "aicore", tileW: 2, tileH: 2,
       palette: { k: "#11151c", b: "#241d44", h: "#4a3f7a", c: "#8a6cf0", w: "#cfe8ff", L: "#49d17a", o: "#3a4350" },
       states: { enabled: AICORE, disabled: off(AICORE) },
+    },
+    {
+      name: "cmdhub", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#1a2c4a", h: "#3a5f9a", c: "#6ea8ff", w: "#bfe9ff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: CMDHUB, disabled: off(CMDHUB) },
+    },
+    {
+      name: "tradenexus", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#3a3418", h: "#8a7320", y: "#caa23a", c: "#ffd86a", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: TRADENEXUS, disabled: off(TRADENEXUS) },
+    },
+    {
+      name: "autoforge", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#3a2418", h: "#8a5320", w: "#ffd27a", c: "#ef6b3a", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: AUTOFORGE, disabled: off(AUTOFORGE) },
+    },
+    {
+      name: "bloomgarden", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#1d3a22", h: "#5a8f68", g: "#7fd08f", w: "#bfeccb", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: BLOOMGARDEN, disabled: off(BLOOMGARDEN) },
+    },
+    {
+      name: "orerefinery", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#3a1d1a", h: "#7a3328", c: "#e8a55a", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: OREREFINERY, disabled: off(OREREFINERY) },
     },
 
     /* ---------- habitation (1x1) ---------- */

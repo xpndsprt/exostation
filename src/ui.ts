@@ -8,7 +8,8 @@ import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
-import { UNLOCKS, isUnlocked, toolLock } from "./research";
+import { UNLOCKS, isUnlocked, toolLock, poweredLabCount } from "./research";
+import { BEACON_SPECIES, moduleActive } from "./beacon";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 
@@ -51,6 +52,11 @@ const PALETTE: PaletteEntry[] = [
   { t: "fusion", label: "Fusion Reactor", key: "X" },
   { t: "cargoex", label: "Cargo Exchange", key: "C" },
   { t: "aicore", label: "AI Core", key: "I" },
+  { t: "cmdhub", label: "Command Hub", key: "", group: "Beacon" },
+  { t: "tradenexus", label: "Trade Nexus", key: "" },
+  { t: "autoforge", label: "Auto-Forge", key: "" },
+  { t: "bloomgarden", label: "Bloom Garden", key: "" },
+  { t: "orerefinery", label: "Ore Refinery", key: "" },
   { t: "select", label: "Select", key: "S", group: "View" },
   { t: "pan", label: "Pan", key: "P" },
 ];
@@ -556,7 +562,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       const b = moodBreakdown(world, a);
       moodLine =
         `<div>Mood ${Math.round(a.mood)}% <span class="muted">→ ${Math.round(b.target)}</span></div>` +
-        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}</div>`;
+        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}</div>`;
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
@@ -574,6 +580,9 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       (def.draw > 0 ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "powered" : s.condition <= 0 ? "broken" : "unpowered"}</span>` : "") +
       (s.kind === "fusion" ? ` · <span style="color:${s.powered ? "#49d17a" : "#e24b4b"}">${s.powered ? "fueled" : "OUT OF FUEL — needs minerals"}</span>` : "") +
       `</div>` +
+      (s.kind in BEACON_SPECIES
+        ? `<div>Beacon charge <b>${Math.round(s.timer)}%</b> · <span style="color:${moduleActive(world, s) ? "#49d17a" : "#e8a33d"}">${moduleActive(world, s) ? "charging" : `idle — needs a ${SPECIES[BEACON_SPECIES[s.kind]!].label}`}</span></div>`
+        : "") +
       (def.draw > 0
         ? `<div>Condition <span style="color:${cc}">${Math.round(s.condition)}%</span>${s.servicedBy >= 0 ? " · being serviced" : ""}</div>`
         : "");
@@ -657,29 +666,26 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
     }
     return;
   }
-  const labs = Object.values(world.structures).filter((s) => s.kind === "lab");
-  const poweredLab = labs.some((s) => s.powered);
+  const labCount = poweredLabCount(world);
+  const anyLab = Object.values(world.structures).some((s) => s.kind === "lab");
   // Only rebuild when something visible changes. Rebuilding the panel's HTML
   // every frame would destroy a button mid-click, so the click never registers.
-  const sig = `${poweredLab}|${labs.length}|${locked.map((u) => `${u.id}:${world.credits >= u.cost ? 1 : 0}`).join(",")}`;
+  const sig = `${labCount}|${anyLab}|${locked.map((u) => `${u.id}:${world.credits >= u.cost ? 1 : 0}:${labCount >= u.labs ? 1 : 0}`).join(",")}`;
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
   el.style.display = "";
-  const labNote = poweredLab ? "" : labs.length ? ' <span class="muted">— Lab unpowered</span>' : ' <span class="muted">— build a Lab</span>';
+  const labNote = labCount > 0
+    ? ` <span class="muted">— ${labCount} Lab${labCount > 1 ? "s" : ""}</span>`
+    : anyLab ? ' <span class="muted">— Lab unpowered</span>' : ' <span class="muted">— build a Lab</span>';
   const head = `<h3>🔬 TECH${labNote}</h3>`;
   const rows = locked
     .map((u) => {
       const afford = world.credits >= u.cost;
-      const can = poweredLab && afford;
-      const label = can
-        ? "Research"
-        : !poweredLab
-          ? labs.length
-            ? "Lab unpowered"
-            : "Needs a Lab"
-          : `Need ¢${u.cost}`;
+      const labsOk = labCount >= u.labs;
+      const can = labsOk && afford;
+      const label = can ? "Research" : !labsOk ? `Needs ${u.labs} Lab${u.labs > 1 ? "s" : ""}` : `Need ¢${u.cost}`;
       return (
-        `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">¢${u.cost}</span></div>` +
+        `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">🔬×${u.labs} · ¢${u.cost}</span></div>` +
         `<div class="ul-d">${u.desc}</div>` +
         `<button data-id="${u.id}" class="${can ? "" : "cant"}" title="${label}">${label}</button></div>`
       );
@@ -844,6 +850,11 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       const cc = s.condition <= 0 ? "#e24b4b" : s.condition < 60 ? "#e8a33d" : "#49d17a";
       html += `<div class="row"><span>Condition</span><b>${Math.round(s.condition)}%</b></div>${bar(s.condition, cc)}`;
       if (s.servicedBy >= 0) html += `<div class="row"><span></span><b style="color:#6ea8ff">being serviced</b></div>`;
+    }
+    if (s.kind in BEACON_SPECIES) {
+      const act = moduleActive(world, s);
+      html += `<div class="row"><span>Beacon charge</span><b>${Math.round(s.timer)}%</b></div>${bar(s.timer, "#b39cff")}`;
+      html += `<div class="row"><span></span><b style="color:${act ? "#49d17a" : "#e8a33d"}">${act ? "charging" : `needs a ${SPECIES[BEACON_SPECIES[s.kind]!].label} aboard`}</b></div>`;
     }
     if (s.kind === "pod") html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
     else if (s.kind === "synth") {
