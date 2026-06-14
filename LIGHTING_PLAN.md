@@ -1,13 +1,11 @@
 # EXOSTATION — Dynamic Lighting & Shadows Plan
 
-> **Status: 🔭 planned (design only — not yet implemented).** This document is the
-> implementation plan for upgrading the current "fake" lighting layer to **true 2D
-> raycast shadows**: **baked** shadows for the light sources the **player places**
-> (Light Fixtures + glowing modules), plus a **dynamic per-character lamp** that
-> lights **2–3 cells** around each crew member and **casts a moving shadow** as they
-> traverse the station (RimWorld-style). No code is written yet; this is the
-> blueprint to build against. Keep it in sync as the system lands (flip the status,
-> tick the phases).
+> **Status: ⚙️ SHIPPED (core).** The grid-shadowcast system below is implemented in
+> `src/renderer.ts`: **baked** shadows for player-placed lights (Light Fixtures +
+> glowing modules) and a **dynamic per-character lamp** (~3 cells) that **casts a
+> moving shadow** as the agent traverses. Phases 1–4 landed together; Phase 5 (sharp
+> polygon shadows / normal-mapped relighting) remains 🔭 optional. Implementation
+> notes are folded in below where they differ from the original plan.
 
 ---
 
@@ -57,6 +55,15 @@ replace "draw a glow blob" with "draw a glow blob **masked by a visibility shape
 ---
 
 ## 3 · Core technique — grid shadowcasting (not per-pixel raymarch)
+
+> **As built:** instead of stamping a gradient sprite per visible cell into an RT,
+> the implementation accumulates each light's `colour × intensity × falloff` into a
+> **CPU per-cell light buffer** (`Float32Array`, RGB), writes it to a **1px-per-cell
+> canvas**, and draws that canvas over the world as a single **bilinear-upscaled,
+> multiply-blended** sprite. Same result, simpler overlap handling, and the bilinear
+> upscale *is* the soft-shadow blur. Static lights bake into one buffer; the dynamic
+> pass copies it and adds character lamps each frame. (`src/renderer.ts`:
+> `bakeStatic` / `updateHeadlights` / `accumulate` / `shadowcast`.)
 
 The station is a grid, so the cheapest correct occlusion is **symmetric recursive
 shadowcasting** (the classic roguelike FOV algorithm) run per light:

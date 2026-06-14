@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, RenderTexture, Renderer as PixiRenderer } from "pixi.js";
+import { Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
 import { World, Structure, StructureKind } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
@@ -8,14 +8,15 @@ import { SERVICE_THRESHOLD } from "./maintenance";
 
 const SCALE = TILE / 16; // sprites are authored at 16px/tile
 
-// --- lighting / shadows ---
-const AMBIENT = 0xbfc4cf; // interior multiply tint when unlit (subtle dim, ~25%)
-// per-kind "height" → drop-shadow length (a pragmatic stand-in for a height map)
-const HEIGHT: Partial<Record<StructureKind, number>> = {
-  o2gen: 1, ch4gen: 1, vat: 1, silo: 1, bay: 0.9, tradehub: 0.9, lab: 0.9,
-  rec: 0.8, turret: 0.8, battery: 0.8, pod: 0.7, hotel: 0.6, synth: 0.6, lamp: 0.35,
-};
-// modules that emit light while powered: [radius in tiles, color, intensity]
+// --- lighting / shadows (2D grid shadowcasting; see LIGHTING_PLAN.md) ---
+// Interior baseline brightness when unlit (a multiply tint); space stays white.
+const AMBIENT_RGB: [number, number, number] = [0.5, 0.52, 0.58];
+// Character lamp: a small warm pool that raycasts ~3 cells and casts a MOVING
+// shadow as the agent traverses (the RimWorld pawn-lamp look).
+const LAMP_RADIUS = 3; // cells
+const LAMP_COLOR: [number, number, number] = [1.0, 0.92, 0.74];
+const LAMP_INTENSITY = 0.95;
+// modules that emit light while powered: [radius in CELLS, color, intensity]
 const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
   o2gen: [2.4, 0xcfe6ff, 0.45],
@@ -25,28 +26,74 @@ const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   tradehub: [2.2, 0xcfeecf, 0.4],
   vat: [2.0, 0xbfeccb, 0.35],
   bay: [2.0, 0xbfe3e3, 0.35],
+  fusion: [2.6, 0xcdfbff, 0.55],
+  cargoex: [2.0, 0xcfeecf, 0.4],
+  aicore: [2.4, 0xc9b8ff, 0.5],
+  fuelrefinery: [2.2, 0xffd9a0, 0.45],
 };
 
-function makeRadialTex(): Texture {
-  const s = 128;
-  const c = document.createElement("canvas");
-  c.width = c.height = s;
-  const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-  g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.45, "rgba(255,255,255,0.5)");
-  g.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, s, s);
-  return Texture.from(c);
+// A "solid" module (2×2 machine, or a Silo) blocks light and casts a shadow;
+// thin furniture (pods, hotels, synth, lamp, docks, solar) does not.
+function blocksLight(kind: StructureKind): boolean {
+  const d = STRUCTURES[kind];
+  return d.w * d.h >= 4 || kind === "silo";
 }
 
-interface Light {
-  x: number;
-  y: number;
-  r: number;
-  color: number;
-  a: number;
+function rgbf(c: number): [number, number, number] {
+  return [((c >> 16) & 255) / 255, ((c >> 8) & 255) / 255, (c & 255) / 255];
+}
+function falloff(d: number, r: number): number {
+  const f = 1 - d / r;
+  return f <= 0 ? 0 : f * f; // smooth-ish edge
+}
+
+// Symmetric recursive shadowcasting (the roguelike FOV algorithm): visit() fires
+// for every cell the light reaches; an opaque cell is itself lit but blocks light
+// beyond it — so walls/modules throw real wedge shadows. O(cells in radius).
+const OCT = [
+  [1, 0, 0, 1], [0, 1, 1, 0], [0, -1, 1, 0], [-1, 0, 0, 1],
+  [-1, 0, 0, -1], [0, -1, -1, 0], [0, 1, -1, 0], [1, 0, 0, -1],
+];
+type Opaque = (x: number, y: number) => boolean;
+type Visit = (x: number, y: number, d: number) => void;
+function shadowcast(cx: number, cy: number, radius: number, opaque: Opaque, visit: Visit): void {
+  visit(cx, cy, 0);
+  for (const m of OCT) castOctant(cx, cy, 1, 1, 0, radius, m[0], m[1], m[2], m[3], opaque, visit);
+}
+function castOctant(cx: number, cy: number, row: number, start: number, end: number, radius: number, xx: number, xy: number, yx: number, yy: number, opaque: Opaque, visit: Visit): void {
+  if (start < end) return;
+  const r2 = radius * radius;
+  let newStart = 0;
+  for (let i = row; i <= radius; i++) {
+    let dx = -i - 1;
+    const dy = -i;
+    let blocked = false;
+    while (dx <= 0) {
+      dx++;
+      const X = cx + dx * xx + dy * xy;
+      const Y = cy + dx * yx + dy * yy;
+      const lSlope = (dx - 0.5) / (dy + 0.5);
+      const rSlope = (dx + 0.5) / (dy - 0.5);
+      if (start < rSlope) continue;
+      if (end > lSlope) break;
+      const d2 = dx * dx + dy * dy;
+      if (d2 <= r2) visit(X, Y, Math.sqrt(d2));
+      const opq = opaque(X, Y);
+      if (blocked) {
+        if (opq) {
+          newStart = rSlope;
+          continue;
+        }
+        blocked = false;
+        start = newStart;
+      } else if (opq && i < radius) {
+        blocked = true;
+        castOctant(cx, cy, i + 1, start, lSlope, radius, xx, xy, yx, yy, opaque, visit);
+        newStart = rSlope;
+      }
+    }
+    if (blocked) break;
+  }
 }
 
 // Wall autotile: map a 4-bit neighbour mask (N=1,E=2,S=4,W=8) to a sprite name
@@ -152,21 +199,28 @@ export class Renderer {
   private selection = new Graphics();
   private cursor = new Graphics();
   private speciesFlash: { sp: string; t: number } | null = null;
-  // lighting/shadow build cache
-  private pixi: PixiRenderer;
-  private lightRT: RenderTexture | null = null;
-  private lightScene = new Container(); // scratch, rendered into lightRT
-  private gradTex = makeRadialTex();
-  private lightSig = "";
+  // lighting: a 1px-per-cell light buffer drawn to a small canvas, then bilinear-
+  // upscaled over the world (multiply). Static (baked) light + dynamic per-agent
+  // lamps accumulate into the buffer. See LIGHTING_PLAN.md.
+  private litW = 0;
+  private litH = 0;
+  private lightCanvas = document.createElement("canvas");
+  private lightCtx!: CanvasRenderingContext2D;
+  private lightImg: ImageData | null = null;
+  private lightTex: Texture | null = null;
+  private staticBuf = new Float32Array(0); // baked: ambient + placed-light shadows
+  private workBuf = new Float32Array(0); // per-frame: static + character lamps
+  private occ = new Uint8Array(0); // 1 = blocks light (walls + solid modules)
+  private bakeSig = "";
 
   // Briefly ring all members of a species (Alienpedia "locate").
   flashSpecies(sp: string): void {
     this.speciesFlash = { sp, t: 45 };
   }
 
-  constructor(world: Container, pixi: PixiRenderer) {
+  constructor(world: Container, _pixi: PixiRenderer) {
     buildTextures();
-    this.pixi = pixi;
+    this.lightCtx = this.lightCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.lighting.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
@@ -216,108 +270,152 @@ export class Renderer {
     this.drawAgents(world);
     this.drawDrones(world);
     this.drawShips(world);
-    this.updateLighting(world);
+    this.bakeStatic(world); // placed-light shadows — recomputed only on change
+    this.updateHeadlights(world); // moving per-character lamps — every frame
     this.drawOverlay(world, overlay);
     this.drawSelection(world, selCell);
   }
 
-  // Center of a structure's footprint, in world pixels.
-  private structCenter(world: World, s: Structure): [number, number] {
-    let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
-    for (const cc of s.cells) {
-      const cx = cc % world.w, cy = (cc / world.w) | 0;
-      minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
-      miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
-    }
-    return [((minx + maxx + 1) / 2) * TILE, ((miny + maxy + 1) / 2) * TILE];
+  // (Re)allocate the per-cell light buffers + the canvas texture for this grid.
+  private ensureLightTargets(world: World): void {
+    if (this.litW === world.w && this.litH === world.h && this.lightTex) return;
+    this.litW = world.w;
+    this.litH = world.h;
+    this.lightCanvas.width = world.w;
+    this.lightCanvas.height = world.h;
+    this.lightImg = this.lightCtx.createImageData(world.w, world.h);
+    for (let i = 3; i < this.lightImg.data.length; i += 4) this.lightImg.data[i] = 255; // opaque
+    this.lightTex = Texture.from(this.lightCanvas);
+    (this.lightTex.source as unknown as { scaleMode: string }).scaleMode = "linear"; // bilinear soften
+    this.lighting.texture = this.lightTex;
+    this.lighting.width = world.w * TILE;
+    this.lighting.height = world.h * TILE;
+    this.staticBuf = new Float32Array(world.w * world.h * 3);
+    this.workBuf = new Float32Array(world.w * world.h * 3);
+    this.bakeSig = ""; // force a rebake
   }
 
-  private gatherLights(world: World): Light[] {
-    const out: Light[] = [];
+  // The integer origin cell of a structure's footprint (nearest cell to centroid).
+  private originCell(world: World, s: Structure): number {
+    let sx = 0, sy = 0;
+    for (const c of s.cells) {
+      sx += c % world.w;
+      sy += (c / world.w) | 0;
+    }
+    const n = s.cells.length;
+    const cx = Math.round(sx / n), cy = Math.round(sy / n);
+    let best = s.cells[0], bd = Infinity;
+    for (const c of s.cells) {
+      const dx = (c % world.w) - cx, dy = ((c / world.w) | 0) - cy;
+      const dd = dx * dx + dy * dy;
+      if (dd < bd) { bd = dd; best = c; }
+    }
+    return best;
+  }
+
+  // walls + solid modules block light; doors pass it (lit doorways). Rebuilt with
+  // the static bake (geometry changes are rare).
+  private buildOccluders(world: World): void {
+    if (this.occ.length !== world.cells.length) this.occ = new Uint8Array(world.cells.length);
+    this.occ.fill(0);
+    for (let i = 0; i < world.cells.length; i++) if (world.cells[i].type === "wall") this.occ[i] = 1;
     for (const id in world.structures) {
       const s = world.structures[id];
-      const g = GLOW[s.kind];
-      if (!g || !s.powered) continue; // only powered emitters glow
-      const [cx, cy] = this.structCenter(world, s);
-      out.push({ x: cx, y: cy, r: g[0] * TILE, color: g[1], a: g[2] });
+      if (blocksLight(s.kind)) for (const c of s.cells) this.occ[c] = 1;
     }
-    return out;
   }
 
-  // Lightmap (multiply) + module drop-shadows. Rebuilt only when the interior
-  // shape, structures, or powered-light states change — cheap to keep static.
-  private updateLighting(world: World): void {
-    const lights = this.gatherLights(world);
-    // signature: interior cells + structures + light states
+  // BAKE: ambient fill + every placed light's shadowcast contribution. Recomputed
+  // only when the geometry / structures / powered-light states change.
+  private bakeStatic(world: World): void {
+    this.ensureLightTargets(world);
     let h = 2166136261 >>> 0;
     for (let i = 0; i < world.cells.length; i++) {
       const t = world.cells[i].type;
-      h = (Math.imul(h ^ (t === "space" ? 0 : t === "wall" ? 1 : t === "door" ? 2 : 3), 16777619)) >>> 0;
+      h = Math.imul(h ^ (t === "space" ? 0 : t === "wall" ? 1 : t === "door" ? 2 : 3), 16777619) >>> 0;
     }
     for (const id in world.structures) {
       const s = world.structures[id];
-      h = (Math.imul(h ^ s.cell ^ (s.powered ? 0x40000 : 0), 16777619)) >>> 0;
+      h = Math.imul(h ^ s.cell ^ (s.powered ? 0x40000 : 0), 16777619) >>> 0;
     }
     const sig = String(h);
-    if (sig === this.lightSig && this.lightRT) return;
-    this.lightSig = sig;
+    if (sig === this.bakeSig) return;
+    this.bakeSig = sig;
+    this.buildOccluders(world);
 
-    if (!this.lightRT) {
-      this.lightRT = RenderTexture.create({ width: world.w * TILE, height: world.h * TILE });
-      this.lighting.texture = this.lightRT;
-    }
-
-    // --- build the lightmap scene ---
-    this.lightScene.removeChildren();
-    const base = new Graphics();
+    const buf = this.staticBuf;
     for (let i = 0; i < world.cells.length; i++) {
-      if (world.cells[i].type === "space") continue; // only the built interior is lit/dimmed
-      base.rect((i % world.w) * TILE, ((i / world.w) | 0) * TILE, TILE, TILE);
+      const o = i * 3;
+      if (world.cells[i].type === "space") {
+        buf[o] = buf[o + 1] = buf[o + 2] = 1; // space: no dimming (multiply by white)
+      } else {
+        buf[o] = AMBIENT_RGB[0];
+        buf[o + 1] = AMBIENT_RGB[1];
+        buf[o + 2] = AMBIENT_RGB[2];
+      }
     }
-    base.fill({ color: AMBIENT });
-    this.lightScene.addChild(base);
-    for (const L of lights) {
-      const sp = new Sprite(this.gradTex);
-      sp.anchor.set(0.5);
-      sp.x = L.x;
-      sp.y = L.y;
-      sp.width = sp.height = L.r * 2;
-      sp.tint = L.color;
-      sp.alpha = L.a;
-      sp.blendMode = "add";
-      this.lightScene.addChild(sp);
-    }
-    this.pixi.render({ container: this.lightScene, target: this.lightRT, clear: true });
-
-    // --- module drop-shadows, cast away from the nearest light ---
-    this.shadowsC.removeChildren();
+    // accumulate each powered emitter, occluded by walls/modules (its own
+    // footprint treated as transparent so it doesn't self-shadow).
     for (const id in world.structures) {
       const s = world.structures[id];
-      if (s.kind === "solar" || s.kind === "dock") continue; // wall-mounted; skip
-      const def = STRUCTURES[s.kind];
-      const state = def.draw > 0 ? (s.powered ? "enabled" : "disabled") : "default";
-      const t = tex(s.kind, state);
-      if (!t) continue;
-      const [cx, cy] = this.structCenter(world, s);
-      let dx = 0.6, dy = 0.6; // default grounding direction when unlit
-      let best = Infinity;
-      for (const L of lights) {
-        const d = Math.hypot(cx - L.x, cy - L.y);
-        if (d < best && d > 0.001) {
-          best = d;
-          dx = (cx - L.x) / d;
-          dy = (cy - L.y) / d;
-        }
-      }
-      const len = TILE * (0.16 + (HEIGHT[s.kind] ?? 0.7) * 0.22);
-      const sp = new Sprite(t);
-      sp.scale.set(SCALE);
-      sp.tint = 0x05070a;
-      sp.alpha = 0.34;
-      sp.x = (s.cell % world.w) * TILE + dx * len;
-      sp.y = ((s.cell / world.w) | 0) * TILE + dy * len;
-      this.shadowsC.addChild(sp);
+      const g = GLOW[s.kind];
+      if (!g || !s.powered) continue;
+      const o = this.originCell(world, s);
+      const ox = o % world.w, oy = (o / world.w) | 0;
+      const radius = Math.max(1, Math.round(g[0]));
+      const [lr, lg, lb] = rgbf(g[1]);
+      const intensity = g[2];
+      const ignore = new Set(s.cells);
+      const opaque: Opaque = (x, y) => {
+        if (x < 0 || y < 0 || x >= world.w || y >= world.h) return true;
+        const i = y * world.w + x;
+        return this.occ[i] === 1 && !ignore.has(i);
+      };
+      this.accumulate(world, buf, ox, oy, radius, lr, lg, lb, intensity, opaque);
     }
+  }
+
+  // Per-frame: static light + a small moving lamp around every character. The
+  // lamp re-casts from each agent's current cell, so its shadow sweeps as it walks.
+  private updateHeadlights(world: World): void {
+    if (!this.lightImg || !this.lightTex) return;
+    this.workBuf.set(this.staticBuf);
+    const buf = this.workBuf;
+    const opaque: Opaque = (x, y) => {
+      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return true;
+      return this.occ[y * world.w + x] === 1;
+    };
+    for (const id in world.agents) {
+      const a = world.agents[id];
+      if (!a.alive) continue;
+      const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
+      this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque);
+    }
+    const d = this.lightImg.data;
+    const n = world.w * world.h;
+    for (let i = 0; i < n; i++) {
+      const o = i * 3;
+      d[i * 4] = Math.min(1, buf[o]) * 255;
+      d[i * 4 + 1] = Math.min(1, buf[o + 1]) * 255;
+      d[i * 4 + 2] = Math.min(1, buf[o + 2]) * 255;
+    }
+    this.lightCtx.putImageData(this.lightImg, 0, 0);
+    (this.lightTex.source as unknown as { update: () => void }).update();
+  }
+
+  // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.
+  private accumulate(world: World, buf: Float32Array, ox: number, oy: number, radius: number, lr: number, lg: number, lb: number, intensity: number, opaque: Opaque): void {
+    shadowcast(ox, oy, radius, opaque, (x, y, dist) => {
+      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return;
+      const i = y * world.w + x;
+      if (world.cells[i].type === "space") return; // don't light open vacuum
+      const f = falloff(dist, radius) * intensity;
+      if (f <= 0) return;
+      const o = i * 3;
+      buf[o] += lr * f;
+      buf[o + 1] += lg * f;
+      buf[o + 2] += lb * f;
+    });
   }
 
   // simple sprite-list helper: place fresh Sprites in a container (textures cached)

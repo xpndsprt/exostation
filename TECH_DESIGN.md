@@ -318,6 +318,15 @@ banner on the transition.
   for the locator.
 - Draws are gated by `needRedraw`; the sim sets it whenever a step or edit
   changes state.
+- **Lighting & shadows (grid shadowcasting — see `LIGHTING_PLAN.md`):** an occluder
+  grid (walls + solid 2×2 modules) drives **symmetric recursive shadowcasting** per
+  light. Placed lights (Light Fixtures + glowing modules) **bake** their
+  shadow-occluded falloff into a per-cell `Float32Array` (recomputed only on a
+  geometry/power-state signature change); each frame that buffer is copied and a
+  small **per-character lamp** (~3 cells) is shadowcast in, so its dark wedge sweeps
+  as the agent walks. The buffer is written to a **1px-per-cell canvas** and drawn as
+  one **bilinear-upscaled, multiply-blended** sprite over the world (space cells =
+  white = undimmed). Pure render layer — no `World`/state changes.
 
 ## UI (DOM overlay) (`ui.ts`)
 - **Top bar:** credits + smoothed net ¢/s, power balance, sim clock, speed

@@ -107,9 +107,12 @@ The rest of the Depth Epic except replayability (M43):
   drive real decisions (the same-air Korro needs its own wing).
 
 ### Content & polish wave *(shipped ✓)*
-- **Lighting & shadows:** a world-space lightmap dims the interior; powered emitters
-  (a new **Light Fixture** + generators/lounge/etc.) cast warm light pools, and modules
-  drop soft shadows away from the nearest light.
+- **Lighting & shadows:** the interior is dim by default; powered emitters (a
+  **Light Fixture** + generators/lounge/etc.) light their rooms via **grid
+  shadowcasting** so walls and large modules **cast real shadows** (baked, free per
+  frame), and **every character carries a moving ~3-cell lamp** whose shadow sweeps
+  as they traverse (RimWorld-style). CPU per-cell light buffer → 1px/cell canvas,
+  bilinear-upscaled + multiply. See [`LIGHTING_PLAN.md`](LIGHTING_PLAN.md).
 - **Big-ticket modules** (thousands-credit sinks): **Fusion Reactor** (+150 PU, burns
   minerals — needs a Bot Bay), **Cargo Exchange** (far better trade), **AI Core** (×1.25
   to all production/mining/repair).
