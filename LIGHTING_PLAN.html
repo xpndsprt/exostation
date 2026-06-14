@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXOSTATION — Dynamic Lighting & Shadows Plan</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>EXOSTATION — Dynamic Lighting &amp; Shadows Plan</h1>
+<blockquote><strong>Status: 🔭 planned (design only — not yet implemented).</strong> This document is the implementation plan for upgrading the current "fake" lighting layer to <strong>true 2D raycast shadows</strong> baked from light fixtures, plus a <strong>per-character headlight</strong> that lights 3–4 cells around each crew member. No code is written yet; this is the blueprint to build against. Keep it in sync as the system lands (flip the status, tick the phases).</blockquote>
+<hr>
+<h2>1 · Goal (what the player should see)</h2>
+<ol><li><strong>Light fixtures (and glowing modules) cast real shadows.</strong> A Light Fixture in a room throws light that is <strong>occluded by walls and modules</strong> — a crate/generator between the lamp and a corner leaves a genuine dark wedge behind it, not a uniform glow. Shadows are <strong>baked</strong> (computed once when geometry/lights change) so they cost nothing per frame.</li><li><strong>Every character carries a headlight.</strong> Each crew member / guest emits a small personal light pool (~<strong>3–4 cells</strong> radius) that <strong>raycasts around them</strong> — it spills through doorways and is blocked by walls, so a lone crew member walking a dark corridor reveals it locally. This is <strong>dynamic</strong> (moves every frame) but cheap.</li><li><strong>It stays efficient</strong> at 80×80 with dozens of agents at 3× speed — no per-pixel CPU raymarching, no per-frame full rebakes.</li></ol>
+<p>The visual target is Prison Architect / RimWorld-grade readability: a dim hull, warm pools of light around lamps and people, and crisp-ish shadow shapes behind solid objects.</p>
+<hr>
+<h2>2 · Where we are today (current lighting)</h2>
+<p><code>src/renderer.ts</code> already has the compositing skeleton we'll build on:</p>
+<ul><li>A <strong>world-space lightmap</strong> (<code>lightRT</code>, a <code>RenderTexture</code>) is filled with an <strong>ambient dark tint</strong> over interior cells, then <strong>additive radial light pools</strong> (<code>gradTex</code>, a soft radial gradient sprite) are drawn at each powered emitter (<code>GLOW</code> table: lamp, generators, lounge…). The lightmap is composited over the scene with <strong><code>multiply</code></strong> blend.</li><li>The lightmap only rebuilds when a <strong>signature</strong> (<code>lightSig</code>) changes (lights / rooms / power), so it's already frame-cheap.</li><li><strong>Shadows are faked:</strong> each module draws a soft drop-shadow <strong>offset away from the nearest light</strong> by a per-kind <code>HEIGHT</code>. There is <strong>no occlusion</strong> — light passes through walls and modules.</li></ul>
+<p><strong>What's missing:</strong> occlusion. Light bleeds across walls; the drop-shadows are a cosmetic offset, not a cast shape. And nothing lights moving characters locally.</p>
+<p>We keep the <strong>RT + multiply composite</strong> and the <strong>radial gradient</strong> approach; we replace "draw a glow blob" with "draw a glow blob <strong>masked by a visibility shape</strong>."</p>
+<hr>
+<h2>3 · Core technique — grid shadowcasting (not per-pixel raymarch)</h2>
+<p>The station is a grid, so the cheapest correct occlusion is <strong>symmetric recursive shadowcasting</strong> (the classic roguelike FOV algorithm) run per light:</p>
+<ul><li>Input: a light origin cell, a radius, and a <strong>per-cell opacity grid</strong> ("does this cell block light?"). Output: the set of cells the light <strong>reaches</strong> (a visibility field), with a 0..1 falloff by distance.</li><li>It's integer, branch-light, processes each cell in radius <strong>once</strong>, and is symmetric (no asymmetry artifacts). Cost ≈ O(cells within radius).</li></ul>
+<p>We <strong>do not</strong> raymarch pixels on the CPU. We compute <strong>per-cell</strong> visibility, then let the GPU smooth it:</p>
+<ul><li>For each lit cell, stamp the <strong>radial gradient sprite</strong> (or a per-light gradient) <strong>only where the cell is visible</strong>, additively, into the light RT. Equivalent: build a small per-light coverage mask and multiply the gradient by it.</li><li>Smoothing/soft edges come from (a) the gradient falloff and (b) an optional <strong>downscale-blur</strong> of the whole light RT (render at ½ res, let bilinear upscale feather the shadow edges). This gives "soft enough" shadows for free.</li></ul>
+<blockquote>Alternative considered: <strong>visibility-polygon raycasting to wall corners</strong> (cast rays to occluder vertices, build a light polygon, draw it as a masked gradient). It yields sharper, resolution-independent shadows but needs an occluder-segment list, robust polygon construction, and a stencil/mask pass. <strong>Decision:</strong> start with grid shadowcasting (simpler, fast, matches the tile aesthetic). Keep the polygon method as a future "sharp shadows" upgrade behind the same RT interface.</blockquote>
+<h3>Occluder model (the opacity grid)</h3>
+<p>A <code>Uint8</code> grid, one byte per cell, rebuilt only when geometry changes:</p>
+<ul><li><strong>Walls / closed structure cells</strong> → fully opaque (block light).</li><li><strong>Doors</strong> → opaque when "shut" for gas, but <strong>we treat them as light-passing</strong> (a lit doorway reads better); tunable.</li><li><strong>Modules</strong> → occlude based on a <strong>height tier</strong> (reuse the existing <code>HEIGHT</code> idea): tall modules (generators, vats, silos) block; low ones (pods, lamps, floor pads) don't. This is the "heightmap per module" the brief asked for, but reduced to the only thing a top-down 2D cast needs: a <strong>per-cell block flag</strong> derived from module height. (True per-texel height isn't needed for grid casts; we revisit it only if we adopt normal-mapped relighting later.)</li><li><strong>Characters never occlude</strong> (so crew don't shadow each other — avoids flicker and keeps headlights stable).</li></ul>
+<p>A light's own origin cell and immediate ring are always lit (no self-shadow pop).</p>
+<hr>
+<h2>4 · Two light layers</h2>
+<h3>4a · Baked static layer (fixtures + glowing modules)</h3>
+<ul><li>Compute <strong>once</strong> whenever the bake signature changes — same gating as today's <code>lightSig</code>, extended to include the occluder grid's hash. Inputs: ambient level, occluder grid, list of static emitters <code>[cell, radius, color, intensity]</code>.</li><li>For each emitter: run shadowcasting → accumulate its falloff-weighted gradient into a <strong>static light RT</strong> (additive).</li><li>Result is a texture that already contains <strong>fixture light + cast shadows</strong>. Per frame it costs <strong>one textured quad</strong> (composite), exactly like now.</li><li>Rebake triggers: build/erase a wall/module, toggle/repower an emitter, room re-detect, light fixture added/removed. None of these happen per frame.</li></ul>
+<h3>4b · Dynamic headlight layer (characters)</h3>
+<ul><li>A separate <strong>dynamic light RT</strong> (or the same RT drawn after the static one), cleared and rebuilt <strong>each frame</strong> — but only from cheap inputs:<ul><li>For each <strong>on-screen, alive</strong> agent: a small shadowcast at <strong>radius 3–4</strong> (a ≤9×9 window) against the same occluder grid, stamped as a small gradient.</li><li>Tint the headlight slightly by species or keep a neutral warm white; a moving agent's pool slides with <code>agentCenter</code> (sub-cell position) for smoothness.</li></ul></li><li>Budget: radius-4 shadowcast ≈ ~50 cell visits; 40 agents ≈ ~2k ops/frame — trivial. Cap to on-screen agents; optionally update headlights at the <strong>10 Hz sim tick</strong> and interpolate position in the gradient stamp for extra headroom.</li><li>Compositing: <code>staticLightRT + dynamicLightRT</code> (additive) → the combined light, then <strong>multiply</strong> over the scene (one extra blend vs today).</li></ul>
+<h3>Final composite per frame</h3>
+<pre><code>scene (tiles, modules, agents, ships)
+  ×  ( ambient  +  bakedStaticLight  +  dynamicHeadlights )   // multiply</code></pre>
+<p><code>ambient</code> is the existing dim interior fill (vacuum/space stays black). Anything unlit reads as the ambient floor, lit areas brighten toward the emitter color.</p>
+<hr>
+<h2>5 · Efficiency summary</h2>
+<table><thead><tr><th>Layer</th><th>Recompute when</th><th>Per-frame cost</th></tr></thead><tbody><tr><td>Occluder grid</td><td>geometry changes (rare)</td><td>none</td></tr><tr><td>Static bake (fixtures)</td><td>bake signature changes (rare)</td><td>1 composite quad</td></tr><tr><td>Headlights</td><td>every frame (cheap)</td><td>~N_onscreen small shadowcasts + N stamps</td></tr><tr><td>Composite</td><td>every frame</td><td>1–2 multiply blends</td></tr></tbody></table>
+<p>Key efficiency rules:</p>
+<ul><li><strong>No per-pixel CPU work.</strong> Visibility is per-cell; the GPU does the smoothing.</li><li><strong>Bake the expensive stuff</strong> (fixtures with full-room radius) and never touch it per frame; only the small, local headlights are dynamic.</li><li><strong>Render lights at ½ resolution</strong> into the RT and upscale — halves fill cost and softens shadow edges for free.</li><li><strong>Cull</strong> dynamic lights to the camera viewport; skip dead/suited-irrelevant cases.</li><li>Reuse one <strong>gradient texture</strong> scaled per radius instead of per-light textures.</li></ul>
+<hr>
+<h2>6 · Data &amp; module touch-points</h2>
+<ul><li><code>src/renderer.ts</code> — the home of all of this. Add: <code>occluderGrid</code> (Uint8 + hash), <code>staticLightRT</code>, <code>dynamicLightRT</code>, a <code>shadowcast(origin, radius, opacity) → cells</code> helper, a <code>stampLight(rt, cell, radius, color, falloffMask)</code> helper, and a <code>buildOccluders(world)</code>. Extend the existing <code>updateLighting</code>/<code>lightSig</code> flow into <code>bakeStaticLights()</code> (gated) + <code>updateHeadlights()</code> (per frame).</li><li><code>src/structures.ts</code> — formalize the <strong>height/occlusion tier</strong> per <code>StructureKind</code> (promote the renderer's <code>HEIGHT</code> map to data: <code>{ blocksLight: boolean, height }</code>). Light emitters stay in the renderer's <code>GLOW</code> table (add per-emitter radius there).</li><li><code>src/config.ts</code> — lighting tunables (ambient level, headlight radius/intensity, RT downscale factor, door-blocks-light flag).</li><li>No <strong>simulation/state</strong> changes: lighting is pure render. <code>World</code> stays serializable; save/load is unaffected. Headlights derive from agent positions already in <code>World</code>.</li><li><code>assets/sprites.js</code> — unaffected (no new art needed; Light Fixture already exists).</li></ul>
+<hr>
+<h2>7 · Phased implementation</h2>
+<ol><li><strong>Occluder grid + shadowcast helper.</strong> Build the opacity grid from walls + module height tiers; implement symmetric shadowcasting; unit-test reachability in <code>scripts/simcheck.ts</code> (pure-function: a wall blocks the cell behind it; an open doorway passes; radius is respected). <em>No visual change yet.</em></li><li><strong>Bake fixture shadows.</strong> Replace the unmasked glow blobs with shadowcast-masked gradients in the static RT (gated rebake). Walls now stop light. Remove/retire the fake drop-shadow offset (or keep a faint contact shadow under tall modules).</li><li><strong>Headlights.</strong> Add the per-agent dynamic light layer (radius 3–4, viewport- culled), composite static + dynamic. Tune ambient so headlights matter.</li><li><strong>Polish &amp; perf.</strong> ½-res light RT + bilinear soften; optional light color per emitter/species; verify 3× speed with 40+ agents stays smooth; expose tunables.</li><li><strong>(Optional later)</strong> Swap grid shadowcast for <strong>visibility-polygon</strong> raycasting behind the same RT interface for sharper shadows; or add normal-mapped module relighting if we want directional highlights (this is where a true per-texel heightmap would come in).</li></ol>
+<hr>
+<h2>8 · Acceptance criteria</h2>
+<ul><li>A Light Fixture with a wall/large module between it and a corner leaves a visible <strong>dark wedge</strong> (occlusion), not a uniform glow.</li><li>A crew member in an unlit corridor is surrounded by a <strong>3–4 cell</strong> light pool that is <strong>clipped by walls</strong> and <strong>spills through an open door</strong>.</li><li>Building/erasing a wall updates the baked shadows; <strong>no per-frame rebake</strong> of the static layer (verify via a rebuild-count/log).</li><li>Frame time at 80×80, 40 agents, 3× speed is within budget (no measurable drop vs today's lightmap-only path beyond the one extra dynamic composite).</li><li><code>World</code> remains plain-JSON-serializable; save/load and <code>npm test</code> unaffected.</li></ul>
+<hr>
+<h2>9 · Risks &amp; notes</h2>
+<ul><li><strong>PixiJS 8 RT churn:</strong> clearing/redrawing the dynamic RT each frame is fine, but allocate the RTs once and reuse; avoid per-frame <code>RenderTexture</code> creation.</li><li><strong>Shadow acne / popping at light origins:</strong> always light the origin cell and its first ring; use symmetric shadowcasting (asymmetric variants flicker as agents move).</li><li><strong>Door semantics:</strong> light-passing doors look best but can leak gas-zone reading cues — keep it a single tunable so we can flip it.</li><li><strong>Over-darkening:</strong> headlights must not make an unlit but <em>powered</em> room feel broken; ambient floor + fixture bake should keep built rooms readable, with headlights as an accent, not the only light.</li><li><strong>Scope discipline:</strong> grid shadowcasting first. Polygon/normal-map upgrades are explicitly deferred to Phase 5 so the first version ships.</li></ul>
+</main>
+</body>
+</html>
