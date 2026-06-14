@@ -144,6 +144,48 @@
   }
   const SHUTTLE_ART = shuttle3();
 
+  // A 3x3 raider/pirate craft, nose UP: a dark angular arrowhead (clearly NOT a
+  // shuttle) with a red cockpit slit, red wing flashes and twin red engines.
+  function raider3() {
+    const W = 48, H = 48, cx = 23.5;
+    const g = Array.from({ length: H }, () => Array(W).fill("."));
+    const fill = (x0, x1, y, ch) => {
+      for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W) g[y][x] = ch;
+    };
+    // solid delta/arrowhead: sharp nose widening to a broad swept tail
+    for (let y = 6; y <= 42; y++) {
+      const outer = 1 + ((y - 6) / 36) * 22; // 1 → 23
+      fill(cx - outer, cx + outer, y, "h");
+    }
+    // trailing-edge notch — carve a shallow V out of the back for a jagged look
+    for (let y = 37; y <= 42; y++) {
+      const notch = ((y - 37) / 5) * 9;
+      fill(cx - notch, cx + notch, y, ".");
+    }
+    // rear hull shading
+    for (let y = 28; y <= 36; y++) fill(cx - 9, cx + 9, y, "d");
+    // cockpit: a red glowing slit near the nose
+    for (let y = 10; y <= 18; y++) fill(cx - 1.5, cx + 1.5, y, "c");
+    // red wing flashes near the swept tips
+    for (let y = 24; y <= 32; y++) {
+      fill(cx - 17, cx - 12, y, "r");
+      fill(cx + 12, cx + 17, y, "r");
+    }
+    // twin engine glow at the back
+    for (let y = 36; y <= 41; y++) {
+      fill(cx - 8, cx - 5, y, "f");
+      fill(cx + 5, cx + 8, y, "f");
+    }
+    const isBody = (x, y) => x >= 0 && x < W && y >= 0 && y < H && g[y][x] !== "." && g[y][x] !== "k";
+    const out = g.map((row) => row.slice());
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        if (g[y][x] === "." && (isBody(x - 1, y) || isBody(x + 1, y) || isBody(x, y - 1) || isBody(x, y + 1)))
+          out[y][x] = "k";
+    return out.map((row) => row.join(""));
+  }
+  const RAIDER_ART = raider3();
+
   /* ===== unique 32x32 module art (enabled) ===== */
 
   // O2 Generator — cyan twin oxygen tanks, manifold, "O2" gauge, status light
@@ -977,6 +1019,11 @@
       name: "trader", tileW: 3, tileH: 3,
       palette: { k: "#11151c", h: "#6fcf97", d: "#3f8a64", g: "#bdf0d2", f: "#ffd27a" },
       states: { default: SHUTTLE_ART },
+    },
+    {
+      name: "raider", tileW: 3, tileH: 3, // pirate craft — dark hull, red glow
+      palette: { k: "#0a0608", h: "#43323a", d: "#2a1d24", c: "#ff4b4b", r: "#c0392b", f: "#ff7a3a" },
+      states: { default: RAIDER_ART },
     },
     {
       name: "drone", tileW: 1, tileH: 1,

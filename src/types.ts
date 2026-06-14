@@ -212,6 +212,7 @@ export interface World {
   priceT: number; // seconds remaining of the current market shock
   notify: string[]; // transient toast queue drained by the UI each frame
   overflow: boolean; // a resource is wasting at its storage cap (M41 morale drag)
+  raidTarget?: number; // cell a raider is currently attacking (renderer beam); -1/undef = none
   breaches: Breach[]; // open hull breaches crew rush to reseal
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)

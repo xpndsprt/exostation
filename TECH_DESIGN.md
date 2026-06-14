@@ -286,8 +286,11 @@ out of the palette until purchased.
 After a grace period, periodic escalating incidents fire, chosen deterministically
 by tick hash: **power surge**, **hull breach** (only with 2+ enclosed rooms so
 crew can flee — vents a wall, crew rush to reseal), **market shock** (mineral
-price ×2 or ×0.5), **raider** (a hostile ship chews modules until a powered Turret
-drives it off). **M38 gives incidents teeth via redundancy gates:** a surge can
+price ×2 or ×0.5), **raider** (a hostile pirate craft chews a module's condition
+and **destroys it via `eraseAt` at 0** — or breaches a wall if nothing's left —
+until a powered Turret drives it off; `world.raidTarget` feeds the renderer's red
+attack beam, and hostile ships draw the dedicated `raider` sprite). **M38 gives
+incidents teeth via redundancy gates:** a surge can
 trip a life-support generator only when `surgeVulnerableLS` (no battery built **and**
 a lone generator for that gas); `raiderDps(w)` scales with powered-module count
 (8→26) and is halved by the Garrison doctrine; an undefended station (no Turret

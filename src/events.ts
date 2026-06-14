@@ -1,6 +1,6 @@
 import { World } from "./types";
 import { STRUCTURES, isDock } from "./structures";
-import { idx, inBounds, setCell, exteriorCell } from "./world";
+import { idx, inBounds, setCell, exteriorCell, eraseAt } from "./world";
 import { activeDoctrine } from "./research";
 
 // Periodic, escalating station incidents that make batteries, layout and
@@ -122,18 +122,33 @@ function handleRaiders(w: World, dt: number): void {
       raided = true;
     }
   }
-  if (raided) {
-    // An undefended, established station (no Turret ever built, 2+ rooms) exposes
-    // even life support to the raider — so "build Security" is a real decision,
-    // not optional. A beginner's single room stays safe.
-    const lsExposed = !hasTurretBuilt(w) && enclosedRoomCount(w) >= 2 && activeDoctrine(w) !== "garrison";
-    const machines = Object.values(w.structures).filter(
-      (s) => STRUCTURES[s.kind].draw > 0 && s.condition > 0 && (targetable(s.kind) || (lsExposed && isLifeSupport(s.kind))),
-    );
-    if (machines.length) {
-      const m = machines[hash(Math.floor(w.tick / 10)) % machines.length];
-      m.condition = Math.max(0, m.condition - raiderDps(w) * dt);
+  if (!raided) {
+    w.raidTarget = -1;
+    return;
+  }
+  // An undefended, established station (no Turret ever built, 2+ rooms) exposes
+  // even life support to the raider — so "build Security" is a real decision,
+  // not optional. A beginner's single room stays safe.
+  const lsExposed = !hasTurretBuilt(w) && enclosedRoomCount(w) >= 2 && activeDoctrine(w) !== "garrison";
+  const machines = Object.values(w.structures).filter(
+    (s) => STRUCTURES[s.kind].draw > 0 && s.condition > 0 && (targetable(s.kind) || (lsExposed && isLifeSupport(s.kind))),
+  );
+  if (machines.length) {
+    const m = machines[hash(Math.floor(w.tick / 10)) % machines.length];
+    m.condition = Math.max(0, m.condition - raiderDps(w) * dt);
+    w.raidTarget = m.cell; // renderer draws an attack beam here
+    if (m.condition <= 0) {
+      // wrecked: actually destroy it, so a raid you don't defend costs you a module
+      const label = STRUCTURES[m.kind].label;
+      eraseAt(w, m.cell % w.w, (m.cell / w.w) | 0);
+      w.notify.push(`Raiders destroyed your ${label}! Build a Turret to fight back.`);
+      w.raidTarget = -1;
     }
+  } else if (breach(w)) {
+    // nothing left to wreck — they blow a hole in the hull instead
+    w.raidTarget = -1;
+  } else {
+    w.raidTarget = -1;
   }
 }
 

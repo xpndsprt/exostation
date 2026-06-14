@@ -719,12 +719,18 @@ export class Renderer {
         const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
         g.circle(x, y, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
       }
-      // bigger berths land bigger ships (size 2/3 scale the 3×3 shuttle art up)
+      // raider attack beam — a pulsing red bolt to the module it's wrecking
+      if (ship.hostile && (world.raidTarget ?? -1) >= 0) {
+        const tx = (world.raidTarget! % world.w) * TILE + TILE / 2;
+        const ty = ((world.raidTarget! / world.w) | 0) * TILE + TILE / 2;
+        g.moveTo(x, y).lineTo(tx, ty).stroke({ width: 2.5, color: 0xff5a3a, alpha: 0.5 + 0.4 * Math.abs(Math.sin(phase * Math.PI * 2)) });
+        g.circle(tx, ty, TILE * (0.3 + 0.12 * Math.sin(phase * Math.PI * 2))).stroke({ width: 2, color: 0xff3b2a, alpha: 0.85 });
+      }
+      // raiders fly the pirate craft; bigger berths land bigger shuttles
       const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
       sprites.push({
-        t: tex(ship.hostile ? "trader" : ship.trader ? "trader" : "shuttle", "default"),
+        t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
         x, y, c: true, rot, scale: SCALE * sizeMul,
-        tint: ship.hostile ? 0xff5555 : undefined,
       });
     }
 

@@ -1452,6 +1452,47 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   };
   check("M38 raider damage rises with station size", dps(6) > dps(0));
 }
+{
+  // an undefended raider actually DESTROYS a module (not just chips condition)
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 6, 8);
+  addStructure(w, "solar", 7, 8); // ample power so the dock stays lit
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 8, 7);
+  addStructure(w, "vat", 9, 7);
+  addDock(w, 12, 7);
+  powerSystem(w, 0.1);
+  const before = Object.keys(w.structures).length;
+  const raidStarted = forceEvent(w, "raid");
+  let destroyed = false;
+  for (let i = 0; i < 300 && !destroyed; i++) {
+    eventsSystem(w, 0.1);
+    if (Object.keys(w.structures).length < before) destroyed = true;
+  }
+  check("Undefended raiders destroy a module", raidStarted && destroyed);
+}
+{
+  // a powered Turret shoots the raider down before it can wreck anything
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 8, 7);
+  addStructure(w, "turret", 9, 7);
+  addDock(w, 12, 7);
+  powerSystem(w, 0.1);
+  const before = Object.keys(w.structures).length;
+  forceEvent(w, "raid");
+  for (let i = 0; i < 40; i++) eventsSystem(w, 0.1);
+  check("A powered Turret stops raiders with no losses", Object.keys(w.structures).length === before && !w.ships.some((s) => s.hostile));
+}
 
 // --- M40: branching tech tree — prerequisites + a mutually-exclusive fork ---
 {
