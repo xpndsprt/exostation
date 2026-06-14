@@ -34,7 +34,10 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Bio Vat | `vat` | Grows a food base from power: **Biomass** or **Spores** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores recipe needs **Fungal Synthesis**, ¢300) | growing / unpowered |
 | Crew Quarters | `pod` | Where **resident crew** sleep. | 1 | 1×1 | 40 | — | assigned / vacant |
 | Bot Bay | `bay` | Launches / docks / recharges a **mining drone** that gathers minerals. | 4 | 2×2 | 120 | — | cycling / occupied / free |
-| Docking Port | `dock` | **Hull airlock placed on a space-facing wall.** Ships park outside and bring guests; the berth for arrivals. | 5 | 1×1 (wall) | 150 | — | guests arrive / free |
+| Docking Port | `dock` | **Hull airlock placed on a space-facing wall.** Ships park on a 3×3 pad and bring up to 3 guests; ships buy fuel on landing. | 5 | 1×1 (wall) | 150 | — | guests arrive / free |
+| Large Dock | `docklarge` | Bigger berth (5×5 pad): lands a bigger ship — **6 guests** (Drenn/Human/Vry'l mix) + buys **18 fuel**. | 8 | 1×1 (wall) | 400 | **Expanded Docking** (¢350) | guests arrive / free |
+| Spaceport Dock | `docksuper` | Largest berth (7×7 pad): huge ship — **10 guests** + buys **40 fuel**. | 12 | 1×1 (wall) | 900 | **Spaceport** (¢700) | guests arrive / free |
+| Fuel Refinery | `fuelrefinery` | Cracks **2 minerals → 3 fuel / 6 s** (needs a Bot Bay mining); fuel is sold to docking ships at 4¢/unit. | 6 | 2×2 | 220 | **Fuel Refining** (¢150) | refining / idle |
 | Lounge | `rec` | Entertainment: crew **and** visitors path here to relax (restore **Fun**) and socialize when fun runs low. | 4 | 2×2 | 80 | — | busy / empty |
 | Hotel Room | `hotel` | Where **visitors** lodge; total Hotel Rooms set guest capacity and drive lodging income. | 2 | 2×1 | 60 | — | assigned / vacant |
 | Trade Hub | `tradehub` | Lets **traders dock and buy your minerals** for credits — the trade-income engine. | 5 | 2×2 | 120 | — | active / unpowered |
@@ -65,13 +68,16 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Recreation | 120 | 1 | **Lounge** |
 | Robotics | 150 | 1 | **Bot Bay** |
 | Commerce | 150 | 1 | **Trade Hub** |
+| Fuel Refining | 150 | 1 | **Fuel Refinery** (root node) |
 | Cargo Logistics | 250 | 2 | **Storage Silo** |
 | Fungal Synthesis | 300 | 2 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | **Methane Gen** (host Thol) |
 | Station Security | 500 | 2 | **Turret** |
+| Expanded Docking | 350 | 2 | **Large Dock** (needs Fuel Refining) |
 | Fusion Power | 600 | 3 | **Fusion Reactor** |
 | Bulk Trade | 600 | 3 | **Cargo Exchange** |
 | Cybernetics | 800 | 3 | **AI Core** |
+| Spaceport | 700 | 3 | **Spaceport Dock** (needs Expanded Docking) |
 | Command Hub · Trade Nexus · Auto-Forge · Bloom Garden · Ore Refinery | 700 ea | 3 | the 5 **Beacon** signature modules (the win) |
 
 Only the survival core is free from the start: floor/wall/door, Solar Panel, O₂ Generator, Rations Synth, Bio Vat, Crew Quarters, Docking Port, Hotel Room, Research Lab, Light Fixture. Everything else is researched.

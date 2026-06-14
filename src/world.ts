@@ -22,7 +22,7 @@ export function createWorld(): World {
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Generous starting biomass so the synth feeds crew for a long while — the
     // player needn't spend on Bio Vats right at the start.
-    stock: { minerals: 0, biomass: 300, spores: 0, meals: { rations: 0, fungal: 0 } },
+    stock: { minerals: 0, biomass: 300, spores: 0, fuel: 0, meals: { rations: 0, fungal: 0 } },
     credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
     crewTimer: 0,
@@ -192,13 +192,14 @@ export function canDock(w: World, x: number, y: number): boolean {
 }
 
 // Place a Docking Port on a hull wall (it stays a wall — an airlock to ships).
-export function addDock(w: World, x: number, y: number): boolean {
+// `kind` selects the tier (dock / docklarge / docksuper); all dock the same way.
+export function addDock(w: World, x: number, y: number, kind: StructureKind = "dock"): boolean {
   if (!canDock(w, x, y)) return false;
   const i = idx(w, x, y);
   const id = w.nextId++;
   w.structures[id] = {
     id,
-    kind: "dock",
+    kind,
     cell: i,
     cells: [i],
     on: true,

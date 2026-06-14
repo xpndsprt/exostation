@@ -18,7 +18,7 @@ The vision is deliberately preserved in full — the ⚙️/🔭 tags keep it ho
 You are the operator of a deep-space station that is three businesses in one: a **trading post**, a **hotel**, and a **fuel depot**. Ships dock, crews disembark, deals are struck, tanks are filled. Your job is to grow the station to meet demand while keeping a roster of wildly different alien species alive, fed, breathing, and — ideally — not at each other's throats.
 
 ## Core Loop
-> ⚙️ **Shipped** — the build → power/supply → receive → profit → manage loop runs in the game today (with per-room atmosphere zoning, food lines, the political chain, and the economy below). The **refinery / fuel-depot** strand is 🔭 planned (no fuel resource or refinery module yet; income today is lodging + mineral trade).
+> ⚙️ **Shipped** — the build → power/supply → receive → profit → manage loop runs in the game today (with per-room atmosphere zoning, food lines, the political chain, and the economy below). The **fuel-depot** strand now ships too: a **Fuel Refinery** cracks mined minerals into **fuel**, and docking ships **buy fuel** for credits — with **Large / Spaceport docks** that land bigger ships buying more fuel and disembarking more guests. 🔭 Still planned: commodity "buy low / sell high" refining and demand-driven rush hours.
 
 1. **Build** modules (habitation, life support, docking, storage, refinery, market, recreation) by snapping rooms onto the station grid.
 2. **Power & supply** the station — deploy **solar panels** for energy and dispatch **mining bots** that fly out to asteroids/wrecks to gather ore, ice, and gas.
@@ -48,7 +48,7 @@ Because species breathe different gases, **atmosphere is a resource you zone and
 Every species holds **opinions** of every other species — some pairs **love** being neighbors (mood/trade bonuses), others **hate** it (mood penalties, refusal to dock, brawls). Room placement becomes diplomacy: who you put next to whom, who shares a corridor, who shares a bar. Mixing the wrong guests turns a profitable hotel into a riot.
 
 ## Economy
-> ⚙️ **Shipped** — lodging income (hotel guests), mineral **trade** (Trade Hub), and **recurring upkeep** (per-module upkeep + crew wages, with a net-¢/s readout) all run today; an idle station bleeds while an active one profits. 🔭 **Planned:** the **fuel** strand (refine ice/gas into fuel, sell to ships, rush hours) and "buy low / sell high" commodity refining.
+> ⚙️ **Shipped** — lodging income (hotel guests), mineral **trade** (Trade Hub), the **fuel** strand (Fuel Refinery: minerals → fuel; docking ships buy fuel, scaled by dock tier), and **recurring upkeep** (per-module upkeep + crew wages, with a net-¢/s readout) all run today; an idle station bleeds while an active one profits. 🔭 **Planned:** "buy low / sell high" commodity refining and demand-driven rush hours.
 
 - **Trade**: buy low / sell high on commodities flowing through the post; refine raw ore into goods.
 - **Hotel**: lodging fees scale with comfort, safety, and species-appropriate amenities.

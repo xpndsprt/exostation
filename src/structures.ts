@@ -26,6 +26,9 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   vat: { label: "Bio Vat", color: 0x4f9d5b, gen: 0, draw: 6, battery: 0, priority: 4, w: 2, h: 2, cost: 90 },
   bay: { label: "Bot Bay", color: 0x4aa3a3, gen: 0, draw: 4, battery: 0, priority: 3, w: 2, h: 2, cost: 120 },
   dock: { label: "Docking Port", color: 0x5a8ad5, gen: 0, draw: 5, battery: 0, priority: 1, w: 1, h: 1, cost: 150 },
+  docklarge: { label: "Large Dock", color: 0x5a8ad5, gen: 0, draw: 8, battery: 0, priority: 1, w: 1, h: 1, cost: 400 },
+  docksuper: { label: "Spaceport Dock", color: 0x5a8ad5, gen: 0, draw: 12, battery: 0, priority: 1, w: 1, h: 1, cost: 900 },
+  fuelrefinery: { label: "Fuel Refinery", color: 0xe8b24a, gen: 0, draw: 6, battery: 0, priority: 4, w: 2, h: 2, cost: 220 },
   rec: { label: "Lounge", color: 0xc05fa8, gen: 0, draw: 4, battery: 0, priority: 2, w: 2, h: 2, cost: 80 },
   hotel: { label: "Hotel Room", color: 0xc99bd5, gen: 0, draw: 2, battery: 0, priority: 2, w: 2, h: 1, cost: 60 },
   tradehub: { label: "Trade Hub", color: 0x6fcf97, gen: 0, draw: 5, battery: 0, priority: 1, w: 2, h: 2, cost: 120 },
@@ -66,3 +69,21 @@ export function costOf(tool: string): number {
 export const VAT = { time: 8, amount: 3 } as const;
 // Synth converts a base resource into a food line (recipe: rations or fungal).
 export const SYNTH = { time: 10, input: 2, meals: 4 } as const;
+// Fuel Refinery converts mined minerals into ship fuel (needs a Bot Bay feeding it).
+export const FUELREC = { time: 6, input: 2, out: 3 } as const;
+
+// Docking tiers. A bigger berth lands a bigger ship that disembarks more guests
+// (and a wider species mix) and buys more fuel — but draws more power and costs
+// more. All three place like a standard dock (a single hull-wall airlock).
+export type DockKind = "dock" | "docklarge" | "docksuper";
+export const DOCK_KINDS: DockKind[] = ["dock", "docklarge", "docksuper"];
+export function isDock(kind: StructureKind): kind is DockKind {
+  return kind === "dock" || kind === "docklarge" || kind === "docksuper";
+}
+// size = visual/pad scale (1/2/3); guests = max passengers per shuttle;
+// fuelNeed = fuel units a landing ship buys; padHalf = landing-pad half-extent (tiles).
+export const DOCK_TIER: Record<DockKind, { size: number; guests: number; fuelNeed: number; padHalf: number }> = {
+  dock: { size: 1, guests: 3, fuelNeed: 6, padHalf: 1.5 },
+  docklarge: { size: 2, guests: 6, fuelNeed: 18, padHalf: 2.5 },
+  docksuper: { size: 3, guests: 10, fuelNeed: 40, padHalf: 3.5 },
+};

@@ -2,7 +2,7 @@ import { Ship, Species, Structure, World } from "./types";
 import { addAgent, accessCell, exteriorCell, GUEST_STAY } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
 import { beaconActive } from "./beacon";
 import { activeDoctrine } from "./research";
 
@@ -14,14 +14,18 @@ const LODGING_RATE = 1.5; // credits per second per living guest
 const SHIP_TIME = 14; // seconds a trader/crew shuttle stays parked
 const IN_TIME = 4.5; // seconds for the cinematic approach
 const OUT_TIME = 3; // seconds for the cinematic departure
-const MAX_GUESTS = 3; // most passengers a shuttle brings at once
 const TRADE_INTERVAL = 30; // seconds between trader visits
 const TRADE_BATCH = 25; // max minerals sold per trade
 const MINERAL_PRICE = 3; // credits per mineral
+const FUEL_PRICE = 4; // credits per fuel unit a docking ship buys
 const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
 // Species that live aboard as resident crew (Drenn only ever visit as guests).
 const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
+// O₂-breathing visitor species a shuttle can disembark as hotel guests. Standard
+// docks bring Drenn; larger berths bring a wider, friendlier mix (no Korro/Thol,
+// to avoid suffocation or hotel brawls). All breathe O₂ → safe in an O₂ hotel.
+const GUEST_POOL: Species[] = ["drenn", "human", "vryl"];
 
 export function economySystem(w: World, dt: number): void {
   // smoothed net ¢/s for the HUD: an exponential filter with a ~20s time
@@ -44,6 +48,13 @@ export function economySystem(w: World, dt: number): void {
       sh.prog = Math.min(1, (sh.prog ?? 0) + dt / IN_TIME);
       if (sh.prog >= 1) {
         sh.phase = "wait";
+        // every docking ship buys fuel (if we have any) — the point of bigger
+        // docks: a huge ship buys a lot of fuel. Fuel → credits.
+        const sold = Math.min(w.stock.fuel, sh.fuelNeed ?? 0);
+        if (sold > 0) {
+          w.stock.fuel -= sold;
+          w.credits += sold * FUEL_PRICE;
+        }
         // a passenger shuttle stays docked for the whole guest visit; trader and
         // crew shuttles just unload and go.
         sh.t = !sh.trader && sh.guests ? GUEST_STAY : SHIP_TIME;
@@ -95,7 +106,7 @@ export function economySystem(w: World, dt: number): void {
       const rid = w.cells[s.cell].roomId;
       const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
       if (gas) podGases.add(gas);
-    } else if (s.kind === "dock") docks.push(s);
+    } else if (isDock(s.kind)) docks.push(s);
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
     else if (s.kind === "cargoex" && s.powered) hasCargoEx = true;
   }
@@ -120,7 +131,7 @@ export function economySystem(w: World, dt: number): void {
     if (dockBusy(w, dock)) continue; // pad still occupied — hold ready, don't reset
     dock.timer -= interval;
     if (freeCap >= 1 && exteriorCell(w, dock) >= 0) {
-      const k = Math.min(MAX_GUESTS, freeCap);
+      const k = Math.min(DOCK_TIER[dock.kind as DockKind].guests, freeCap);
       spawnShip(w, dock, { guests: k });
       freeCap -= k;
     }
@@ -194,23 +205,27 @@ function dockBusy(w: World, dock: Structure): boolean {
 }
 
 // Push a cinematic ship onto a dock's landing pad: it flies in along the dock's
-// outward axis (dx,dy), parks, then departs the same way.
+// outward axis (dx,dy), parks, then departs. Ship scale + fuel purchase come from
+// the dock tier (a Spaceport lands a size-3 ship that buys a lot of fuel).
 function spawnShip(w: World, dock: Structure, opts: Partial<Ship>): void {
   const ex = exteriorCell(w, dock);
   if (ex < 0) return;
   const d = ex - dock.cell;
   const dx = d === 1 ? 1 : d === -1 ? -1 : 0;
   const dy = d === w.w ? 1 : d === -w.w ? -1 : 0;
-  w.ships.push({ cell: ex, t: 0, dx, dy, prog: 0, phase: "in", ...opts });
+  const tier = DOCK_TIER[dock.kind as DockKind] ?? DOCK_TIER.dock;
+  w.ships.push({ cell: ex, t: 0, dx, dy, prog: 0, phase: "in", size: tier.size, fuelNeed: tier.fuelNeed, ...opts });
 }
 
 // A landed passenger shuttle disgorges its guests at the dock's interior access
 // cell, capped by hotel rooms actually free right now (in case one was removed).
+// Standard berths land Drenn; larger berths bring a wider species mix (cosmetic
+// variety — all O₂ visitors so they're safe in an O₂ hotel).
 function dropGuests(w: World, sh: Ship): void {
   let dock: Structure | undefined;
   for (const id in w.structures) {
     const s = w.structures[id];
-    if (s.kind === "dock" && exteriorCell(w, s) === sh.cell) {
+    if (isDock(s.kind) && exteriorCell(w, s) === sh.cell) {
       dock = s;
       break;
     }
@@ -227,5 +242,9 @@ function dropGuests(w: World, sh: Ship): void {
   }
   const room = Math.max(0, hotels - guests);
   const n = Math.min(sh.guests ?? 0, room);
-  for (let i = 0; i < n; i++) addAgent(w, access % w.w, (access / w.w) | 0, "drenn", true);
+  const variety = (sh.size ?? 1) >= 2; // large/super docks bring a species mix
+  for (let i = 0; i < n; i++) {
+    const sp = variety ? GUEST_POOL[i % GUEST_POOL.length] : "drenn";
+    addAgent(w, access % w.w, (access / w.w) | 0, sp, true);
+  }
 }

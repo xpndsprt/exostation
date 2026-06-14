@@ -22,6 +22,9 @@ export type StructureKind =
   | "fusion"
   | "cargoex"
   | "aicore"
+  | "fuelrefinery"
+  | "docklarge"
+  | "docksuper"
   | "cmdhub"
   | "tradenexus"
   | "autoforge"
@@ -118,6 +121,7 @@ export interface Stock {
   minerals: number; // mined from asteroids
   biomass: number; // grown in Vats; feedstock for Rations
   spores: number; // grown in Vats; feedstock for Fungal Mash
+  fuel: number; // refined from minerals at a Fuel Refinery; sold to docking ships
   meals: Record<FoodLine, number>; // synthesized food, per line; eaten by crew
 }
 
@@ -148,6 +152,8 @@ export interface Ship {
   guests?: number; // passengers a shuttle drops on landing
   dx?: number; // outward unit direction from the hull (the approach axis)
   dy?: number;
+  size?: number; // dock-tier scale (1 standard, 2 large, 3 super) — bigger ships
+  fuelNeed?: number; // fuel units the ship buys on landing (income)
 }
 
 export type RequestKind = "host" | "happy" | "amenity";

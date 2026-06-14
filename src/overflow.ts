@@ -25,6 +25,7 @@ export function overflowSystem(w: World, dt: number): void {
   w.stock.biomass = decay(w.stock.biomass, caps.biomass);
   w.stock.spores = decay(w.stock.spores, caps.spores);
   w.stock.minerals = decay(w.stock.minerals, caps.minerals);
+  w.stock.fuel = decay(w.stock.fuel, caps.fuel);
   w.stock.meals.rations = decay(w.stock.meals.rations, caps.rations);
   w.stock.meals.fungal = decay(w.stock.meals.fungal, caps.fungal);
 

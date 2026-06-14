@@ -404,6 +404,19 @@
     "kkkkkkkkkkkkkkkk",
   ];
 
+  // Fuel Refinery (2x2) — twin amber fuel tanks with a gauge + status light
+  const FR_CAP = D(3) + "hhhhhhhhh" + D(2) + "hhhhhhhhh" + D(3);
+  const FR_BODY = D(3) + "hyyyyyyyh" + D(2) + "hyyyyyyyh" + D(3);
+  const FR_HIGH = D(3) + "hywwwwwyh" + D(2) + "hywwwwwyh" + D(3);
+  const FR_GAUGE = D(3) + "hyaaaaayh" + D(2) + "hyaaaaayh" + D(3);
+  const FUELREFINERY = box2([
+    D(25) + "L", D(26),
+    FR_CAP, FR_BODY, FR_BODY, FR_BODY, FR_BODY, FR_BODY, FR_BODY,
+    FR_HIGH, FR_BODY, FR_BODY, FR_BODY, FR_BODY, FR_BODY, FR_BODY,
+    FR_BODY, FR_BODY, FR_BODY, FR_BODY, FR_GAUGE, FR_CAP,
+    D(26), D(26), D(26), D(26), D(26),
+  ]);
+
   // Research Lab (2x1) — a console screen with a graph + a bubbling flask
   const LAB = [
     "kkkkkkkkkkkkkkk.kkkkkkkkkkkk.kkk.",
@@ -707,6 +720,21 @@
       name: "dock", tileW: 1, tileH: 1,
       palette: { k: "#11151c", b: "#2a4a78", h: "#3a5f9a", a: "#7fb0e8", y: "#e8c349", L: "#49d17a", o: "#3a4350" },
       states: { enabled: DOCK, disabled: off(DOCK) },
+    },
+    {
+      name: "docklarge", tileW: 1, tileH: 1, // bigger berth — teal trim
+      palette: { k: "#11151c", b: "#1f5a55", h: "#2f8a80", a: "#7fe8d8", y: "#e8c349", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: DOCK, disabled: off(DOCK) },
+    },
+    {
+      name: "docksuper", tileW: 1, tileH: 1, // spaceport — gold trim
+      palette: { k: "#11151c", b: "#6a5320", h: "#9a7a2e", a: "#ffe08a", y: "#fff0c0", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: DOCK, disabled: off(DOCK) },
+    },
+    {
+      name: "fuelrefinery", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", d: "#241c10", h: "#7a6a44", y: "#e8b24a", a: "#ff8a3a", w: "#ffe6a8", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: FUELREFINERY, disabled: off(FUELREFINERY) },
     },
     {
       name: "lab", tileW: 2, tileH: 1,

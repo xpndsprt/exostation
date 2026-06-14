@@ -44,6 +44,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "rec", label: "Lounge", key: "9" },
   { t: "bay", label: "Bot Bay", key: "0" },
   { t: "dock", label: "Docking Port", key: "-" },
+  { t: "docklarge", label: "Large Dock", key: "" },
+  { t: "docksuper", label: "Spaceport Dock", key: "" },
+  { t: "fuelrefinery", label: "Fuel Refinery", key: "" },
   { t: "tradehub", label: "Trade Hub", key: "M" },
   { t: "lab", label: "Research Lab", key: "R" },
   { t: "silo", label: "Storage Silo", key: "G" },
@@ -431,6 +434,7 @@ export function updateHud(world: World): void {
       chip("🍱", `${st.meals.rations}/${st.meals.fungal}`, st.meals.rations >= caps.rations * 0.95 || st.meals.fungal >= caps.fungal * 0.95) +
       chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}`, st.biomass >= caps.biomass * 0.95) +
       chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`, st.minerals >= caps.minerals * 0.95) +
+      (st.fuel > 0 ? chip("⛽", `${Math.floor(st.fuel)}/${caps.fuel}`, st.fuel >= caps.fuel * 0.95) : "") +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
 

@@ -6,6 +6,7 @@ import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
 import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
+import { fuelSystem } from "./fuel";
 import { overflowSystem } from "./overflow";
 import { atmosphereSystem } from "./atmosphere";
 import { harmonySystem } from "./harmony";
@@ -48,7 +49,7 @@ import {
   UIHandlers,
 } from "./ui";
 import { TILE, COLORS, SIM_HZ } from "./config";
-import { STRUCTURES, costOf } from "./structures";
+import { STRUCTURES, costOf, isDock } from "./structures";
 import { SPECIES } from "./species";
 import { HoverTarget, OverlayMode, Phase, Selection, Speed, StructureKind, UIState, World } from "./types";
 
@@ -60,6 +61,7 @@ function simStep(world: World, dt: number): void {
   maintenanceSystem(world, dt);
   miningSystem(world, dt);
   foodSystem(world, dt);
+  fuelSystem(world, dt);
   overflowSystem(world, dt);
   atmosphereSystem(world);
   harmonySystem(world);
@@ -309,8 +311,8 @@ async function boot(): Promise<void> {
     } else if (tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       if (fp) ok = addStructureMulti(world, "solar", fp);
-    } else if (tool === "dock") {
-      ok = addDock(world, tx, ty);
+    } else if (isDock(tool as StructureKind)) {
+      ok = addDock(world, tx, ty, tool as StructureKind);
     } else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
       const fp = footprintCells(world, tool as StructureKind, tx, ty);
       if (fp) ok = addStructureMulti(world, tool as StructureKind, fp);
@@ -374,7 +376,7 @@ async function boot(): Promise<void> {
       ghost = fp ?? [hover];
       valid = fp !== null;
       if (fp) anchor = fp[0]; // the wall-mounted base, so the facing is unmistakable
-    } else if (hover >= 0 && tool in STRUCTURES && tool !== "dock") {
+    } else if (hover >= 0 && tool in STRUCTURES && !isDock(tool as StructureKind)) {
       const fp = footprintCells(world, tool as StructureKind, tx, ty);
       ghost = fp ?? [hover];
       valid = fp !== null;

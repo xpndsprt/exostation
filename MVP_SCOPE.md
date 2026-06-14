@@ -121,6 +121,11 @@ The rest of the Depth Epic except replayability (M43):
   to win. See [`src/beacon.ts`].
 - **UI:** compact 2-column build palette; Advisor moved to a prominent bottom-centre bar;
   collapsible right-column panels; stabilized Alienpedia.
+- **Fuel economy & docking tiers:** a **Fuel Refinery** (root-tech `Fuel Refining`) cracks
+  mined minerals into **fuel**; every ship **buys fuel on landing** for credits — a third
+  income stream alongside lodging and trade. **Large Dock** and **Spaceport Dock** tiers
+  (research-gated) land progressively bigger ships that disembark more guests (3 → 6 → 10),
+  a wider O₂ species mix, and buy more fuel (6 → 18 → 40), with 5×5 / 7×7 landing pads.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
   pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**
@@ -143,7 +148,7 @@ Still deferred or planned:
 - **Standing-order automation** — auto-dispatch / production orders beyond the current
   autonomous behavior.
 - **Food quality tiers / palate** — meals as more than a single satisfaction value.
-- **Refinery / fuel** — processing minerals into fuel and selling it.
+- ~~**Refinery / fuel**~~ — *shipped:* Fuel Refinery (minerals → fuel) + fuel sold to docking ships, with Large/Spaceport dock tiers. (Commodity buy-low/sell-high refining is still future.)
 - **Faction takeover** — hostile factions seizing the station.
 - **Audio** (M31) — the remaining Reviewer's-Epic item.
 - **Replayability** (M43) — seeded starts, asymmetric scenarios, post-win escalation.

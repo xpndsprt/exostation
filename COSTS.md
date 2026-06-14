@@ -24,7 +24,10 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Hotel Room | 60 | 2×1 | Visitor lodging (= guest capacity) |
 | Lounge | 80 | 2×2 | Entertainment / recreation |
 | Bot Bay | 120 | 2×2 | Mining drone (minerals) |
-| Docking Port | 150 | wall | Hull airlock; guests + ship berth |
+| Docking Port | 150 | wall | Hull airlock; guests + ship berth (3×3 pad) |
+| Large Dock | 400 | wall | Bigger berth (5×5 pad): more guests + fuel sold. Unlock: Expanded Docking |
+| Spaceport Dock | 900 | wall | Largest berth (7×7 pad): huge ships, most guests + fuel. Unlock: Spaceport |
+| Fuel Refinery | 220 | 2×2 | Cracks minerals → ship fuel (needs a Bot Bay). Unlock: Fuel Refining |
 | Trade Hub | 120 | 2×2 | Lets traders buy your minerals |
 | Research Lab | 150 | 2×1 | Enables the Tech panel (spend credits to research unlocks) |
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
@@ -46,7 +49,10 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Recreation | 120 | 1 | Lounge |
 | Robotics | 150 | 1 | Bot Bay |
 | Commerce | 150 | 1 | Trade Hub |
+| Fuel Refining | 150 | 1 | Fuel Refinery (root node) |
 | Cargo Logistics | 250 | 2 | Storage Silo |
+| Expanded Docking | 350 | 2 | Large Dock (needs Fuel Refining) |
+| Spaceport | 700 | 3 | Spaceport Dock (needs Expanded Docking) |
 | Fungal Synthesis | 300 | 2 | Spores/Fungal recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | Methane Gen (host Thol) |
 | Station Security | 500 | 2 | Turret |
@@ -62,5 +68,6 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 |--------|------|
 | Lodging | ~1.5¢/s per guest (needs Hotel Rooms) |
 | Mineral trade | ~25 minerals × 3¢ every ~30s (needs a powered Trade Hub) |
+| Fuel sales | every docking ship buys fuel at 4¢/unit on landing — 6 / 18 / 40 units for a standard / large / spaceport dock (needs Fuel Refineries stocked) |
 
 *Deconstruct refund: 50% of build cost.*

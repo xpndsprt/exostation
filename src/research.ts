@@ -20,11 +20,13 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "recreation", label: "Recreation", desc: "Build Lounges where crew and guests relax and socialize.", cost: 120, labs: 1, tool: "rec" },
   { id: "robotics", label: "Robotics", desc: "Build Bot Bays — each comes with a mining drone for the minerals economy.", cost: 150, labs: 1, tool: "bay" },
   { id: "commerce", label: "Commerce", desc: "Build a Trade Hub so traders buy your minerals for credits.", cost: 150, labs: 1, tool: "tradehub" },
+  { id: "fuelrefining", label: "Fuel Refining", desc: "Build Fuel Refineries that crack minerals into ship fuel — sold to docking ships for credits.", cost: 150, labs: 1, tool: "fuelrefinery" },
   // --- Tier 2: species & infrastructure (2 Labs) ---
   { id: "logistics", label: "Cargo Logistics", desc: "Build Storage Silos that raise every resource cap.", cost: 250, labs: 2, tool: "silo" },
   { id: "fungal", label: "Fungal Synthesis", desc: "Set Vats to Spores and Synths to Fungal Mash — the food chain for Vry'l.", cost: 300, labs: 2 },
   { id: "methane", label: "Methane Life-Support", desc: "Build Methane Generators — a sealed CH₄ wing lets you host Thol.", cost: 350, labs: 2, tool: "ch4gen" },
   { id: "security", label: "Station Security", desc: "Build Turrets that shoot down raiders before they wreck your modules.", cost: 500, labs: 2, tool: "turret" },
+  { id: "largedock", label: "Expanded Docking", desc: "Build Large Docks — bigger berths land bigger ships: more guests and more fuel sold.", cost: 350, labs: 2, tool: "docklarge", requires: ["fuelrefining"] },
   // --- Doctrine fork (2 Labs): pick ONE station specialization; it permanently
   // locks the other two. ¢ can no longer buy the whole tree in a single run. ---
   { id: "doc_industry", label: "Industrialist Doctrine", desc: "Specialize: +15% mining, food & repair across the station. Locks the other doctrines.", cost: 400, labs: 2, requires: ["robotics"], excludes: ["doc_hospitality", "doc_garrison"] },
@@ -34,6 +36,7 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "fusion", label: "Fusion Power", desc: "Build a Fusion Reactor (+150 PU; burns minerals).", cost: 600, labs: 3, tool: "fusion", requires: ["robotics"] },
   { id: "bulktrade", label: "Bulk Trade", desc: "Build a Cargo Exchange — bigger, faster mineral trades at better prices.", cost: 600, labs: 3, tool: "cargoex", requires: ["commerce"] },
   { id: "cybernetics", label: "Cybernetics", desc: "Build an AI Core — +25% to all production, repair and mining.", cost: 800, labs: 3, tool: "aicore", requires: ["logistics"] },
+  { id: "superdock", label: "Spaceport", desc: "Build Spaceport Docks — the largest berths: huge ships, the biggest guest crowds and fuel sales.", cost: 700, labs: 3, tool: "docksuper", requires: ["largedock"] },
   // --- Tier 4: the Sector Beacon — one signature module per species (3 Labs) ---
   { id: "cmdhub", label: "Command Hub", desc: "Human signature module: a station-wide mood lift while a Human staffs it. Charges the Beacon.", cost: 700, labs: 3, tool: "cmdhub" },
   { id: "tradenexus", label: "Trade Nexus", desc: "Drenn signature module: +50% trade income while a Drenn is aboard. Charges the Beacon.", cost: 700, labs: 3, tool: "tradenexus" },

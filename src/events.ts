@@ -1,5 +1,5 @@
 import { World } from "./types";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, isDock } from "./structures";
 import { idx, inBounds, setCell, exteriorCell } from "./world";
 import { activeDoctrine } from "./research";
 
@@ -218,7 +218,7 @@ function raid(w: World): boolean {
   let dock = null;
   for (const id in w.structures) {
     const s = w.structures[id];
-    if (s.kind === "dock" && s.powered) {
+    if (isDock(s.kind) && s.powered) {
       dock = s;
       break;
     }

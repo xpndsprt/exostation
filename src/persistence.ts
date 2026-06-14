@@ -124,12 +124,14 @@ function sanitize(w: World): World {
   if (typeof w.priceMult !== "number") w.priceMult = 1;
   if (typeof w.priceT !== "number") w.priceT = 0;
   if (!Array.isArray(w.notify)) w.notify = [];
+  if (typeof w.overflow !== "boolean") w.overflow = false;
   if (!Array.isArray(w.breaches)) w.breaches = [];
   if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
   if (!Array.isArray(w.requests)) w.requests = [];
   if (typeof w.reqTimer !== "number") w.reqTimer = 0;
-  const st = w.stock as unknown as { spores?: number; meals: unknown };
+  const st = w.stock as unknown as { spores?: number; fuel?: number; meals: unknown };
   if (typeof st.spores !== "number") st.spores = 0;
+  if (typeof st.fuel !== "number") st.fuel = 0;
   if (typeof st.meals === "number") w.stock.meals = { rations: st.meals, fungal: 0 };
   else if (!st.meals || typeof st.meals !== "object") w.stock.meals = { rations: 0, fungal: 0 };
   else {

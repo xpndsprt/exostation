@@ -38,6 +38,7 @@ simStep(world, dt):              // src/main.ts
   maintenanceSystem  // 2.  machinery wears down while running
   miningSystem       // 3.  drone shuttle loop -> minerals
   foodSystem         // 4.  Vats grow base resources; Synths -> meals
+  fuelSystem         // 4b. Fuel Refineries crack minerals -> fuel (sold to ships)
   overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
   atmosphereSystem   // 6.  per-room gas (o2 / ch4 / mixed / none)
   harmonySystem      // 7.  per-room relations -> harmony (productivity + mood)
@@ -236,8 +237,19 @@ biomass, `fungal` from spores). Crew eat the line their species eats. Production
 idles at the storage cap, scaled by room productivity; Vry'l botanists boost
 vats in their room (trait).
 
+### Fuel & docks (`fuel.ts`, `economy.ts`, `structures.ts`)
+**Fuel Refineries** convert **2 minerals → 3 fuel / 6 s** (`FUELREC`) while powered,
+scaled by room productivity / AI Core / Industrialist; idle out of ore (needs a Bot
+Bay) or at the fuel cap (`fuelSystem`, after mining). **Docking tiers** live in
+`structures.ts` (`DOCK_KINDS` / `DOCK_TIER` — size, max guests, fuelNeed, padHalf);
+`isDock(kind)` covers all three. All tiers place via the generalized `addDock(w,x,y,kind)`
+as a hull-wall airlock. On a ship's `in→wait` landing, `economy.ts` sells `min(stockFuel,
+ship.fuelNeed)` at 4¢/unit, then disembarks guests — larger berths set a bigger `ship.size`
+(sprite scale + pad) and a wider O₂ guest mix. The renderer reads `DOCK_TIER[kind].padHalf`
+for the pad and `ship.size` for the ship scale.
+
 ### Storage (`storage.ts`)
-Per-resource **caps** (biomass / spores / rations / fungal / minerals).
+Per-resource **caps** (biomass / spores / rations / fungal / minerals / fuel).
 Production plateaus at the cap, so sizing production to population (and trading
 ore to make room) is an ongoing decision. Each **Storage Silo** raises every cap
 (gated behind the Cargo Logistics tech).

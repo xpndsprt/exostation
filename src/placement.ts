@@ -1,6 +1,6 @@
 import { StructureKind, Tool, World } from "./types";
 import { idx, inBounds, canDock } from "./world";
-import { STRUCTURES, costOf } from "./structures";
+import { STRUCTURES, costOf, isDock } from "./structures";
 
 const STRUCTURE_KINDS = new Set([
   "solar",
@@ -87,7 +87,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;
   if (w.credits < costOf(tool)) return false; // can't afford it
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
-  if (tool === "dock") return canDock(w, x, y);
+  if (tool in STRUCTURES && isDock(tool as StructureKind)) return canDock(w, x, y);
   if (tool in STRUCTURES) return footprintCells(w, tool as StructureKind, x, y) !== null;
   const c = w.cells[idx(w, x, y)];
   switch (tool) {

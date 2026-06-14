@@ -114,10 +114,13 @@ Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, an
 | Recreation | 120 | 1 | Lounge |
 | Robotics | 150 | 1 | Bot Bay |
 | Commerce | 150 | 1 | Trade Hub |
+| Fuel Refining | 150 | 1 | Fuel Refinery (root node) |
 | Cargo Logistics | 250 | 2 | Storage Silo |
 | Fungal Synthesis | 300 | 2 | Vry'l food recipes |
 | Methane Life-Support | 350 | 2 | Methane Gen (Thol) |
 | Station Security | 500 | 2 | Turret |
+| Expanded Docking | 350 | 2 | Large Dock *(needs Fuel Refining)* |
+| Spaceport | 700 | 3 | Spaceport Dock *(needs Expanded Docking)* |
 | Fusion Power | 600 | 3 | Fusion Reactor *(needs Robotics)* |
 | Bulk Trade | 600 | 3 | Cargo Exchange *(needs Commerce)* |
 | Cybernetics | 800 | 3 | AI Core *(needs Cargo Logistics)* |
@@ -154,6 +157,20 @@ For stations earning in the thousands. All 2×2.
 | **Cargo Exchange** | 1500 | −6 | Trades **60** ore every **20 s** at **×1.5** price (vs 25/30s/×1 for a Trade Hub) and **+500 mineral cap**. Works standalone |
 | **AI Core** | 2500 | −10 | **×1.25** to all food production, mining and repair while powered |
 
+## Fuel economy & docking tiers
+A third income stream: refine minerals into **fuel** and sell it to docking ships.
+- **Fuel Refinery** (¢220, 2×2, draw 6): converts **2 minerals → 3 fuel every 6 s** while powered (scaled by room productivity, AI Core, Industrialist doctrine). Idles with no minerals (needs a **Bot Bay** mining) or at the fuel cap. Research: **Fuel Refining** (Tier-1 root).
+- **Fuel storage cap:** base **120**, +250 per Storage Silo. Spoils like other resources past 95% (M41).
+- **Refueling income:** every ship (guest/trader/crew) **buys fuel on landing** at **4¢/unit**, up to its dock tier's need; the sale is capped by fuel in stock. No fuel → no refuel income (guests still arrive).
+
+| Dock | ¢ | Draw | Pad | Guests/shuttle | Fuel bought | Research |
+|------|:--:|:----:|:---:|:--------------:|:-----------:|----------|
+| Docking Port | 150 | 5 | 3×3 | 3 (Drenn) | 6 (~¢24) | — (start) |
+| Large Dock | 400 | 8 | 5×5 | 6 (mix) | 18 (~¢72) | Expanded Docking |
+| Spaceport Dock | 900 | 12 | 7×7 | 10 (mix) | 40 (~¢160) | Spaceport |
+
+Larger berths land a visually bigger ship (size 2/3) and disembark a wider **O₂ guest mix** (Drenn/Human/Vry'l). Guests are still capped by free Hotel Rooms; one ship per pad at a time.
+
 ## Operating economy / credit sink (M37)
 Recurring costs give the economy an equilibrium instead of a one-way ratchet.
 - **Module upkeep:** **0.15¢/s** per *powered, operating* module (draw > 0; passive solar/battery/silo are free).
@@ -173,7 +190,7 @@ Credits are the sink; a **powered Research Lab** (¢150, draw 6) is the gate.
 - Locked tools are disabled in the palette; `applyTool` and the recipe toggle also refuse them.
 
 ## Storage caps (M32) + overflow (M41)
-Base caps: biomass **400**, spores **250**, rations **50**, fungal **50**, minerals **200**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
+Base caps: biomass **400**, spores **250**, rations **50**, fungal **50**, minerals **200**, fuel **120**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
 - **Overflow consequences (M41):** a store **≥95% of its cap** spoils at **2%/s** of the held amount (floored at 95% — it churns just under the cap), and any store **≥99%** sets a station-wide `overflow` flag worth **−5 mood** (see modifiers) plus an amber HUD chip + toast. So overproduction wastes the inputs spent on it and annoys the crew — right-sizing production / keeping trade capacity ahead of mining is now a live cost, not free idling. Runs in `overflowSystem` between food and atmosphere.
 
 ## Station incidents (M29) + teeth (M38)

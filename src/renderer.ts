@@ -1,7 +1,7 @@
 import { Container, Graphics, Sprite, Texture, RenderTexture, Renderer as PixiRenderer } from "pixi.js";
 import { World, Structure, StructureKind } from "./types";
 import { TILE, COLORS } from "./config";
-import { STRUCTURES } from "./structures";
+import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
 import { exteriorCell } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
@@ -600,10 +600,10 @@ export class Renderer {
     };
     for (const id in world.structures) {
       const s = world.structures[id];
-      if (s.kind !== "dock" || !s.powered) continue;
+      if (!isDock(s.kind) || !s.powered) continue;
       const p = padOf(s);
       if (!p) continue;
-      const half = TILE * 1.5;
+      const half = TILE * DOCK_TIER[s.kind as DockKind].padHalf; // 3×3 / 5×5 / 7×7 by tier
       g.rect(p.cx - half, p.cy - half, half * 2, half * 2).fill({ color: 0x11161f, alpha: 0.55 }).stroke({ width: 1.5, color: 0x3a4a63, alpha: 0.8 });
       g.rect(p.cx - half * 0.55, p.cy - half * 0.55, half * 1.1, half * 1.1).stroke({ width: 1, color: 0x2d3a50, alpha: 0.7 });
       // corner guide lights — alternate the diagonals so the pad appears to chase
@@ -619,7 +619,7 @@ export class Renderer {
     // toward the pad from off-screen, "out" eases away; legacy/raiders just sit.
     const ease = (p: number) => 1 - Math.pow(1 - p, 3); // decelerate
     const FAR = TILE * 16; // off-screen approach distance
-    const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number }[] = [];
+    const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number; scale?: number }[] = [];
     for (const ship of world.ships) {
       const padX = (ship.cell % world.w) * TILE + TILE / 2 + (ship.dx ?? 0) * TILE;
       const padY = ((ship.cell / world.w) | 0) * TILE + TILE / 2 + (ship.dy ?? 0) * TILE;
@@ -636,9 +636,11 @@ export class Renderer {
         const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
         g.circle(x, y, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
       }
+      // bigger berths land bigger ships (size 2/3 scale the 3×3 shuttle art up)
+      const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
       sprites.push({
         t: tex(ship.hostile ? "trader" : ship.trader ? "trader" : "shuttle", "default"),
-        x, y, c: true, rot,
+        x, y, c: true, rot, scale: SCALE * sizeMul,
         tint: ship.hostile ? 0xff5555 : undefined,
       });
     }
@@ -655,7 +657,7 @@ export class Renderer {
     for (const it of sprites) {
       if (!it.t) continue;
       const sp = new Sprite(it.t);
-      sp.scale.set(SCALE);
+      sp.scale.set(it.scale ?? SCALE);
       sp.anchor.set(0.5);
       if (it.rot) sp.rotation = it.rot;
       if (it.tint !== undefined) sp.tint = it.tint;

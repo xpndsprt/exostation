@@ -1,13 +1,14 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
 import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
-import { costOf } from "../src/structures";
+import { costOf, DOCK_TIER } from "../src/structures";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
 import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
+import { fuelSystem } from "../src/fuel";
 import { overflowSystem } from "../src/overflow";
 import { atmosphereSystem } from "../src/atmosphere";
 import { harmonySystem } from "../src/harmony";
@@ -46,6 +47,7 @@ function step(w: World) {
   maintenanceSystem(w, DT);
   miningSystem(w, DT);
   foodSystem(w, DT);
+  fuelSystem(w, DT);
   overflowSystem(w, DT);
   atmosphereSystem(w);
   harmonySystem(w);
@@ -1490,6 +1492,77 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("M40 Fusion needs Robotics first", buyUnlock(w, "fusion") === false);
   buyUnlock(w, "robotics");
   check("M40 Fusion unlocks once Robotics is owned", buyUnlock(w, "fusion") === true && isUnlocked(w, "fusion"));
+}
+
+// --- Fuel Refinery: minerals -> fuel; ships buy fuel for credits ---
+{
+  // a powered Fuel Refinery with mineral stock produces fuel
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "fuelrefinery", 7, 6);
+  w.stock.minerals = 100;
+  w.stock.fuel = 0;
+  for (let i = 0; i < 200; i++) step(w);
+  check("Fuel Refinery cracks minerals into fuel", w.stock.fuel > 0 && w.stock.minerals < 100);
+}
+{
+  // no minerals → no fuel (needs a Bot Bay feeding it)
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "fuelrefinery", 7, 6);
+  w.stock.minerals = 0;
+  for (let i = 0; i < 100; i++) step(w);
+  check("Fuel Refinery produces nothing without minerals", w.stock.fuel === 0);
+}
+{
+  // a docking ship buys fuel on landing → credits up, fuel down
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 7, 7);
+  addDock(w, 9, 6);
+  addStructure(w, "hotel", 7, 6);
+  w.stock.fuel = 100;
+  w.stock.meals.rations = 50;
+  const fuel0 = w.stock.fuel;
+  let bought = false;
+  for (let i = 0; i < 1500 && !bought; i++) {
+    step(w);
+    if (w.stock.fuel < fuel0) bought = true;
+  }
+  check("A docking ship buys fuel (fuel falls)", bought);
+}
+
+// --- Dock tiers: larger berths land bigger ships with more guests ---
+{
+  check("Large dock lands more guests than standard", DOCK_TIER.docklarge.guests > DOCK_TIER.dock.guests);
+  check("Spaceport lands the most guests + biggest fuel buy", DOCK_TIER.docksuper.guests > DOCK_TIER.docklarge.guests && DOCK_TIER.docksuper.fuelNeed > DOCK_TIER.docklarge.fuelNeed);
+  // a Large Dock places as a hull-wall airlock just like a standard dock
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  const ok = addDock(w, 9, 6, "docklarge");
+  check("Large Dock places on a hull wall (airlock)", ok && w.cells[idx(w, 9, 6)].type === "wall");
+}
+
+// --- Fuel/dock research gating (Fuel Refining is a Tier-1 root node) ---
+{
+  const w = createWorld();
+  check("Fuel Refinery is gated behind Fuel Refining", toolLock(w, "fuelrefinery")?.id === "fuelrefining");
+  check("Large Dock is gated behind Expanded Docking", toolLock(w, "docklarge")?.id === "largedock");
+  check("Spaceport Dock is gated behind Spaceport", toolLock(w, "docksuper")?.id === "superdock");
+  const fuel = UNLOCKS.find((u) => u.id === "fuelrefining")!;
+  check("Fuel Refining is a 1-Lab root node (no prerequisite)", fuel.labs === 1 && !fuel.requires);
+  const largeDock = UNLOCKS.find((u) => u.id === "largedock")!;
+  check("Expanded Docking requires Fuel Refining", (largeDock.requires ?? []).includes("fuelrefining"));
 }
 
 // --- Wall drag traces the perimeter; floor fills the rectangle ---
