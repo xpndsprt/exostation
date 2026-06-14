@@ -194,20 +194,14 @@ export class Renderer {
   private dronesC = new Container();
   private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
-  private lighting = new Sprite(); // lightmap, multiply-blended over the interior
+  private lighting = new Graphics(); // lightmap: per-cell multiply rects over the interior
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
   private speciesFlash: { sp: string; t: number } | null = null;
-  // lighting: a 1px-per-cell light buffer drawn to a small canvas, then bilinear-
-  // upscaled over the world (multiply). Static (baked) light + dynamic per-agent
-  // lamps accumulate into the buffer. See LIGHTING_PLAN.md.
-  private litW = 0;
-  private litH = 0;
-  private lightCanvas = document.createElement("canvas");
-  private lightCtx!: CanvasRenderingContext2D;
-  private lightImg: ImageData | null = null;
-  private lightTex: Texture | null = null;
+  // lighting: a per-cell RGB light buffer (ambient + shadowcast light pools) drawn
+  // as multiply-blended rects. Static (baked) light + dynamic per-agent lamps
+  // accumulate into the buffer. See LIGHTING_PLAN.md.
   private staticBuf = new Float32Array(0); // baked: ambient + placed-light shadows
   private workBuf = new Float32Array(0); // per-frame: static + character lamps
   private occ = new Uint8Array(0); // 1 = blocks light (walls + solid modules)
@@ -220,7 +214,6 @@ export class Renderer {
 
   constructor(world: Container, _pixi: PixiRenderer) {
     buildTextures();
-    this.lightCtx = this.lightCanvas.getContext("2d") as CanvasRenderingContext2D;
     this.lighting.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
@@ -276,22 +269,12 @@ export class Renderer {
     this.drawSelection(world, selCell);
   }
 
-  // (Re)allocate the per-cell light buffers + the canvas texture for this grid.
+  // (Re)allocate the per-cell light buffers for this grid size.
   private ensureLightTargets(world: World): void {
-    if (this.litW === world.w && this.litH === world.h && this.lightTex) return;
-    this.litW = world.w;
-    this.litH = world.h;
-    this.lightCanvas.width = world.w;
-    this.lightCanvas.height = world.h;
-    this.lightImg = this.lightCtx.createImageData(world.w, world.h);
-    for (let i = 3; i < this.lightImg.data.length; i += 4) this.lightImg.data[i] = 255; // opaque
-    this.lightTex = Texture.from(this.lightCanvas);
-    (this.lightTex.source as unknown as { scaleMode: string }).scaleMode = "linear"; // bilinear soften
-    this.lighting.texture = this.lightTex;
-    this.lighting.width = world.w * TILE;
-    this.lighting.height = world.h * TILE;
-    this.staticBuf = new Float32Array(world.w * world.h * 3);
-    this.workBuf = new Float32Array(world.w * world.h * 3);
+    const n = world.w * world.h * 3;
+    if (this.staticBuf.length === n) return;
+    this.staticBuf = new Float32Array(n);
+    this.workBuf = new Float32Array(n);
     this.bakeSig = ""; // force a rebake
   }
 
@@ -375,10 +358,11 @@ export class Renderer {
     }
   }
 
-  // Per-frame: static light + a small moving lamp around every character. The
-  // lamp re-casts from each agent's current cell, so its shadow sweeps as it walks.
+  // Per-frame: static light + a small moving lamp around every character (the lamp
+  // re-casts from each agent's current cell, so its shadow sweeps as it walks),
+  // then paint the buffer as multiply-blended rects — interior only, so open space
+  // stays at full brightness.
   private updateHeadlights(world: World): void {
-    if (!this.lightImg || !this.lightTex) return;
     this.workBuf.set(this.staticBuf);
     const buf = this.workBuf;
     const opaque: Opaque = (x, y) => {
@@ -391,16 +375,17 @@ export class Renderer {
       const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
       this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque);
     }
-    const d = this.lightImg.data;
-    const n = world.w * world.h;
-    for (let i = 0; i < n; i++) {
+    const g = this.lighting;
+    g.clear();
+    const W = world.w;
+    for (let i = 0; i < world.cells.length; i++) {
+      if (world.cells[i].type === "space") continue; // leave vacuum at full brightness
       const o = i * 3;
-      d[i * 4] = Math.min(1, buf[o]) * 255;
-      d[i * 4 + 1] = Math.min(1, buf[o + 1]) * 255;
-      d[i * 4 + 2] = Math.min(1, buf[o + 2]) * 255;
+      const r = Math.min(255, buf[o] * 255) | 0;
+      const gg = Math.min(255, buf[o + 1] * 255) | 0;
+      const b = Math.min(255, buf[o + 2] * 255) | 0;
+      g.rect((i % W) * TILE, ((i / W) | 0) * TILE, TILE, TILE).fill(((r << 16) | (gg << 8) | b) >>> 0);
     }
-    this.lightCtx.putImageData(this.lightImg, 0, 0);
-    (this.lightTex.source as unknown as { update: () => void }).update();
   }
 
   // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.
