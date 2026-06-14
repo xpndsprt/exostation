@@ -5,6 +5,7 @@ import { SPECIES, TRAITS } from "./species";
 import { STRUCTURES, aiBoost } from "./structures";
 import { productivity } from "./harmony";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
+import { industryBoost } from "./research";
 
 const SPEED = 4; // cells / second
 const O2_DECAY = 8; // breath lost per second once the suit is empty
@@ -152,7 +153,7 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
         if (s) {
           const room = w.cells[a.cell].roomId;
           const prod = room >= 0 && w.rooms[room] ? productivity(w.rooms[room].harmony) : 1;
-          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod * aiBoost(w);
+          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod * aiBoost(w) * industryBoost(w);
           s.condition = Math.min(100, s.condition + rate * dt);
           if (s.condition >= 100) releaseTask(w, a);
           return; // keep working until fully serviced

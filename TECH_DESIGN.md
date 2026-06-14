@@ -38,15 +38,17 @@ simStep(world, dt):              // src/main.ts
   maintenanceSystem  // 2.  machinery wears down while running
   miningSystem       // 3.  drone shuttle loop -> minerals
   foodSystem         // 4.  Vats grow base resources; Synths -> meals
-  atmosphereSystem   // 5.  per-room gas (o2 / ch4 / mixed / none)
-  harmonySystem      // 6.  per-room relations -> harmony (productivity + mood)
-  agentSystem        // 7.  needs decay, suit/o2, utility task selection, movement
-  moodSystem         // 8.  ease mood toward needs+social+harmony target
-  combatSystem       // 9.  tension -> skirmishes, deaths, collateral
-  economySystem      // 10. upkeep sink, lodging, trade, immigration shuttles
-  eventsSystem       // 11. periodic incidents (surge/breach/shock/raid)
-  requestsSystem     // 12. species requests/goals, reputation
-  objectivesSystem   // 13. scenario goal progression, win/lose
+  overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
+  atmosphereSystem   // 6.  per-room gas (o2 / ch4 / mixed / none)
+  harmonySystem      // 7.  per-room relations -> harmony (productivity + mood)
+  agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
+  moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
+  combatSystem       // 10. tension -> skirmishes, deaths, collateral
+  economySystem      // 11. upkeep sink, lodging, trade, immigration shuttles
+  eventsSystem       // 12. periodic incidents (surge/breach/shock/raid — M38 teeth)
+  requestsSystem     // 13. species requests/goals, reputation
+  beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
+  objectivesSystem   // 15. scenario goal progression, win/lose
   world.tick++
 ```
 
@@ -119,6 +121,7 @@ interface World {
   unlocked: Record<string, boolean>;          // researched tech
   priceMult, priceT: number;                  // market shock multiplier + remaining time
   notify: string[];                           // toast queue drained by the UI
+  overflow: boolean;                          // a store is wasting at its cap (M41 mood drag)
   breaches: Breach[];                         // open hull breaches crew rush to reseal
   reputation: Partial<Record<Species, number>>; requests: StationRequest[]; seen: Species[];
   tick: number; speed: 0|1|2|3; nextId: number;
@@ -195,11 +198,21 @@ to step onto (excludes start), `[]` if already there, `null` if unreachable.
 `nearestBreathable` is a separate BFS to the closest room of a given gas.
 
 ### Mood, harmony & relations (`mood.ts`, `harmony.ts`, `relations.ts`)
-`RELATIONS` is an asymmetric per-species opinion matrix. **Harmony** is computed
-per room from the pairwise relations of its current occupants and maps to a
-**productivity multiplier** (≈0.6–1.4) applied to food production and repair
-speed. **Mood** eases toward a target of `base + needs + nearby-neighbour social
-opinion + room harmony`. The same `moodBreakdown` feeds the UI tooltip.
+`RELATIONS` is an asymmetric per-species opinion matrix using two strength tiers
+each way (M42): **LOVE +15 / LIKE +8 / KIN +4 / DISLIKE −8 / HATE −15**.
+**Harmony** is computed per room from the pairwise relations of its current
+occupants and maps to a **productivity multiplier** (≈0.6–1.4) applied to food
+production and repair speed. **Mood** eases toward a target of `base + needs +
+nearby-neighbour social opinion (clamped ±45) + room harmony + command +
+overflow`. The `overflow` term is a −5 station-wide drag set by `overflowSystem`
+when any store is wasting at its cap (M41). The same `moodBreakdown` feeds the UI
+tooltip.
+
+### Overflow / spoilage (`overflow.ts`)
+Runs after food/mining: a resource ≥95% of its cap **spoils** at 2%/s (floored at
+95%, so it churns under the cap), and any store ≥99% sets `world.overflow` (the
+mood drag above) + a toast. Makes overproduction a real cost instead of free
+idling (M41).
 
 ### Combat: tension → skirmishes (`combat.ts`)
 Tension rises while a disliked neighbour is in proximity — **fast** when morale
@@ -242,19 +255,30 @@ ore to make room) is an ongoing decision. Each **Storage Silo** raises every cap
   buys a batch at the current `priceMult` (Drenn aboard raise the price).
 
 ### Tech tree (`research.ts`)
-Credits spent at a **powered Research Lab** buy unlocks (`unlocked` map):
-Methane Life-Support (CH₄ gen → host Thol), Fungal Synthesis (spore/fungal chain
-→ host Vry'l), Cargo Logistics (Storage Silos), Station Security (Turrets).
-Gated build tools are locked out of the palette until purchased.
+Credits spent at **powered Research Labs** buy unlocks (`unlocked` map); higher
+tiers need more powered Labs. Each `UnlockDef` may carry `requires[]`
+(prerequisite unlocks) and `excludes[]` (siblings it permanently locks). M40 adds:
+prerequisites on the Tier-3 nodes (Fusion←Robotics, Bulk Trade←Commerce,
+Cybernetics←Cargo Logistics) and a **mutually-exclusive doctrine fork** —
+`doc_industry` / `doc_hospitality` / `doc_garrison`, each excluding the other two.
+`canResearch(w, u)` is the single gate (labs + credits + requires + excludes) used
+by `buyUnlock`, the tech panel and the toast feedback. `activeDoctrine(w)` /
+`industryBoost(w)` expose the chosen specialization to the other systems
+(mining/food/repair, economy lodging, raider damage). Gated build tools are locked
+out of the palette until purchased.
 
 ### Incidents (`events.ts`)
 After a grace period, periodic escalating incidents fire, chosen deterministically
-by tick hash: **power surge** (a module trips offline for a while), **hull breach**
-(only with 2+ enclosed rooms so crew can flee — vents a wall, crew rush to reseal),
-**market shock** (mineral price ×2 or ×0.5 for a window), **raider** (a hostile
-ship chews modules until a powered Turret drives it off). Incidents never target
-life-support generators, so suffocation only ever comes from the player's own
-power/zoning mistakes.
+by tick hash: **power surge**, **hull breach** (only with 2+ enclosed rooms so
+crew can flee — vents a wall, crew rush to reseal), **market shock** (mineral
+price ×2 or ×0.5), **raider** (a hostile ship chews modules until a powered Turret
+drives it off). **M38 gives incidents teeth via redundancy gates:** a surge can
+trip a life-support generator only when `surgeVulnerableLS` (no battery built **and**
+a lone generator for that gas); `raiderDps(w)` scales with powered-module count
+(8→26) and is halved by the Garrison doctrine; an undefended station (no Turret
+ever built, 2+ rooms, not Garrison) exposes life support to the raider too. So the
+counter to a lethal incident is cheap redundancy, not blanket immunity — and a
+single-room beginner is still spared.
 
 ### Requests & reputation (`requests.ts`)
 Seen species post time-limited **requests** (host N of us / keep us content /

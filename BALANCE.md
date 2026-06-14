@@ -81,6 +81,9 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 | Contaminated / wrong atmosphere | −30 + damage/death risk |
 | Crowding (over capacity) | −5 per overflow |
 | No recreation access | −6 |
+| Resource overflow / waste at cap (M41) | −5 (station-wide while any store is full) |
+
+**Implemented social weight (M42):** the summed neighbor opinion is clamped at **±45** (was ±30), so neighbors now rival needs (food/rest/fun ≈ ±22 total). Room harmony scales relation sums by /15, so a **LOVE/HATE** pair drives a room to ±1.0 harmony (vs ±0.53 for like/dislike).
 
 ## Tension & skirmishes
 - Each **species-pair present on the station** accrues a Tension value (0–100).
@@ -115,11 +118,22 @@ Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, an
 | Fungal Synthesis | 300 | 2 | Vry'l food recipes |
 | Methane Life-Support | 350 | 2 | Methane Gen (Thol) |
 | Station Security | 500 | 2 | Turret |
-| Fusion Power | 600 | 3 | Fusion Reactor |
-| Bulk Trade | 600 | 3 | Cargo Exchange |
-| Cybernetics | 800 | 3 | AI Core |
+| Fusion Power | 600 | 3 | Fusion Reactor *(needs Robotics)* |
+| Bulk Trade | 600 | 3 | Cargo Exchange *(needs Commerce)* |
+| Cybernetics | 800 | 3 | AI Core *(needs Cargo Logistics)* |
 | Command Hub / Trade Nexus / Auto-Forge / Bloom Garden / Ore Refinery | 700 ea | 3 | the 5 Beacon modules |
 Only the survival core (floor/wall/door, solar, O₂ gen, synth, vat, crew quarters, dock, hotel, lab, light) is unlocked from the start.
+
+### Branching & doctrine fork (M40)
+The tree is no longer flat: nodes can require a **prerequisite** and a fork can **mutually exclude** its siblings (`requires[]` / `excludes[]` in `src/research.ts`; gated by `canResearch`).
+- **Prereqs:** Fusion Power ← Robotics · Bulk Trade ← Commerce · Cybernetics ← Cargo Logistics.
+- **Doctrine fork — 2 Labs, ¢400 each, pick exactly one** (each owns `excludes` over the other two, so choosing one permanently locks the rest):
+
+| Doctrine | Prereq | Effect |
+|----------|--------|--------|
+| **Industrialist** | Robotics | ×**1.15** mining, food & repair (`industryBoost`) |
+| **Hospitality** | Commerce | lodging ×**1.5**, guest arrival interval ×**0.7** |
+| **Garrison** | Station Security | raider DPS ×**0.5**, life support never raider-targetable |
 
 ## The Sector Beacon — win finale (one signature module per species)
 Each species has a researched signature module (¢800 build, Tier-4 tech). A module is **active** only while **powered AND its species is in the module's room**; while active it grants a unique perk and charges its `timer` 0→100 at **2%/s** (charge persists). Charging all five = the final objective "Bring the Sector Beacon online" → victory.
@@ -158,25 +172,37 @@ Credits are the sink; a **powered Research Lab** (¢150, draw 6) is the gate.
 - Starter tools (floor/wall/door, solar, battery, o2gen, synth, pod, dock, vat, bay, rec, hotel, tradehub, lab) are never locked — onboarding is unchanged.
 - Locked tools are disabled in the palette; `applyTool` and the recipe toggle also refuse them.
 
-## Storage caps (M32)
+## Storage caps (M32) + overflow (M41)
 Base caps: biomass **400**, spores **250**, rations **50**, fungal **50**, minerals **200**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
+- **Overflow consequences (M41):** a store **≥95% of its cap** spoils at **2%/s** of the held amount (floored at 95% — it churns just under the cap), and any store **≥99%** sets a station-wide `overflow` flag worth **−5 mood** (see modifiers) plus an amber HUD chip + toast. So overproduction wastes the inputs spent on it and annoys the crew — right-sizing production / keeping trade capacity ahead of mining is now a live cost, not free idling. Runs in `overflowSystem` between food and atmosphere.
 
-## Station incidents (M29)
+## Station incidents (M29) + teeth (M38)
 First incident at **120 s**, then every **90 s** (shrinks 5 s per 10 min, floor **60 s**); type chosen by a deterministic tick hash.
 | Incident | Effect |
 |----------|--------|
-| Power surge | a random non-life-support module offline for **20 s** |
+| Power surge | a module offline for **20 s**. Normally non-life-support — **but a life-support gen becomes eligible when unredundant**: station `batteryMax == 0` **and** only **one** generator of that gas. A Battery (soaks the spike) or a backup gen removes the vulnerability |
 | Hull breach | vents one hull wall of a sealed room (**only with ≥2 enclosed rooms**); a resident rushes to reseal it as an emergency (0.4/s ≈ 2.5s) at a cost of **¢120**. Player can also wall it manually (¢3) |
 | Market shock | mineral price ×2 or ×0.5 for **40 s** |
-| Raider | hostile ship parks at a dock, **8 condition/s** to a random non-life-support module for **18 s**; a powered **Turret** destroys it instantly |
-- **Life support (O₂/CH₄ gens) is never targeted** — incidents threaten economy/production/defense, not a guaranteed suffocation. Suffocation only comes from the player's own power/zoning failures.
+| Raider | hostile ship parks at a dock for **18 s**; DPS = **min(26, 8 + 0.4·poweredModules)** (scales with station value), ×**0.5** under Garrison doctrine. Targets a random non-life-support module — **but life support too** when **no Turret has ever been built**, the station has **2+ rooms**, and the doctrine isn't Garrison. A powered **Turret** destroys the raider instantly |
+- **Redundancy is the counter (M38), not blanket immunity:** life support can be hurt by a surge or raid *only* when the player skipped the cheap defenses (Battery / backup generator / Turret / Garrison). A beginner's single room is still spared (breach & raider-LS both gated on ≥2 rooms).
 
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).
 - **Trait — Hauler:** mining drone cargo ×**1.5** (10 → 15) while any Korro is aboard.
-- **Relations:** Korro→Human **−8**, Korro→Vry'l **−8**, Human→Korro **−8** (mutual), Korro↔Drenn/Thol 0, Korro→Korro +4. Drenn→Korro +8 (Drenn like everyone).
-- **Net effect:** a mixed Human/Korro O₂ room sits at harmony ≈ **−0.53** → −40% productivity and a mood drag (observed ~45 vs ~70). Survivable indefinitely if needs are met; only crosses into a skirmish when mood < 30. Fix = give Korro their own O₂ wing (separate room + Door).
+- **Relations (M42 — now HATE):** Korro⇄Human **−15** (mutual HATE), Korro⇄Vry'l **−15** (mutual HATE), Korro→Thol **−8** / Thol→Korro **−8**, Korro↔Drenn **0**, Korro→Korro **+4**.
+- **Net effect:** a mixed Human/Korro O₂ room now sits at harmony ≈ **−1.0** → the −40% productivity floor and a heavy mood drag. With M39 friction it reaches a skirmish even when fed (slow-burn 4/s). Fix = give Korro their **own O₂ wing** (separate room + Door).
+
+## Full relations matrix (M42 — implemented)
+Tiers each way: **LOVE +15 · LIKE +8 · KIN +4 · NEUTRAL 0 · DISLIKE −8 · HATE −15** (`src/relations.ts`). Row feels about column.
+| A \ B | Human | Drenn | Thol | Vry'l | Korro |
+|-------|:-----:|:-----:|:----:|:-----:|:-----:|
+| **Human** | +4 | +15 | −8 | 0 | −15 |
+| **Drenn** | +15 | +4 | +8 | +8 | +8 |
+| **Thol** | 0 | +8 | +4 | +15 | −8 |
+| **Vry'l** | 0 | +8 | +15 | +4 | −15 |
+| **Korro** | −15 | 0 | −8 | −15 | +4 |
+Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l. Drenn are the universal diplomat (liked by all, like all).
 
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.

@@ -35,15 +35,19 @@ The verified findings:
 Priority: **P0** = the two cardinal sins (runaway economy, dead failure-state) ·
 **P1** = make the existing systems bite · **P2** = depth & replayability.
 
-| # | Milestone | Fixes finding | Pri | Effort |
-|---|-----------|---------------|:---:|:------:|
-| 1 | **M37 — Recurring credit sink** | #1 runaway economy | P0 | M |
-| 2 | **M39 — Live skirmishes** | #2 dead failure-state | P0 | M |
-| 3 | **M38 — Incidents with teeth** | #3 ignorable incidents | P1 | M |
-| 4 | **M40 — Branching tech tree** | #4 shopping-list tech | P1 | L |
-| 5 | **M41 — Overflow consequences** | #5 caps = idle | P1 | S |
-| 6 | **M42 — Deeper relations** | (coarse political web) | P2 | M |
-| 7 | **M43 — Replayability layer** | #6 one-and-done | P2 | L |
+| # | Milestone | Fixes finding | Pri | Effort | Status |
+|---|-----------|---------------|:---:|:------:|:------:|
+| 1 | **M37 — Recurring credit sink** | #1 runaway economy | P0 | M | ✅ shipped |
+| 2 | **M39 — Live skirmishes** | #2 dead failure-state | P0 | M | ✅ shipped |
+| 3 | **M38 — Incidents with teeth** | #3 ignorable incidents | P1 | M | ✅ shipped |
+| 4 | **M40 — Branching tech tree** | #4 shopping-list tech | P1 | L | ✅ shipped |
+| 5 | **M41 — Overflow consequences** | #5 caps = idle | P1 | S | ✅ shipped |
+| 6 | **M42 — Deeper relations** | (coarse political web) | P2 | M | ✅ shipped |
+| 7 | **M43 — Replayability layer** | #6 one-and-done | P2 | L | 🔭 planned |
+
+> **Status:** every Depth-Epic milestone except **M43 (replayability/seeds/scenarios)** has
+> shipped. M38/M40/M41/M42 landed together — see the per-spec notes below and
+> `STRATEGY.md`/`BALANCE.md` for the live numbers.
 
 **Execution order:** M37 → M39 (the two that change the *core loop*), then M38 →
 M41 → M40 (make pressure & progression real), then M42 → M43 (depth & longevity).
@@ -87,7 +91,7 @@ headless checks) + `STRATEGY.md`/`BALANCE.md`/`COSTS.md` sync + local commit.
 
 ---
 
-### M38 — Incidents with teeth · P1 · M
+### M38 — Incidents with teeth · P1 · M ✅ SHIPPED
 **Why:** *"Incidents are ignorable by construction… the one thing that could kill me is walled off by design."*
 
 **Scope**
@@ -104,7 +108,7 @@ headless checks) + `STRATEGY.md`/`BALANCE.md`/`COSTS.md` sync + local commit.
 
 ---
 
-### M40 — Branching tech tree · P1 · L
+### M40 — Branching tech tree · P1 · L ✅ SHIPPED
 **Why:** *"Four nodes, no prerequisites, no opportunity cost. You buy all four and you're done forever."*
 
 **Scope**
@@ -120,7 +124,7 @@ headless checks) + `STRATEGY.md`/`BALANCE.md`/`COSTS.md` sync + local commit.
 
 ---
 
-### M41 — Overflow consequences · P1 · S
+### M41 — Overflow consequences · P1 · S ✅ SHIPPED
 **Why:** *"Caps that idle production are not economic pressure; they're a screensaver."*
 
 **Scope**
@@ -135,7 +139,7 @@ headless checks) + `STRATEGY.md`/`BALANCE.md`/`COSTS.md` sync + local commit.
 
 ---
 
-### M42 — Deeper relations · P2 · M
+### M42 — Deeper relations · P2 · M ✅ SHIPPED
 **Why:** *"Five species, a single ±8 matrix, social clamped at ±30 vs needs worth ±22 — the political web is a minority shareholder in mood."*
 
 **Scope**

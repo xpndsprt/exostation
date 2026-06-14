@@ -8,6 +8,7 @@ import { powerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
 import { miningSystem } from "../src/mining";
 import { foodSystem } from "../src/food";
+import { overflowSystem } from "../src/overflow";
 import { atmosphereSystem } from "../src/atmosphere";
 import { harmonySystem } from "../src/harmony";
 import { agentSystem } from "../src/agents";
@@ -17,8 +18,8 @@ import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
-import { toolLock, buyUnlock } from "../src/research";
-import { eventsSystem, forceEvent } from "../src/events";
+import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS } from "../src/research";
+import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
@@ -45,6 +46,7 @@ function step(w: World) {
   maintenanceSystem(w, DT);
   miningSystem(w, DT);
   foodSystem(w, DT);
+  overflowSystem(w, DT);
   atmosphereSystem(w);
   harmonySystem(w);
   agentSystem(w, DT);
@@ -995,7 +997,9 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   addStructure(w, "vat", 7, 6); // grows biomass, no synth consuming
   w.stock.biomass = 395;
   for (let i = 0; i < 600; i++) step(w);
-  check("Biomass plateaus at the storage cap", w.stock.biomass === BASE_CAPS.biomass);
+  // M41: production never exceeds the cap, but a near-full store now spoils, so
+  // it churns just under the cap instead of pinning exactly at it.
+  check("Biomass plateaus near the storage cap (capped, spoils)", w.stock.biomass <= BASE_CAPS.biomass && w.stock.biomass >= BASE_CAPS.biomass * 0.9);
   const before = storageCaps(w).biomass;
   addStructure(w, "silo", 8, 7);
   check("A Storage Silo raises the cap", storageCaps(w).biomass === before + SILO_BONUS);
@@ -1331,6 +1335,161 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("All five modules charged = beacon complete", beaconCharged(w) === 5);
   objectivesSystem(w, 0.1);
   check("Bringing the Beacon online wins the scenario", w.phase === "won");
+}
+
+// --- M42: deeper relations — LOVE/HATE tiers bite harder ---
+{
+  const mk = (other: "korro" | "thol") => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "o2gen", 6, 7);
+    addAgent(w, 7, 6, "human");
+    addAgent(w, 8, 6, other);
+    step(w);
+    const h = Object.values(w.agents).find((a) => a.species === "human")!;
+    return moodBreakdown(w, h);
+  };
+  const hate = mk("korro"); // human HATES korro (−15)
+  const dis = mk("thol"); // human DISLIKES thol (−8)
+  check("M42 a HATE neighbour hits social harder than a DISLIKE one", hate.social < dis.social);
+  check("M42 a HATE room turns more tense than a DISLIKE room", hate.harmony < dis.harmony);
+  check("M42 neighbours now rival needs in weight (±8 / ±15)", Math.abs(dis.social) >= 8 && Math.abs(hate.social) >= 15);
+}
+
+// --- M41: overflow consequences — full stores spoil and drag morale ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  const cap = storageCaps(w).minerals;
+  w.stock.minerals = cap;
+  overflowSystem(w, 1);
+  check("M41 a resource at cap spoils (loses units)", w.stock.minerals < cap);
+  check("M41 overflowing flags the morale drag", w.overflow === true);
+
+  const w2 = createWorld();
+  carve(w2, 5, 5, 9, 8);
+  recomputeRooms(w2);
+  w2.stock.minerals = cap * 0.5;
+  overflowSystem(w2, 1);
+  check("M41 a resource under cap does not spoil", w2.stock.minerals === cap * 0.5 && w2.overflow === false);
+
+  const w3 = createWorld();
+  carve(w3, 5, 5, 9, 8);
+  recomputeRooms(w3);
+  addStructure(w3, "solar", 6, 6);
+  addStructure(w3, "o2gen", 6, 7);
+  addAgent(w3, 7, 6, "human");
+  w3.stock.minerals = storageCaps(w3).minerals;
+  step(w3);
+  const hm = Object.values(w3.agents).find((a) => a.species === "human")!;
+  check("M41 overflow waste drags mood", moodBreakdown(w3, hm).overflow < 0 && w3.overflow === true);
+}
+
+// --- M38: incidents with teeth ---
+{
+  // no battery + lone O2 gen → a surge CAN take life support
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "o2gen", 7, 6);
+  powerSystem(w, 0.1);
+  const o2 = Object.values(w.structures).find((s) => s.kind === "o2gen")!;
+  forceEvent(w, "surge");
+  check("M38 a surge can fault a lone, battery-less life-support gen", o2.faultT > 0);
+}
+{
+  // a Battery soaks the spike → the surge hits the Synth, never life support
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "battery", 8, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "synth", 7, 7);
+  powerSystem(w, 0.1);
+  const o2 = Object.values(w.structures).find((s) => s.kind === "o2gen")!;
+  forceEvent(w, "surge");
+  check("M38 a Battery shields life support from a surge", o2.faultT === 0);
+}
+{
+  // a redundant second O2 gen also shields life support (no battery needed)
+  const w = createWorld();
+  carve(w, 5, 5, 11, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "solar", 7, 7);
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "o2gen", 9, 6);
+  powerSystem(w, 0.1);
+  forceEvent(w, "surge");
+  const hit = Object.values(w.structures).filter((s) => s.kind === "o2gen" && s.faultT > 0).length;
+  check("M38 a backup generator shields life support from a surge", hit === 0);
+}
+{
+  // raider damage scales with station value
+  const dps = (extra: number): number => {
+    const w = createWorld();
+    carve(w, 5, 5, 20, 12);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 6, 7);
+    addStructure(w, "solar", 7, 7);
+    addStructure(w, "solar", 8, 7);
+    addStructure(w, "o2gen", 7, 6);
+    for (let i = 0; i < extra; i++) addStructure(w, "synth", 9 + i, 6);
+    powerSystem(w, 0.1);
+    return raiderDps(w);
+  };
+  check("M38 raider damage rises with station size", dps(6) > dps(0));
+}
+
+// --- M40: branching tech tree — prerequisites + a mutually-exclusive fork ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 14, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "solar", 7, 7);
+  addStructure(w, "lab", 8, 6);
+  addStructure(w, "lab", 10, 6);
+  w.credits = 5000;
+  powerSystem(w, 0.1);
+  const indu = UNLOCKS.find((x) => x.id === "doc_industry")!;
+  check("M40 a doctrine is blocked without its prerequisite", buyUnlock(w, "doc_industry") === false);
+  check("M40 the block names the missing prerequisite", (canResearch(w, indu).reason ?? "").includes("Robotics"));
+  buyUnlock(w, "robotics");
+  check("M40 prerequisite met → the doctrine becomes researchable", canResearch(w, indu).ok === true);
+  check("M40 doctrine purchase succeeds", buyUnlock(w, "doc_industry") === true);
+  check("M40 the chosen doctrine is active", activeDoctrine(w) === "industry");
+  check("M40 Industrialist boost = ×1.15", industryBoost(w) === 1.15);
+  buyUnlock(w, "commerce"); // the Hospitality prerequisite
+  check("M40 choosing one doctrine permanently locks the others", buyUnlock(w, "doc_hospitality") === false);
+  const hosp = UNLOCKS.find((x) => x.id === "doc_hospitality")!;
+  check("M40 the locked sibling explains the exclusivity", (canResearch(w, hosp).reason ?? "").toLowerCase().includes("chose"));
+}
+{
+  // a Tier-3 node is unbuyable until its Tier-1 prerequisite is owned
+  const w = createWorld();
+  carve(w, 5, 5, 14, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 7);
+  addStructure(w, "lab", 8, 6);
+  addStructure(w, "lab", 10, 6);
+  addStructure(w, "lab", 12, 6);
+  w.credits = 5000;
+  powerSystem(w, 0.1);
+  check("M40 Fusion needs Robotics first", buyUnlock(w, "fusion") === false);
+  buyUnlock(w, "robotics");
+  check("M40 Fusion unlocks once Robotics is owned", buyUnlock(w, "fusion") === true && isUnlocked(w, "fusion"));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

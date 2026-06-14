@@ -6,6 +6,7 @@ import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
 import { miningSystem } from "./mining";
 import { foodSystem } from "./food";
+import { overflowSystem } from "./overflow";
 import { atmosphereSystem } from "./atmosphere";
 import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
@@ -16,7 +17,7 @@ import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
 import { beaconSystem } from "./beacon";
 import { objectivesSystem } from "./objectives";
-import { buyUnlock, toolLock, isUnlocked, poweredLabCount, UNLOCKS } from "./research";
+import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch } from "./research";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
 import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
@@ -59,6 +60,7 @@ function simStep(world: World, dt: number): void {
   maintenanceSystem(world, dt);
   miningSystem(world, dt);
   foodSystem(world, dt);
+  overflowSystem(world, dt);
   atmosphereSystem(world);
   harmonySystem(world);
   agentSystem(world, dt);
@@ -226,13 +228,9 @@ async function boot(): Promise<void> {
       const u = UNLOCKS.find((x) => x.id === id);
       if (!u || isUnlocked(world, id)) return;
       // Always give feedback — never an inert click.
-      const labs = poweredLabCount(world);
-      if (labs < u.labs) {
-        pushAlert(`${u.label} needs ${u.labs} powered Research Lab${u.labs > 1 ? "s" : ""} (you have ${labs}).`, "warn");
-        return;
-      }
-      if (world.credits < u.cost) {
-        pushAlert(`Not enough credits — ${u.label} costs ¢${u.cost}.`, "warn");
+      const r = canResearch(world, u);
+      if (!r.ok) {
+        pushAlert(`${u.label}: ${r.reason}`, "warn");
         return;
       }
       if (buyUnlock(world, id)) {

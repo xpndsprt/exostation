@@ -4,6 +4,7 @@ import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
 import { STRUCTURES } from "./structures";
 import { beaconActive } from "./beacon";
+import { activeDoctrine } from "./research";
 
 const MODULE_UPKEEP = 0.15; // credits/s per powered, operating module
 const WAGE = 0.2; // credits/s per resident crew member
@@ -75,7 +76,8 @@ export function economySystem(w: World, dt: number): void {
     }
     if (a.species === "drenn") hasDrenn = true;
   }
-  w.credits += guests * LODGING_RATE * dt;
+  const hospitality = activeDoctrine(w) === "hospitality";
+  w.credits += guests * LODGING_RATE * (hospitality ? 1.5 : 1) * dt; // Hospitality doctrine
 
   let hotels = 0; // guest capacity = Hotel Rooms
   let pods = 0; // crew capacity = Crew Quarters
@@ -110,7 +112,7 @@ export function economySystem(w: World, dt: number): void {
   let inbound = 0;
   for (const sh of w.ships) if (!sh.trader && !sh.hostile && sh.phase === "in") inbound += sh.guests ?? 0;
   let freeCap = hotels - guests - inbound;
-  const interval = SPAWN_INTERVAL * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
+  const interval = SPAWN_INTERVAL * (hospitality ? 0.7 : 1) * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;

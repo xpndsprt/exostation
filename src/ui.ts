@@ -8,7 +8,7 @@ import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
-import { UNLOCKS, isUnlocked, toolLock, poweredLabCount } from "./research";
+import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch } from "./research";
 import { BEACON_SPECIES, moduleActive } from "./beacon";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
@@ -428,9 +428,9 @@ export function updateHud(world: World): void {
       chip("👥", `${residents}/${pods}${dead ? ` <span class="muted">${dead}✕</span>` : ""}`, residents > pods) +
       chip("🏨", `${guests}/${hotels}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
-      chip("🍱", `${st.meals.rations}/${st.meals.fungal}`) +
-      chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}`) +
-      chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`) +
+      chip("🍱", `${st.meals.rations}/${st.meals.fungal}`, st.meals.rations >= caps.rations * 0.95 || st.meals.fungal >= caps.fungal * 0.95) +
+      chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}`, st.biomass >= caps.biomass * 0.95) +
+      chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`, st.minerals >= caps.minerals * 0.95) +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
 
@@ -562,7 +562,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       const b = moodBreakdown(world, a);
       moodLine =
         `<div>Mood ${Math.round(a.mood)}% <span class="muted">→ ${Math.round(b.target)}</span></div>` +
-        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}</div>`;
+        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}${b.overflow ? ` · waste ${sgn(b.overflow)}` : ""}</div>`;
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
@@ -670,7 +670,8 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
   const anyLab = Object.values(world.structures).some((s) => s.kind === "lab");
   // Only rebuild when something visible changes. Rebuilding the panel's HTML
   // every frame would destroy a button mid-click, so the click never registers.
-  const sig = `${labCount}|${anyLab}|${locked.map((u) => `${u.id}:${world.credits >= u.cost ? 1 : 0}:${labCount >= u.labs ? 1 : 0}`).join(",")}`;
+  const states = locked.map((u) => canResearch(world, u));
+  const sig = `${labCount}|${anyLab}|${locked.map((u, i) => `${u.id}:${states[i].ok ? 1 : 0}:${states[i].reason ?? ""}`).join(",")}`;
   if (el.dataset.sig === sig) return;
   el.dataset.sig = sig;
   el.style.display = "";
@@ -679,15 +680,17 @@ export function renderTech(world: World, onBuy: (id: string) => void): void {
     : anyLab ? ' <span class="muted">— Lab unpowered</span>' : ' <span class="muted">— build a Lab</span>';
   const head = `<h3>🔬 TECH${labNote}</h3>`;
   const rows = locked
-    .map((u) => {
-      const afford = world.credits >= u.cost;
-      const labsOk = labCount >= u.labs;
-      const can = labsOk && afford;
-      const label = can ? "Research" : !labsOk ? `Needs ${u.labs} Lab${u.labs > 1 ? "s" : ""}` : `Need ¢${u.cost}`;
+    .map((u, i) => {
+      const st = states[i];
+      const label = st.ok ? "Research" : st.reason ?? "Locked";
+      // prerequisite / exclusivity note, so the branching structure is legible
+      const reqLabel = (u.requires ?? []).map((r) => UNLOCKS.find((x) => x.id === r)?.label ?? r).join(", ");
+      const note = reqLabel ? `<div class="ul-d muted">After: ${reqLabel}</div>` : "";
+      const excl = (u.excludes ?? []).length ? `<div class="ul-d muted">One doctrine only</div>` : "";
       return (
         `<div class="unlock"><div class="ul-h"><span class="goal">${u.label}</span><span class="num">🔬×${u.labs} · ¢${u.cost}</span></div>` +
-        `<div class="ul-d">${u.desc}</div>` +
-        `<button data-id="${u.id}" class="${can ? "" : "cant"}" title="${label}">${label}</button></div>`
+        `<div class="ul-d">${u.desc}</div>${note}${excl}` +
+        `<button data-id="${u.id}" class="${st.ok ? "" : "cant"}" title="${label}">${label}</button></div>`
       );
     })
     .join("");

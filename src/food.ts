@@ -4,6 +4,7 @@ import { TRAITS } from "./species";
 import { productivity } from "./harmony";
 import { storageCaps } from "./storage";
 import { beaconActive } from "./beacon";
+import { industryBoost } from "./research";
 
 // room productivity multiplier for a structure's location
 function roomProd(w: World, cell: number): number {
@@ -26,7 +27,7 @@ function botanistIn(w: World, roomId: number): boolean {
 // spores). Meals are stored per food line; crew eat the line their species eats.
 export function foodSystem(w: World, dt: number): void {
   const caps = storageCaps(w);
-  const boost = aiBoost(w) * (beaconActive(w, "bloomgarden") ? 1.5 : 1); // AI Core + Vry'l Bloom Garden
+  const boost = aiBoost(w) * industryBoost(w) * (beaconActive(w, "bloomgarden") ? 1.5 : 1); // AI Core + Industrialist + Vry'l Bloom Garden
   for (const id in w.structures) {
     const s = w.structures[id];
     if (!s.powered) continue;

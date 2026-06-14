@@ -146,9 +146,19 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 **Relations are asymmetric** — A's feeling about B is not always B's feeling about A. **Read the table by row:** each row is *how that species feels about the species in each column.*
 
-> **⚙️ Shipped vs 🔭 target.** The full 9×9 table below is the **design target**, not the live matrix. Today the game wires relations only among the **5 shipped species** (Humans, Drenn, Korro, Vry'l, Thol). The shipped weights are **LIKE +8 / DISLIKE −8 / KIN +4 / NEUTRAL 0** (see `src/relations.ts` / `BALANCE.md`). **LOVE / HATE (±15) are reserved for the unshipped Tier-3 species** — so no live pair currently uses ♥ or ✖. The rows/columns for Sszra, Chlorithe, Naaz, and Voltaar are 🔭 planned.
+> **⚙️ Shipped vs 🔭 target.** The full 9×9 table further below is the **design target**, not the live matrix. Today the game wires relations among the **5 shipped species** (Humans, Drenn, Korro, Vry'l, Thol), and **as of M42 it uses the full LOVE/HATE (±15) tiers** — they are no longer reserved for Tier-3. The rows/columns for Sszra, Chlorithe, Naaz, and Voltaar remain 🔭 planned. The **live 5×5 matrix** (source of truth: `src/relations.ts` / `BALANCE.md`):
+>
+> | feels about → | Hum | Drn | Kor | Vry | Thl |
+> |---------------|:---:|:---:|:---:|:---:|:---:|
+> | **Humans** | — | ♥ | ✖ | · | – |
+> | **Drenn**  | ♥ | — | + | + | + |
+> | **Korro**  | ✖ | · | — | ✖ | – |
+> | **Vry'l**  | · | + | ✖ | — | ♥ |
+> | **Thol**   | · | + | – | ♥ | — |
+>
+> Strong rivalries (✖ both ways): **Human⇄Korro**, **Vry'l⇄Korro** — the same-air Korro is the layout problem. Strong alliances (♥ both ways): **Human⇄Drenn**, **Thol⇄Vry'l**. Drenn are the universal diplomat.
 
-**Legend:** ♥ Love (±15, 🔭 Tier-3 only) · `+` Like (+8) · `·` Neutral (0) · `–` Dislike (−8) · ✖ Hate (−15, 🔭 Tier-3 only)
+**Legend (full target table):** ♥ Love (±15) · `+` Like (+8) · `·` Neutral (0) · `–` Dislike (−8) · ✖ Hate (−15)
 
 | feels about → | Hum | Drn | Kor | Vry | Thl | Ssz | Chl | Naz | Vol |
 |---------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -178,7 +188,7 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 # PROGRESSION & UNLOCKS
 
-> ⚙️ **Shipped (simpler than below):** a **credit-gated tech tree** — research at a powered Research Lab spending credits unlocks Methane Life-Support, Fungal Synthesis, Cargo Logistics, and Station Security (see `COSTS.md` / `BALANCE.md`). 🔭 The full wealth-**and**-reputation gating per species, and the deep multi-branch research tree (Containment, Robotics, Sensors, etc.) described below, are the planned target.
+> ⚙️ **Shipped (simpler than below):** a **credit-gated tech tree** with **tiers (1–3 Labs), prerequisites, and a mutually-exclusive doctrine fork** (M40 — Industrialist / Hospitality / Garrison; pick one, the others lock). Research at a powered Research Lab unlocks the catalog (see `COSTS.md` / `BALANCE.md`). 🔭 The full wealth-**and**-reputation gating per species, and the deeper multi-branch research tree (Containment, Sensors, etc.) described below, are the planned target.
 
 Growth is gated by two things working together:
 
@@ -191,7 +201,7 @@ So a species only arrives when you can *both afford the reputation* **and** *kee
 
 # TECHNOLOGY → PROFIT → DANGER
 
-> ⚙️ **Shipped:** the **political web → mood → tension → skirmish** chain runs in the game (relations drive room harmony and mood; chronic tension between cohabiting rivals erupts into live skirmishes — see `BALANCE.md` "Tension & skirmishes", M39). 🔭 **Planned:** **faction takeover** (a winning faction seizing the station as a soft loss) and the full Security I–III tiers / breach-collateral cascade described below are vision, not yet built.
+> ⚙️ **Shipped:** the **political web → mood → tension → skirmish** chain runs in the game (relations drive room harmony and mood; chronic tension between cohabiting rivals erupts into live skirmishes — see `BALANCE.md` "Tension & skirmishes", M39). As of **M42** the web uses the full **LOVE/HATE (±15)** tiers and neighbors weigh as much as needs, so layout politics genuinely bite. 🔭 **Planned:** **faction takeover** (a winning faction seizing the station as a soft loss) and the full Security I–III tiers / breach-collateral cascade described below are vision, not yet built.
 
 Each species has a **Tech Level (TL 1–6)** that rises with tier. Tech cuts both ways:
 

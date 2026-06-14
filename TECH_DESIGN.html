@@ -80,15 +80,17 @@ tr:hover td { background: #eef3ff; }
   maintenanceSystem  // 2.  machinery wears down while running
   miningSystem       // 3.  drone shuttle loop -&gt; minerals
   foodSystem         // 4.  Vats grow base resources; Synths -&gt; meals
-  atmosphereSystem   // 5.  per-room gas (o2 / ch4 / mixed / none)
-  harmonySystem      // 6.  per-room relations -&gt; harmony (productivity + mood)
-  agentSystem        // 7.  needs decay, suit/o2, utility task selection, movement
-  moodSystem         // 8.  ease mood toward needs+social+harmony target
-  combatSystem       // 9.  tension -&gt; skirmishes, deaths, collateral
-  economySystem      // 10. upkeep sink, lodging, trade, immigration shuttles
-  eventsSystem       // 11. periodic incidents (surge/breach/shock/raid)
-  requestsSystem     // 12. species requests/goals, reputation
-  objectivesSystem   // 13. scenario goal progression, win/lose
+  overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
+  atmosphereSystem   // 6.  per-room gas (o2 / ch4 / mixed / none)
+  harmonySystem      // 7.  per-room relations -&gt; harmony (productivity + mood)
+  agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
+  moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
+  combatSystem       // 10. tension -&gt; skirmishes, deaths, collateral
+  economySystem      // 11. upkeep sink, lodging, trade, immigration shuttles
+  eventsSystem       // 12. periodic incidents (surge/breach/shock/raid — M38 teeth)
+  requestsSystem     // 13. species requests/goals, reputation
+  beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
+  objectivesSystem   // 15. scenario goal progression, win/lose
   world.tick++</code></pre>
 <h3>Tick / time model</h3>
 <ul><li>Fixed simulation step: <strong>10 ticks/sec at 1×</strong> (<code>SIM_HZ</code>), driven by an accumulator inside PixiJS's <code>app.ticker</code>; rendering is decoupled and happens on the same RAF, gated by a <code>needRedraw</code> flag.</li><li>Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s). The accumulator caps catch-up at 120 steps/frame to avoid spiral-of-death.</li><li>While paused, a lightweight <code>refresh()</code> still recomputes rooms / power / atmosphere so edits show their effect immediately.</li></ul>
@@ -145,6 +147,7 @@ interface World {
   unlocked: Record&lt;string, boolean&gt;;          // researched tech
   priceMult, priceT: number;                  // market shock multiplier + remaining time
   notify: string[];                           // toast queue drained by the UI
+  overflow: boolean;                          // a store is wasting at its cap (M41 mood drag)
   breaches: Breach[];                         // open hull breaches crew rush to reseal
   reputation: Partial&lt;Record&lt;Species, number&gt;&gt;; requests: StationRequest[]; seen: Species[];
   tick: number; speed: 0|1|2|3; nextId: number;
@@ -170,7 +173,9 @@ interface World {
 <h3>Pathfinding (<code>pathfind.ts</code>)</h3>
 <p><strong>A\</strong>* over walkable cells (<code>floor</code> + <code>door</code>), 4-directional, Manhattan heuristic, linear-scan open set (fine at this grid size). Returns the cell list to step onto (excludes start), <code>[]</code> if already there, <code>null</code> if unreachable. <code>nearestBreathable</code> is a separate BFS to the closest room of a given gas.</p>
 <h3>Mood, harmony &amp; relations (<code>mood.ts</code>, <code>harmony.ts</code>, <code>relations.ts</code>)</h3>
-<p><code>RELATIONS</code> is an asymmetric per-species opinion matrix. <strong>Harmony</strong> is computed per room from the pairwise relations of its current occupants and maps to a <strong>productivity multiplier</strong> (≈0.6–1.4) applied to food production and repair speed. <strong>Mood</strong> eases toward a target of <code>base + needs + nearby-neighbour social opinion + room harmony</code>. The same <code>moodBreakdown</code> feeds the UI tooltip.</p>
+<p><code>RELATIONS</code> is an asymmetric per-species opinion matrix using two strength tiers each way (M42): <strong>LOVE +15 / LIKE +8 / KIN +4 / DISLIKE −8 / HATE −15</strong>. <strong>Harmony</strong> is computed per room from the pairwise relations of its current occupants and maps to a <strong>productivity multiplier</strong> (≈0.6–1.4) applied to food production and repair speed. <strong>Mood</strong> eases toward a target of <code>base + needs + nearby-neighbour social opinion (clamped ±45) + room harmony + command + overflow</code>. The <code>overflow</code> term is a −5 station-wide drag set by <code>overflowSystem</code> when any store is wasting at its cap (M41). The same <code>moodBreakdown</code> feeds the UI tooltip.</p>
+<h3>Overflow / spoilage (<code>overflow.ts</code>)</h3>
+<p>Runs after food/mining: a resource ≥95% of its cap <strong>spoils</strong> at 2%/s (floored at 95%, so it churns under the cap), and any store ≥99% sets <code>world.overflow</code> (the mood drag above) + a toast. Makes overproduction a real cost instead of free idling (M41).</p>
 <h3>Combat: tension → skirmishes (<code>combat.ts</code>)</h3>
 <p>Tension rises while a disliked neighbour is in proximity — <strong>fast</strong> when morale has cratered, or a <strong>slow burn</strong> in a chronically tense room even when everyone is fed (so forcing rivals to cohabit eventually erupts). Separation bleeds it off. At 100 tension an agent strikes the nearest disliked target (one-sided by relation, damage scales with species <code>power</code>). A death can wreck a module in the room as collateral — which may vent it into a breach.</p>
 <h3>Mining (<code>mining.ts</code>)</h3>
@@ -182,9 +187,9 @@ interface World {
 <h3>Economy (<code>economy.ts</code>)</h3>
 <ul><li><strong>Upkeep sink:</strong> crew <strong>wages</strong> + per-<strong>operating-module</strong> cost each tick. An idle station bleeds credits; only an active economy stays in the black.</li><li><strong>Net-income readout:</strong> <code>creditRate</code> is an exponentially-smoothed ¢/s shown on the HUD so lumpy payouts read as a trend.</li><li><strong>Lodging:</strong> living guests pay per second.</li><li><strong>Guest arrivals:</strong> a powered dock spawns Drenn visitors when a Hotel Room is free; Drenn reputation shortens the interval. A ship sprite parks at the dock.</li><li><strong>Crew immigration:</strong> the shuttle path above.</li><li><strong>Trade:</strong> with a powered Trade Hub and minerals in stock, a trader periodically buys a batch at the current <code>priceMult</code> (Drenn aboard raise the price).</li></ul>
 <h3>Tech tree (<code>research.ts</code>)</h3>
-<p>Credits spent at a <strong>powered Research Lab</strong> buy unlocks (<code>unlocked</code> map): Methane Life-Support (CH₄ gen → host Thol), Fungal Synthesis (spore/fungal chain → host Vry'l), Cargo Logistics (Storage Silos), Station Security (Turrets). Gated build tools are locked out of the palette until purchased.</p>
+<p>Credits spent at <strong>powered Research Labs</strong> buy unlocks (<code>unlocked</code> map); higher tiers need more powered Labs. Each <code>UnlockDef</code> may carry <code>requires[]</code> (prerequisite unlocks) and <code>excludes[]</code> (siblings it permanently locks). M40 adds: prerequisites on the Tier-3 nodes (Fusion←Robotics, Bulk Trade←Commerce, Cybernetics←Cargo Logistics) and a <strong>mutually-exclusive doctrine fork</strong> — <code>doc_industry</code> / <code>doc_hospitality</code> / <code>doc_garrison</code>, each excluding the other two. <code>canResearch(w, u)</code> is the single gate (labs + credits + requires + excludes) used by <code>buyUnlock</code>, the tech panel and the toast feedback. <code>activeDoctrine(w)</code> / <code>industryBoost(w)</code> expose the chosen specialization to the other systems (mining/food/repair, economy lodging, raider damage). Gated build tools are locked out of the palette until purchased.</p>
 <h3>Incidents (<code>events.ts</code>)</h3>
-<p>After a grace period, periodic escalating incidents fire, chosen deterministically by tick hash: <strong>power surge</strong> (a module trips offline for a while), <strong>hull breach</strong> (only with 2+ enclosed rooms so crew can flee — vents a wall, crew rush to reseal), <strong>market shock</strong> (mineral price ×2 or ×0.5 for a window), <strong>raider</strong> (a hostile ship chews modules until a powered Turret drives it off). Incidents never target life-support generators, so suffocation only ever comes from the player's own power/zoning mistakes.</p>
+<p>After a grace period, periodic escalating incidents fire, chosen deterministically by tick hash: <strong>power surge</strong>, <strong>hull breach</strong> (only with 2+ enclosed rooms so crew can flee — vents a wall, crew rush to reseal), <strong>market shock</strong> (mineral price ×2 or ×0.5), <strong>raider</strong> (a hostile ship chews modules until a powered Turret drives it off). <strong>M38 gives incidents teeth via redundancy gates:</strong> a surge can trip a life-support generator only when <code>surgeVulnerableLS</code> (no battery built <strong>and</strong> a lone generator for that gas); <code>raiderDps(w)</code> scales with powered-module count (8→26) and is halved by the Garrison doctrine; an undefended station (no Turret ever built, 2+ rooms, not Garrison) exposes life support to the raider too. So the counter to a lethal incident is cheap redundancy, not blanket immunity — and a single-room beginner is still spared.</p>
 <h3>Requests &amp; reputation (<code>requests.ts</code>)</h3>
 <p>Seen species post time-limited <strong>requests</strong> (host N of us / keep us content / build a Lounge). Fulfilling pays credits + <strong>reputation</strong>; letting one expire costs reputation. Reputation (0..100, default 50) feeds back into guest arrival frequency and trade.</p>
 <h3>Objectives &amp; win/lose (<code>objectives.ts</code>)</h3>

@@ -1,6 +1,6 @@
 # EXOSTATION — MVP Scope & Milestone History
 
-> **STATUS — the MVP is complete; the game is now well beyond it (~M39).**
+> **STATUS — the MVP is complete; the game is now well beyond it (~M42).**
 > This document's original purpose was to define the deliberately small first
 > build (M0–M7). That slice **shipped long ago** and every item below it is
 > historical. The game has since grown through multi-gas atmospheres, a political
@@ -86,6 +86,26 @@ From a hardcore-systems review (see [`DEPTH_EPIC.md`](DEPTH_EPIC.md)):
   erupt, and the cure stays *architecture* (separate wings + Door). Previously the combat
   system effectively never fired.
 
+### M38 + M40 + M41 + M42 — the "Depth Epic" second wave *(shipped ✓)*
+The rest of the Depth Epic except replayability (M43):
+- **M38 — Incidents with teeth:** incidents now punish a lack of redundancy instead of
+  being walled off. A power surge can knock out a **lone, battery-less life-support
+  generator**; **raider damage scales with station size** and can reach **life support on
+  an undefended** (no-Turret, 2+-room) station. The counters are cheap — a Battery, a
+  backup generator, a Turret, or the Garrison doctrine — and a beginner's single room
+  stays safe.
+- **M40 — Branching tech tree:** unlocks gained **prerequisites** (Fusion←Robotics,
+  Bulk Trade←Commerce, Cybernetics←Cargo Logistics) and a **mutually-exclusive doctrine
+  fork** — pick **one** of Industrialist / Hospitality / Garrison and the other two lock
+  for the run. The tech panel shows prereq/exclusivity state.
+- **M41 — Overflow consequences:** a resource sitting near its cap **spoils** (~2%/s) and
+  the visible waste is a **station-wide morale drag** — overproduction now costs you, so
+  right-sizing production and trade capacity is a live decision rather than free idling.
+- **M42 — Deeper relations:** the political web uses the full **LOVE/HATE (±15)** tiers
+  with pointed rivalries (Human⇄Korro, Vry'l⇄Korro) and alliances (Thol⇄Vry'l,
+  Human⇄Drenn), and neighbor weight was raised to **rival needs** — layout politics now
+  drive real decisions (the same-air Korro needs its own wing).
+
 ### Content & polish wave *(shipped ✓)*
 - **Lighting & shadows:** a world-space lightmap dims the interior; powered emitters
   (a new **Light Fixture** + generators/lounge/etc.) cast warm light pools, and modules
@@ -125,13 +145,12 @@ Still deferred or planned:
 - **Food quality tiers / palate** — meals as more than a single satisfaction value.
 - **Refinery / fuel** — processing minerals into fuel and selling it.
 - **Faction takeover** — hostile factions seizing the station.
-- **Branching research** (M40) — prerequisites, tiers, and a mutually-exclusive
-  specialization fork (the current tech tree is flat).
 - **Audio** (M31) — the remaining Reviewer's-Epic item.
+- **Replayability** (M43) — seeded starts, asymmetric scenarios, post-win escalation.
 
-> Later Depth-Epic milestones (M38 incidents-with-teeth, M40 branching tech, M41 overflow
-> consequences, M42 deeper relations, M43 replayability/seeds/scenarios) are specced in
-> [`DEPTH_EPIC.md`](DEPTH_EPIC.md) but not all shipped — treat that doc as the live roadmap.
+> The Depth-Epic roadmap (see [`DEPTH_EPIC.md`](DEPTH_EPIC.md)) is now **complete except
+> M43** (replayability/seeds/scenarios): M37/M39 shipped in the first wave, M38/M40/M41/M42
+> in the second. Treat that doc as the live roadmap for what remains.
 
 ---
 

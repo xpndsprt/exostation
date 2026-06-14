@@ -3,6 +3,7 @@ import { TRAITS } from "./species";
 import { storageCaps } from "./storage";
 import { aiBoost } from "./structures";
 import { beaconActive } from "./beacon";
+import { industryBoost } from "./research";
 
 const DRONE_SPEED = 6; // tiles / second
 const CARGO_CAP = 10;
@@ -45,7 +46,7 @@ function nearestSite(w: World, cell: number): Site | null {
 // assignment is a post-MVP radar feature).
 export function miningSystem(w: World, dt: number): void {
   const cap = cargoCap(w);
-  const rate = MINE_RATE * aiBoost(w) * (beaconActive(w, "orerefinery") ? 1.5 : 1); // AI Core + Korro Ore Refinery
+  const rate = MINE_RATE * aiBoost(w) * industryBoost(w) * (beaconActive(w, "orerefinery") ? 1.5 : 1); // AI Core + Industrialist + Korro Ore Refinery
   for (const id in w.drones) {
     const d = w.drones[id];
     const bay = w.structures[d.bayId];

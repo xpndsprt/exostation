@@ -36,6 +36,7 @@ export function createWorld(): World {
     priceMult: 1,
     priceT: 0,
     notify: [],
+    overflow: false,
     breaches: [],
     reputation: {},
     requests: [],

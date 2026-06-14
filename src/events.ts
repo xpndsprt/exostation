@@ -1,6 +1,7 @@
 import { World } from "./types";
 import { STRUCTURES } from "./structures";
 import { idx, inBounds, setCell, exteriorCell } from "./world";
+import { activeDoctrine } from "./research";
 
 // Periodic, escalating station incidents that make batteries, layout and
 // Security matter under duress. Deterministic from the tick so runs replay.
@@ -9,7 +10,11 @@ const BASE_INTERVAL = 90; // seconds between incidents (shrinks slightly over ti
 const SURGE_FAULT = 20; // seconds a surged module stays offline
 const SHOCK_TIME = 40; // seconds a market shock lasts
 const RAID_TIME = 18; // seconds a raider lingers
-const RAID_DPS = 8; // condition/sec a raider chews off a module (no Turret)
+// Raider damage scales with station value (M38): a fat, undefended station is a
+// fat target. condition/sec = BASE + PER·(powered modules), capped at MAX.
+const RAID_DPS_BASE = 8;
+const RAID_DPS_PER = 0.4;
+const RAID_DPS_MAX = 26;
 
 function hash(n: number): number {
   return (n * 2654435761) >>> 0;
@@ -20,11 +25,49 @@ function interval(w: World): number {
   return Math.max(60, BASE_INTERVAL - Math.floor(w.tick / 6000) * 5);
 }
 
-// Incidents never strike life support — a single O₂/CH₄ outage would guarantee a
-// wipe. They hit production, economy and defence instead; suffocation only comes
-// from the player's own power/zoning mistakes (and breaches, which need a 2nd room).
+// Production/economy/defence modules are always fair game. Life support
+// (O₂/CH₄ generators) is protected *by default* — but that protection is now
+// earned through redundancy, not granted unconditionally (M38, see below).
+function isLifeSupport(kind: string): boolean {
+  return kind === "o2gen" || kind === "ch4gen";
+}
 function targetable(kind: string): boolean {
-  return kind !== "o2gen" && kind !== "ch4gen";
+  return !isLifeSupport(kind);
+}
+
+// Total battery capacity built — a battery bank absorbs a power-surge spike.
+function stationBatteryMax(w: World): number {
+  let max = 0;
+  for (const id in w.structures) max += STRUCTURES[w.structures[id].kind].battery;
+  return max;
+}
+function kindCount(w: World, kind: string): number {
+  let n = 0;
+  for (const id in w.structures) if (w.structures[id].kind === kind) n++;
+  return n;
+}
+function hasTurretBuilt(w: World): boolean {
+  for (const id in w.structures) if (w.structures[id].kind === "turret") return true;
+  return false;
+}
+
+// A surge can fry a life-support generator only if the player skipped *both*
+// forms of redundancy: a Battery Bank to soak the spike, and a backup generator
+// for that gas. Build either and a surge can never take that room's air.
+function surgeVulnerableLS(w: World, kind: string): boolean {
+  if (!isLifeSupport(kind)) return false;
+  return stationBatteryMax(w) <= 0 && kindCount(w, kind) <= 1;
+}
+
+// Condition lost per second by a raid, scaled to station size.
+export function raiderDps(w: World): number {
+  let n = 0;
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    if (STRUCTURES[s.kind].draw > 0 && s.powered) n++;
+  }
+  const garrison = activeDoctrine(w) === "garrison" ? 0.5 : 1; // Garrison doctrine halves it
+  return Math.min(RAID_DPS_MAX, RAID_DPS_BASE + n * RAID_DPS_PER) * garrison;
 }
 
 function enclosedRoomCount(w: World): number {
@@ -80,13 +123,16 @@ function handleRaiders(w: World, dt: number): void {
     }
   }
   if (raided) {
-    // focus fire one module at a time (changes ~once per second)
+    // An undefended, established station (no Turret ever built, 2+ rooms) exposes
+    // even life support to the raider — so "build Security" is a real decision,
+    // not optional. A beginner's single room stays safe.
+    const lsExposed = !hasTurretBuilt(w) && enclosedRoomCount(w) >= 2 && activeDoctrine(w) !== "garrison";
     const machines = Object.values(w.structures).filter(
-      (s) => STRUCTURES[s.kind].draw > 0 && s.condition > 0 && targetable(s.kind),
+      (s) => STRUCTURES[s.kind].draw > 0 && s.condition > 0 && (targetable(s.kind) || (lsExposed && isLifeSupport(s.kind))),
     );
     if (machines.length) {
       const m = machines[hash(Math.floor(w.tick / 10)) % machines.length];
-      m.condition = Math.max(0, m.condition - RAID_DPS * dt);
+      m.condition = Math.max(0, m.condition - raiderDps(w) * dt);
     }
   }
 }
@@ -110,15 +156,18 @@ export function forceEvent(w: World, type: "surge" | "breach" | "shock" | "raid"
   return raid(w);
 }
 
-// Power surge: a random running machine trips offline for a while.
+// Power surge: a random running machine trips offline for a while. Life support
+// is included only when it's unredundant (no Battery + a lone generator) — so
+// the counter to a life-threatening surge is redundancy, not blanket immunity.
 function surge(w: World): boolean {
   const machines = Object.values(w.structures).filter(
-    (s) => STRUCTURES[s.kind].draw > 0 && s.powered && s.faultT <= 0 && targetable(s.kind),
+    (s) => STRUCTURES[s.kind].draw > 0 && s.powered && s.faultT <= 0 && (targetable(s.kind) || surgeVulnerableLS(w, s.kind)),
   );
   if (machines.length === 0) return false;
   const m = machines[hash(w.tick + 1) % machines.length];
   m.faultT = SURGE_FAULT;
-  w.notify.push(`Power surge — ${STRUCTURES[m.kind].label} tripped offline.`);
+  const warn = isLifeSupport(m.kind) ? " — life support is DOWN, build a Battery or backup generator!" : ".";
+  w.notify.push(`Power surge — ${STRUCTURES[m.kind].label} tripped offline${warn}`);
   return true;
 }
 

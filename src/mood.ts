@@ -3,7 +3,7 @@ import { RELATIONS } from "./relations";
 import { beaconActive } from "./beacon";
 
 const PROXIMITY = 4; // Manhattan tiles — "living next to each other"
-const SOCIAL_CLAMP = 30;
+const SOCIAL_CLAMP = 45; // M42: neighbors now matter as much as needs (±~22)
 const RATE = 0.5; // mood easing per second toward its target
 const BASE = 50;
 
@@ -13,10 +13,12 @@ export interface MoodBreakdown {
   social: number; // summed neighbor opinions (clamped)
   harmony: number; // contribution from the room's harmony
   command: number; // station-wide lift from an active Command Hub
+  overflow: number; // morale hit from resources visibly going to waste at cap
   target: number; // resulting target mood (0..100)
 }
 
 const COMMAND_LIFT = 8; // mood bonus while a Human-staffed Command Hub runs
+const OVERFLOW_HIT = -5; // morale drag while a resource is wasting at its cap (M41)
 
 // Single source of truth for what an agent's mood is pulled toward. The system
 // eases actual mood toward this; the UI reads the same breakdown for tooltips.
@@ -38,8 +40,9 @@ export function moodBreakdown(w: World, a: Agent): MoodBreakdown {
   const rid = w.cells[a.cell].roomId;
   const harmony = rid >= 0 && w.rooms[rid] ? w.rooms[rid].harmony * 10 : 0;
   const command = beaconActive(w, "cmdhub") ? COMMAND_LIFT : 0;
-  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command));
-  return { base: BASE, needs, social, harmony, command, target };
+  const overflow = w.overflow ? OVERFLOW_HIT : 0;
+  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command + overflow));
+  return { base: BASE, needs, social, harmony, command, overflow, target };
 }
 
 // Mood blends need-satisfaction with how an agent feels about nearby neighbors

@@ -161,11 +161,11 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 ## 9 · The species (who you're hosting)
 | Species | Breathes | Likes / Dislikes | Combat power | Notes |
 |---------|----------|------------------|:-----------:|-------|
-| **Human** | O₂ | likes Drenn · **dislikes Thol** | 20 | Rations diet. Your first residents — an O₂ room + Rations + a bunk + a dock brings them. |
-| **Drenn** | O₂ | likes everyone | 18 | Rations diet. Easy guests; share air & food with humans. |
-| **Thol** | **CH₄ (methane)** | likes Drenn · neutral to humans | **35** | Rations diet, but need a sealed methane wing; strong in a fight. |
-| **Vry'l** | O₂ | likes Drenn · neutral to others | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
-| **Korro** | O₂ | **dislikes Humans & Vry'l** (mutual with Humans) · neutral to Drenn/Thol | **25** | Rations diet, **shares humans' air** — the first rival you can't separate by gas alone. Strong haulers (see traits). |
+| **Human** | O₂ | **loves Drenn** · dislikes Thol · **HATES Korro** | 20 | Rations diet. Your first residents — an O₂ room + Rations + a bunk + a dock brings them. |
+| **Drenn** | O₂ | **loves Humans** · likes everyone | 18 | Rations diet. The universal diplomat — easy guests, great social glue. |
+| **Thol** | **CH₄ (methane)** | **loves Vry'l** · likes Drenn · dislikes Korro · neutral to humans | **35** | Rations diet, but need a sealed methane wing; strong in a fight. A Thol+Vry'l wing is a happy, productive pairing. |
+| **Vry'l** | O₂ | **loves Thol** · likes Drenn · **HATES Korro** · neutral to humans | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
+| **Korro** | O₂ | **HATED by Humans & Vry'l** (mutual) · disliked by Thol · neutral to Drenn | **25** | Rations diet, **shares humans' air** — the pariah you can't separate by gas alone. Needs its own O₂ wing (+ Door). Strong haulers (see traits). |
 
 Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them. **Korro are the twist:** they breathe the *same* O₂ as your humans and eat the *same* Rations, so you **can't keep them apart with gas zoning** — you must give them their **own O₂ wing** (separate room, linked by a Door) or the shared room turns tense.
 
@@ -194,12 +194,12 @@ Each request shows its **reward (credits)**, **rep gain**, and a **countdown** (
 
 ---
 
-## 10 · The political web (M10) — mood from neighbors
-- Every species holds an **opinion** of every other (asymmetric). Living within ~**4 tiles** of another crew member applies a mood delta:
-  - **Like ≈ +8**, **Dislike ≈ −8**, same-species ≈ +4.
-- **Mood = needs satisfaction + summed neighbor opinions** (clamped). The **mood dot** over each head is green (happy) → yellow → red (miserable); the 🙂 chip shows station average.
-- Current relations that matter: **Humans dislike Thol** (one-sided — Thol don't mind humans). Drenn are universally liked and make great social glue.
-- **Takeaway:** place friends together and keep resented pairs apart — even across a wall, proximity counts. A well-laid-out station keeps everyone in the green on its own.
+## 10 · The political web (M10 / M42) — mood from neighbors
+- Every species holds an **opinion** of every other (asymmetric). Living within ~**4 tiles** of another crew member applies a mood delta. **Two strength tiers each way (M42):**
+  - **Love ≈ +15**, **Like ≈ +8**, same-species ≈ +4, **Dislike ≈ −8**, **Hate ≈ −15**.
+- **Mood = needs satisfaction + summed neighbor opinions** (clamped at ±45). Neighbors now matter **as much as needs** — two haters next door can crater a fed crew member. The **mood dot** over each head is green → yellow → red; the 🙂 chip shows station average.
+- The relations that drive layout: **Humans ⇄ Korro HATE** and **Vry'l ⇄ Korro HATE** (so the same-air Korro must get its **own O₂ wing**), **Thol ⇄ Vry'l LOVE** and **Humans ⇄ Drenn LOVE** (productive, happy pairings), and **Drenn** like everyone — the perfect glue/buffer.
+- **Takeaway:** place lovers together and keep haters apart — even across a wall, proximity counts. Drenn between two rivals soften the blow. A well-laid-out station keeps everyone in the green on its own; a careless one full of haters falls into skirmishes fast.
 
 ---
 
@@ -218,24 +218,30 @@ This is the failure state the whole game is designed around.
 Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
 - **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub).
 - **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · Station Security (¢500 → Turret).
-- **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor) · Bulk Trade (¢600 → Cargo Exchange) · Cybernetics (¢800 → AI Core).
+- **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*).
 - **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
+- **Doctrine fork — 2 Labs, pick ONE (M40):** a permanent **station specialization** — choosing one **locks the other two for the rest of the run**, so credits can't buy everything. Each needs a Tier-1 prerequisite:
+  - **Industrialist Doctrine** (¢400; needs Robotics) — **+15% mining, food & repair** station-wide.
+  - **Hospitality Doctrine** (¢400; needs Commerce) — guests pay **+50% lodging** and arrive **~30% faster**.
+  - **Garrison Doctrine** (¢400; needs Station Security) — raiders deal **half damage** and **can never reach life support**.
+- **Prerequisites & locks** show in the TECH panel: a node greys out with *"Needs …"* until its prerequisite is owned, and a doctrine you didn't pick reads *"Locked — chose …"*.
 - **Big modules to spend thousands on:** Fusion Reactor (¢2000) frees you from tiling solar — but it **burns minerals as fuel** (~0.6/s), so you need a Bot Bay mining or it goes dark; Cargo Exchange (¢1500) trades 60 ore every 20s at ×1.5 price; AI Core (¢2500) boosts the whole station.
 - **Takeaway:** lodging income funds your first Lab; from there you research the species, economy and power scaling you want. Only the bare survival chain (sealed room → solar → O₂ → synth → bunk → dock) is free from the start.
 
-## 13 · Storage & abundance (M32) — production is finite
+## 13 · Storage, abundance & overflow (M32 / M41) — production is finite *and* costs you
 Every resource has a **storage cap** (shown on the HUD chips as *x / cap*): biomass **400**, spores 250, each meal line **50**, minerals **200**. Production **idles at the cap** — vats stop growing, synths stop cooking, drones stop hauling once full.
-- This keeps food a live decision: size production to your population, and **trade minerals** to keep room for more.
+- **Overflow now bites (M41):** a store sitting near its cap (≥95%) **spoils** — it loses **~2%/s** as you jettison the excess, and the visible waste is a **station-wide morale drag (−5 mood)** until you clear it. The chip turns **amber** and a toast warns you. So overproducing isn't free idling any more — it wastes the minerals/biomass you spent making it and annoys the crew.
+- This makes sizing a live decision: match production to your population, keep **trade capacity** ahead of mining, and **trade minerals** (or build Silos) to keep room.
 - Build a **Storage Silo** (¢70, 1×1; unlock *Cargo Logistics*) to raise **every** cap by **+250**.
-- **Takeaway:** if a chip reads *400/400*, that production is wasted — consume it, sell it, or build Silos.
+- **Takeaway:** an amber *400/400* chip is actively costing you — consume it, sell it, throttle it (toggle a Vat off), or raise the cap with Silos.
 
-## 14 · Station incidents (M29) — pressure that tests your layout
-After the first couple of minutes, the station faces periodic **incidents** (announced by a toast; they escalate slightly over time):
-- **Power surge** — a random *non-life-support* module trips offline for ~20s. Battery headroom and not over-packing one wing help you ride it out.
+## 14 · Station incidents (M29 / M38) — pressure that tests your layout
+After the first couple of minutes, the station faces periodic **incidents** (announced by a toast; they escalate slightly over time). **As of M38 they reward redundancy instead of being harmless** — a fat, single-pointed station can genuinely be hurt:
+- **Power surge** — a random module trips offline for ~20s. It normally avoids life support — **but if your O₂/CH₄ supply has *no redundancy*** (no **Battery Bank** to soak the spike **and** only a **single generator** for that gas), a surge **can** knock that generator out and start suffocation. The counter is cheap: build a **Battery** *or* a **backup generator** for each gas and life support is surge-proof again.
 - **Hull breach** — a wall blows out (marked by a blinking red ❌) and the room starts venting. **Crew treat it as an emergency**: a resident drops what they're doing, rushes over, and reseals the wall — but the emergency repair **costs ¢120**. You can also wall it yourself for the normal ¢3 if you're faster. *Only happens once you have 2+ rooms*, so a beginner's single room is safe.
 - **Market shock** — mineral prices **surge ×2** (sell now!) or **crash ×0.5** (hold) for ~40s.
-- **Raider** — a hostile ship (red ring) parks at your dock and **chews through modules** (never life support). A **powered Turret** (unlock *Station Security*) shoots it down on sight; otherwise crew must repair the damage.
-- **Life support is never targeted** by incidents — suffocation only ever comes from *your* power/zoning mistakes. Incidents threaten your economy, production and defenses, not a guaranteed wipe.
+- **Raider** — a hostile ship (red ring) parks at your dock and **chews through modules**. **Damage now scales with station size** (~8/s up to ~26/s on a big station), and an **undefended** established station (2+ rooms, **no Turret ever built**) even exposes **life support** to the raider. A **powered Turret** (unlock *Station Security*) shoots it down on sight; the **Garrison Doctrine** halves raider damage and keeps life support off-limits entirely.
+- **Beginner grace stays:** a brand-new single-room station is still safe from breaches and raider life-support hits — the teeth only come out once you've grown enough to be expected to build redundancy and defense.
 
 ## 15 · The Sector Beacon — how you win
 The finale (the last objective) is **bringing the Sector Beacon online**, which means building and charging **one signature module per species**. Each is **researched** (Tier 4 tech), **only operates while its species is aboard in its room**, gives a **perk no other species provides**, and **charges 0→100%** while running. Charge all five to win.
@@ -289,9 +295,10 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
 | Lighting | the interior is gently dimmed; powered **Light Fixtures** (¢30) and glowing modules cast warm light pools, and modules drop soft shadows away from the nearest light — visual only |
-| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
-| Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. Each Storage Silo +250 to all |
-| Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (wrecks modules until a Turret kills it). Never hits life support |
+| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core (each needs a Tier-1 prereq) · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
+| Doctrine fork | 2 Labs, ¢400, **pick ONE** (locks the others): **Industrialist** (+15% mining/food/repair; needs Robotics) · **Hospitality** (+50% lodging, faster guests; needs Commerce) · **Garrison** (½ raider damage, life support shielded; needs Security) |
+| Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200; production idles at cap. **Near cap (≥95%) a store spoils ~2%/s and drags mood −5** until cleared. Each Storage Silo +250 to all |
+| Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s; **can hit a lone, battery-less life-support gen**) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (DPS ~8→26 scaling with station size; **hits life support if undefended & 2+ rooms**, until a Turret kills it). Redundancy (Battery / backup gen / Turret / Garrison) is the counter |
 | Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
 | Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core 2×2, solar 1×3 (wall) |
@@ -301,7 +308,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Guests | Drenn arrive by shuttle ~20s, **up to 3 per shuttle** (≤ free Hotel Rooms), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation. Shuttle flies in to a 3×3 dock landing pad and stays docked the whole visit |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
-| Relations | like +8 / dislike −8 / kin +4; proximity 4 tiles |
+| Relations | love +15 / like +8 / kin +4 / dislike −8 / hate −15; neighbor sum clamped ±45 (rivals needs); proximity 4 tiles. Human⇄Korro & Vry'l⇄Korro HATE; Thol⇄Vry'l & Human⇄Drenn LOVE; Drenn like all |
 | Reputation | per-species 0–100, starts 50; requests give +10–15 / expiry −6–10; ≤2 active, new ~every 50s, 120s to fulfil; Drenn rep scales guest arrival rate |
 | Upkeep | operating modules ~0.15¢/s each + resident wages ~0.2¢/s; net ¢/s shown by the credits chip. Idle stations bleed |
 | Skirmish | tension rises fast when mood <30 near a disliked species, **or slow-burn (4/s) when sharing a tense room (harmony <−0.3) even if fed**; fights at 100. Separate rivals to stop it |

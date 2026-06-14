@@ -204,6 +204,7 @@ export interface World {
   priceMult: number; // current mineral-price multiplier (market shocks)
   priceT: number; // seconds remaining of the current market shock
   notify: string[]; // transient toast queue drained by the UI each frame
+  overflow: boolean; // a resource is wasting at its storage cap (M41 morale drag)
   breaches: Breach[]; // open hull breaches crew rush to reseal
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
