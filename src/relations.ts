@@ -18,9 +18,11 @@ const KIN = 4; // mild comfort around one's own kind
 // - Thol ⇄ Vry'l are a strong alliance (LOVE) — a productive mixed wing.
 // - Human ⇄ Drenn LOVE — the comfortable starter pairing.
 export const RELATIONS: Record<Species, Record<Species, number>> = {
-  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE },
-  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE },
-  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE },
-  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE },
-  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN },
+  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE, vorn: NEUTRAL },
+  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE, vorn: LIKE },
+  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE, vorn: LIKE },
+  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE, vorn: NEUTRAL },
+  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN, vorn: NEUTRAL },
+  // Vorn — the methane merchants: friendly traders (like the Drenn), neutral to prickly Korro.
+  vorn: { human: LIKE, drenn: LIKE, thol: LIKE, vryl: LIKE, korro: NEUTRAL, vorn: KIN },
 };

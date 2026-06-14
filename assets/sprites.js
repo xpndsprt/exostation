@@ -16,7 +16,7 @@
   // who. Generated from the idle/walk frames after the library is built.
   const suitUp = (rows) =>
     rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
-  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a" };
+  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a", vorn: "#c77fe0" };
 
   // Helpers for new 2x2 modules: wrap 27 content rows (each 26 chars) in a
   // bordered 32x32 box. Using .repeat() guarantees exact widths.
@@ -837,6 +837,30 @@
     {
       name: "drenn", tileW: 1, tileH: 1,
       palette: { k: "#11151c", s: "#cbb46a", c: "#e8c349", b: "#9a7d22", e: "#1a2230" },
+      states: {
+        idle: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "....kcccccck....","....kcccccck....",".....kccck......",".....kbbbk......",
+          ".....kb.bk......",".....kb.bk......",".....kk.kk......","................",
+        ],
+        walk: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "...kcccccckk....","....kcccccck....",".....kccck......",".....kbbbk......",
+          "....kb.bbk......","...kb..kbk......","..kk....kk......","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","................","...kk...........","..kssk.kkkkkk...",
+          ".kkssskccccccck.",".ksssskcccccbk..",".kkkkkkbbbbbk...","..kkkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
+    {
+      name: "vorn", tileW: 1, tileH: 1, // methane-breathing merchant — the CH₄ Drenn
+      palette: { k: "#11151c", s: "#c79bd0", c: "#b256c9", b: "#7a2f8f", e: "#1a2230" },
       states: {
         idle: [
           "................","......kkkk......",".....kssssk.....",".....kseesk.....",

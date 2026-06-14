@@ -111,9 +111,9 @@ Food is a parallel strategic layer to atmosphere. **Synthesizers convert base re
 
 Nine species across three compatibility tiers (vision). You start with **Humans** and unlock the rest as the station grows and reputation spreads.
 
-> **⚙️ Shipped:** five species — **Humans, Drenn, Korro, Vry'l, Thol** (see `src/species.ts`). **🔭 Planned:** **Sszra, Chlorithe, Naaz, Voltaar** — their exotic gases (Cl₂ / NH₃ / H₂) and cryo/temperature mechanics are not implemented, so neither are they.
+> **⚙️ Shipped:** six species — **Humans, Drenn, Korro, Vry'l, Thol, Vorn** (see `src/species.ts`). **🔭 Planned:** **Sszra, Chlorithe, Naaz, Voltaar** — their exotic gases (Cl₂ / NH₃ / H₂) and cryo/temperature mechanics are not implemented, so neither are they.
 >
-> **Crew are NOT hand-placed.** Residents **immigrate by shuttle** through a powered Docking Port once you've built living conditions for them (their gas + their food + a free bunk). **Drenn are guest-only visitors** (hotel lodging), never residents. The shipped resident roster is Human / Korro / Thol / Vry'l.
+> **Crew are NOT hand-placed.** Residents **immigrate by shuttle** through a powered Docking Port once you've built living conditions for them (their gas + their food + a free bunk). **Drenn (O₂) and Vorn (CH₄) are guest-only visitors** — the per-gas "trader class" that lodges in a Hotel Room of their gas, never residents. The shipped resident roster is Human / Korro / Thol / Vry'l.
 
 ### Tier 1 — Kindred  (Gas: Oxygen · Food: Standard Rations · easy to co-house)
 | Species | Breathes | Eats | Palate | Status | Flavor |
@@ -127,6 +127,7 @@ Nine species across three compatibility tiers (vision). You start with **Humans*
 |---------|----------|------|--------|--------|----------------------|
 | **Vry'l** | Oxygen (O₂) | **Fungal Mash** | None | ⚙️ shipped (resident) | Same air as humans, but need a whole separate Spore→Fungal food chain. |
 | **Thol** | **Methane (CH₄)** | Standard Rations | Medium | ⚙️ shipped (resident) | Eat the shared food line, but need a sealed methane wing — and CH₄ is flammable. |
+| **Vorn** | **Methane (CH₄)** | Standard Rations | — | ⚙️ shipped (guest-only) | The **methane Drenn**: a CH₄-breathing merchant caste that visits a methane wing's Hotel Room. *Fuel Baron* — ships pay +50% for fuel while aboard. Gives harder (methane) builds their own lodging + fuel income. |
 | **Sszra** | Oxygen (O₂) | **Live Protein** | High | 🔭 planned | Carnivores; share air but demand a high-biomass gourmet protein chain (not implemented). |
 
 ### Tier 3 — Alien  (gas + food + temperature all exotic — fully sealed wings)
@@ -148,15 +149,16 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 > **⚙️ Shipped vs 🔭 target.** The full 9×9 table further below is the **design target**, not the live matrix. Today the game wires relations among the **5 shipped species** (Humans, Drenn, Korro, Vry'l, Thol), and **as of M42 it uses the full LOVE/HATE (±15) tiers** — they are no longer reserved for Tier-3. The rows/columns for Sszra, Chlorithe, Naaz, and Voltaar remain 🔭 planned. The **live 5×5 matrix** (source of truth: `src/relations.ts` / `BALANCE.md`):
 >
-> | feels about → | Hum | Drn | Kor | Vry | Thl |
-> |---------------|:---:|:---:|:---:|:---:|:---:|
-> | **Humans** | — | ♥ | ✖ | · | – |
-> | **Drenn**  | ♥ | — | + | + | + |
-> | **Korro**  | ✖ | · | — | ✖ | – |
-> | **Vry'l**  | · | + | ✖ | — | ♥ |
-> | **Thol**   | · | + | – | ♥ | — |
+> | feels about → | Hum | Drn | Kor | Vry | Thl | Vrn |
+> |---------------|:---:|:---:|:---:|:---:|:---:|:---:|
+> | **Humans** | — | ♥ | ✖ | · | – | · |
+> | **Drenn**  | ♥ | — | + | + | + | + |
+> | **Korro**  | ✖ | · | — | ✖ | – | · |
+> | **Vry'l**  | · | + | ✖ | — | ♥ | · |
+> | **Thol**   | · | + | – | ♥ | — | + |
+> | **Vorn**   | + | + | · | + | + | — |
 >
-> Strong rivalries (✖ both ways): **Human⇄Korro**, **Vry'l⇄Korro** — the same-air Korro is the layout problem. Strong alliances (♥ both ways): **Human⇄Drenn**, **Thol⇄Vry'l**. Drenn are the universal diplomat.
+> Strong rivalries (✖ both ways): **Human⇄Korro**, **Vry'l⇄Korro** — the same-air Korro is the layout problem. Strong alliances (♥ both ways): **Human⇄Drenn**, **Thol⇄Vry'l**. **Drenn (O₂)** and **Vorn (CH₄)** are the universal-diplomat trader classes.
 
 **Legend (full target table):** ♥ Love (±15) · `+` Like (+8) · `·` Neutral (0) · `–` Dislike (−8) · ✖ Hate (−15)
 

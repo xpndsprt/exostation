@@ -31,7 +31,7 @@ export type StructureKind =
   | "bloomgarden"
   | "orerefinery";
 
-export type Species = "human" | "drenn" | "thol" | "vryl" | "korro";
+export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn";
 
 export type FoodLine = "rations" | "fungal";
 
@@ -154,6 +154,7 @@ export interface Ship {
   dy?: number;
   size?: number; // dock-tier scale (1 standard, 2 large, 3 super) — bigger ships
   fuelNeed?: number; // fuel units the ship buys on landing (income)
+  gas?: GasKind; // breathing gas of the guests aboard (which hotels they can use)
 }
 
 export type RequestKind = "host" | "happy" | "amenity";

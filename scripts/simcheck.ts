@@ -2,6 +2,7 @@
 import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
 import { costOf, DOCK_TIER } from "../src/structures";
+import { SPECIES } from "../src/species";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
@@ -1525,7 +1526,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   carve(w, 5, 5, 9, 8);
   recomputeRooms(w);
   addStructure(w, "solar", 6, 6);
-  addStructure(w, "solar", 6, 7);
+  addStructure(w, "solar", 8, 7);
   addStructure(w, "o2gen", 6, 7);
   addStructure(w, "synth", 7, 7);
   addDock(w, 9, 6);
@@ -1551,6 +1552,27 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   recomputeRooms(w);
   const ok = addDock(w, 9, 6, "docklarge");
   check("Large Dock places on a hull wall (airlock)", ok && w.cells[idx(w, 9, 6)].type === "wall");
+}
+
+// --- A methane wing draws its own visitor class (Vorn = the CH₄ Drenn) ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9); // interior x6-10, y6-8
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6);
+  addStructure(w, "ch4gen", 6, 7); // methane wing
+  addStructure(w, "hotel", 8, 8); // a CH₄ hotel room
+  addDock(w, 11, 7);
+  w.stock.meals.rations = 50;
+  let vorn = 0;
+  for (let i = 0; i < 2000 && vorn === 0; i++) {
+    step(w);
+    vorn = Object.values(w.agents).filter((a) => a.alive && a.species === "vorn").length;
+  }
+  check("Vorn breathe methane and only ever visit", SPECIES.vorn.gas === "ch4" && SPECIES.vorn.role.includes("Visitor"));
+  check("A methane wing + CH₄ hotel draws Vorn visitors", vorn >= 1);
 }
 
 // --- Fuel/dock research gating (Fuel Refining is a Tier-1 root node) ---

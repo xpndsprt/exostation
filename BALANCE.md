@@ -212,14 +212,21 @@ The first implemented rival that breathes **O₂** (the rest of the roster split
 
 ## Full relations matrix (M42 — implemented)
 Tiers each way: **LOVE +15 · LIKE +8 · KIN +4 · NEUTRAL 0 · DISLIKE −8 · HATE −15** (`src/relations.ts`). Row feels about column.
-| A \ B | Human | Drenn | Thol | Vry'l | Korro |
-|-------|:-----:|:-----:|:----:|:-----:|:-----:|
-| **Human** | +4 | +15 | −8 | 0 | −15 |
-| **Drenn** | +15 | +4 | +8 | +8 | +8 |
-| **Thol** | 0 | +8 | +4 | +15 | −8 |
-| **Vry'l** | 0 | +8 | +15 | +4 | −15 |
-| **Korro** | −15 | 0 | −8 | −15 | +4 |
-Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l. Drenn are the universal diplomat (liked by all, like all).
+| A \ B | Human | Drenn | Thol | Vry'l | Korro | Vorn |
+|-------|:-----:|:-----:|:----:|:-----:|:-----:|:----:|
+| **Human** | +4 | +15 | −8 | 0 | −15 | 0 |
+| **Drenn** | +15 | +4 | +8 | +8 | +8 | +8 |
+| **Thol** | 0 | +8 | +4 | +15 | −8 | +8 |
+| **Vry'l** | 0 | +8 | +15 | +4 | −15 | 0 |
+| **Korro** | −15 | 0 | −8 | −15 | +4 | 0 |
+| **Vorn** | +8 | +8 | +8 | +8 | 0 | +4 |
+Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l. Drenn (O₂) and **Vorn (CH₄)** are the universal-diplomat **trader classes** — friendly to all, neutral to prickly Korro.
+
+## Vorn — the methane trader class
+A **guest-only** visitor species (like the Drenn, but breathes **CH₄**) so methane wings earn lodging too.
+- **Profile:** CH₄ · Rations diet · Combat Power **16** · visitor only (never a resident).
+- **Lodging:** a CH₄ shuttle disembarks Vorn only when a **Hotel Room sits in a CH₄ room**; guests are gas-matched to hotels (`GUEST_POOL` in `economy.ts`: O₂ → drenn/human/vry'l, CH₄ → vorn/thol).
+- **Trait — Fuel Baron:** docking ships pay **×1.5** for fuel while any Vorn is aboard (`TRAITS.vornFuel`).
 
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.

@@ -244,9 +244,12 @@ Bay) or at the fuel cap (`fuelSystem`, after mining). **Docking tiers** live in
 `structures.ts` (`DOCK_KINDS` / `DOCK_TIER` — size, max guests, fuelNeed, padHalf);
 `isDock(kind)` covers all three. All tiers place via the generalized `addDock(w,x,y,kind)`
 as a hull-wall airlock. On a ship's `in→wait` landing, `economy.ts` sells `min(stockFuel,
-ship.fuelNeed)` at 4¢/unit, then disembarks guests — larger berths set a bigger `ship.size`
-(sprite scale + pad) and a wider O₂ guest mix. The renderer reads `DOCK_TIER[kind].padHalf`
-for the pad and `ship.size` for the ship scale.
+ship.fuelNeed)` at 4¢/unit (×1.5 with a Vorn aboard — *Fuel Baron*), then disembarks guests
+— larger berths set a bigger `ship.size` (sprite scale + pad) and a wider guest mix. Guests
+are **gas-matched**: a shuttle carries `ship.gas`, and `GUEST_POOL[gas]` picks the species
+(O₂ → drenn/human/vry'l, CH₄ → **vorn**/thol), so a methane wing with a CH₄ Hotel Room earns
+its own lodging. The renderer reads `DOCK_TIER[kind].padHalf` for the pad and `ship.size` for
+the ship scale.
 
 ### Storage (`storage.ts`)
 Per-resource **caps** (biomass / spores / rations / fungal / minerals / fuel).

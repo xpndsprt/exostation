@@ -125,7 +125,11 @@ The rest of the Depth Epic except replayability (M43):
   mined minerals into **fuel**; every ship **buys fuel on landing** for credits — a third
   income stream alongside lodging and trade. **Large Dock** and **Spaceport Dock** tiers
   (research-gated) land progressively bigger ships that disembark more guests (3 → 6 → 10),
-  a wider O₂ species mix, and buy more fuel (6 → 18 → 40), with 5×5 / 7×7 landing pads.
+  a wider species mix, and buy more fuel (6 → 18 → 40), with 5×5 / 7×7 landing pads.
+- **A trader class per gas (Vorn):** guests are now **gas-matched** to hotels, and each
+  breathing gas has its own visitor species — **Vorn** is the methane (CH₄) counterpart of
+  the Drenn. A methane wing with a CH₄ Hotel Room earns its own lodging stream, and a Vorn
+  aboard makes ships pay +50% for fuel (*Fuel Baron*). Roster is now six species.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
   pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**
@@ -136,7 +140,8 @@ The rest of the Depth Epic except replayability (M43):
 
 ## Out of scope / planned (not yet shipped)
 
-The current roster is **Human, Drenn, Thol, Vry'l, Korro** with **O₂** and **CH₄** gases.
+The current roster is **Human, Drenn, Thol, Vry'l, Korro, Vorn** with **O₂** and **CH₄** gases
+(Drenn = O₂ trader class, **Vorn = CH₄ trader class** — both guest-only).
 Still deferred or planned:
 
 - **Tier-3 species** — Sszra, Chlorithe, Naaz, Voltaar — and the **exotic gases** they'd

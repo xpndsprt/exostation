@@ -1,4 +1,4 @@
-import { Ship, Species, Structure, World } from "./types";
+import { GasKind, Ship, Species, Structure, World } from "./types";
 import { addAgent, accessCell, exteriorCell, GUEST_STAY } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { getRep } from "./requests";
@@ -22,10 +22,14 @@ const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
 // Species that live aboard as resident crew (Drenn only ever visit as guests).
 const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
-// O₂-breathing visitor species a shuttle can disembark as hotel guests. Standard
-// docks bring Drenn; larger berths bring a wider, friendlier mix (no Korro/Thol,
-// to avoid suffocation or hotel brawls). All breathe O₂ → safe in an O₂ hotel.
-const GUEST_POOL: Species[] = ["drenn", "human", "vryl"];
+// Visitor species per breathing gas — every gas gets its own "trader class" so a
+// methane wing draws paying guests too. The first entry is the standard-dock
+// visitor; larger berths cycle the whole list for a species mix. All entries
+// breathe the keyed gas, so they're safe in a hotel of that gas.
+const GUEST_POOL: Record<GasKind, Species[]> = {
+  o2: ["drenn", "human", "vryl"],
+  ch4: ["vorn", "thol"],
+};
 
 export function economySystem(w: World, dt: number): void {
   // smoothed net ¢/s for the HUD: an exponential filter with a ~20s time
@@ -49,11 +53,12 @@ export function economySystem(w: World, dt: number): void {
       if (sh.prog >= 1) {
         sh.phase = "wait";
         // every docking ship buys fuel (if we have any) — the point of bigger
-        // docks: a huge ship buys a lot of fuel. Fuel → credits.
+        // docks: a huge ship buys a lot of fuel. A Vorn fuel-baron aboard raises
+        // the price paid. Fuel → credits.
         const sold = Math.min(w.stock.fuel, sh.fuelNeed ?? 0);
         if (sold > 0) {
           w.stock.fuel -= sold;
-          w.credits += sold * FUEL_PRICE;
+          w.credits += sold * FUEL_PRICE * (vornAboard(w) ? TRAITS.vornFuel : 1);
         }
         // a passenger shuttle stays docked for the whole guest visit; trader and
         // crew shuttles just unload and go.
@@ -76,11 +81,14 @@ export function economySystem(w: World, dt: number): void {
   let residents = 0;
   let hasDrenn = false; // Drenn merchant trait raises mineral prices
   const resCount: Partial<Record<Species, number>> = {};
+  const guestsByGas: Record<string, number> = {}; // guests already aboard, per gas
   for (const id in w.agents) {
     const a = w.agents[id];
     if (!a.alive) continue;
     if (a.guest) {
       guests++;
+      const g = SPECIES[a.species].gas;
+      guestsByGas[g] = (guestsByGas[g] || 0) + 1;
     } else {
       residents++;
       resCount[a.species] = (resCount[a.species] || 0) + 1;
@@ -90,18 +98,21 @@ export function economySystem(w: World, dt: number): void {
   const hospitality = activeDoctrine(w) === "hospitality";
   w.credits += guests * LODGING_RATE * (hospitality ? 1.5 : 1) * dt; // Hospitality doctrine
 
-  let hotels = 0; // guest capacity = Hotel Rooms
   let pods = 0; // crew capacity = Crew Quarters
   let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
   let hasCargoEx = false; // a Cargo Exchange: bigger/faster/better trades
   const podGases = new Set<string>(); // gases of rooms that contain a bunk
+  const hotelsByGas: Record<string, number> = {}; // hotel rooms per breathable gas
   const docks = [];
   let operating = 0; // powered, running modules — they cost upkeep
   for (const id in w.structures) {
     const s = w.structures[id];
     if (STRUCTURES[s.kind].draw > 0 && s.powered) operating++;
-    if (s.kind === "hotel") hotels++;
-    else if (s.kind === "pod") {
+    if (s.kind === "hotel") {
+      const rid = w.cells[s.cell].roomId;
+      const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
+      if (gas === "o2" || gas === "ch4") hotelsByGas[gas] = (hotelsByGas[gas] || 0) + 1;
+    } else if (s.kind === "pod") {
       pods++;
       const rid = w.cells[s.cell].roomId;
       const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
@@ -116,25 +127,34 @@ export function economySystem(w: World, dt: number): void {
   const upkeep = residents * WAGE + operating * MODULE_UPKEEP;
   w.credits = Math.max(0, w.credits - upkeep * dt);
 
-  // guest arrivals (need free hotel rooms AND a powered dock). A shuttle carries
-  // up to MAX_GUESTS, who disembark only once it lands; free capacity therefore
-  // discounts guests already inbound on a shuttle. Drenn reputation shortens the
-  // interval — well-liked stations get more visitors.
-  let inbound = 0;
-  for (const sh of w.ships) if (!sh.trader && !sh.hostile && sh.phase === "in") inbound += sh.guests ?? 0;
-  let freeCap = hotels - guests - inbound;
+  // guest arrivals — gas-aware (need a free hotel IN THE GUESTS' GAS + a powered
+  // dock). Each breathing gas draws its own visitor class: O₂ → Drenn (et al),
+  // CH₄ → Vorn — so a methane wing earns lodging too. Free capacity discounts
+  // guests already inbound. Drenn reputation shortens the interval.
+  const GASES: GasKind[] = ["o2", "ch4"];
+  const inboundByGas: Record<string, number> = {};
+  for (const sh of w.ships) {
+    if (sh.trader || sh.hostile || sh.phase !== "in") continue;
+    const g = sh.gas ?? "o2";
+    inboundByGas[g] = (inboundByGas[g] || 0) + (sh.guests ?? 0);
+  }
+  const freeByGas: Record<string, number> = {};
+  for (const g of GASES) freeByGas[g] = (hotelsByGas[g] || 0) - (guestsByGas[g] || 0) - (inboundByGas[g] || 0);
   const interval = SPAWN_INTERVAL * (hospitality ? 0.7 : 1) * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
   for (const dock of docks) {
     if (!dock.powered) continue;
     dock.timer += dt;
     if (dock.timer < interval) continue;
     if (dockBusy(w, dock)) continue; // pad still occupied — hold ready, don't reset
-    dock.timer -= interval;
-    if (freeCap >= 1 && exteriorCell(w, dock) >= 0) {
-      const k = Math.min(DOCK_TIER[dock.kind as DockKind].guests, freeCap);
-      spawnShip(w, dock, { guests: k });
-      freeCap -= k;
+    const g = GASES.find((x) => freeByGas[x] >= 1); // a gas we can house guests for
+    if (!g || exteriorCell(w, dock) < 0) {
+      dock.timer = interval; // hold ready until a room frees / a dock faces space
+      continue;
     }
+    dock.timer -= interval;
+    const k = Math.min(DOCK_TIER[dock.kind as DockKind].guests, freeByGas[g]);
+    spawnShip(w, dock, { guests: k, gas: g });
+    freeByGas[g] -= k;
   }
 
   // resident immigration — a shuttle brings new crew when there is a free bunk
@@ -196,6 +216,15 @@ function tryCrewArrival(
   return true;
 }
 
+// Is a (living) Vorn fuel-baron aboard? Raises the price ships pay for fuel.
+function vornAboard(w: World): boolean {
+  for (const id in w.agents) {
+    const a = w.agents[id];
+    if (a.alive && a.species === "vorn") return true;
+  }
+  return false;
+}
+
 // A dock's landing pad is occupied while any ship sits on its exterior cell —
 // from approach through departure — so only one ship uses a pad at a time.
 function dockBusy(w: World, dock: Structure): boolean {
@@ -233,18 +262,26 @@ function dropGuests(w: World, sh: Ship): void {
   if (!dock) return;
   const access = accessCell(w, dock);
   if (access < 0) return;
+  const gas: GasKind = sh.gas ?? "o2";
+  // free hotels in this gas right now (a room may have been removed mid-flight)
   let hotels = 0;
   let guests = 0;
-  for (const id in w.structures) if (w.structures[id].kind === "hotel") hotels++;
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    if (s.kind !== "hotel") continue;
+    const rid = w.cells[s.cell].roomId;
+    if ((rid >= 0 ? w.rooms[rid]?.gas : undefined) === gas) hotels++;
+  }
   for (const id in w.agents) {
     const a = w.agents[id];
-    if (a.alive && a.guest) guests++;
+    if (a.alive && a.guest && SPECIES[a.species].gas === gas) guests++;
   }
   const room = Math.max(0, hotels - guests);
   const n = Math.min(sh.guests ?? 0, room);
+  const pool = GUEST_POOL[gas];
   const variety = (sh.size ?? 1) >= 2; // large/super docks bring a species mix
   for (let i = 0; i < n; i++) {
-    const sp = variety ? GUEST_POOL[i % GUEST_POOL.length] : "drenn";
+    const sp = variety ? pool[i % pool.length] : pool[0];
     addAgent(w, access % w.w, (access / w.w) | 0, sp, true);
   }
 }

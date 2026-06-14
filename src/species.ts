@@ -17,6 +17,7 @@ export const TRAITS = {
   vrylVat: 1.5, // Vry'l boost Bio Vat output in their room by 50%
   drennTrade: 1.5, // Drenn raise mineral sale price 50% while aboard
   korroHaul: 1.5, // Korro muscle lets mining drones carry 50% more
+  vornFuel: 1.5, // Vorn fuel barons raise the price ships pay for fuel 50%
 } as const;
 
 export const SPECIES: Record<Species, SpeciesDef> = {
@@ -69,5 +70,15 @@ export const SPECIES: Record<Species, SpeciesDef> = {
     role: "Resident crew",
     trait: "Hauler — their muscle lets mining drones carry +50% while a Korro is aboard.",
     blurb: "Oxygen-breathing brawlers who share humans' air and rations — but they have no love for Humans or Vry'l. Give them their OWN O₂ wing or the shared room turns tense.",
+  },
+  vorn: {
+    label: "Vorn",
+    gas: "ch4",
+    diet: "rations",
+    accent: 0xb256c9,
+    power: 16,
+    role: "Visitor (trader)",
+    trait: "Fuel Baron — docking ships pay +50% for fuel while a Vorn is aboard.",
+    blurb: "Methane-breathing merchant caste — the CH₄ counterpart of the Drenn. They only visit (never reside), and they need a sealed methane wing with a CH₄ Hotel Room to lodge. Host them to give your methane builds their own stream of paying guests.",
   },
 };
