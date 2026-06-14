@@ -29,6 +29,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   docklarge: { label: "Large Dock", color: 0x5a8ad5, gen: 0, draw: 8, battery: 0, priority: 1, w: 1, h: 1, cost: 400 },
   docksuper: { label: "Spaceport Dock", color: 0x5a8ad5, gen: 0, draw: 12, battery: 0, priority: 1, w: 1, h: 1, cost: 900 },
   fuelrefinery: { label: "Fuel Refinery", color: 0xe8b24a, gen: 0, draw: 6, battery: 0, priority: 4, w: 2, h: 2, cost: 220 },
+  medbay: { label: "Med Bay", color: 0xe8e8f0, gen: 0, draw: 4, battery: 0, priority: 6, w: 2, h: 2, cost: 240 },
   rec: { label: "Lounge", color: 0xc05fa8, gen: 0, draw: 4, battery: 0, priority: 2, w: 2, h: 2, cost: 80 },
   hotel: { label: "Hotel Room", color: 0xc99bd5, gen: 0, draw: 2, battery: 0, priority: 2, w: 2, h: 1, cost: 60 },
   tradehub: { label: "Trade Hub", color: 0x6fcf97, gen: 0, draw: 5, battery: 0, priority: 1, w: 2, h: 2, cost: 120 },

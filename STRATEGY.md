@@ -53,7 +53,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Alienpedia + Advisor (lower-right)**
 - **First contact:** the very first time a species ever appears on your station, the game **pauses and shows a portrait + backstory card** for them. Dismiss with **Continue** (multiple new arrivals queue up). Afterwards they live in the Alienpedia.
 - The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
-- The **Advisor** (below) watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
+- The **Advisor** (bottom-centre) shows your **current goal** (the 🎯 progress bar, at the top of the panel) and your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 
 ---
 
@@ -219,9 +219,20 @@ This is the failure state the whole game is designed around.
 
 ---
 
+## 11b · Encounters, injuries & the Med Bay
+- **Social encounters:** every so often, when two crew/guests of different species share a cell, a moment flares up — a **clash** (if they dislike each other) or a **bond** (if they get on). **The game pauses and you choose how to respond.**
+  - **Clash choices:** *Defuse it* (usually safe, small morale lift — slight chance it still goes wrong), *Discipline both* (no fight but both resent it), or *Let them settle it* (a gamble — they may brawl and get **wounded**, or back down with new respect). A bad/unlucky call **injures** someone.
+  - **Bond choices:** *Encourage it* (both cheer, reputation up), *Put them to work* (small morale + a little income), or *Throw a party* (¢60 → lifts the **whole crew's** morale).
+- **Risky repairs:** servicing a **high-tier module** (anything that needed **2+ research Labs** — Turret, Fusion, Cargo Exchange, AI Core, the Beacon modules, etc.) can **injure** the crew member doing it. **Thol engineers** are far safer at it.
+- **Injuries:** a wounded crew member (red status) is **bleeding out**. With **no Med Bay they slowly die**; build one and they recover.
+- **Med Bay** (¢240, 2×2; research **Medicine** — 1 Lab): while powered it **heals every wounded crew member** on the station (no need to walk there). Build it *before* you start hosting rival species or repairing big modules.
+- **Takeaway:** the more species and the bigger your machines, the more you need a Med Bay. Respond to clashes calmly, and keep a doctor in the house.
+
+---
+
 ## 12 · Research & tech (M30) — where your credits go
 Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
-- **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)**.
+- **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)** · **Medicine (¢200 → Med Bay)**.
 - **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
 - **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*) · **Spaceport (¢700 → Spaceport Dock; *needs Expanded Docking*)**.
 - **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
@@ -300,7 +311,9 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
 | Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
 | Lighting | the interior is dim by default; powered **Light Fixtures** (¢30) and glowing modules light their rooms and **cast real shadows** (walls/large modules block light). Every crew member carries a **moving lamp** (~3 cells) whose shadow sweeps as they walk. Visual only — no gameplay effect |
-| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core (each needs a Tier-1 prereq) · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
+| Encounters | every ~55s two co-located rival/friendly species trigger a **paused choice dialog**: a clash (bad/unlucky pick → injury) or a bond (morale/income/party). Injuries also come from servicing **2+-Lab modules** (Thol much safer) |
+| Injuries & Med Bay | wounded crew **bleed ~0.5%/s** and die without care; a powered **Med Bay** (¢240; research Medicine) **heals +6%/s** station-wide. Skirmishes wound too |
+| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub/Fuel Refinery/Med Bay · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core (each needs a Tier-1 prereq) · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
 | Doctrine fork | 2 Labs, ¢400, **pick ONE** (locks the others): **Industrialist** (+15% mining/food/repair; needs Robotics) · **Hospitality** (+50% lodging, faster guests; needs Commerce) · **Garrison** (½ raider damage, life support shielded; needs Security) |
 | Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200 · fuel 120; production idles at cap. **Near cap (≥95%) a store spoils ~2%/s and drags mood −5** until cleared. Each Storage Silo +250 to all |
 | Fuel | Fuel Refinery: 2 minerals → 3 fuel / 6s (needs a Bot Bay). Docking ships buy fuel at 4¢/unit: 6 / 18 / 40 per standard / large / spaceport dock |

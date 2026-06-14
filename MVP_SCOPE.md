@@ -136,6 +136,13 @@ The rest of the Depth Epic except replayability (M43):
 - **Species backstories + first-contact dialog:** each species has a written backstory
   (`lore` in `src/species.ts`); the first time one ever appears the game **pauses and shows
   a pixel portrait + paragraph** (queued for simultaneous arrivals), then resumes.
+- **Social encounters + injuries + Med Bay:** co-located rival/friendly species periodically
+  trigger a **paused choice dialog** (a clash or a bond); a bad/unlucky clash response — and
+  servicing **2+-Lab "high-tier" modules** — **wounds** crew, who **bleed out without a
+  powered Med Bay** (new module, research **Medicine**) and heal with one. Dynamic lighting
+  (grid shadowcast bake + moving character lamps) and the distinct **raider** pirate craft
+  that now actually **destroys** modules also landed in this wave.
+- **UI:** the current-goal bar moved from the top bar into the **Advisor** panel.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
   pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**

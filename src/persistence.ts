@@ -109,6 +109,7 @@ function sanitize(w: World): World {
     if (!a.guest) a.stay = Infinity;
     else if (a.stay == null) a.stay = 0;
     if (typeof a.fun !== "number") a.fun = 100;
+    if (typeof a.injured !== "boolean") a.injured = false;
   }
   if (!Array.isArray(w.seen)) w.seen = [];
   if (!Array.isArray(w.ships)) w.ships = [];
@@ -125,6 +126,8 @@ function sanitize(w: World): World {
   if (typeof w.priceT !== "number") w.priceT = 0;
   if (!Array.isArray(w.notify)) w.notify = [];
   if (typeof w.overflow !== "boolean") w.overflow = false;
+  if (typeof w.encounterTimer !== "number") w.encounterTimer = 0;
+  if (w.encounter === undefined) w.encounter = null;
   if (!Array.isArray(w.breaches)) w.breaches = [];
   if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
   if (!Array.isArray(w.requests)) w.requests = [];

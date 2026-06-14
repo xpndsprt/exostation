@@ -16,11 +16,13 @@ import { harmonySystem } from "../src/harmony";
 import { agentSystem } from "../src/agents";
 import { moodSystem, moodBreakdown } from "../src/mood";
 import { combatSystem } from "../src/combat";
+import { medicalSystem, injure } from "../src/medical";
+import { resolveEncounter } from "../src/encounters";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
-import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS } from "../src/research";
+import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
@@ -55,6 +57,7 @@ function step(w: World) {
   agentSystem(w, DT);
   moodSystem(w, DT);
   combatSystem(w, DT);
+  medicalSystem(w, DT);
   economySystem(w, DT);
   requestsSystem(w, DT);
   beaconSystem(w, DT);
@@ -1638,6 +1641,69 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Erase drag fills the whole rectangle", dragCells(w, a, b, "erase").length === rectCells(w, a, b).length);
   // a 1-wide drag is all perimeter (a straight wall line)
   check("A 1-wide wall drag is a solid line", dragCells(w, idx(w, 5, 5), idx(w, 5, 9), "wall").length === 5);
+}
+
+// --- Injuries, Med Bay healing, and social encounters ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "human");
+  const a = Object.values(w.agents)[0];
+  injure(w, a.id, 60);
+  check("Injuring sets the wounded flag + drops health", a.injured && a.health <= 40);
+  for (let i = 0; i < 2000 && a.alive; i++) medicalSystem(w, 0.1);
+  check("Untreated wounds are eventually fatal (no Med Bay)", !a.alive);
+}
+{
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "medbay", 8, 7);
+  powerSystem(w, 0.1);
+  addAgent(w, 9, 7, "human");
+  const a = Object.values(w.agents)[0];
+  injure(w, a.id, 60);
+  for (let i = 0; i < 300; i++) {
+    powerSystem(w, 0.1);
+    medicalSystem(w, 0.1);
+  }
+  check("A powered Med Bay heals the wounded", a.alive && !a.injured && a.health >= 99);
+  check("Med Bay is gated behind Medicine research", toolLock(createWorld(), "medbay")?.id === "medicine");
+}
+{
+  // high-tier (2+ Lab) modules are injury-risky to service; basic ones aren't
+  check("High-tier modules flagged risky to repair", highTierModule("turret") && highTierModule("fusion"));
+  check("Basic modules are safe to repair", !highTierModule("o2gen") && !highTierModule("medbay"));
+}
+{
+  // encounter resolution: disciplining a clash never wounds and clears the encounter
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 7, 6, "korro");
+  const ids = Object.keys(w.agents).map(Number);
+  w.encounter = { kind: "conflict", aId: ids[0], bId: ids[1], aSpecies: "human", bSpecies: "korro", cell: idx(w, 7, 6) };
+  resolveEncounter(w, 1);
+  check("Resolving an encounter clears it", w.encounter === null);
+  check("Disciplining a clash wounds nobody", Object.values(w.agents).every((x) => !x.injured));
+}
+{
+  // a bond, encouraged, lifts mood
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "drenn", true);
+  addAgent(w, 7, 6, "human");
+  const ids = Object.keys(w.agents).map(Number);
+  w.agents[ids[1]].mood = 50;
+  w.encounter = { kind: "bond", aId: ids[0], bId: ids[1], aSpecies: "drenn", bSpecies: "human", cell: idx(w, 7, 6) };
+  resolveEncounter(w, 0);
+  check("Encouraging a bond raises mood", w.agents[ids[1]].mood > 50);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

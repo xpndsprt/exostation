@@ -13,6 +13,8 @@ import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
+import { medicalSystem } from "./medical";
+import { encountersSystem } from "./encounters";
 import { economySystem } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
@@ -20,6 +22,7 @@ import { beaconSystem } from "./beacon";
 import { objectivesSystem } from "./objectives";
 import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch } from "./research";
 import { updateSeen } from "./advisor";
+import { resolveEncounter } from "./encounters";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells } from "./placement";
 import { Renderer } from "./renderer";
@@ -46,6 +49,9 @@ import {
   setSpeed,
   markSaved,
   showFirstContact,
+  isFirstContactOpen,
+  showEncounter,
+  isEncounterOpen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -69,9 +75,11 @@ function simStep(world: World, dt: number): void {
   agentSystem(world, dt);
   moodSystem(world, dt);
   combatSystem(world, dt);
+  medicalSystem(world, dt);
   economySystem(world, dt);
   eventsSystem(world, dt);
   requestsSystem(world, dt);
+  encountersSystem(world, dt);
   beaconSystem(world, dt);
   objectivesSystem(world, dt);
   world.tick++;
@@ -610,6 +618,18 @@ async function boot(): Promise<void> {
         setSpeed(world, 0);
         showFirstContact(firstSeen, () => {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
+        });
+      }
+      // a pending social encounter pauses the game for the player's choice
+      // (defer if a first-contact card is still up — they share the pause)
+      if (world.encounter && world.phase === "playing" && !isEncounterOpen() && !isFirstContactOpen()) {
+        const resumeSpeed = world.speed || 1;
+        setSpeed(world, 0);
+        showEncounter(world.encounter, (choice) => {
+          const msg = resolveEncounter(world, choice);
+          if (msg) pushAlert(msg, "info");
+          if (world.phase === "playing") setSpeed(world, resumeSpeed);
+          needRedraw = true;
         });
       }
       renderer.draw(world, sc, overlay);

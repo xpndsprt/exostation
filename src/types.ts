@@ -25,6 +25,7 @@ export type StructureKind =
   | "fuelrefinery"
   | "docklarge"
   | "docksuper"
+  | "medbay"
   | "cmdhub"
   | "tradenexus"
   | "autoforge"
@@ -111,6 +112,7 @@ export interface Agent {
   health: number; // 0..100 (combat)
   tension: number; // 0..100 (toward a skirmish)
   fighting: boolean; // transient: throwing blows this tick
+  injured: boolean; // wounded (from an encounter/skirmish): bleeds out without a Med Bay
   alive: boolean;
   task: Task | null;
   path: number[]; // remaining cells to step onto (excludes current)
@@ -155,6 +157,18 @@ export interface Ship {
   size?: number; // dock-tier scale (1 standard, 2 large, 3 super) — bigger ships
   fuelNeed?: number; // fuel units the ship buys on landing (income)
   gas?: GasKind; // breathing gas of the guests aboard (which hotels they can use)
+}
+
+// A pending social encounter between two co-located agents, awaiting the player's
+// response in a paused dialog. The choice definitions/outcomes live in encounters.ts;
+// only the instance (who + which kind) is stored on the world (serializable).
+export interface Encounter {
+  kind: "conflict" | "bond";
+  aId: number; // first agent
+  bId: number; // second agent
+  aSpecies: Species; // captured for the dialog text/portrait (agents may move/die)
+  bSpecies: Species;
+  cell: number; // where it happened
 }
 
 export type RequestKind = "host" | "happy" | "amenity";
@@ -213,6 +227,8 @@ export interface World {
   notify: string[]; // transient toast queue drained by the UI each frame
   overflow: boolean; // a resource is wasting at its storage cap (M41 morale drag)
   raidTarget?: number; // cell a raider is currently attacking (renderer beam); -1/undef = none
+  encounterTimer: number; // accumulator toward the next random social encounter
+  encounter?: Encounter | null; // a pending crew encounter awaiting the player's choice
   breaches: Breach[]; // open hull breaches crew rush to reseal
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)

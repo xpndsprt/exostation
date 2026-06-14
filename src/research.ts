@@ -21,6 +21,7 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "robotics", label: "Robotics", desc: "Build Bot Bays — each comes with a mining drone for the minerals economy.", cost: 150, labs: 1, tool: "bay" },
   { id: "commerce", label: "Commerce", desc: "Build a Trade Hub so traders buy your minerals for credits.", cost: 150, labs: 1, tool: "tradehub" },
   { id: "fuelrefining", label: "Fuel Refining", desc: "Build Fuel Refineries that crack minerals into ship fuel — sold to docking ships for credits.", cost: 150, labs: 1, tool: "fuelrefinery" },
+  { id: "medicine", label: "Medicine", desc: "Build a Med Bay — wounded crew (from fights or risky repairs) heal there instead of bleeding out.", cost: 200, labs: 1, tool: "medbay" },
   // --- Tier 2: species & infrastructure (2 Labs) ---
   { id: "logistics", label: "Cargo Logistics", desc: "Build Storage Silos that raise every resource cap.", cost: 250, labs: 2, tool: "silo" },
   { id: "fungal", label: "Fungal Synthesis", desc: "Set Vats to Spores and Synths to Fungal Mash — the food chain for Vry'l.", cost: 300, labs: 2 },
@@ -53,6 +54,13 @@ export function isUnlocked(w: World, id: string): boolean {
 export function toolLock(w: World, tool: string): UnlockDef | null {
   for (const u of UNLOCKS) if (u.tool === tool && !isUnlocked(w, u.id)) return u;
   return null;
+}
+
+// A "high-tier" module is one whose unlock needs 2+ Labs — heavier, more
+// dangerous machinery, so servicing it can injure the crew (see agents.ts).
+export function highTierModule(kind: StructureKind): boolean {
+  const u = UNLOCKS.find((x) => x.tool === kind);
+  return !!u && u.labs >= 2;
 }
 
 // How many powered Research Labs the station is running.

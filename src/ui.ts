@@ -1,4 +1,4 @@
-import { HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, World } from "./types";
+import { Encounter, HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, World } from "./types";
 import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
@@ -10,6 +10,7 @@ import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
 import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch } from "./research";
 import { BEACON_SPECIES, moduleActive } from "./beacon";
+import { encounterText, encounterChoices } from "./encounters";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 
@@ -48,6 +49,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "docklarge", label: "Large Dock", key: "" },
   { t: "docksuper", label: "Spaceport Dock", key: "" },
   { t: "fuelrefinery", label: "Fuel Refinery", key: "" },
+  { t: "medbay", label: "Med Bay", key: "" },
   { t: "tradehub", label: "Trade Hub", key: "M" },
   { t: "lab", label: "Research Lab", key: "R" },
   { t: "silo", label: "Storage Silo", key: "G" },
@@ -501,22 +503,28 @@ export function renderTutorial(world: World): void {
 }
 
 // Topbar scenario-objective indicator with a progress bar.
-export function renderObjective(world: World): void {
+// The objective now lives inside the Advisor panel (see objectiveHtml/renderAdvisor);
+// keep this to clear the old top-bar slot.
+export function renderObjective(_world: World): void {
   const el = document.getElementById("objective");
-  if (!el) return;
+  if (el) el.innerHTML = "";
+}
+
+// The current-goal bar markup, hosted at the top of the Advisor panel.
+function objectiveHtml(world: World): string {
   const obj = world.phase === "playing" ? currentObjective(world) : null;
-  if (!obj) {
-    el.innerHTML = "";
-    return;
-  }
+  if (!obj) return "";
   const cur = Math.min(obj.target, Math.floor(obj.progress(world)));
   const pct = Math.round((cur / obj.target) * 100);
   const u = obj.unit || "";
-  el.innerHTML =
-    `<span class="muted">🎯 ${world.objectiveIx + 1}/${OBJECTIVES.length}</span>` +
+  return (
+    `<div class="goalbar${pct >= 100 ? " done" : ""}">` +
+    `<span class="gtag">🎯 ${world.objectiveIx + 1}/${OBJECTIVES.length}</span>` +
     `<span class="goal">${obj.label}</span>` +
     `<span class="ob"><i style="width:${pct}%"></i></span>` +
-    `<span class="num">${u}${cur} / ${u}${obj.target}</span>`;
+    `<span class="num">${u}${cur} / ${u}${obj.target}</span>` +
+    `</div>`
+  );
 }
 
 // Victory / defeat modal. The primary button's action is supplied by the caller
@@ -798,6 +806,7 @@ export function renderAdvisor(world: World): void {
     .join("");
   el.innerHTML =
     `<h3>🤖 ADVISOR</h3>` +
+    objectiveHtml(world) +
     `<div class="seen">${seen}</div>` +
     `<ul class="advice">${advice}</ul>`;
 }
@@ -968,5 +977,45 @@ function renderNextFC(): void {
   (el.querySelector(".fc-role") as HTMLElement).textContent =
     `${def.role} · breathes ${def.gas === "ch4" ? "methane (CH₄)" : "oxygen (O₂)"}`;
   (el.querySelector(".fc-lore") as HTMLElement).textContent = def.lore;
+  el.classList.add("show");
+}
+
+export function isFirstContactOpen(): boolean {
+  return !!document.getElementById("firstcontact")?.classList.contains("show");
+}
+
+// ---- social-encounter dialog (conflict / bond) with player choices ----
+let encShown = false;
+
+export function isEncounterOpen(): boolean {
+  return encShown;
+}
+
+export function showEncounter(enc: Encounter, onChoose: (choice: number) => void): void {
+  const el = document.getElementById("encounter");
+  if (!el) {
+    onChoose(0);
+    return;
+  }
+  encShown = true;
+  drawSpeciesArt(el.querySelector(".enc-a") as HTMLCanvasElement, enc.aSpecies);
+  drawSpeciesArt(el.querySelector(".enc-b") as HTMLCanvasElement, enc.bSpecies);
+  (el.querySelector(".enc-vs") as HTMLElement).textContent = enc.kind === "conflict" ? "✕" : "♥";
+  const t = encounterText(enc);
+  (el.querySelector(".enc-title") as HTMLElement).textContent = t.title;
+  (el.querySelector(".enc-body") as HTMLElement).textContent = t.body;
+  const box = el.querySelector(".enc-choices") as HTMLElement;
+  const choices = encounterChoices(enc);
+  box.innerHTML = choices
+    .map((c, i) => `<button type="button" data-i="${i}"><b>${c.label}</b><span class="ch-hint">${c.hint}</span></button>`)
+    .join("");
+  box.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = Number((btn as HTMLButtonElement).dataset.i);
+      el.classList.remove("show");
+      encShown = false;
+      onChoose(i);
+    }, { once: true });
+  });
   el.classList.add("show");
 }

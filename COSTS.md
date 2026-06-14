@@ -28,6 +28,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Large Dock | 400 | wall | Bigger berth (5×5 pad): more guests + fuel sold. Unlock: Expanded Docking |
 | Spaceport Dock | 900 | wall | Largest berth (7×7 pad): huge ships, most guests + fuel. Unlock: Spaceport |
 | Fuel Refinery | 220 | 2×2 | Cracks minerals → ship fuel (needs a Bot Bay). Unlock: Fuel Refining |
+| Med Bay | 240 | 2×2 | Heals wounded crew; without one the injured bleed out. Unlock: Medicine |
 | Trade Hub | 120 | 2×2 | Lets traders buy your minerals |
 | Research Lab | 150 | 2×1 | Enables the Tech panel (spend credits to research unlocks) |
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
@@ -50,6 +51,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Robotics | 150 | 1 | Bot Bay |
 | Commerce | 150 | 1 | Trade Hub |
 | Fuel Refining | 150 | 1 | Fuel Refinery (root node) |
+| Medicine | 200 | 1 | Med Bay |
 | Cargo Logistics | 250 | 2 | Storage Silo |
 | Expanded Docking | 350 | 2 | Large Dock (needs Fuel Refining) |
 | Spaceport | 700 | 3 | Spaceport Dock (needs Expanded Docking) |

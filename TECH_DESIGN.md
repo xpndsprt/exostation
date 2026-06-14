@@ -45,9 +45,11 @@ simStep(world, dt):              // src/main.ts
   agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
   moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
   combatSystem       // 10. tension -> skirmishes, deaths, collateral
+  medicalSystem      // 10b. injured heal at a powered Med Bay; bleed out without one
   economySystem      // 11. upkeep sink, lodging, trade, immigration shuttles
   eventsSystem       // 12. periodic incidents (surge/breach/shock/raid — M38 teeth)
   requestsSystem     // 13. species requests/goals, reputation
+  encountersSystem   // 13b. roll a paused social encounter (conflict/bond) — player choice
   beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
   objectivesSystem   // 15. scenario goal progression, win/lose
   world.tick++
@@ -222,6 +224,20 @@ is fed (so forcing rivals to cohabit eventually erupts). Separation bleeds it
 off. At 100 tension an agent strikes the nearest disliked target (one-sided by
 relation, damage scales with species `power`). A death can wreck a module in the
 room as collateral — which may vent it into a breach.
+
+### Encounters & medical (`encounters.ts`, `medical.ts`)
+`encountersSystem` rolls on a timer (paused while one is open): it finds two alive
+different-species agents in the **same cell** with a clearly +/− relationship and
+sets `world.encounter` (kind + the two agent ids/species + cell). The main loop
+detects it, **pauses**, and `ui.showEncounter` presents `encounterChoices`;
+`resolveEncounter(world, choice)` applies the outcome (mood/rep/credits/injuries)
+and clears it. `medicalSystem` heals `injured` agents **+6 hp/s** if any Med Bay is
+powered, else **bleeds −0.5 hp/s** to death. `injure(world,id,severity)` (in
+`medical.ts`) flags the wound + drops health; it's called from encounters, combat
+collateral, and `agents.ts` (servicing a `highTierModule` — 2+-Lab unlock — rolls
+3%/s, ×0.4 for Thol). Encounter/injury state is plain data on the `World`/`Agent`
+(serializable); resolution uses `Math.random` since it's player-driven, off the
+deterministic tick.
 
 ### Mining (`mining.ts`)
 Asteroids (`sites`) are scattered in open space. Each Bot Bay spawns a drone with

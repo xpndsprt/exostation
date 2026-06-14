@@ -115,6 +115,7 @@ Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, an
 | Robotics | 150 | 1 | Bot Bay |
 | Commerce | 150 | 1 | Trade Hub |
 | Fuel Refining | 150 | 1 | Fuel Refinery (root node) |
+| Medicine | 200 | 1 | Med Bay |
 | Cargo Logistics | 250 | 2 | Storage Silo |
 | Fungal Synthesis | 300 | 2 | Vry'l food recipes |
 | Methane Life-Support | 350 | 2 | Methane Gen (Thol) |
@@ -170,6 +171,13 @@ A third income stream: refine minerals into **fuel** and sell it to docking ship
 | Spaceport Dock | 900 | 12 | 7×7 | 10 (mix) | 40 (~¢160) | Spaceport |
 
 Larger berths land a visually bigger ship (size 2/3) and disembark a wider **O₂ guest mix** (Drenn/Human/Vry'l). Guests are still capped by free Hotel Rooms; one ship per pad at a time.
+
+## Social encounters, injuries & medical
+Random **encounters** (`encounters.ts`): first possible at **55 s**, then a roll every **55 s** (retry in **8 s** if nobody's co-located). A roll finds two **alive, different-species** agents in the **same cell** with avg relation **≤ −7** (conflict) or **≥ +7** (bond); it sets `world.encounter` and the game **pauses** for the player's choice (one at a time).
+- **Conflict choices:** *Defuse* (80% both mood +6; 20% one is injured), *Discipline* (both mood −7, tension zeroed, no injury), *Let them settle it* (55% both injured; else both mood +9).
+- **Bond choices:** *Encourage* (both mood +10, +4 rep each species), *Work together* (both +5, +¢40), *Party* (−¢60 → **all** crew +8; if unaffordable, the pair +5).
+
+**Injuries** (`medical.ts`): an injured agent has `injured = true` and reduced `health`. With **no powered Med Bay** it bleeds **0.5 health/s** → death at 0 (~80 s from a fresh 40-hp wound). A **powered Med Bay** heals **6 health/s** station-wide (no pathing); at 100 the wound clears. Sources of injury: bad/unlucky encounter outcomes; **skirmishes**; and **servicing high-tier modules** — `agents.ts` rolls **3%/s** (×0.4 for Thol) while a crew member repairs any module whose unlock needs **2+ Labs**. **Med Bay:** ¢240, 2×2, draw 4, priority 6; research **Medicine** (¢200, 1 Lab).
 
 ## Operating economy / credit sink (M37)
 Recurring costs give the economy an equilibrium instead of a one-way ratchet.

@@ -198,6 +198,15 @@
     #advisor .advice li.warn .mk { background: #e8a33d; }
     #advisor .advice li.tip .mk { background: #49d17a; }
     #advisor .advice li.critical span:last-child { color: #ffb4b4; }
+    /* objective goal bar, now hosted inside the advisor */
+    #advisor .goalbar { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding-bottom: 8px;
+      border-bottom: 1px solid #232b3a; font-size: 13px; color: #c3cbdc; flex-wrap: wrap; }
+    #advisor .goalbar .gtag { color: #6b7488; }
+    #advisor .goalbar .goal { font-weight: 600; color: #e3e7ef; }
+    #advisor .goalbar.done .goal { color: #49d17a; }
+    #advisor .goalbar .ob { width: 90px; height: 6px; border-radius: 3px; background: #2a3142; overflow: hidden; }
+    #advisor .goalbar .ob > i { display: block; height: 100%; background: #6ea8ff; }
+    #advisor .goalbar .num { font-variant-numeric: tabular-nums; color: #aab2c4; margin-left: auto; }
     /* drag size label */
     #draglabel { position: fixed; z-index: 30; pointer-events: none; display: none;
       background: rgba(20,26,36,.96); border: 1px solid #2c3445; border-radius: 6px;
@@ -257,6 +266,24 @@
     #firstcontact .fc-go { width: 100%; background: #2d6cdf; color: #fff; border: none; border-radius: 9px;
       padding: 10px; font-size: 14px; cursor: pointer; }
     #firstcontact .fc-go:hover { background: #3a78ec; }
+    /* encounter modal */
+    #encounter { position: fixed; inset: 0; z-index: 62; display: none; align-items: center; justify-content: center;
+      background: rgba(4,7,12,.74); backdrop-filter: blur(3px); }
+    #encounter.show { display: flex; }
+    #encounter .enc-card { background: #121826; border: 1px solid #2c3445; border-radius: 16px; padding: 20px 22px;
+      width: 460px; box-shadow: 0 16px 50px rgba(0,0,0,.6); animation: fcpop .18s ease-out; }
+    #encounter .enc-head { display: flex; gap: 14px; align-items: center; justify-content: center; }
+    #encounter .enc-a, #encounter .enc-b { width: 80px; height: 80px; image-rendering: pixelated;
+      background: radial-gradient(circle at 50% 45%, #1c2740, #0c1018 70%); border: 1px solid #2c3445; border-radius: 12px; }
+    #encounter .enc-vs { width: 34px; height: 34px; border-radius: 50%; background: #1c2230; border: 1px solid #2c3445;
+      color: #e3e7ef; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+    #encounter .enc-title { margin: 14px 2px 6px; font-size: 18px; color: #eef2f8; text-align: center; }
+    #encounter .enc-body { color: #cdd4e0; font-size: 13px; line-height: 1.5; margin: 0 2px 14px; text-align: center; }
+    #encounter .enc-choices { display: flex; flex-direction: column; gap: 8px; }
+    #encounter .enc-choices button { text-align: left; background: #1c2230; color: #e3e7ef; border: 1px solid #2c3445;
+      border-radius: 9px; padding: 9px 12px; font-size: 13.5px; cursor: pointer; }
+    #encounter .enc-choices button:hover { background: #243150; border-color: #3a5f9a; }
+    #encounter .enc-choices .ch-hint { display: block; color: #9aa3b6; font-size: 11px; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -288,6 +315,12 @@
     <div class="fc-head"><canvas class="fc-art"></canvas><div class="fc-id"><div class="fc-tag">FIRST CONTACT</div><h3 class="fc-name"></h3><div class="fc-role"></div></div></div>
     <p class="fc-lore"></p>
     <button class="fc-go" type="button">Continue</button>
+  </div></div>
+  <div id="encounter"><div class="enc-card">
+    <div class="enc-head"><canvas class="enc-a"></canvas><div class="enc-vs"></div><canvas class="enc-b"></canvas></div>
+    <h3 class="enc-title"></h3>
+    <p class="enc-body"></p>
+    <div class="enc-choices"></div>
   </div></div>
   <div id="watermark"></div>
   <div id="advisor"></div>

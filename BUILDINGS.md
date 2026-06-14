@@ -38,6 +38,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Large Dock | `docklarge` | Bigger berth (5×5 pad): lands a bigger ship — **6 guests** (Drenn/Human/Vry'l mix) + buys **18 fuel**. | 8 | 1×1 (wall) | 400 | **Expanded Docking** (¢350) | guests arrive / free |
 | Spaceport Dock | `docksuper` | Largest berth (7×7 pad): huge ship — **10 guests** + buys **40 fuel**. | 12 | 1×1 (wall) | 900 | **Spaceport** (¢700) | guests arrive / free |
 | Fuel Refinery | `fuelrefinery` | Cracks **2 minerals → 3 fuel / 6 s** (needs a Bot Bay mining); fuel is sold to docking ships at 4¢/unit. | 6 | 2×2 | 220 | **Fuel Refining** (¢150) | refining / idle |
+| Med Bay | `medbay` | While powered, **heals all wounded crew +6 hp/s** station-wide; without one the injured bleed out. | 4 | 2×2 | 240 | **Medicine** (¢200) | active / unpowered |
 | Lounge | `rec` | Entertainment: crew **and** visitors path here to relax (restore **Fun**) and socialize when fun runs low. | 4 | 2×2 | 80 | — | busy / empty |
 | Hotel Room | `hotel` | Where **visitors** lodge; total Hotel Rooms set guest capacity and drive lodging income. | 2 | 2×1 | 60 | — | assigned / vacant |
 | Trade Hub | `tradehub` | Lets **traders dock and buy your minerals** for credits — the trade-income engine. | 5 | 2×2 | 120 | — | active / unpowered |
@@ -69,6 +70,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Robotics | 150 | 1 | **Bot Bay** |
 | Commerce | 150 | 1 | **Trade Hub** |
 | Fuel Refining | 150 | 1 | **Fuel Refinery** (root node) |
+| Medicine | 200 | 1 | **Med Bay** |
 | Cargo Logistics | 250 | 2 | **Storage Silo** |
 | Fungal Synthesis | 300 | 2 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | **Methane Gen** (host Thol) |

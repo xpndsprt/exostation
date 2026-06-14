@@ -459,6 +459,22 @@
     D(26), D(26), D(26), D(26), D(26),
   ]);
 
+  // Med Bay (2x2) — a clean white ward panel with a big red medical cross + a bed
+  const MEDBAY = (function () {
+    const rows = [];
+    for (let y = 0; y < 27; y++) {
+      let s = "";
+      for (let x = 0; x < 26; x++) {
+        const vbar = x >= 11 && x <= 14 && y >= 4 && y <= 22;
+        const hbar = y >= 11 && y <= 14 && x >= 5 && x <= 20;
+        s += vbar || hbar ? "r" : "w";
+      }
+      rows.push(s);
+    }
+    rows[0] = rows[0].slice(0, 25) + "L"; // status light, top-right
+    return box2(rows);
+  })();
+
   // Research Lab (2x1) — a console screen with a graph + a bubbling flask
   const LAB = [
     "kkkkkkkkkkkkkkk.kkkkkkkkkkkk.kkk.",
@@ -777,6 +793,11 @@
       name: "fuelrefinery", tileW: 2, tileH: 2,
       palette: { k: "#11151c", d: "#241c10", h: "#7a6a44", y: "#e8b24a", a: "#ff8a3a", w: "#ffe6a8", L: "#49d17a", o: "#3a4350" },
       states: { enabled: FUELREFINERY, disabled: off(FUELREFINERY) },
+    },
+    {
+      name: "medbay", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", w: "#e6ecf2", r: "#e24b4b", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: MEDBAY, disabled: off(MEDBAY) },
     },
     {
       name: "lab", tileW: 2, tileH: 1,
