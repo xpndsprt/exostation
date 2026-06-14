@@ -85,7 +85,11 @@ function refresh(world: World): void {
 
 async function boot(): Promise<void> {
   const app = new Application();
-  await app.init({ background: COLORS.space, resizeTo: window, antialias: true });
+  // Force WebGL: dynamic CanvasSource texture re-uploads (the lighting buffer,
+  // updated every frame via source.update()) don't reliably refresh on the WebGPU
+  // backend, which left the multiply-lightmap blank → a black screen. WebGL is
+  // plenty for 2D and avoids the "Failed to create WebGPU Context Provider" warning.
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true });
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
   mount.appendChild(app.canvas);
