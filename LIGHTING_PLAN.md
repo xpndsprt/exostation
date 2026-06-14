@@ -2,30 +2,34 @@
 
 > **Status: 🔭 planned (design only — not yet implemented).** This document is the
 > implementation plan for upgrading the current "fake" lighting layer to **true 2D
-> raycast shadows** baked from light fixtures, plus a **per-character headlight**
-> that lights 3–4 cells around each crew member. No code is written yet; this is
-> the blueprint to build against. Keep it in sync as the system lands (flip the
-> status, tick the phases).
+> raycast shadows**: **baked** shadows for the light sources the **player places**
+> (Light Fixtures + glowing modules), plus a **dynamic per-character lamp** that
+> lights **2–3 cells** around each crew member and **casts a moving shadow** as they
+> traverse the station (RimWorld-style). No code is written yet; this is the
+> blueprint to build against. Keep it in sync as the system lands (flip the status,
+> tick the phases).
 
 ---
 
 ## 1 · Goal (what the player should see)
 
-1. **Light fixtures (and glowing modules) cast real shadows.** A Light Fixture in
-   a room throws light that is **occluded by walls and modules** — a crate/generator
+1. **Player-placed lights cast real, BAKED shadows.** A Light Fixture (or glowing
+   module) throws light that is **occluded by walls and modules** — a crate/generator
    between the lamp and a corner leaves a genuine dark wedge behind it, not a uniform
-   glow. Shadows are **baked** (computed once when geometry/lights change) so they
-   cost nothing per frame.
-2. **Every character carries a headlight.** Each crew member / guest emits a small
-   personal light pool (~**3–4 cells** radius) that **raycasts around them** — it
-   spills through doorways and is blocked by walls, so a lone crew member walking a
-   dark corridor reveals it locally. This is **dynamic** (moves every frame) but cheap.
+   glow. Because these sources don't move, their shadows are **baked once** (recomputed
+   only when geometry or lights change) so they cost **nothing per frame**.
+2. **Every character carries a moving lamp.** Each crew member / guest emits a small
+   personal light pool (~**2–3 cells** radius) that **raycasts around them** — blocked
+   by walls, spilling through doorways. Crucially it is **dynamic**: as the character
+   walks past a wall or a module, its **shadow sweeps and stretches** in real time
+   (the RimWorld "pawn carrying a lamp" look). A lone crew member lights its own patch
+   of a dark corridor and throws a shadow ahead of itself.
 3. **It stays efficient** at 80×80 with dozens of agents at 3× speed — no per-pixel
-   CPU raymarching, no per-frame full rebakes.
+   CPU raymarching, no per-frame full rebakes; only the tiny moving lamps update live.
 
 The visual target is Prison Architect / RimWorld-grade readability: a dim hull,
-warm pools of light around lamps and people, and crisp-ish shadow shapes behind
-solid objects.
+warm baked pools around fixtures, and small **moving** light+shadow around each
+character as it traverses.
 
 ---
 
@@ -114,17 +118,20 @@ A light's own origin cell and immediate ring are always lit (no self-shadow pop)
 - Rebake triggers: build/erase a wall/module, toggle/repower an emitter, room
   re-detect, light fixture added/removed. None of these happen per frame.
 
-### 4b · Dynamic headlight layer (characters)
+### 4b · Dynamic character-lamp layer (moving lights + moving shadows)
 
 - A separate **dynamic light RT** (or the same RT drawn after the static one),
   cleared and rebuilt **each frame** — but only from cheap inputs:
-  - For each **on-screen, alive** agent: a small shadowcast at **radius 3–4** (a
-    ≤9×9 window) against the same occluder grid, stamped as a small gradient.
-  - Tint the headlight slightly by species or keep a neutral warm white; a moving
-    agent's pool slides with `agentCenter` (sub-cell position) for smoothness.
-- Budget: radius-4 shadowcast ≈ ~50 cell visits; 40 agents ≈ ~2k ops/frame —
-  trivial. Cap to on-screen agents; optionally update headlights at the **10 Hz
-  sim tick** and interpolate position in the gradient stamp for extra headroom.
+  - For each **on-screen, alive** agent: a small shadowcast at **radius 2–3** (a
+    ≤7×7 window) against the same occluder grid, stamped as a small gradient. Because
+    the cast is re-run from the agent's **current cell each frame**, the dark wedge
+    behind any nearby wall/module **moves and stretches as the agent walks** — that's
+    the "pawn carrying a lamp" shadow, not a static blob.
+  - Tint the lamp slightly by species or keep a neutral warm white; the pool slides
+    with `agentCenter` (sub-cell position) for smoothness between cells.
+- Budget: radius-3 shadowcast ≈ ~25 cell visits; 40 agents ≈ ~1k ops/frame — trivial.
+  Cap to on-screen agents; optionally re-cast only when an agent **changes cell** (and
+  just slide the stamp between casts) for extra headroom.
 - Compositing: `staticLightRT + dynamicLightRT` (additive) → the combined light,
   then **multiply** over the scene (one extra blend vs today).
 
@@ -188,8 +195,9 @@ Key efficiency rules:
 2. **Bake fixture shadows.** Replace the unmasked glow blobs with shadowcast-masked
    gradients in the static RT (gated rebake). Walls now stop light. Remove/retire
    the fake drop-shadow offset (or keep a faint contact shadow under tall modules).
-3. **Headlights.** Add the per-agent dynamic light layer (radius 3–4, viewport-
-   culled), composite static + dynamic. Tune ambient so headlights matter.
+3. **Character lamps.** Add the per-agent dynamic light layer (radius 2–3, viewport-
+   culled, re-cast on cell change), composite static + dynamic. Verify the shadow
+   sweeps as an agent walks past a wall/module. Tune ambient so the lamps matter.
 4. **Polish & perf.** ½-res light RT + bilinear soften; optional light color per
    emitter/species; verify 3× speed with 40+ agents stays smooth; expose tunables.
 5. **(Optional later)** Swap grid shadowcast for **visibility-polygon** raycasting
@@ -203,8 +211,9 @@ Key efficiency rules:
 
 - A Light Fixture with a wall/large module between it and a corner leaves a visible
   **dark wedge** (occlusion), not a uniform glow.
-- A crew member in an unlit corridor is surrounded by a **3–4 cell** light pool that
-  is **clipped by walls** and **spills through an open door**.
+- A crew member in an unlit corridor is surrounded by a **2–3 cell** light pool that
+  is **clipped by walls** and **spills through an open door**, and **its shadow visibly
+  sweeps** as the character walks past a wall or module.
 - Building/erasing a wall updates the baked shadows; **no per-frame rebake** of the
   static layer (verify via a rebuild-count/log).
 - Frame time at 80×80, 40 agents, 3× speed is within budget (no measurable drop vs
