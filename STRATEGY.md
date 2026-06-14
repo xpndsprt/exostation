@@ -51,6 +51,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - A **Getting Started** checklist appears top-center on a fresh game and ticks off as you *seal → power → add O₂ → synth → quarters → dock*. It disappears once your first crew arrive (or hit **Skip**).
 
 **Alienpedia + Advisor (lower-right)**
+- **First contact:** the very first time a species ever appears on your station, the game **pauses and shows a portrait + backstory card** for them. Dismiss with **Continue** (multiple new arrivals queue up). Afterwards they live in the Alienpedia.
 - The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
 - The **Advisor** (below) watches the sim and shows your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 

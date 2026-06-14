@@ -45,6 +45,7 @@ import {
   setActiveTool,
   setSpeed,
   markSaved,
+  showFirstContact,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -599,7 +600,14 @@ async function boot(): Promise<void> {
     if (needRedraw) {
       const sc = selCell();
       if (sc < 0 && sel) sel = null;
-      updateSeen(world);
+      const firstSeen = updateSeen(world);
+      if (firstSeen.length && world.phase === "playing") {
+        const resumeSpeed = world.speed || 1; // pause to read; restore after
+        setSpeed(world, 0);
+        showFirstContact(firstSeen, () => {
+          if (world.phase === "playing") setSpeed(world, resumeSpeed);
+        });
+      }
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);

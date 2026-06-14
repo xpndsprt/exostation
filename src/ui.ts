@@ -895,3 +895,78 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     panel.querySelector('[data-act="recipe"]')?.addEventListener("click", () => handlers.onRecipe(id));
   }
 }
+
+// ---- first-contact dialog: when a species first appears, show its portrait + lore ----
+type SpriteDef = { name: string; tileW: number; tileH: number; palette: Record<string, string>; states: Record<string, string[]> };
+const spriteList = (): SpriteDef[] => (window as unknown as { SPRITES?: SpriteDef[] }).SPRITES ?? [];
+
+// Rasterize a species' idle frame onto the given canvas (nearest-neighbour, ~96px).
+function drawSpeciesArt(canvas: HTMLCanvasElement, species: string): void {
+  const s = spriteList().find((x) => x.name === species);
+  const tw = (s?.tileW ?? 1) * 16;
+  const th = (s?.tileH ?? 1) * 16;
+  const px = Math.max(1, Math.floor(96 / Math.max(tw, th)));
+  canvas.width = tw * px;
+  canvas.height = th * px;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!s) return;
+  const rows = s.states.idle ?? s.states.default ?? Object.values(s.states)[0] ?? [];
+  for (let y = 0; y < th; y++) {
+    const row = rows[y] || "";
+    for (let x = 0; x < tw; x++) {
+      const ch = row[x];
+      if (ch && ch !== "." && s.palette[ch]) {
+        ctx.fillStyle = s.palette[ch];
+        ctx.fillRect(x * px, y * px, px, px);
+      }
+    }
+  }
+}
+
+let fcQueue: Species[] = [];
+let fcDone: (() => void) | null = null;
+let fcWired = false;
+
+// Show a first-contact card for each newly-seen species, in turn; call onAllDone
+// once the last one is dismissed (the caller uses it to un-pause).
+export function showFirstContact(list: Species[], onAllDone: () => void): void {
+  if (list.length === 0) {
+    onAllDone();
+    return;
+  }
+  const el = document.getElementById("firstcontact");
+  if (!el) {
+    onAllDone();
+    return;
+  }
+  fcQueue.push(...list);
+  fcDone = onAllDone;
+  if (!fcWired) {
+    fcWired = true;
+    el.querySelector(".fc-go")?.addEventListener("click", () => renderNextFC());
+  }
+  if (!el.classList.contains("show")) renderNextFC();
+}
+
+function renderNextFC(): void {
+  const el = document.getElementById("firstcontact");
+  if (!el) return;
+  const sp = fcQueue.shift();
+  if (!sp) {
+    el.classList.remove("show");
+    const d = fcDone;
+    fcDone = null;
+    d?.();
+    return;
+  }
+  const def = SPECIES[sp];
+  drawSpeciesArt(el.querySelector(".fc-art") as HTMLCanvasElement, sp);
+  (el.querySelector(".fc-name") as HTMLElement).textContent = def.label;
+  (el.querySelector(".fc-role") as HTMLElement).textContent =
+    `${def.role} · breathes ${def.gas === "ch4" ? "methane (CH₄)" : "oxygen (O₂)"}`;
+  (el.querySelector(".fc-lore") as HTMLElement).textContent = def.lore;
+  el.classList.add("show");
+}

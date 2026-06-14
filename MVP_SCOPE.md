@@ -133,6 +133,9 @@ The rest of the Depth Epic except replayability (M43):
   breathing gas has its own visitor species — **Vorn** is the methane (CH₄) counterpart of
   the Drenn. A methane wing with a CH₄ Hotel Room earns its own lodging stream, and a Vorn
   aboard makes ships pay +50% for fuel (*Fuel Baron*). Roster is now six species.
+- **Species backstories + first-contact dialog:** each species has a written backstory
+  (`lore` in `src/species.ts`); the first time one ever appears the game **pauses and shows
+  a pixel portrait + paragraph** (queued for simultaneous arrivals), then resumes.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
   pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**

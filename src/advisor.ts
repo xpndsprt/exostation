@@ -10,12 +10,18 @@ export interface Advice {
 
 const RANK: Record<Severity, number> = { critical: 0, warn: 1, tip: 2 };
 
-// Remember every species that has ever appeared on the station.
-export function updateSeen(world: World): void {
+// Remember every species that has ever appeared on the station. Returns the
+// species newly seen this call (drives the first-contact dialog).
+export function updateSeen(world: World): Species[] {
+  const added: Species[] = [];
   for (const id in world.agents) {
     const s = world.agents[id].species;
-    if (!world.seen.includes(s)) world.seen.push(s);
+    if (!world.seen.includes(s)) {
+      world.seen.push(s);
+      added.push(s);
+    }
   }
+  return added;
 }
 
 function isNative(world: World, cell: number, species: Species): boolean {

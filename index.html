@@ -240,6 +240,23 @@
     #saves .muted { color: #6b7488; }
     #saves .close { margin-top: 4px; width: 100%; background: #2d6cdf; color: #fff; border: none;
       border-radius: 8px; padding: 8px; font-size: 13px; cursor: pointer; }
+    /* first-contact modal */
+    #firstcontact { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center;
+      background: rgba(4,7,12,.72); backdrop-filter: blur(3px); }
+    #firstcontact.show { display: flex; }
+    #firstcontact .fc-card { background: #121826; border: 1px solid #2c3445; border-radius: 16px; padding: 22px 24px;
+      width: 440px; box-shadow: 0 16px 50px rgba(0,0,0,.6); animation: fcpop .18s ease-out; }
+    @keyframes fcpop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    #firstcontact .fc-head { display: flex; gap: 16px; align-items: center; }
+    #firstcontact .fc-art { width: 96px; height: 96px; image-rendering: pixelated; flex: 0 0 auto;
+      background: radial-gradient(circle at 50% 45%, #1c2740, #0c1018 70%); border: 1px solid #2c3445; border-radius: 12px; }
+    #firstcontact .fc-tag { color: #6ea8ff; font-size: 10.5px; letter-spacing: .18em; }
+    #firstcontact .fc-name { margin: 3px 0 2px; font-size: 22px; color: #eef2f8; }
+    #firstcontact .fc-role { color: #aab2c4; font-size: 12px; }
+    #firstcontact .fc-lore { color: #cdd4e0; font-size: 13.5px; line-height: 1.55; margin: 16px 2px 18px; }
+    #firstcontact .fc-go { width: 100%; background: #2d6cdf; color: #fff; border: none; border-radius: 9px;
+      padding: 10px; font-size: 14px; cursor: pointer; }
+    #firstcontact .fc-go:hover { background: #3a78ec; }
   </style>
 </head>
 <body>
@@ -266,6 +283,11 @@
     <div class="title"></div>
     <div class="sub"></div>
     <button type="button">New station</button>
+  </div></div>
+  <div id="firstcontact"><div class="fc-card">
+    <div class="fc-head"><canvas class="fc-art"></canvas><div class="fc-id"><div class="fc-tag">FIRST CONTACT</div><h3 class="fc-name"></h3><div class="fc-role"></div></div></div>
+    <p class="fc-lore"></p>
+    <button class="fc-go" type="button">Continue</button>
   </div></div>
   <div id="watermark"></div>
   <div id="advisor"></div>
