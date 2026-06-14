@@ -124,3 +124,27 @@ export function rectCells(w: World, a: number, b: number): number[] {
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) out.push(y * w.w + x);
   return out;
 }
+
+// Just the border of the rectangle (a hollow box) — what you want when dragging
+// walls, since you draw the wall *around* a floor area, not fill it solid.
+export function rectPerimeterCells(w: World, a: number, b: number): number[] {
+  const ax = a % w.w;
+  const ay = (a / w.w) | 0;
+  const bx = b % w.w;
+  const by = (b / w.w) | 0;
+  const x0 = Math.min(ax, bx);
+  const x1 = Math.max(ax, bx);
+  const y0 = Math.min(ay, by);
+  const y1 = Math.max(ay, by);
+  const out: number[] = [];
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++)
+      if (x === x0 || x === x1 || y === y0 || y === y1) out.push(y * w.w + x);
+  return out;
+}
+
+// The cells a drag of `tool` should affect: walls trace the perimeter (a hollow
+// box around a floor), everything else fills the whole rectangle.
+export function dragCells(w: World, a: number, b: number, tool: Tool): number[] {
+  return tool === "wall" ? rectPerimeterCells(w, a, b) : rectCells(w, a, b);
+}

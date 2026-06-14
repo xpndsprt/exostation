@@ -20,7 +20,7 @@ import { objectivesSystem } from "./objectives";
 import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch } from "./research";
 import { updateSeen } from "./advisor";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
-import { canPlace, isAreaTool, rectCells, solarFootprint, footprintCells } from "./placement";
+import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells } from "./placement";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -358,7 +358,7 @@ async function boot(): Promise<void> {
     let valid = true;
     let anchor = -1; // facing marker (e.g. a solar panel's wall-mounted base)
     if (dragging && dragStart >= 0 && hover >= 0) {
-      ghost = rectCells(world, dragStart, hover);
+      ghost = dragCells(world, dragStart, hover, tool);
       valid = canPlace(world, tool, tx, ty);
       const w = Math.abs((dragStart % world.w) - tx) + 1;
       const h = Math.abs(((dragStart / world.w) | 0) - ty) + 1;
@@ -426,7 +426,7 @@ async function boot(): Promise<void> {
     if (dragging && dragStart >= 0) {
       const { tx, ty } = tileAt(e.clientX, e.clientY);
       if (inBounds(world, tx, ty)) {
-        for (const cell of rectCells(world, dragStart, idx(world, tx, ty))) {
+        for (const cell of dragCells(world, dragStart, idx(world, tx, ty), state.tool)) {
           applyTool(cell % world.w, (cell / world.w) | 0);
         }
       }

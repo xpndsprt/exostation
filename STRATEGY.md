@@ -33,7 +33,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 **Building**
 - Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
-- **Floor / Wall / Erase** support **drag-rectangle** fill — drag out a room and the label shows the size **and running ¢ cost** (red if you can't afford it).
+- **Floor / Wall / Erase** support **drag-rectangle** — drag out a room and the label shows the size **and running ¢ cost** (red if you can't afford it). **Floor and Erase fill the whole rectangle; Wall traces only the perimeter** (a hollow box) — so you can drag one rectangle to wall a room without filling its interior with walls. Drag **Floor** first to lay the deck, then drag **Wall** around the same area.
 - **Door** and modules place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth/hotel/lab 2×1, quarters/batteries/silo/turret 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor. The **Solar** ghost marks its **wall-mounted base** so you can see which way it faces before placing.
 - **Find your modules:** **double-click a build tool** in the palette to pan-cycle the camera through every instance you've placed (and select each).
 - **You don't place crew.** There is no "add a Human" tool — residents **immigrate by shuttle** once their living conditions are ready (see *Crew* below). You only ever build the *environment*.

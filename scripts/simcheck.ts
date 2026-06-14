@@ -1,6 +1,6 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
 import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
-import { solarFootprint, footprintCells, canPlace } from "../src/placement";
+import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
 import { costOf } from "../src/structures";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
@@ -1490,6 +1490,18 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("M40 Fusion needs Robotics first", buyUnlock(w, "fusion") === false);
   buyUnlock(w, "robotics");
   check("M40 Fusion unlocks once Robotics is owned", buyUnlock(w, "fusion") === true && isUnlocked(w, "fusion"));
+}
+
+// --- Wall drag traces the perimeter; floor fills the rectangle ---
+{
+  const w = createWorld();
+  const a = idx(w, 5, 5);
+  const b = idx(w, 8, 7); // a 4×3 rectangle
+  check("Floor drag fills the whole rectangle", dragCells(w, a, b, "floor").length === 12);
+  check("Wall drag traces only the perimeter (hollow box)", dragCells(w, a, b, "wall").length === 10);
+  check("Erase drag fills the whole rectangle", dragCells(w, a, b, "erase").length === rectCells(w, a, b).length);
+  // a 1-wide drag is all perimeter (a straight wall line)
+  check("A 1-wide wall drag is a solid line", dragCells(w, idx(w, 5, 5), idx(w, 5, 9), "wall").length === 5);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
