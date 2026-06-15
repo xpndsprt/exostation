@@ -221,7 +221,7 @@ This is the failure state the whole game is designed around.
 ---
 
 ## 11b · Encounters, injuries & the Med Bay
-- **Social encounters:** every so often, when two crew/guests of different species share a cell, a moment flares up — a **clash** (if they dislike each other) or a **bond** (if they get on). **The game pauses and you choose how to respond.**
+- **Social encounters:** every so often, when two crew/guests of different species share a cell, a moment flares up — a **clash** (if they dislike each other) or a **bond** (if they get on). **The game pauses and you choose how to respond.** The flavor text is drawn from a **library of 50+ species-specific lines** (Human↔Korro, Vry'l↔Korro, Thol↔Vry'l, the Drenn/Vorn diplomats, etc.), so encounters read distinctly rather than repeating.
   - **Clash choices:** *Defuse it* (usually safe, small morale lift — slight chance it still goes wrong), *Discipline both* (no fight but both resent it), or *Let them settle it* (a gamble — they may brawl and get **wounded**, or back down with new respect). A bad/unlucky call **injures** someone.
   - **Bond choices:** *Encourage it* (both cheer, reputation up), *Put them to work* (small morale + a little income), or *Throw a party* (¢60 → lifts the **whole crew's** morale).
 - **Risky repairs:** servicing a **high-tier module** (anything that needed **2+ research Labs** — Turret, Fusion, Cargo Exchange, AI Core, the Beacon modules, etc.) can **injure** the crew member doing it. **Thol engineers** are far safer at it.

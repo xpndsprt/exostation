@@ -169,6 +169,7 @@ export interface Encounter {
   aSpecies: Species; // captured for the dialog text/portrait (agents may move/die)
   bSpecies: Species;
   cell: number; // where it happened
+  variant?: number; // index into the flavor pool for this pair+kind (stable text)
 }
 
 export type RequestKind = "host" | "happy" | "amenity";

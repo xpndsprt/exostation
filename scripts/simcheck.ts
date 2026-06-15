@@ -17,7 +17,7 @@ import { agentSystem } from "../src/agents";
 import { moodSystem, moodBreakdown } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { medicalSystem, injure } from "../src/medical";
-import { resolveEncounter } from "../src/encounters";
+import { resolveEncounter, encounterText } from "../src/encounters";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
@@ -1704,6 +1704,14 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   w.encounter = { kind: "bond", aId: ids[0], bId: ids[1], aSpecies: "drenn", bSpecies: "human", cell: idx(w, 7, 6) };
   resolveEncounter(w, 0);
   check("Encouraging a bond raises mood", w.agents[ids[1]].mood > 50);
+}
+{
+  // encounter flavor text varies per pair (the matrix of ~50 variations)
+  const titles = new Set<string>();
+  for (let v = 0; v < 16; v++) titles.add(encounterText({ kind: "conflict", aId: 0, bId: 1, aSpecies: "human", bSpecies: "korro", cell: 0, variant: v }).title);
+  check("Encounters have many text variations per pair", titles.size >= 10);
+  const c0 = encounterText({ kind: "conflict", aId: 0, bId: 1, aSpecies: "human", bSpecies: "korro", cell: 0, variant: 0 });
+  check("Encounter text fills in the species names", c0.body.includes("Human") && c0.body.includes("Korro"));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

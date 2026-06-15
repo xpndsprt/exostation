@@ -173,7 +173,7 @@ A third income stream: refine minerals into **fuel** and sell it to docking ship
 Larger berths land a visually bigger ship (size 2/3) and disembark a wider **O₂ guest mix** (Drenn/Human/Vry'l). Guests are still capped by free Hotel Rooms; one ship per pad at a time.
 
 ## Social encounters, injuries & medical
-Random **encounters** (`encounters.ts`): first possible at **55 s**, then a roll every **55 s** (retry in **8 s** if nobody's co-located). A roll finds two **alive, different-species** agents in the **same cell** with avg relation **≤ −7** (conflict) or **≥ +7** (bond); it sets `world.encounter` and the game **pauses** for the player's choice (one at a time).
+Random **encounters** (`encounters.ts`): first possible at **55 s**, then a roll every **55 s** (retry in **8 s** if nobody's co-located). A roll finds two **alive, different-species** agents in the **same cell** with avg relation **≤ −7** (conflict) or **≥ +7** (bond); it sets `world.encounter` and the game **pauses** for the player's choice (one at a time). The dialog text comes from a **~50-line `FLAVORS` library** — generic + per-species (Drenn/Vorn) + pair-specific (Human/Korro, Vry'l/Korro, Thol/Vry'l, Human/Drenn, …) lines; a `variant` index is chosen at creation so the text is stable and varied.
 - **Conflict choices:** *Defuse* (80% both mood +6; 20% one is injured), *Discipline* (both mood −7, tension zeroed, no injury), *Let them settle it* (55% both injured; else both mood +9).
 - **Bond choices:** *Encourage* (both mood +10, +4 rep each species), *Work together* (both +5, +¢40), *Party* (−¢60 → **all** crew +8; if unaffordable, the pair +5).
 
