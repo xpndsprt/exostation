@@ -118,6 +118,7 @@ export interface UIHandlers {
   onBuyUnlock: (id: string) => void;
   onCycle: (kind: string) => void; // double-click a palette tool to find its instances
   onLocateSpecies: (species: Species) => void; // click an Alienpedia entry to find them
+  onNewGame: () => void; // "New Station" — wipe the live world and start fresh
 }
 
 const toolButtons = new Map<Tool, HTMLButtonElement>();
@@ -320,6 +321,11 @@ function buildSaveControls(world: World, handlers: UIHandlers): void {
   modal?.addEventListener("click", (e) => {
     if (e.target === modal) closeSaves();
   });
+
+  document.getElementById("saves-new")?.addEventListener("click", () => {
+    closeSaves();
+    handlers.onNewGame();
+  });
 }
 
 export function markSaved(): void {
@@ -506,6 +512,44 @@ function setTutorialSeen(): void {
   } catch {
     /* ignore */
   }
+}
+
+// ---- new-station intro: a one-time briefing on the Beacon goal + species rules ----
+const INTRO_KEY = "exostation.introSeen";
+let introShown = false;
+export function isIntroOpen(): boolean {
+  return introShown;
+}
+// Has the player seen the intro before (so a plain page reload doesn't re-nag)?
+export function introSeen(): boolean {
+  try {
+    return localStorage.getItem(INTRO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+// Show the briefing; calls onClose when dismissed (the caller resumes the sim).
+export function showIntro(onClose: () => void): void {
+  const el = document.getElementById("intro");
+  if (!el) {
+    onClose();
+    return;
+  }
+  introShown = true;
+  try {
+    localStorage.setItem(INTRO_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+  const go = el.querySelector(".intro-go") as HTMLButtonElement;
+  const done = () => {
+    el.classList.remove("show");
+    introShown = false;
+    go.removeEventListener("click", done);
+    onClose();
+  };
+  go.addEventListener("click", done);
+  el.classList.add("show");
 }
 
 export function renderTutorial(world: World): void {

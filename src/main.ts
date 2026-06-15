@@ -57,6 +57,8 @@ import {
   showStarChart,
   isStarChartOpen,
   refreshStarChart,
+  showIntro,
+  introSeen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -193,6 +195,15 @@ async function boot(): Promise<void> {
 
   let prevPhase: Phase = "playing";
   let prevObjectiveIx = world.objectiveIx;
+  // Pause and show the new-station briefing (Beacon goal + species rules), then resume.
+  const launchIntro = (): void => {
+    const resume = world.speed || 1;
+    setSpeed(world, 0);
+    showIntro(() => {
+      if (world.phase === "playing") setSpeed(world, resume);
+    });
+  };
+
   const restart = (): void => {
     const fresh = createWorld();
     seedSolarSystem(fresh);
@@ -206,6 +217,7 @@ async function boot(): Promise<void> {
     setSpeed(world, 1);
     recenter();
     needRedraw = true;
+    launchIntro(); // a deliberate new station always gets the briefing
   };
 
   const handlers: UIHandlers = {
@@ -318,6 +330,10 @@ async function boot(): Promise<void> {
       centerOnCell(target);
       needRedraw = true;
     },
+    onNewGame: () => {
+      if (!window.confirm("Start a new station? Any unsaved progress on the current station will be lost.")) return;
+      restart();
+    },
     onStarChart: (bayId) => {
       // Open the orbital chart for this bay; clicking a body dispatches its drone.
       showStarChart(world, bayId, (siteId) => {
@@ -335,6 +351,7 @@ async function boot(): Promise<void> {
 
   setupUI(state, world, handlers);
   applyCam();
+  if (!introSeen()) launchIntro(); // first-ever run gets the briefing (reloads don't re-nag)
 
   const tileAt = (clientX: number, clientY: number): { tx: number; ty: number } => {
     const rect = canvas.getBoundingClientRect();

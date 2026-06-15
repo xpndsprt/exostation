@@ -304,6 +304,25 @@
     #starchart .sc-dispatch:hover:not(:disabled) { background: #3a78ec; }
     #starchart .sc-dispatch:disabled { background: #2a3445; color: #6b7488; cursor: default; }
     #starchart .sc-hint { color: #8b93a6; font-size: 11.5px; line-height: 1.45; }
+    /* new-station intro */
+    #intro { position: fixed; inset: 0; z-index: 64; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
+    #intro.show { display: flex; }
+    #intro .intro-card { background: #121826; border: 1px solid #2c3445; border-radius: 16px; padding: 24px 26px;
+      width: 540px; max-width: 92vw; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 70px rgba(0,0,0,.6); }
+    #intro .intro-tag { color: #6ea8ff; font-size: 10.5px; letter-spacing: .22em; font-weight: 700; }
+    #intro .intro-title { margin: 6px 0 14px; font-size: 24px; color: #eef2f8; }
+    #intro .intro-body p { color: #cdd4e0; font-size: 13.5px; line-height: 1.6; margin: 0 0 12px; }
+    #intro .intro-sec { background: #161d2b; border: 1px solid #242c3c; border-radius: 10px; padding: 12px 14px; margin: 0 0 12px; }
+    #intro .intro-sec h4 { margin: 0 0 6px; font-size: 13.5px; color: #e3e7ef; }
+    #intro .intro-sec p { margin: 0; font-size: 12.5px; color: #cdd4e0; line-height: 1.55; }
+    #intro .intro-tip { color: #9aa3b6; font-size: 12.5px; }
+    #intro .intro-go { width: 100%; background: #2d6cdf; color: #fff; border: none; border-radius: 9px;
+      padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+    #intro .intro-go:hover { background: #3a78ec; }
+    #saves .newstation { width: 100%; margin-top: 4px; background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445;
+      border-radius: 8px; padding: 8px; font-size: 12.5px; cursor: pointer; }
+    #saves .newstation:hover { background: #232c3d; }
   </style>
 </head>
 <body>
@@ -324,6 +343,7 @@
   <div id="saves"><div class="card">
     <h3>💾 Saves</h3>
     <div id="saves-body"></div>
+    <button class="newstation" id="saves-new" type="button">↻ New Station</button>
     <button class="close" type="button" onclick="document.getElementById('saves').classList.remove('show')">Close</button>
   </div></div>
   <div id="endbanner"><div class="card">
@@ -352,6 +372,21 @@
         <div class="sc-hint"></div>
       </div>
     </div>
+  </div></div>
+  <div id="intro"><div class="intro-card">
+    <div class="intro-tag">SECTOR ORBIT // NEW STATION</div>
+    <h2 class="intro-title">Welcome aboard, Commander</h2>
+    <div class="intro-body">
+      <p>You're founding a deep-space station and a crew of wildly different alien species — and racing to light the <b>Sector Beacon</b>.</p>
+      <div class="intro-sec"><h4>🎯 Your goal — the Sector Beacon</h4>
+        <p>Grow your crew, bank credits, and host a diverse roster — then build each species' <b>signature module</b> and keep it staffed to charge the Beacon. Bring all five online to win.</p></div>
+      <div class="intro-sec"><h4>🫁 Air is zoned — seal it</h4>
+        <p>Species breathe different gases (O₂, CH₄, Cl₂, NH₃, H₂). Each needs its own <b>sealed wing</b> with the matching generator, linked by <b>doors</b> (they pass crew but hold gas). The wrong air — or two gases mixing — is lethal. <b>H₂ + O₂ in one room explodes</b>; <b>Cl₂ corrodes</b> machinery; some crews want their wing <b>hot</b> or <b>cold</b>.</p></div>
+      <div class="intro-sec"><h4>🤝 The political web — who you house together matters</h4>
+        <p>Every species loves or hates others. <b>Humans &amp; Korro HATE</b> each other; <b>Thol &amp; Vry'l LOVE</b>; the <b>Drenn &amp; Naaz</b> get on with everyone. Friends sharing a room boost mood and production; rivals turn it tense — and a tense room eventually erupts into a fight. Group allies, wall off rivals.</p></div>
+      <p class="intro-tip">A <b>Getting Started</b> checklist sits in the corner: seal a room → power it → add air, food, a bunk and a dock, and your first crew will fly in.</p>
+    </div>
+    <button class="intro-go" type="button">Begin</button>
   </div></div>
   <div id="watermark"></div>
   <div id="advisor"></div>
