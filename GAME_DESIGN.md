@@ -224,9 +224,9 @@ Each species has a **Tech Level (TL 1–6)** that rises with tier. Tech cuts bot
 
 # RESOURCE GATHERING: RADAR, SITES & DRONE FLEET
 
-> 🔭 **Mostly planned.** This whole layer — the **Radar View**, fog-of-space + survey, multi-site/blip management, the managed **drone fleet** (tiers, range rings, integrity), per-resource standing orders, and **Charging Relays** — is design target, not yet built.
+> ⚙️ **Shipped (a first cut of this layer):** a Bot Bay's **Star Chart** is a real orbital map — the star, your station's orbit, and the system's **asteroids & planets** as **unknown contacts** you survey by sending a drone. You **select a body and dispatch** the bay's drone; it flies **off-map** and returns with minerals after a distance-scaled round trip (~25s near asteroid → ~70s far planet). The **first trip surveys + delivers** (Discover→Exploit fused); bodies are **finite and deplete**; **planets** are far/slow/rich vs **asteroids** near/fast/modest. Korro Hauler / AI Core / doctrine / Ore Refinery scale the haul. (See `BALANCE.md` "Star Chart & drone dispatch".)
 >
-> ⚙️ **Shipped mining is much simpler:** a **Bot Bay** auto-dispatches a mining drone to the **nearest asteroid**, which hauls **cargo 10** (×1.5 with a Korro aboard) back to storage, repeating automatically. No radar view, no surveying, no fleet management, no relays. Minerals feed trade and Mineral-Slurry-style needs.
+> 🔭 **Still planned (the richer vision below):** fog-of-space, multi-resource site types, the tiered **drone fleet** (range rings, cargo/speed tiers, integrity + Repair Bays), **Sensor Array** scan tiers, per-resource **standing orders**, replenishing sites, and **Charging Relays**. Today every body yields the same resource (minerals) — only the *amount* differs.
 
 Resources live **out in space**, often far from the station, so gathering is its own layer of play with its own view. You toggle between the **Build View** (station interior) and the **Radar View** (the space around you), and the gathering loop is: **scan → identify → assign drones → shuttle → deplete → move on.**
 

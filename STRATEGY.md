@@ -152,11 +152,13 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 
 ---
 
-## 7 · Mining (minerals) — the materials economy
-- **Asteroids occur naturally** — they're scattered around the map in open space at the start (you don't place them). Build a **Bot Bay** inside the station near some, and each bay comes with **one mining drone**.
-- The drone auto-runs the loop: **lift off its pad → fly out → mine → fly back → land & unload**, delivering **minerals** to stock (the ⛏ chip; cargo 10/trip). Each Bot Bay projects a small **1×1 launch pad** (blinking light) on the hull; the drone accelerates off it, rises mid-flight, and decelerates back down to land. Drone color shows its state (outbound/mining/inbound); a pip shows it's carrying cargo.
-- A site has **richness** (starts at 1000) that **depletes** as it's mined.
-- **Takeaway:** mining is **not tied to food** — it builds your **minerals** stockpile (for trade/construction as those systems land). Food comes from Vats; minerals come from asteroids. Place the asteroid close to cut round-trip time.
+## 7 · Mining (minerals) — the Star Chart & orbital dispatch
+- There are **no asteroids on the station map**. Mining happens **out in the star system**. Build a **Bot Bay** (it comes with **one drone**), select it, and click **🛰 Star Chart** to open the orbital map.
+- **The Star Chart** shows your **star** at the centre, your **station on its orbit** (the green marker), and the system's **asteroids and planets** scattered at various distances. Bodies start as **unknown contacts (`?`)** — you don't know their yield until a drone visits.
+- **Click a body, then "Dispatch / Survey"** to send that bay's drone. It **lifts off the pad, flies off-map, and returns some time later** with minerals. **The first trip both surveys it (revealing yield + remaining units) and delivers that first haul** — every trip pays off.
+- **Distance = time vs reward.** Near **asteroids** are quick (~25s round trip) with **modest hauls (8–20)**; far **planets** are slow (~70s) but bring **big hauls (40–80)**. The drone keeps re-running trips to the assigned target on its own until that body is **depleted** (each has finite richness), then idles — open the chart and pick a fresh target.
+- **More bays = more drones** working in parallel (each dispatched from its own chart). The **Korro Hauler** trait adds **+50%** to every haul; an **AI Core / Industrialist doctrine / Ore Refinery beacon** stack on top.
+- **Takeaway:** mining is **not tied to food** — it builds your **minerals** stockpile (trade, fuel, Fusion). Send a cheap first drone to **survey** nearby asteroids, then commit drones to the richest finds; push out to planets once you can afford the long trips.
 
 ---
 
@@ -167,7 +169,7 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 - **A trader class per gas:** guests need a hotel **in their own breathable gas**, and each gas has its own visitor species. An **O₂** Hotel Room draws **Drenn** (and a Human/Vry'l mix at bigger docks); a **CH₄** Hotel Room draws **Vorn**, the methane merchants. So building a **methane wing with its own Hotel Room** opens a *second* lodging stream — and a Vorn aboard makes every ship pay **+50% for fuel**. Put a dock near each wing so guests don't trek across the wrong air.
 - **Bigger berths (Large & Spaceport Docks):** research **Expanded Docking** then **Spaceport** to build larger docks. They place exactly like a standard dock (one hull-wall airlock) but project a **5×5** / **7×7** pad and land progressively **bigger ships** that disembark **more guests per visit** (3 → 6 → 10) **and a wider species mix** (large/spaceport berths bring Drenn + Human + Vry'l tourists, not just Drenn) — and crucially **buy far more fuel** (see below). Guests are still capped by your free Hotel Rooms.
 - **Fuel for sale (refueling income):** research **Fuel Refining** (a cheap **root** tech) and build a **Fuel Refinery** — it **cracks minerals into fuel** (2 minerals → 3 fuel every ~6s; needs a **Bot Bay** mining to feed it). **Every ship that docks buys fuel on landing at ~4¢/unit** — **6 / 18 / 40** units for a standard / large / spaceport dock. So a Spaceport + stocked refineries turns each arrival into a big cash drop (~¢160). Fuel shows on the **⛽ chip**; out of fuel, ships just don't refuel (no income, but they still bring guests).
-- **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: mine asteroids → minerals → Trade Hub → credits.
+- **Trade:** build a **Trade Hub** (your trading station) and every ~30s **traders buy your minerals** (up to 25 at ~3¢ each), converting mining output into credits. A green **trader ship** parks at a dock if you have one. No Trade Hub = no mineral sales. So the materials loop closes: dispatch drones → minerals → Trade Hub → credits.
 - **Running costs (M37):** the station has **upkeep** — every operating module costs **~0.15¢/s** and every resident draws a **wage of ~0.2¢/s**. The credit chip shows your **net ¢/s** next to the balance (red when negative). So an *idle* station slowly **bleeds**; only an active economy (lodging + trade + fuel) stays in the black. Watch the net rate — if it's red, you're shrinking.
 - **Takeaway:** Hotel Rooms + a dock drive lodging; mining + a **Trade Hub** drive trade; **minerals → Fuel Refinery → fuel → bigger docks** is a third income stream that rewards scaling your berths. Keep net income positive, then spend the surplus on expansion and **research**; deconstruct for a 50% refund.
 
@@ -302,7 +304,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 4. **Docking Port** on a **hull wall** (airlock to space). With air + food + a bunk + a powered dock, a **shuttle brings your first Human** within ~12s. Add more Crew Quarters to grow the crew.
 5. **Bio Vat** before the starting biomass runs low, so food stays self-sustaining.
 6. **Battery** for power headroom.
-7. **Bot Bay** near a natural **asteroid** → drone mines **minerals** (materials stockpile).
+7. **Bot Bay** → open its **🛰 Star Chart**, survey a nearby asteroid, dispatch the drone → **minerals** (materials stockpile).
 8. **Lounge** so crew (and guests) can relax — keeps mood up as the station grows.
 9. **Hotel Rooms** (+ the dock you already have) → Drenn guests arrive by shuttle for lodging income; a **Trade Hub** lets **trader ships** buy your minerals for credits.
 10. Want Thol money later? Build a **separate methane wing** (its own walls + Methane Gen + a bunk + Rations), **linked to the rest by a Door** so traffic flows but the gases never mix — Thol then immigrate to it.
@@ -343,7 +345,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Dock tiers | Docking Port (3×3 pad, 3 guests) · Large Dock (5×5, 6 guests) · Spaceport Dock (7×7, 10 guests). Bigger berths land bigger ships, a wider guest species mix, and bigger fuel sales |
 | Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s; **can hit a lone, battery-less life-support gen**) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (pirate craft; DPS ~8→26 scaling with station size; **destroys a module when its condition hits 0**, breaches the hull if nothing's left, **hits life support if undefended & 2+ rooms**, until a Turret kills it). Redundancy (Battery / backup gen / Turret / Garrison) is the counter |
 | Food | Bio Vat: +3 / 8s (biomass · spores · microbes) · Synth: 2 base → 4 meals / 10s. Lines: Rations (biomass) · Fungal (spores) · **Live-Protein** (microbes → Sszra) · **Exo-Culture** (microbes → Chlorithe/Naaz/Voltaar). Spores/Fungal need Fungal Synthesis; Microbes/Protein/Exo need Exobiology |
-| Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
+| Mining | minerals only, via the Bot Bay **Star Chart**: dispatch a drone to an orbital body (off-map). Round trip ~25s (near asteroid) → ~70s (far planet); haul = body yield (asteroid 8–20 / planet 40–80), ×1.5 Korro. First trip surveys + delivers; bodies are finite and deplete. Storage idles at the minerals cap |
 | Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core/med-bay/fuel-refinery/heater/cryo-unit 2×2, solar 1×3 (wall) |
 | Objectives | grow to 3 crew → bank ¢3000 → host 4 resident species → **bring the Sector Beacon online** (charge all 5 species signature modules). Clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Sector Beacon | 5 researched signature modules (one per species); each charges 0→100% only while powered + its species is in its room, and grants a unique perk (mood / trade / repair / food / mining). All 5 charged = victory |

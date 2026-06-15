@@ -1,5 +1,5 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addSite, seedAsteroids, addAgent, eraseAt, idx } from "../src/world";
+import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addBody, seedSolarSystem, addAgent, eraseAt, idx } from "../src/world";
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
 import { costOf, DOCK_TIER } from "../src/structures";
 import { SPECIES } from "../src/species";
@@ -8,7 +8,7 @@ import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
-import { miningSystem } from "../src/mining";
+import { miningSystem, transitSeconds } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { fuelSystem } from "../src/fuel";
 import { overflowSystem } from "../src/overflow";
@@ -147,7 +147,7 @@ check("M4 agent reached pod", h.cell === idx(w2, 13, 6));
 check("M4 agent slept to full at some point", sleptFull);
 check("M4 pod released after sleeping", pod.occupantId === -1);
 
-// --- M5: mining drone loop ---
+// --- M5: drone dispatch loop (off-map orbital bodies) ---
 const w3 = createWorld();
 // Small powered room so the Bot Bay has power.
 for (let y = 5; y <= 7; y++) {
@@ -159,26 +159,26 @@ for (let y = 5; y <= 7; y++) {
 recomputeRooms(w3);
 addStructure(w3, "solar", 6, 6); // +10 supply covers bay's 4 draw
 addStructure(w3, "bay", 7, 6); // spawns one drone
-addSite(w3, 20, 6); // asteroid out in space
+const bodyId = addBody(w3, "asteroid", { angle: 0, dist: 0.1, yield: 15, richness: 300 });
 w3.stock.minerals = 0;
 
 const bay = Object.values(w3.structures).find((s) => s.kind === "bay")!;
 const drone = Object.values(w3.drones)[0];
 check("M5 bay spawned a docked drone", !!drone && drone.state === "docked");
+check("M5 an undiscovered body starts hidden", w3.sites[bodyId].discovered === false);
 
-const site = Object.values(w3.sites)[0];
+drone.siteId = bodyId; // the player assigns a target from the Star Chart
+const site = w3.sites[bodyId];
 const richBefore = site.richness;
-let sawOutbound = false;
-let sawMining = false;
-for (let i = 0; i < 200; i++) {
+let sawTransit = false;
+for (let i = 0; i < 400; i++) {
   step(w3);
-  if (drone.state === "outbound") sawOutbound = true;
-  if (drone.state === "mining") sawMining = true;
+  if (drone.state === "transit") sawTransit = true;
 }
 check("M5 bay is powered", bay.powered);
-check("M5 drone flew outbound", sawOutbound);
-check("M5 drone mined the site", sawMining);
-check("M5 site richness dropped", site.richness < richBefore);
+check("M5 drone flew a transit leg off-map", sawTransit);
+check("M5 the body was discovered on arrival", site.discovered === true);
+check("M5 body richness dropped", site.richness < richBefore);
 check("M5 drone delivered minerals to stock", w3.stock.minerals > 0);
 
 // --- M6: docking port spawns Drenn guests + lodging income ---
@@ -588,9 +588,10 @@ check("Footprint over an occupied tile is rejected", footprintCells(wf2, "vat", 
 
 // --- M18: natural asteroids ---
 const wa2 = createWorld();
-check("Fresh world has no asteroids", Object.keys(wa2.sites).length === 0);
-seedAsteroids(wa2, 8);
-check("seedAsteroids scatters asteroids into space", Object.keys(wa2.sites).length > 0);
+check("Fresh world has no orbital bodies", Object.keys(wa2.sites).length === 0);
+seedSolarSystem(wa2, 8, 2);
+check("seedSolarSystem populates the star system", Object.keys(wa2.sites).length === 10);
+check("Seeded bodies start undiscovered", Object.values(wa2.sites).every((s) => !s.discovered));
 
 // --- Door crossing: agents transit a door without oscillating (suit covers it) ---
 const wdoor = createWorld();
@@ -896,12 +897,33 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
     addStructure(w, "solar", 7, 6); // power for o2gen + bay
     addStructure(w, "o2gen", 6, 7);
     addStructure(w, "bay", 8, 6); // one drone
-    addSite(w, 40, 30); // a distant asteroid so trip count matters
+    const id = addBody(w, "asteroid", { angle: 0, dist: 0.1, yield: 15, richness: 5000 }); // deep target — won't deplete
+    Object.values(w.drones)[0].siteId = id;
     if (withKorro) addAgent(w, 8, 7, "korro");
     for (let i = 0; i < 2500; i++) step(w);
     return w.stock.minerals;
   }
   check("Korro Hauler trait boosts mining throughput", mineRun(true) > mineRun(false));
+}
+{
+  // a target depletes and the drone idles (un-targets itself) when it runs dry
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "bay", 7, 6);
+  const id = addBody(w, "asteroid", { angle: 0, dist: 0.05, yield: 20, richness: 40 }); // tiny — empties in ~2 trips
+  const dr = Object.values(w.drones)[0];
+  dr.siteId = id;
+  w.stock.minerals = 0;
+  for (let i = 0; i < 1200; i++) step(w);
+  check("A target depletes to zero", w.sites[id].richness === 0);
+  check("Depleted target's drone goes idle", dr.siteId === -1 && dr.state === "docked");
+  check("Delivered minerals equal the body's richness", w.stock.minerals === 40);
+}
+{
+  // planets (far) take much longer per trip than asteroids (near)
+  check("Far planets take longer per trip than near asteroids", transitSeconds(0.9) > transitSeconds(0.1) * 2);
 }
 
 // --- M28: mood breakdown is the single source of truth ---

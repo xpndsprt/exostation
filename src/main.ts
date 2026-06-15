@@ -1,6 +1,6 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
-import { createWorld, setCell, addStructureMulti, addDock, seedAsteroids, eraseAt, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructureMulti, addDock, seedSolarSystem, eraseAt, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -54,6 +54,9 @@ import {
   isFirstContactOpen,
   showEncounter,
   isEncounterOpen,
+  showStarChart,
+  isStarChartOpen,
+  refreshStarChart,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -127,7 +130,7 @@ async function boot(): Promise<void> {
   app.stage.addChild(worldContainer);
 
   const world = createWorld();
-  seedAsteroids(world); // scatter natural asteroids to mine
+  seedSolarSystem(world); // populate the star system with unknown orbital bodies
   const cam = createCamera();
   const renderer = new Renderer(worldContainer, app.renderer);
   renderer.drawGrid(world.w, world.h);
@@ -192,7 +195,7 @@ async function boot(): Promise<void> {
   let prevObjectiveIx = world.objectiveIx;
   const restart = (): void => {
     const fresh = createWorld();
-    seedAsteroids(fresh);
+    seedSolarSystem(fresh);
     Object.assign(world, fresh);
     world.dirtyRooms = true;
     sel = null;
@@ -315,6 +318,18 @@ async function boot(): Promise<void> {
       centerOnCell(target);
       needRedraw = true;
     },
+    onStarChart: (bayId) => {
+      // Open the orbital chart for this bay; clicking a body dispatches its drone.
+      showStarChart(world, bayId, (siteId) => {
+        for (const id in world.drones) {
+          const d = world.drones[id];
+          if (d.bayId !== bayId) continue;
+          d.siteId = siteId; // applies now if docked; otherwise on its next return
+          break;
+        }
+        needRedraw = true;
+      });
+    },
   };
   const cycleIx: Record<string, number> = {};
 
@@ -382,15 +397,14 @@ async function boot(): Promise<void> {
     }
     const c = world.cells[cell];
     if (c.structureId >= 0) return { kind: "structure", id: c.structureId };
-    for (const id in world.sites) if (world.sites[id].cell === cell) return { kind: "site", id: +id };
-    return null;
+    return null; // asteroids/planets are off-map (selected from the Star Chart)
   };
 
   const selCell = (): number => {
     if (!sel) return -1;
     if (sel.kind === "agent") return world.agents[sel.id]?.cell ?? -1;
     if (sel.kind === "structure") return world.structures[sel.id]?.cell ?? -1;
-    return world.sites[sel.id]?.cell ?? -1;
+    return -1;
   };
 
   // --- pointer interaction ---
@@ -701,6 +715,7 @@ async function boot(): Promise<void> {
       renderer.draw(world, sc, overlay);
       updateHud(world);
       updateInfo(world, sel, handlers);
+      if (isStarChartOpen()) refreshStarChart(world); // live ETAs / drone position while it's up
       renderTech(world, handlers.onBuyUnlock);
       refreshPalette(world);
       renderRequests(world);

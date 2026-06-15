@@ -261,9 +261,7 @@ export class Renderer {
   draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none"): void {
     this.drawTiles(world);
     this.drawAtmosphere(world);
-    this.drawSprites(this.sitesC, Object.values(world.sites).map((s) => ({
-      t: tex("asteroid", "default"), x: (s.cell % world.w) * TILE, y: ((s.cell / world.w) | 0) * TILE, c: false,
-    })));
+    // Asteroids/planets live off-map in the Star Chart now — nothing on the grid.
     this.drawStructures(world);
     this.drawAgents(world);
     this.drawDrones(world);
@@ -406,21 +404,6 @@ export class Renderer {
       buf[o + 1] += lg * f;
       buf[o + 2] += lb * f;
     });
-  }
-
-  // simple sprite-list helper: place fresh Sprites in a container (textures cached)
-  private drawSprites(box: Container, items: { t: Texture | null; x: number; y: number; c: boolean; tint?: number }[]): void {
-    box.removeChildren();
-    for (const it of items) {
-      if (!it.t) continue;
-      const sp = new Sprite(it.t);
-      sp.scale.set(SCALE);
-      if (it.c) sp.anchor.set(0.5);
-      if (it.tint !== undefined) sp.tint = it.tint;
-      sp.x = it.x;
-      sp.y = it.y;
-      box.addChild(sp);
-    }
   }
 
   // Tiles are drawn as sprites, rebuilt only when the grid actually changes
@@ -628,43 +611,39 @@ export class Renderer {
       const on = phase < 0.5;
       g.circle(px, py - TILE * 0.28, 1.6).fill({ color: on ? 0xffd27a : 0x4a3a1e, alpha: on ? 0.95 : 0.6 });
     }
-    // drone flight: accelerate off the pad (ease-in) and decelerate onto the
-    // site / back home (ease-out), rising mid-flight (lift) for a 3D feel.
+    // Drone flight is now just the on/off-map legs: lift off the pad out toward
+    // space (outbound), vanish off-map (transit), descend back onto the pad
+    // (inbound). The exit point is several tiles beyond the pad along its outward
+    // normal, so the drone climbs away into the void and shrinks as it goes.
     const easeIn = (t: number) => t * t;
     const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
+    const EXIT = 7; // tiles beyond the pad where the drone leaves the screen
     for (const id in world.drones) {
       const d = world.drones[id];
+      if (d.state === "transit") continue; // off-map — invisible
       const bay = world.structures[d.bayId];
       if (!bay) continue;
-      const [bx, by] = center(padCell.get(bay.id) ?? bay.cell);
-      const site = world.sites[d.siteId];
-      let x = bx;
-      let y = by;
-      let lift = 0;
-      if (site) {
-        const [sx, sy] = center(site.cell);
-        if (d.state === "outbound") {
-          const te = easeIn(d.t);
-          x = bx + (sx - bx) * te;
-          y = by + (sy - by) * te;
-          lift = Math.sin(d.t * Math.PI);
-        } else if (d.state === "mining") {
-          x = sx;
-          y = sy;
-        } else if (d.state === "inbound") {
-          const te = easeOut(d.t);
-          x = sx + (bx - sx) * te;
-          y = sy + (by - sy) * te;
-          lift = Math.sin(d.t * Math.PI);
-        }
-        if (d.state !== "docked")
-          g.moveTo(bx, by).lineTo(sx, sy).stroke({ width: 1, color: COLORS.route, alpha: 0.4 });
-      }
+      const pc = padCell.get(bay.id) ?? bay.cell;
+      const [px, py] = center(pc);
+      // outward normal = pad cell minus bay anchor (one of ±1 / ±w)
+      const dxn = (pc % world.w) - (bay.cell % world.w);
+      const dyn = ((pc / world.w) | 0) - ((bay.cell / world.w) | 0);
+      const ux = Math.sign(dxn) || 0;
+      const uy = Math.sign(dyn) || (ux === 0 ? -1 : 0); // default: straight up
+      const ex = px + ux * EXIT * TILE;
+      const ey = py + uy * EXIT * TILE;
+      const te = d.state === "outbound" ? easeIn(d.t) : d.state === "inbound" ? easeOut(1 - d.t) : 0; // docked = on the pad
+      const x = px + (ex - px) * te;
+      const y = py + (ey - py) * te;
+      const fade = 1 - te;
+      if (d.state !== "docked")
+        g.moveTo(px, py).lineTo(ex, ey).stroke({ width: 1, color: COLORS.route, alpha: 0.35 });
       const t = tex("drone", d.cargo > 0 ? "laden" : "empty");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE * (1 + 0.3 * lift));
+        sp.scale.set(SCALE * (0.5 + 0.5 * fade)); // shrink as it climbs away
         sp.anchor.set(0.5);
+        sp.alpha = 0.35 + 0.65 * fade;
         sp.x = x;
         sp.y = y;
         this.dronesC.addChild(sp);

@@ -1,5 +1,5 @@
 import { World } from "./types";
-import { defaultRecipe } from "./world";
+import { defaultRecipe, seedSolarSystem } from "./world";
 
 const PREFIX = "exostation.save.";
 const LEGACY = "exostation.save.v1";
@@ -151,6 +151,29 @@ function sanitize(w: World): World {
     if (typeof s.servicedBy !== "number") s.servicedBy = -1;
     if (typeof s.recipe !== "string") s.recipe = defaultRecipe(s.kind);
     if (typeof s.faultT !== "number") s.faultT = 0;
+  }
+  // Sites became orbital bodies (no grid cell). A legacy save has on-grid sites
+  // (a `cell`, no `kind`/`discovered`) — discard those and re-seed a fresh system,
+  // then reset every drone to idle so none references a dropped target.
+  if (!w.sites || typeof w.sites !== "object") w.sites = {};
+  const legacySites = Object.values(w.sites).some((s) => (s as { kind?: string }).kind === undefined);
+  if (legacySites) {
+    w.sites = {};
+    seedSolarSystem(w);
+    for (const id in w.drones) {
+      const d = w.drones[id];
+      d.state = "docked";
+      d.siteId = -1;
+      d.t = 0;
+      d.cargo = 0;
+    }
+  }
+  for (const id in w.drones) {
+    const d = w.drones[id];
+    if (!["docked", "outbound", "transit", "inbound"].includes(d.state)) {
+      d.state = "docked"; // old "mining" state retired
+      d.t = 0;
+    }
   }
   w.dirtyRooms = true;
   return w;

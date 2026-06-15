@@ -36,7 +36,7 @@ simStep(world, dt):              // src/main.ts
   if (dirtyRooms) recomputeRooms // flood-fill room/enclosure detection
   powerSystem        // 1.  supply/draw, battery, brownout priority-shedding, faults
   maintenanceSystem  // 2.  machinery wears down while running
-  miningSystem       // 3.  drone shuttle loop -> minerals
+  miningSystem       // 3.  drone dispatch loop (off-map orbital bodies) -> minerals
   foodSystem         // 4.  Vats grow base resources; Synths -> meals
   fuelSystem         // 4b. Fuel Refineries crack minerals -> fuel (sold to ships)
   overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
@@ -69,9 +69,9 @@ simStep(world, dt):              // src/main.ts
 There is **no stored seeded PRNG**. The sim avoids `Math.random` in the per-tick
 path: incidents and requests choose deterministically by **hashing `world.tick`**
 (`(tick * 2654435761) >>> 0`), so a given save replays identically. The one
-exception is `seedAsteroids()`, which uses `Math.random` *once* at new-game time
-to scatter asteroids — but the result is baked into the saved `World`, so it
-stays reproducible thereafter.
+exception is `seedSolarSystem()`, which uses `Math.random` *once* at new-game time
+to lay out the orbital bodies — but the result is baked into the saved `World`, so
+it stays reproducible thereafter.
 
 ## Data model (real shapes — see `src/types.ts`)
 ```ts
@@ -251,12 +251,17 @@ collateral, and `agents.ts` (servicing a `highTierModule` — 2+-Lab unlock — 
 (serializable); resolution uses `Math.random` since it's player-driven, off the
 deterministic tick.
 
-### Mining (`mining.ts`)
-Asteroids (`sites`) are scattered in open space. Each Bot Bay spawns a drone with
-a shuttle FSM: `docked → outbound → mining → inbound → unload`. It auto-dispatches
-to the nearest non-empty site; travel time scales with distance. Unloaded
-minerals are added to stock up to the storage cap. Korro crew raise cargo
-capacity (trait). Per-site standing orders are a deferred radar feature.
+### Mining (`mining.ts` + Star Chart UI)
+Asteroids/planets (`sites`) are **off-map orbital bodies** — `{ kind, name, angle,
+dist, discovered, richness, yield }`, not grid cells (`seedSolarSystem` in
+`world.ts`). The player opens a Bot Bay's **Star Chart** (a 2D-canvas dialog in
+`ui.ts`) and assigns its drone a target (`drone.siteId`). Each drone runs an FSM
+`docked → outbound → transit (off-map) → inbound → unload`; transit time =
+`transitSeconds(dist)`. On first arrival the body is **discovered** (yield/richness
+revealed) and its haul (`yield ×` Korro/AI/doctrine/beacon, capped by richness) is
+delivered up to the storage cap, then the drone auto-repeats until the body
+depletes (finite) and un-targets. The renderer flies the drone off the pad toward
+space (outbound/inbound) and hides it during transit.
 
 ### Food (`food.ts`)
 **Bio Vats** grow a base resource on a timer by recipe (`biomass` or `spores`);

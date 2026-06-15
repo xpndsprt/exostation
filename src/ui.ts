@@ -1,4 +1,5 @@
-import { Encounter, HoverTarget, OverlayMode, Selection, Speed, Species, Tool, UIState, World } from "./types";
+import { Encounter, HoverTarget, OverlayMode, Selection, Site, Speed, Species, Tool, UIState, World } from "./types";
+import { transitSeconds } from "./mining";
 import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
@@ -111,6 +112,7 @@ export interface UIHandlers {
   onDeconstruct: (id: number) => void;
   onToggle: (id: number) => void;
   onRecipe: (id: number) => void;
+  onStarChart: (bayId: number) => void; // open the orbital chart for a Bot Bay
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
   onBuyUnlock: (id: string) => void;
@@ -638,10 +640,6 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       (def.draw > 0
         ? `<div>Condition <span style="color:${cc}">${Math.round(s.condition)}%</span>${s.servicedBy >= 0 ? " · being serviced" : ""}</div>`
         : "");
-  } else if (target.kind === "site") {
-    const site = world.sites[target.id];
-    if (!site) return hideTooltip();
-    html = `<h4>Asteroid</h4><div>richness ${Math.round(site.richness)}</div>`;
   } else if (target.kind === "cell") {
     const c = world.cells[target.cell];
     const cx = target.cell % world.w;
@@ -918,19 +916,35 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
     } else if (s.kind === "vat") {
       html += `<div class="row"><span>Grows</span><b>${VAT_LABEL[s.recipe] ?? "Biomass"}</b></div>`;
+    } else if (s.kind === "bay") {
+      const drone = Object.values(world.drones).find((d) => d.bayId === s.id);
+      const site = drone && drone.siteId >= 0 ? world.sites[drone.siteId] : undefined;
+      const status = !drone
+        ? "—"
+        : drone.state === "docked"
+          ? site
+            ? "ready"
+            : "idle — no target"
+          : drone.state === "transit"
+            ? `mining ${site?.name ?? "?"}`
+            : drone.state === "outbound"
+              ? "launching"
+              : `returning${drone.cargo > 0 ? ` (+${Math.round(drone.cargo)})` : ""}`;
+      html += `<div class="row"><span>Drone</span><b>${status}</b></div>`;
+      if (site)
+        html += `<div class="row"><span>Target</span><b>${site.discovered ? `${site.name} · ${Math.round(site.richness)} left` : `${site.name} (unknown)`}</b></div>`;
     }
     const toggleLabel = s.on ? "Turn off" : "Turn on";
     const recipeBtn = s.kind === "synth" || s.kind === "vat" ? `<button data-act="recipe">Switch recipe</button>` : "";
+    const starBtn = s.kind === "bay" ? `<button data-act="starchart">🛰 Star Chart</button>` : "";
     actions =
       `<div class="actions">` +
       recipeBtn +
+      starBtn +
       (def.draw > 0 ? `<button data-act="toggle">${toggleLabel}</button>` : "") +
       `<button class="danger" data-act="remove">Deconstruct</button></div>`;
   } else {
-    const site = world.sites[sel.id];
-    if (!site) return void panel.classList.remove("show");
-    html += `<h3>Asteroid</h3>`;
-    html += `<div class="row"><span>Richness</span><b>${Math.round(site.richness)}</b></div>${bar((site.richness / 1000) * 100, "#8a7a5c")}`;
+    return void panel.classList.remove("show"); // sites are off-map (Star Chart) now
   }
 
   panel.innerHTML = html + actions;
@@ -941,6 +955,7 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     panel.querySelector('[data-act="remove"]')?.addEventListener("click", () => handlers.onDeconstruct(id));
     panel.querySelector('[data-act="toggle"]')?.addEventListener("click", () => handlers.onToggle(id));
     panel.querySelector('[data-act="recipe"]')?.addEventListener("click", () => handlers.onRecipe(id));
+    panel.querySelector('[data-act="starchart"]')?.addEventListener("click", () => handlers.onStarChart(id));
   }
 }
 
@@ -1057,4 +1072,211 @@ export function showEncounter(enc: Encounter, onChoose: (choice: number) => void
     }, { once: true });
   });
   el.classList.add("show");
+}
+
+// ---- Star Chart: the Bot Bay's orbital dispatch dialog (non-pausing) ----
+const SC_SIZE = 520; // canvas px (square)
+let scOpen = false;
+let scBayId = -1;
+let scSelected = -1; // selected body id, or -1
+let scWorld: World | null = null;
+let scDispatch: ((siteId: number) => void) | null = null;
+let scWired = false;
+let scHits: { id: number; x: number; y: number; r: number }[] = [];
+
+export function isStarChartOpen(): boolean {
+  return scOpen;
+}
+
+// The drone belonging to the open chart's bay (if any).
+function scDrone(world: World) {
+  return Object.values(world.drones).find((d) => d.bayId === scBayId);
+}
+
+export function showStarChart(world: World, bayId: number, onDispatch: (siteId: number) => void): void {
+  const el = document.getElementById("starchart");
+  if (!el) return;
+  scOpen = true;
+  scBayId = bayId;
+  scWorld = world;
+  scDispatch = onDispatch;
+  const d = scDrone(world);
+  scSelected = d && d.siteId >= 0 ? d.siteId : -1; // preselect the current target
+
+  if (!scWired) {
+    scWired = true;
+    el.querySelector(".sc-close")?.addEventListener("click", closeStarChart);
+    const canvas = el.querySelector(".sc-map") as HTMLCanvasElement;
+    canvas.width = SC_SIZE;
+    canvas.height = SC_SIZE;
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = ((e.clientX - rect.left) / rect.width) * SC_SIZE;
+      const my = ((e.clientY - rect.top) / rect.height) * SC_SIZE;
+      let pick = -1;
+      let best = 18 * 18; // generous click radius²
+      for (const h of scHits) {
+        const dd = (h.x - mx) ** 2 + (h.y - my) ** 2;
+        if (dd < best) {
+          best = dd;
+          pick = h.id;
+        }
+      }
+      if (pick >= 0) scSelected = pick;
+      if (scWorld) refreshStarChart(scWorld);
+    });
+    el.querySelector(".sc-dispatch")?.addEventListener("click", () => {
+      if (scSelected >= 0 && scDispatch) scDispatch(scSelected);
+      if (scWorld) refreshStarChart(scWorld);
+    });
+  }
+  el.classList.add("show");
+  refreshStarChart(world);
+}
+
+function closeStarChart(): void {
+  scOpen = false;
+  document.getElementById("starchart")?.classList.remove("show");
+}
+
+const SC_ASTEROID = "#9a8a64";
+const SC_PLANET = "#6fa8d0";
+const SC_UNKNOWN = "#566074";
+
+export function refreshStarChart(world: World): void {
+  if (!scOpen) return;
+  scWorld = world;
+  const el = document.getElementById("starchart");
+  if (!el) return;
+  const canvas = el.querySelector(".sc-map") as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const cx = SC_SIZE / 2;
+  const cy = SC_SIZE / 2;
+  const r0 = 64; // station orbit radius
+  const rMax = SC_SIZE / 2 - 26;
+  const bodyR = (s: Site) => r0 + 26 + s.dist * (rMax - r0 - 26);
+
+  // backdrop
+  ctx.fillStyle = "#070a12";
+  ctx.fillRect(0, 0, SC_SIZE, SC_SIZE);
+  // faint starfield (deterministic by index so it doesn't shimmer)
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  for (let i = 0; i < 90; i++) {
+    const a = i * 2.39996;
+    const rr = ((i * 97) % 1000) / 1000;
+    ctx.globalAlpha = 0.12 + ((i * 7) % 10) / 50;
+    ctx.fillRect(cx + Math.cos(a) * rr * (SC_SIZE / 2), cy + Math.sin(a) * rr * (SC_SIZE / 2), 1.4, 1.4);
+  }
+  ctx.globalAlpha = 1;
+
+  // the star + the station's orbit ring
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
+  glow.addColorStop(0, "#ffe9a8");
+  glow.addColorStop(1, "rgba(255,210,122,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffd27a";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(110,168,255,0.35)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r0, 0, Math.PI * 2);
+  ctx.stroke();
+  // the station sits on its orbit (top)
+  const stx = cx;
+  const sty = cy - r0;
+  ctx.fillStyle = "#49d17a";
+  ctx.fillRect(stx - 4, sty - 4, 8, 8);
+
+  scHits = [];
+  const drone = scDrone(world);
+
+  for (const id in world.sites) {
+    const s = world.sites[id];
+    const r = bodyR(s);
+    const x = cx + Math.cos(s.angle) * r;
+    const y = cy + Math.sin(s.angle) * r;
+    const known = s.discovered;
+    const depleted = known && s.richness <= 0;
+    const col = depleted ? "#3a4150" : !known ? SC_UNKNOWN : s.kind === "planet" ? SC_PLANET : SC_ASTEROID;
+    const rad = s.kind === "planet" ? 8 : 5;
+    // selection ring
+    if (s.id === scSelected) {
+      ctx.strokeStyle = "#6ea8ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, rad + 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.fill();
+    // label
+    ctx.fillStyle = known ? "#c3cbdc" : "#6b7488";
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(known ? s.name : "?", x, y + rad + 11);
+    scHits.push({ id: s.id, x, y, r: rad });
+  }
+
+  // the bay's drone, drawn en route along its target line (out then back)
+  if (drone && drone.siteId >= 0) {
+    const s = world.sites[drone.siteId];
+    if (s) {
+      const r = bodyR(s);
+      const tx = cx + Math.cos(s.angle) * r;
+      const ty = cy + Math.sin(s.angle) * r;
+      ctx.strokeStyle = "rgba(110,168,255,0.5)";
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(stx, sty);
+      ctx.lineTo(tx, ty);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (drone.state === "transit") {
+        const frac = Math.min(1, drone.t / transitSeconds(s.dist));
+        const p = frac < 0.5 ? frac * 2 : (1 - frac) * 2; // out, then back
+        const dxp = stx + (tx - stx) * p;
+        const dyp = sty + (ty - sty) * p;
+        ctx.fillStyle = "#dfe6f2";
+        ctx.beginPath();
+        ctx.arc(dxp, dyp, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // side panel: selected-body details + dispatch state
+  const sel = scSelected >= 0 ? world.sites[scSelected] : undefined;
+  const selEl = el.querySelector(".sc-sel") as HTMLElement;
+  if (sel) {
+    const trip = Math.round(transitSeconds(sel.dist));
+    const kindLabel = sel.kind === "planet" ? "Planet" : "Asteroid";
+    selEl.innerHTML =
+      `<div class="sc-name">${sel.discovered ? sel.name : "Unknown contact"}</div>` +
+      `<div class="sc-stat">${kindLabel} · ~${trip}s round trip</div>` +
+      (sel.discovered
+        ? `<div class="sc-stat">Yield <b>${sel.yield}</b>/trip · <b>${Math.round(sel.richness)}</b> left${sel.richness <= 0 ? " (depleted)" : ""}</div>`
+        : `<div class="sc-stat">Yield unknown — send a drone to survey it.</div>`);
+  } else {
+    selEl.innerHTML = `<div class="sc-stat">Select an asteroid or planet to send the drone.</div>`;
+  }
+
+  const btn = el.querySelector(".sc-dispatch") as HTMLButtonElement;
+  const targeted = drone && drone.siteId === scSelected;
+  const canDispatch = !!sel && sel.richness > 0 && !targeted;
+  btn.disabled = !canDispatch;
+  btn.textContent = !sel ? "Dispatch drone" : targeted ? "Drone assigned" : sel.discovered ? "Send drone here" : "Survey this body";
+
+  const hint = el.querySelector(".sc-hint") as HTMLElement;
+  if (!drone) hint.textContent = "This bay has no drone.";
+  else if (drone.state === "docked") hint.textContent = drone.siteId >= 0 ? "Drone ready — it will launch shortly." : "Drone idle — pick a target.";
+  else if (drone.state === "transit") hint.textContent = "Drone is out mining — new orders apply on its return.";
+  else hint.textContent = drone.state === "outbound" ? "Drone launching…" : "Drone returning…";
 }

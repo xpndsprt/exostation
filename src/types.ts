@@ -137,21 +137,35 @@ export interface Stock {
   meals: Record<FoodLine, number>; // synthesized food, per line; eaten by crew
 }
 
-export type DroneState = "docked" | "outbound" | "mining" | "inbound";
+// Drones fly OFF the map to orbital bodies (no on-grid asteroids). The trip is:
+// docked → outbound (lift off the pad toward space) → transit (off-map, to the
+// body and back) → inbound (descend onto the pad, unload) → docked.
+export type DroneState = "docked" | "outbound" | "transit" | "inbound";
 
 export interface Drone {
   id: number;
   bayId: number;
-  siteId: number; // -1 if unassigned
+  siteId: number; // assigned orbital body, -1 if idle (no target)
   state: DroneState;
-  t: number; // 0..1 flight progress, or seconds while mining
-  cargo: number; // units aboard
+  t: number; // outbound/inbound: 0..1 flight progress · transit: seconds elapsed
+  cargo: number; // units aboard (revealed on the return leg)
 }
+
+// An orbital body in the star system (NOT on the grid). You dispatch a Bot Bay's
+// drone to it from the Star Chart. Unknown until a drone first visits ("discovered"),
+// at which point its yield/richness are revealed. Every body gives minerals; the
+// only difference is how much (yield/trip) and how much is left (richness).
+export type SiteKind = "asteroid" | "planet";
 
 export interface Site {
   id: number;
-  cell: number; // grid index (in space)
-  richness: number; // remaining units
+  kind: SiteKind;
+  name: string; // designation shown on the chart, e.g. "AX-7" / "Veil"
+  angle: number; // 0..2π position around the star map
+  dist: number; // 0..1 normalized orbital distance (→ trip time + chart radius)
+  discovered: boolean; // revealed once a drone has visited
+  richness: number; // remaining units (hidden until discovered)
+  yield: number; // units delivered per trip (hidden until discovered)
 }
 
 export interface Ship {

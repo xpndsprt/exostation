@@ -284,6 +284,26 @@
       border-radius: 9px; padding: 9px 12px; font-size: 13.5px; cursor: pointer; }
     #encounter .enc-choices button:hover { background: #243150; border-color: #3a5f9a; }
     #encounter .enc-choices .ch-hint { display: block; color: #9aa3b6; font-size: 11px; margin-top: 2px; }
+    /* star chart (Bot Bay orbital dispatch) */
+    #starchart { position: fixed; inset: 0; z-index: 61; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,16,.78); backdrop-filter: blur(3px); }
+    #starchart.show { display: flex; }
+    #starchart .sc-card { background: #111726; border: 1px solid #2c3445; border-radius: 16px; padding: 16px 18px; box-shadow: 0 18px 60px rgba(0,0,0,.6); }
+    #starchart .sc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    #starchart .sc-tag { color: #6ea8ff; font-size: 11px; letter-spacing: .2em; font-weight: 700; }
+    #starchart .sc-close { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445; border-radius: 7px; width: 28px; height: 28px; cursor: pointer; }
+    #starchart .sc-close:hover { background: #243150; }
+    #starchart .sc-body { display: flex; gap: 16px; align-items: flex-start; }
+    #starchart .sc-map { width: 520px; height: 520px; max-width: 56vw; max-height: 70vh; border-radius: 10px; border: 1px solid #1d2636; cursor: pointer; background: #070a12; }
+    #starchart .sc-side { width: 210px; display: flex; flex-direction: column; gap: 12px; }
+    #starchart .sc-sel { background: #161d2b; border: 1px solid #242c3c; border-radius: 10px; padding: 12px; min-height: 84px; }
+    #starchart .sc-name { font-size: 16px; color: #eef2f8; margin-bottom: 6px; }
+    #starchart .sc-stat { color: #aab2c4; font-size: 12.5px; line-height: 1.5; }
+    #starchart .sc-stat b { color: #e3e7ef; }
+    #starchart .sc-dispatch { background: #2d6cdf; color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+    #starchart .sc-dispatch:hover:not(:disabled) { background: #3a78ec; }
+    #starchart .sc-dispatch:disabled { background: #2a3445; color: #6b7488; cursor: default; }
+    #starchart .sc-hint { color: #8b93a6; font-size: 11.5px; line-height: 1.45; }
   </style>
 </head>
 <body>
@@ -321,6 +341,17 @@
     <h3 class="enc-title"></h3>
     <p class="enc-body"></p>
     <div class="enc-choices"></div>
+  </div></div>
+  <div id="starchart"><div class="sc-card">
+    <div class="sc-head"><div class="sc-tag">STAR CHART</div><button class="sc-close" type="button" title="Close">✕</button></div>
+    <div class="sc-body">
+      <canvas class="sc-map"></canvas>
+      <div class="sc-side">
+        <div class="sc-sel"></div>
+        <button class="sc-dispatch" type="button" disabled>Dispatch drone</button>
+        <div class="sc-hint"></div>
+      </div>
+    </div>
   </div></div>
   <div id="watermark"></div>
   <div id="advisor"></div>

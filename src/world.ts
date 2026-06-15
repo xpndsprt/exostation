@@ -1,4 +1,4 @@
-import { Agent, Cell, CellType, Species, Structure, StructureKind, World } from "./types";
+import { Agent, Cell, CellType, Site, Species, Structure, StructureKind, World } from "./types";
 import { GRID_W, GRID_H } from "./config";
 
 export const GUEST_STAY = 90; // seconds a Drenn guest stays before leaving
@@ -217,32 +217,56 @@ export function addDock(w: World, x: number, y: number, kind: StructureKind = "d
   return true;
 }
 
-// Scatter natural asteroids across open space, keeping the central build area
-// clear. Called once for a fresh game (not from createWorld, so tests stay
-// deterministic). Uses Math.random — fine because the result is saved.
-export function seedAsteroids(w: World, count = 12): void {
-  const cx = w.w / 2;
-  const cy = w.h / 2;
-  let placed = 0;
-  let tries = 0;
-  while (placed < count && tries < count * 30) {
-    tries++;
-    const x = Math.floor(Math.random() * w.w);
-    const y = Math.floor(Math.random() * w.h);
-    if (Math.hypot(x - cx, y - cy) < 20) continue; // leave room for the station
-    if (addSite(w, x, y)) placed++;
+// Designations for generated bodies (asteroid prefix + planet names).
+const PLANET_NAMES = ["Veil", "Kestrel", "Oort", "Tannhauser", "Cinder", "Halcyon", "Mistral", "Erebus"];
+const AST_LETTERS = "ABCDEFGHJKLMNPRSTVXZ";
+
+// Populate the star system with unknown orbital bodies — many near/modest
+// asteroids and a few far/rich planets. All start undiscovered (a drone reveals
+// each on its first visit). Called once for a fresh game (not from createWorld,
+// so tests stay deterministic). Uses Math.random — fine because the result is saved.
+export function seedSolarSystem(w: World, asteroids = 14, planets = 4): void {
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+  for (let i = 0; i < asteroids; i++) {
+    const dist = rnd(0.08, 0.6); // near-ish
+    addBody(w, "asteroid", {
+      angle: Math.random() * Math.PI * 2,
+      dist,
+      yield: Math.round(rnd(8, 20)),
+      richness: Math.round(rnd(120, 320)),
+      name: `${AST_LETTERS[Math.floor(Math.random() * AST_LETTERS.length)]}X-${Math.floor(rnd(10, 99))}`,
+    });
+  }
+  for (let i = 0; i < planets; i++) {
+    const dist = rnd(0.62, 0.98); // far out
+    addBody(w, "planet", {
+      angle: Math.random() * Math.PI * 2,
+      dist,
+      yield: Math.round(rnd(40, 80)),
+      richness: Math.round(rnd(600, 1400)),
+      name: PLANET_NAMES[i % PLANET_NAMES.length],
+    });
   }
 }
 
-// Place a mining site (asteroid) on an empty space cell.
-export function addSite(w: World, x: number, y: number): boolean {
-  if (!inBounds(w, x, y)) return false;
-  const i = idx(w, x, y);
-  if (w.cells[i].type !== "space") return false;
-  for (const id in w.sites) if (w.sites[id].cell === i) return false;
+// Add one orbital body. `opts` carries its (hidden) truth; it starts undiscovered.
+export function addBody(
+  w: World,
+  kind: Site["kind"],
+  opts: { angle: number; dist: number; yield: number; richness: number; name?: string },
+): number {
   const id = w.nextId++;
-  w.sites[id] = { id, cell: i, richness: 1000 };
-  return true;
+  w.sites[id] = {
+    id,
+    kind,
+    name: opts.name ?? `${kind === "planet" ? "P" : "AX"}-${id}`,
+    angle: opts.angle,
+    dist: opts.dist,
+    discovered: false,
+    richness: opts.richness,
+    yield: opts.yield,
+  };
+  return id;
 }
 
 // Erase: remove a structure if present, else clear the floor to space.
@@ -250,13 +274,6 @@ export function eraseAt(w: World, x: number, y: number): void {
   if (!inBounds(w, x, y)) return;
   const i = idx(w, x, y);
   const c = w.cells[i];
-  // Remove a site (asteroid) sitting on this cell.
-  for (const id in w.sites) {
-    if (w.sites[id].cell === i) {
-      delete w.sites[id];
-      return;
-    }
-  }
   if (c.structureId >= 0) {
     removeStructure(w, c.structureId);
     return;

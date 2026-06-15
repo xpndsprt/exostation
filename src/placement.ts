@@ -17,11 +17,6 @@ const STRUCTURE_KINDS = new Set([
   "tradehub",
 ]);
 
-function hasSite(w: World, cell: number): boolean {
-  for (const id in w.sites) if (w.sites[id].cell === cell) return true;
-  return false;
-}
-
 // Solar panels mount on the OUTSIDE of a space-facing wall and extend 3 tiles
 // out into space, normal to the wall. Given a clicked space cell adjacent to a
 // wall, returns the 3 occupied cells (starting at the wall, going outward), or
@@ -98,7 +93,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
     case "door":
       return c.type !== "door";
     case "erase":
-      return c.structureId >= 0 || c.type !== "space" || hasSite(w, idx(w, x, y));
+      return c.structureId >= 0 || c.type !== "space";
     default:
       if (STRUCTURE_KINDS.has(tool)) return c.type === "floor" && c.structureId < 0;
       return false; // pan / select have no placement

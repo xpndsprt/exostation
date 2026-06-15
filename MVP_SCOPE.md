@@ -159,6 +159,14 @@ The rest of the Depth Epic except replayability (M43):
   behind **Exobiology**; the exotic crews no longer eat Rations. And the 10th species, the **Sszra**
   (O₂ obligate-carnivore sentinel; sprite, lore, first-contact, 10×10 relations). Roster → **10
   species, 5 gases**.
+- **Bot Bay redesign — the Star Chart:** removed all on-grid asteroids. A Bot Bay now opens an
+  **orbital map** (the star, your station's orbit, and the system's asteroids & planets as
+  **unknown contacts**). You **select a body and dispatch** the bay's drone; it flies **off-map**
+  and returns with minerals after a distance-scaled round trip (~25s near asteroid → ~70s far
+  planet). The **first trip surveys + delivers** (discovery reveals yield/richness and pays out);
+  bodies are **finite** and deplete; **planets** are far/slow/rich, **asteroids** near/fast/modest;
+  every body gives the same resource (minerals), only the amount differs (`seedSolarSystem`,
+  `mining.ts` `docked→outbound→transit→inbound`, star-chart canvas in `ui.ts`).
 - **Audio:** generated SFX layer (M31) + a shuffled `assets/music/` soundtrack at ~30% volume.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
@@ -176,8 +184,10 @@ Naaz, Voltaar, Sszra** — across **5 gases** (O₂, CH₄, **Cl₂, NH₃, H₂
 - **Deeper exotic content** — **food-quality / palate** mood tiers, and per-gas *bespoke* exotic
   recipes beyond the unified Exo-Culture line. (The temperature, hazard, exotic-food and Sszra
   layers that were deferred here have now shipped — see the changelog above.)
-- **Sensing & logistics** — radar / fog-of-war / survey, **drone-fleet management**, and
-  **charging relays** for the power grid.
+- **Sensing & logistics** — the **Star Chart** shipped a first cut (orbital map, survey-on-visit,
+  per-bay dispatch, finite asteroids/planets). Still planned: multi-resource site types, the tiered
+  **drone fleet** (range/cargo/speed tiers, integrity + Repair Bays), **Sensor Array** scan tiers,
+  per-resource **standing orders**, replenishing sites, and **charging relays**.
 - **EVA / spacewalk** — crew working in vacuum, **decompression spread** between rooms,
   and **severed connectivity** when a wing is cut off.
 - **Standing-order automation** — auto-dispatch / production orders beyond the current
