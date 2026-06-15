@@ -11,6 +11,7 @@ import { OBJECTIVES, currentObjective } from "./objectives";
 import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch } from "./research";
 import { BEACON_SPECIES, moduleActive } from "./beacon";
 import { encounterText, encounterChoices } from "./encounters";
+import { isMuted, setMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 
@@ -264,6 +265,16 @@ function buildOverlayControls(handlers: UIHandlers): void {
   recenter.textContent = "Recenter";
   recenter.onclick = handlers.onRecenter;
   ctl.appendChild(recenter);
+  const sound = document.createElement("button");
+  sound.className = "tbtn";
+  sound.title = "Toggle sound";
+  const sync = () => (sound.textContent = isMuted() ? "🔇" : "🔊");
+  sync();
+  sound.onclick = () => {
+    setMuted(!isMuted());
+    sync();
+  };
+  ctl.appendChild(sound);
   bar.appendChild(ctl);
 }
 

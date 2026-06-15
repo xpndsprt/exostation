@@ -1,10 +1,16 @@
 # EXOSTATION — Sound Effects & Audio Plan (M31)
 
-> **Status: 🔭 planned (catalog only — no audio implemented yet).** This is the
-> full wish-list of sound effects (gameplay + UI) plus ambient/music beds, to
-> decide scope from. Nothing here is wired up; once we pick the subset, we'll add a
-> tiny Web-Audio layer and trigger hooks. Keep this in sync as sounds land (tick
-> them off / flip the status).
+> **Status: ⚙️ implemented (M31, first pass).** All 56 cues are generated
+> (`npm run gen:sfx` → `assets/sfx/`), and **`src/audio.ts`** loads + plays them
+> (Web-Audio; master + ui/world/music buses; mute toggle 🔊 in the top bar,
+> persisted). Triggers are wired for: every UI button click, build/deconstruct,
+> research buy/deny + doctrine, first-contact, encounter open/choice/outcome, crew &
+> guest arrivals, deaths, brownout, skirmish, suffocation, objective-complete,
+> victory/defeat, the `ambient-station` loop, and all incident toasts (raider /
+> module-destroyed / breach / surge / market / turret / med-bay / overflow / injury)
+> via a notify→sfx map. **Not yet wired (assets exist):** shuttle land/takeoff,
+> drone launch/return, beacon-module-online, mood-low, music-tension crossfade —
+> easy to add at their event sites. Swap any cue by dropping a same-named wav.
 
 Each entry is **`name` — when it fires (code hook) — character**. "Loop" marks a
 sustained/ambient sound; everything else is a one-shot. Most one-shots can be

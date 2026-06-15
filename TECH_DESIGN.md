@@ -225,6 +225,16 @@ off. At 100 tension an agent strikes the nearest disliked target (one-sided by
 relation, damage scales with species `power`). A death can wreck a module in the
 room as collateral — which may vent it into a breach.
 
+### Audio (`audio.ts`, `assets/sfx/`, `scripts/gensfx.mjs`)
+SFX are **generated** (no downloads): `npm run gen:sfx` synthesizes every catalog
+cue to `assets/sfx/<id>.wav` + `manifest.json`. `audio.ts` is a Web-Audio layer —
+master gain + **ui/world/music** buses + a persisted **mute** — that lazily boots on
+the first user gesture, loads the wavs via `import.meta.glob`, and exposes `play(id)`.
+`main.ts` calls `play()` at the event sites (build/research/encounter/first-contact/
+arrivals/deaths/objective/end-state) and maps incident toasts via a notify→sfx table;
+the sim stays audio-free (headless/deterministic). Swap any cue by dropping a
+same-named wav (AI/CC0). See `AUDIO_PLAN.md`.
+
 ### Encounters & medical (`encounters.ts`, `medical.ts`)
 `encountersSystem` rolls on a timer (paused while one is open): it finds two alive
 different-species agents in the **same cell** with a clearly +/− relationship and

@@ -25,6 +25,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Views & camera**
 - **Right-drag** = pan · **mouse wheel** = zoom · **Recenter** button snaps back to your station.
 - **Overlay** buttons (top bar): **Power** (powered/unpowered modules) and **Rooms** (per-room tint). Atmosphere is always shown as a colored fill.
+- **🔊 / 🔇** (top bar) toggles **sound** (state is remembered). Audio starts on your first click/keypress.
 
 **Your objective & the HUD**
 - The **top bar** shows a 🎯 **scenario objective** with a progress bar — your current goal (e.g. *grow your crew → bank credits → host different species*). Clear them all to **win**; you can then keep building in free play.

@@ -52,7 +52,7 @@ credits, and time controls / save-load / UI polish.
   zoning, forcing architectural separation (own O₂ wing + Door) — the first real layout
   dilemma.
 
-### M26–M36 — the "Reviewer's Epic" (harden the first hour) *(shipped ✓; audio still pending)*
+### M26–M36 — the "Reviewer's Epic" (harden the first hour) *(shipped ✓)*
 From a one-hour playtest review (see [`REVIEWER_EPIC.md`](REVIEWER_EPIC.md)):
 - **M26** — Arrival & capacity legibility: crew/guest capacity HUD chips, arrival toast +
   dock pulse, "why no crew" advisor reason.
@@ -64,7 +64,10 @@ From a one-hour playtest review (see [`REVIEWER_EPIC.md`](REVIEWER_EPIC.md)):
   market shock, raider) — never targeting life support.
 - **M30** — Tech tree / credit sink: a powered Research Lab unlocks gated content
   (Methane Life-Support, Fungal Synthesis, Cargo Logistics, Station Security).
-- **M31 — Audio pass:** *still pending* — the lone unshipped Reviewer's-Epic item.
+- **M31 — Audio pass:** *shipped* — 56 procedurally-generated SFX (`npm run gen:sfx`)
+  + a Web-Audio layer (`src/audio.ts`, master/ui/world/music buses, mute) wired to UI,
+  build, research, encounters, arrivals, incidents, objectives and end states. See
+  [`AUDIO_PLAN.md`](AUDIO_PLAN.md).
 - **M32** — Storage caps: per-resource caps; production idles at the cap; Storage Silo
   raises every cap.
 - **M33** — Guided onboarding: a dismissible first-build checklist that ticks off from
@@ -168,7 +171,7 @@ Still deferred or planned:
 - **Food quality tiers / palate** — meals as more than a single satisfaction value.
 - ~~**Refinery / fuel**~~ — *shipped:* Fuel Refinery (minerals → fuel) + fuel sold to docking ships, with Large/Spaceport dock tiers. (Commodity buy-low/sell-high refining is still future.)
 - **Faction takeover** — hostile factions seizing the station.
-- **Audio** (M31) — the remaining Reviewer's-Epic item.
+- ~~**Audio** (M31)~~ — *shipped:* generated SFX + a Web-Audio layer (see [`AUDIO_PLAN.md`](AUDIO_PLAN.md)). Richer/AI samples + music beds are an optional upgrade.
 - **Replayability** (M43) — seeded starts, asymmetric scenarios, post-win escalation.
 
 > The Depth-Epic roadmap (see [`DEPTH_EPIC.md`](DEPTH_EPIC.md)) is now **complete except

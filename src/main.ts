@@ -23,6 +23,7 @@ import { objectivesSystem } from "./objectives";
 import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch } from "./research";
 import { updateSeen } from "./advisor";
 import { resolveEncounter } from "./encounters";
+import * as audio from "./audio";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells } from "./placement";
 import { Renderer } from "./renderer";
@@ -62,6 +63,23 @@ import { HoverTarget, OverlayMode, Phase, Selection, Speed, StructureKind, UISta
 
 const STEP = 1 / SIM_HZ;
 
+// Map an incident/notify toast to a sound id (first match wins; "" = silent).
+const NOTIFY_SFX: [RegExp, string][] = [
+  [/raider inbound/i, "raider-inbound"],
+  [/destroyed/i, "module-destroyed"],
+  [/shot down a raider/i, "turret-fire"],
+  [/hull breach|breached the hull/i, "breach-klaxon"],
+  [/power surge/i, "power-surge"],
+  [/prices/i, "market-shock"],
+  [/recovered in the med bay/i, "medbay-heal"],
+  [/hurt servicing/i, "injury"],
+  [/storage overflowing/i, "overflow-warn"],
+];
+function sfxForNotify(msg: string): string {
+  for (const [re, id] of NOTIFY_SFX) if (re.test(msg)) return id;
+  return "";
+}
+
 function simStep(world: World, dt: number): void {
   if (world.dirtyRooms) recomputeRooms(world);
   powerSystem(world, dt);
@@ -98,6 +116,7 @@ async function boot(): Promise<void> {
   // backend, which left the multiply-lightmap blank → a black screen. WebGL is
   // plenty for 2D and avoids the "Failed to create WebGPU Context Provider" warning.
   await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true });
+  audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
   mount.appendChild(app.canvas);
@@ -168,6 +187,7 @@ async function boot(): Promise<void> {
   };
 
   let prevPhase: Phase = "playing";
+  let prevObjectiveIx = world.objectiveIx;
   const restart = (): void => {
     const fresh = createWorld();
     seedAsteroids(fresh);
@@ -177,6 +197,7 @@ async function boot(): Promise<void> {
     overlay = "none";
     known.clear();
     prevPhase = "playing";
+    prevObjectiveIx = world.objectiveIx;
     setSpeed(world, 1);
     recenter();
     needRedraw = true;
@@ -201,6 +222,7 @@ async function boot(): Promise<void> {
       overlay = "none";
       rememberAgents();
       prevPhase = world.phase;
+      prevObjectiveIx = world.objectiveIx;
       hideEndBanner();
       needRedraw = true;
       pushAlert("Station loaded.", "info");
@@ -246,10 +268,12 @@ async function boot(): Promise<void> {
       const r = canResearch(world, u);
       if (!r.ok) {
         pushAlert(`${u.label}: ${r.reason}`, "warn");
+        audio.play("research-denied");
         return;
       }
       if (buyUnlock(world, id)) {
         pushAlert(`Researched: ${u.label}.`, "info");
+        audio.play(id.startsWith("doc_") ? "doctrine-pick" : "research-buy");
         refreshPalette(world);
         needRedraw = true;
       }
@@ -297,6 +321,7 @@ async function boot(): Promise<void> {
     const tool = state.tool;
     // free actions
     if (tool === "erase") {
+      if (world.cells[idx(world, tx, ty)].structureId >= 0 || world.cells[idx(world, tx, ty)].type !== "space") audio.play("build-deconstruct");
       eraseAt(world, tx, ty);
       needRedraw = true;
       return;
@@ -304,7 +329,10 @@ async function boot(): Promise<void> {
     // paid actions — only charge on a successful placement
     if (toolLock(world, tool)) return; // tech not researched yet
     const cost = costOf(tool);
-    if (world.credits < cost) return;
+    if (world.credits < cost) {
+      audio.play("build-invalid");
+      return;
+    }
     let ok = false;
     if (tool === "floor") {
       if (world.cells[idx(world, tx, ty)].type !== "floor") {
@@ -332,6 +360,7 @@ async function boot(): Promise<void> {
     }
     if (ok) {
       world.credits -= cost;
+      audio.play(tool === "floor" ? "build-floor" : tool === "wall" ? "build-wall" : tool === "door" ? "build-door" : "build-module");
       needRedraw = true;
     }
   };
@@ -508,15 +537,25 @@ async function boot(): Promise<void> {
   let prevBrownout = false;
   let prevFighting = false;
   const detectAlerts = (): void => {
-    // drain transient station-incident messages (M29 events)
-    while (world.notify.length) pushAlert(world.notify.shift() as string, "warn");
+    // drain transient station-incident messages (M29 events) — map each to a sound
+    while (world.notify.length) {
+      const msg = world.notify.shift() as string;
+      pushAlert(msg, "warn");
+      audio.play(sfxForNotify(msg));
+    }
 
-    if (world.power.brownout && !prevBrownout) pushAlert("Brownout — shedding power.", "warn");
+    if (world.power.brownout && !prevBrownout) {
+      pushAlert("Brownout — shedding power.", "warn");
+      audio.play("brownout");
+    }
     prevBrownout = world.power.brownout;
 
     let anyFight = false;
     for (const id in world.agents) if (world.agents[id].fighting) anyFight = true;
-    if (anyFight && !prevFighting) pushAlert("Skirmish! Crew are fighting.", "bad");
+    if (anyFight && !prevFighting) {
+      pushAlert("Skirmish! Crew are fighting.", "bad");
+      audio.play("skirmish-start");
+    }
     prevFighting = anyFight;
 
     const curAlive = new Map<number, boolean>();
@@ -530,6 +569,7 @@ async function boot(): Promise<void> {
         const cell = a.cell;
         const label = SPECIES[a.species].label;
         const msg = guest ? `A ${label} guest docked.` : `${label} crew arrived by shuttle.`;
+        audio.play(guest ? "guest-arrive" : "crew-arrive");
         pushAlert(msg, "info", () => {
           sel = { kind: "agent", id };
           centerOnCell(cell);
@@ -541,6 +581,7 @@ async function boot(): Promise<void> {
       if (!curAlive.has(id)) {
         const a = world.agents[id];
         if (a && !a.alive) {
+          audio.play("crew-death");
           pushAlert(`A ${SPECIES[a.species].label} died.`, "bad", () => {
             sel = { kind: "agent", id };
             centerOnCell(a.cell);
@@ -561,6 +602,7 @@ async function boot(): Promise<void> {
       const gas = room >= 0 ? world.rooms[room]?.gas : "none";
       if (a.o2 < 40 && gas !== SPECIES[a.species].gas) {
         pushAlert("Crew can't breathe — check atmosphere.", "warn");
+        audio.play("suffocation-warn");
         break;
       }
     }
@@ -594,14 +636,22 @@ async function boot(): Promise<void> {
       refresh(world);
     }
 
+    // objective ladder progress chime
+    if (world.objectiveIx !== prevObjectiveIx) {
+      if (world.objectiveIx > prevObjectiveIx && world.phase === "playing") audio.play("objective-complete");
+      prevObjectiveIx = world.objectiveIx;
+    }
+
     // victory / defeat transitions — pause and surface the end banner
     if (world.phase !== prevPhase) {
       prevPhase = world.phase;
       if (world.phase === "won") {
         setSpeed(world, 0);
+        audio.play("victory");
         showEndBanner("won", "Keep building", () => setSpeed(world, 1));
       } else if (world.phase === "lost") {
         setSpeed(world, 0);
+        audio.play("defeat");
         showEndBanner("lost", "New station", restart);
       } else {
         hideEndBanner();
@@ -616,6 +666,7 @@ async function boot(): Promise<void> {
       if (firstSeen.length && world.phase === "playing") {
         const resumeSpeed = world.speed || 1; // pause to read; restore after
         setSpeed(world, 0);
+        audio.play("first-contact");
         showFirstContact(firstSeen, () => {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
@@ -624,10 +675,15 @@ async function boot(): Promise<void> {
       // (defer if a first-contact card is still up — they share the pause)
       if (world.encounter && world.phase === "playing" && !isEncounterOpen() && !isFirstContactOpen()) {
         const resumeSpeed = world.speed || 1;
+        const conflict = world.encounter.kind === "conflict";
         setSpeed(world, 0);
+        audio.play(conflict ? "encounter-conflict" : "encounter-bond");
         showEncounter(world.encounter, (choice) => {
           const msg = resolveEncounter(world, choice);
+          audio.play("encounter-choice");
           if (msg) pushAlert(msg, "info");
+          // outcome flavour: wounds/brawls sound bad, everything else good
+          audio.play(/wound|hurt|brawl|sideways/i.test(msg) ? "outcome-bad" : "outcome-good");
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
           needRedraw = true;
         });
