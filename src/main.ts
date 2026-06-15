@@ -657,9 +657,24 @@ async function boot(): Promise<void> {
   };
 
   // --- autosave ---
-  setInterval(() => {
+  const autosaveTimer = setInterval(() => {
     if (saveWorld(world)) markSaved();
   }, 30000);
+
+  // Dev-only: Vite HMR re-runs boot() on hot updates. Without disposing the old
+  // PixiJS app each reload leaks its WebGL context; after ~16 the browser starts
+  // force-losing contexts ("CONTEXT_LOST_WEBGL") and the canvas corrupts. Tear the
+  // old app + timers down before the new module evaluates. (Production has no HMR.)
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+      clearInterval(autosaveTimer);
+      try {
+        app.destroy(true, { children: true });
+      } catch {
+        /* ignore */
+      }
+    });
+  }
 
   let acc = 0;
   app.ticker.add((ticker: Ticker) => {
