@@ -3,6 +3,7 @@ import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
 import { costOf, DOCK_TIER } from "../src/structures";
 import { SPECIES } from "../src/species";
+import { RELATIONS } from "../src/relations";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
@@ -1712,6 +1713,27 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Encounters have many text variations per pair", titles.size >= 10);
   const c0 = encounterText({ kind: "conflict", aId: 0, bId: 1, aSpecies: "human", bSpecies: "korro", cell: 0, variant: 0 });
   check("Encounter text fills in the species names", c0.body.includes("Human") && c0.body.includes("Korro"));
+}
+
+// --- Tier-3 exotic gases + species ---
+{
+  const o2After = (gen: "cl2gen" | "o2gen"): number => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 7, 6);
+    addStructure(w, gen, 6, 7);
+    addAgent(w, 8, 6, "chlorithe");
+    for (let i = 0; i < 160; i++) step(w);
+    return Object.values(w.agents)[0].o2;
+  };
+  check("Chlorithe breathes in a sealed Cl₂ wing", o2After("cl2gen") > 80);
+  check("Chlorithe suffocates in an O₂ wing", o2After("o2gen") < 60);
+  const w = createWorld();
+  check("Chlorine/Ammonia/Hydrogen gens are research-gated", toolLock(w, "cl2gen")?.id === "chlorine" && toolLock(w, "nh3gen")?.id === "ammonia" && toolLock(w, "h2gen")?.id === "hydrogen");
+  check("Roster now has 9 species", Object.keys(SPECIES).length === 9);
+  check("Naaz are the peacemakers (no dislikes)", Object.values(RELATIONS.naaz).every((v) => v >= 0));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

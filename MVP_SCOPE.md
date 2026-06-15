@@ -146,6 +146,13 @@ The rest of the Depth Epic except replayability (M43):
   (grid shadowcast bake + moving character lamps) and the distinct **raider** pirate craft
   that now actually **destroys** modules also landed in this wave.
 - **UI:** the current-goal bar moved from the top bar into the **Advisor** panel.
+- **Tier-3 gases & species:** three new breathable gases — **Cl₂ / NH₃ / H₂** — each with a
+  research-gated generator, plus their resident species **Chlorithe / Naaz / Voltaar** (sprites,
+  lore, first-contact cards, a full 9×9 relations web). The atmosphere system is gas-generic, so
+  they zone/breathe/suffocate like O₂/CH₄. They share the Rations chain — the only gate is the
+  sealed exotic wing. Roster → 9 species, 5 gases. (Cryo/hazards/exotic-food + the Sszra are the
+  remaining 🔭 Tier-3 layers.)
+- **Audio:** generated SFX layer (M31) + a shuffled `assets/music/` soundtrack at ~30% volume.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
   pad, stays docked the whole visit, then lifts off — and now carries **up to 3 guests**
@@ -156,12 +163,13 @@ The rest of the Depth Epic except replayability (M43):
 
 ## Out of scope / planned (not yet shipped)
 
-The current roster is **Human, Drenn, Thol, Vry'l, Korro, Vorn** with **O₂** and **CH₄** gases
-(Drenn = O₂ trader class, **Vorn = CH₄ trader class** — both guest-only).
-Still deferred or planned:
+The current roster is **9 species** — Human, Drenn, Thol, Vry'l, Korro, Vorn, **Chlorithe,
+Naaz, Voltaar** — across **5 gases** (O₂, CH₄, **Cl₂, NH₃, H₂**). Still deferred or planned:
 
-- **Tier-3 species** — Sszra, Chlorithe, Naaz, Voltaar — and the **exotic gases** they'd
-  need (Cl₂, NH₃, H₂), plus **cryo / temperature** as a system.
+- **Sszra** — the last planned species (O₂ / Live-Protein), plus the *deeper* Tier-3 layers
+  the exotic species imply but don't yet have: **cryo / temperature** as a system,
+  **explosive/corrosive gas hazards** (H₂↔O₂, Cl₂), and bespoke **exotic food lines**
+  (Chlorithe/Naaz/Voltaar currently eat Rations).
 - **Sensing & logistics** — radar / fog-of-war / survey, **drone-fleet management**, and
   **charging relays** for the power grid.
 - **EVA / spacewalk** — crew working in vacuum, **decompression spread** between rooms,

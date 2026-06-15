@@ -20,8 +20,8 @@ const MINERAL_PRICE = 3; // credits per mineral
 const FUEL_PRICE = 4; // credits per fuel unit a docking ship buys
 const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
-// Species that live aboard as resident crew (Drenn only ever visit as guests).
-const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
+// Species that live aboard as resident crew (Drenn/Vorn only ever visit as guests).
+const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro", "chlorithe", "naaz", "voltaar"];
 // Visitor species per breathing gas — every gas gets its own "trader class" so a
 // methane wing draws paying guests too. The first entry is the standard-dock
 // visitor; larger berths cycle the whole list for a species mix. All entries
@@ -29,6 +29,9 @@ const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro"];
 const GUEST_POOL: Record<GasKind, Species[]> = {
   o2: ["drenn", "human", "vryl"],
   ch4: ["vorn", "thol"],
+  cl2: [], // exotic Tier-3 gases have no visiting trader class (residents only)
+  nh3: [],
+  h2: [],
 };
 
 export function economySystem(w: World, dt: number): void {

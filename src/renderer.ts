@@ -21,6 +21,9 @@ const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
   o2gen: [2.4, 0xcfe6ff, 0.45],
   ch4gen: [2.4, 0xffcf9a, 0.5],
+  cl2gen: [2.4, 0xd6f0a0, 0.5],
+  nh3gen: [2.4, 0xbcd0f0, 0.5],
+  h2gen: [2.4, 0xf0bcd6, 0.5],
   rec: [2.8, 0xffd9f2, 0.5],
   lab: [2.4, 0xc9b8ff, 0.5],
   tradehub: [2.2, 0xcfeecf, 0.4],
@@ -474,9 +477,12 @@ export class Renderer {
         if (c.type !== "floor" || c.roomId < 0) continue;
         const room = world.rooms[c.roomId];
         if (!room || room.gas === "none") continue;
-        let color: number = COLORS.atmosphere;
+        let color: number = COLORS.atmosphere; // o2 default
         let alpha = 0.16;
         if (room.gas === "ch4") color = 0xc98a3a;
+        else if (room.gas === "cl2") color = 0x9bd14a;
+        else if (room.gas === "nh3") color = 0x6a8fd1;
+        else if (room.gas === "h2") color = 0xd16a9b;
         else if (room.gas === "mixed") {
           color = 0xe24b4b;
           alpha = 0.28;

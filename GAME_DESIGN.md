@@ -42,7 +42,7 @@ Species arrive over time. The further the game progresses, the stranger and hard
 | **Tier 3 — Alien** | Completely incompatible — exotic gases, hostile temperatures, inedible-to-others food. | Sealed, isolated wings. A leak is lethal to everyone nearby. | 🔭 planned |
 
 ### Atmosphere as a hazard  *(⚙️ shipped)*
-Because species breathe different gases, **atmosphere is a resource you zone and contain**. Airlocks separate incompatible wings; a breach or a wrong door means one species' air poisons another. Designing safe adjacency and traffic flow is the central spatial puzzle. *(Shipped today as per-room O₂ vs CH₄ zoning — the exotic gases Cl₂/NH₃/H₂ are 🔭 planned alongside their Tier-3 species.)*
+Because species breathe different gases, **atmosphere is a resource you zone and contain**. Airlocks separate incompatible wings; a breach or a wrong door means one species' air poisons another. Designing safe adjacency and traffic flow is the central spatial puzzle. *(Shipped today as per-room zoning across **five gases** — O₂, CH₄, Cl₂, NH₃, H₂ — each with its species; the corrosive/explosive *hazard* behaviors of Cl₂/H₂ and the cryo axis are 🔭 planned.)*
 
 ### Relations web
 Every species holds **opinions** of every other species — some pairs **love** being neighbors (mood/trade bonuses), others **hate** it (mood penalties, refusal to dock, brawls). Room placement becomes diplomacy: who you put next to whom, who shares a corridor, who shares a bar. Mixing the wrong guests turns a profitable hotel into a riot.
@@ -111,9 +111,9 @@ Food is a parallel strategic layer to atmosphere. **Synthesizers convert base re
 
 Nine species across three compatibility tiers (vision). You start with **Humans** and unlock the rest as the station grows and reputation spreads.
 
-> **⚙️ Shipped:** six species — **Humans, Drenn, Korro, Vry'l, Thol, Vorn** (see `src/species.ts`). **🔭 Planned:** **Sszra, Chlorithe, Naaz, Voltaar** — their exotic gases (Cl₂ / NH₃ / H₂) and cryo/temperature mechanics are not implemented, so neither are they.
+> **⚙️ Shipped:** nine species — **Humans, Drenn, Korro, Vry'l, Thol, Vorn, Chlorithe, Naaz, Voltaar** (see `src/species.ts`) across **five breathable gases** (O₂, CH₄, Cl₂, NH₃, H₂). **🔭 Planned:** the **Sszra** (O₂ / Live-Protein), and the deeper Tier-3 systems the others *imply* but don't yet have — **cryo/temperature**, **explosive/corrosive hazards**, and bespoke **exotic food lines** (Chlorithe/Naaz/Voltaar currently eat Rations; their only gate is the sealed exotic-gas wing).
 >
-> **Crew are NOT hand-placed.** Residents **immigrate by shuttle** through a powered Docking Port once you've built living conditions for them (their gas + their food + a free bunk). **Drenn (O₂) and Vorn (CH₄) are guest-only visitors** — the per-gas "trader class" that lodges in a Hotel Room of their gas, never residents. The shipped resident roster is Human / Korro / Thol / Vry'l.
+> **Crew are NOT hand-placed.** Residents **immigrate by shuttle** through a powered Docking Port once you've built living conditions for them (their gas + their food + a free bunk). **Drenn (O₂) and Vorn (CH₄) are guest-only visitors** — the per-gas "trader class" that lodges in a Hotel Room of their gas, never residents. The shipped resident roster is Human / Korro / Thol / Vry'l / Chlorithe / Naaz / Voltaar.
 
 ### Tier 1 — Kindred  (Gas: Oxygen · Food: Standard Rations · easy to co-house)
 | Species | Breathes | Eats | Palate | Status | Flavor |
@@ -130,14 +130,14 @@ Nine species across three compatibility tiers (vision). You start with **Humans*
 | **Vorn** | **Methane (CH₄)** | Standard Rations | — | ⚙️ shipped (guest-only) | The **methane Drenn**: a CH₄-breathing merchant caste that visits a methane wing's Hotel Room. *Fuel Baron* — ships pay +50% for fuel while aboard. Gives harder (methane) builds their own lodging + fuel income. |
 | **Sszra** | Oxygen (O₂) | **Live Protein** | High | 🔭 planned | Carnivores; share air but demand a high-biomass gourmet protein chain (not implemented). |
 
-### Tier 3 — Alien  (gas + food + temperature all exotic — fully sealed wings)
-> 🔭 **All Tier 3 species are planned, not shipped.** Exotic atmospheres (Cl₂ / NH₃ / H₂), cryogenic temperature, and their exotic food lines do not exist in the build yet.
+### Tier 3 — Alien  (exotic sealed-gas wings)
+> ⚙️ **Shipped (gas + species):** the exotic atmospheres **Cl₂ / NH₃ / H₂** and their species (**Chlorithe / Naaz / Voltaar**) are in the build as resident crew, each needing a fully sealed wing of their gas (research-gated generators). 🔭 **Still planned:** the *deeper* exotic layers — **cryogenic temperature** (Naaz), **explosive/corrosive hazards** (H₂↔O₂, Cl₂ leaks), and the bespoke **exotic food lines** below (they currently eat Rations).
 
-| Species | Breathes | Eats | Palate | Status | Hazard |
-|---------|----------|------|--------|--------|--------|
-| **Chlorithe** | **Chlorine (Cl₂)** | Mineral Slurry (silicon-based) | None | 🔭 planned | Cl₂ atmosphere lethal to every other species; corrosive leaks. |
-| **Naaz** | **Ammonia (NH₃)**, cryogenic | Cryo-Gel Feed | High | 🔭 planned | Need cold + ammonia; their food chain shares those hazardous inputs. |
-| **Voltaar** | **Hydrogen (H₂)** | Plasma Feed (energy) | N/A | 🔭 planned | Energy-based; H₂ + any O₂ leak = explosion. Power-hungry. |
+| Species | Breathes | Eats *(target → live)* | Status | Hazard *(planned)* |
+|---------|----------|------|--------|--------|
+| **Chlorithe** | **Chlorine (Cl₂)** | Mineral Slurry → *Rations* | ⚙️ shipped (resident) | Cl₂ lethal to all others; corrosive leaks (planned). |
+| **Naaz** | **Ammonia (NH₃)** | Cryo-Gel Feed → *Rations* | ⚙️ shipped (resident) | Cryo/temperature requirement (planned). The peacemaker. |
+| **Voltaar** | **Hydrogen (H₂)** | Plasma Feed → *Rations* | ⚙️ shipped (resident) | H₂ + O₂ = explosion (planned). Power-hungry. |
 
 ---
 
@@ -147,7 +147,7 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 **Relations are asymmetric** — A's feeling about B is not always B's feeling about A. **Read the table by row:** each row is *how that species feels about the species in each column.*
 
-> **⚙️ Shipped vs 🔭 target.** The full 9×9 table further below is the **design target**, not the live matrix. Today the game wires relations among the **5 shipped species** (Humans, Drenn, Korro, Vry'l, Thol), and **as of M42 it uses the full LOVE/HATE (±15) tiers** — they are no longer reserved for Tier-3. The rows/columns for Sszra, Chlorithe, Naaz, and Voltaar remain 🔭 planned. The **live 5×5 matrix** (source of truth: `src/relations.ts` / `BALANCE.md`):
+> **⚙️ Shipped vs 🔭 target.** The relations web now spans the **9 shipped species** (Humans, Drenn, Korro, Vry'l, Thol, Vorn, Chlorithe, Naaz, Voltaar) with the full LOVE/HATE (±15) tiers — only **Sszra** remains 🔭 planned. The illustrative table below predates several of these pairings; the **live, authoritative 9×9 matrix is in `src/relations.ts` / `BALANCE.md`** (e.g. Chlorithe⇄Naaz & Vry'l⇄Naaz LOVE, Naaz dislike no one).
 >
 > | feels about → | Hum | Drn | Kor | Vry | Thl | Vrn |
 > |---------------|:---:|:---:|:---:|:---:|:---:|:---:|

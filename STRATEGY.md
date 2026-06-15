@@ -77,10 +77,11 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 ---
 
 ## 4 · Atmosphere & gases (M3, M9) — the core puzzle
-- An **Atmosphere Generator** fills its **enclosed** room with one gas while powered:
-  - **O₂ Generator** → oxygen (cyan tint) — for Humans & Drenn.
-  - **Methane Generator** → CH₄ (orange tint) — for Thol.
-- **A room with two *different* gas generators becomes "mixed" (red) and is lethal to everyone.** Never put an O₂ and a Methane generator in the same room.
+- An **Atmosphere Generator** fills its **enclosed** room with one gas while powered. **Five breathable gases** (each its own sealed wing + species):
+  - **O₂ Generator** → oxygen (cyan) — Humans, Drenn, Vry'l, Korro.
+  - **Methane Generator** → CH₄ (orange) — Thol, Vorn.
+  - **Chlorine / Ammonia / Hydrogen Generators** (research-gated) → Cl₂ (green) / NH₃ (blue) / H₂ (magenta) — the Tier-3 **Chlorithe / Naaz / Voltaar**.
+- **A room with two *different* gas generators becomes "mixed" (red) and is lethal to everyone.** Keep each gas in its own room. (Lore-wise H₂ near O₂ would be explosive and Cl₂ corrosive — those hazards are a planned later layer; for now "mixed = lethal" covers it.)
 - No power or not enclosed → **no air** (vacuum).
 - **The zoning puzzle:** species that breathe different gases need **separate, sealed wings**, linked by **doors** so crew can still move around without the gases mixing. Plan your floorplan so incompatible atmospheres never share a room.
 - Crew breathe their species' gas only. In the right gas they're fine (breath recovers ~15%/s, suit refills). In the wrong gas, a mix, or vacuum, their **space suit auto-dons** and protects them — see below.
@@ -172,6 +173,9 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 | **Vry'l** | O₂ | **loves Thol** · likes Drenn · **HATES Korro** · neutral to humans | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
 | **Korro** | O₂ | **HATED by Humans & Vry'l** (mutual) · disliked by Thol · neutral to Drenn | **25** | Rations diet, **shares humans' air** — the pariah you can't separate by gas alone. Needs its own O₂ wing (+ Door). Strong haulers (see traits). |
 | **Vorn** | **CH₄ (methane)** | likes everyone · neutral to Korro | 16 | **Visitor only** (never resides) — the **methane Drenn**. Needs a sealed CH₄ wing with a **CH₄ Hotel Room** to lodge. *Fuel Baron:* docking ships pay **+50% for fuel** while a Vorn is aboard. Give your methane builds their own paying guests. |
+| **Chlorithe** | **Cl₂ (chlorine)** | likes Thol & **loves Naaz** · dislikes Vry'l/Voltaar | 28 | **Tier-3 resident.** Crystalline; eats Rations. Needs a fully sealed **Cl₂ wing** (Chlorine Gen). Their air is lethal to all others. |
+| **Naaz** | **NH₃ (ammonia)** | **likes everyone, dislikes no one** (loves Vry'l & Chlorithe) | 12 | **Tier-3 resident** & station peacemaker. Eats Rations. Needs a sealed **NH₃ wing** (Ammonia Gen). Great social glue across a mixed crew. |
+| **Voltaar** | **H₂ (hydrogen)** | aloof · dislikes Thol & Chlorithe | 30 | **Tier-3 resident** energy-being. Eats Rations. Needs a sealed **H₂ wing** (Hydrogen Gen) kept clear of others. Strong but standoffish. |
 
 Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them. **Korro are the twist:** they breathe the *same* O₂ as your humans and eat the *same* Rations, so you **can't keep them apart with gas zoning** — you must give them their **own O₂ wing** (separate room, linked by a Door) or the shared room turns tense.
 
@@ -234,7 +238,7 @@ This is the failure state the whole game is designed around.
 ## 12 · Research & tech (M30) — where your credits go
 Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
 - **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)** · **Medicine (¢200 → Med Bay)**.
-- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
+- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
 - **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*) · **Spaceport (¢700 → Spaceport Dock; *needs Expanded Docking*)**.
 - **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
 - **Doctrine fork — 2 Labs, pick ONE (M40):** a permanent **station specialization** — choosing one **locks the other two for the rest of the run**, so credits can't buy everything. Each needs a Tier-1 prerequisite:
@@ -329,7 +333,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Guests | arrive by shuttle ~20s, **3 / 6 / 10 per shuttle by dock tier** (≤ free Hotel Rooms **of the guests' gas**), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation. **Per-gas trader class:** O₂ hotels → Drenn (+Human/Vry'l mix at big docks); CH₄ hotels → **Vorn**. Shuttle flies into the dock pad and stays docked the whole visit |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
-| Relations | love +15 / like +8 / kin +4 / dislike −8 / hate −15; neighbor sum clamped ±45 (rivals needs); proximity 4 tiles. Human⇄Korro & Vry'l⇄Korro HATE; Thol⇄Vry'l & Human⇄Drenn LOVE; Drenn like all |
+| Relations | love +15 / like +8 / kin +4 / dislike −8 / hate −15; neighbor sum clamped ±45 (rivals needs); proximity 4 tiles. Human⇄Korro & Vry'l⇄Korro HATE; Thol⇄Vry'l, Human⇄Drenn, Chlorithe⇄Naaz, Vry'l⇄Naaz LOVE; Drenn & **Naaz** like all (Naaz dislike none) |
 | Reputation | per-species 0–100, starts 50; requests give +10–15 / expiry −6–10; ≤2 active, new ~every 50s, 120s to fulfil; Drenn rep scales guest arrival rate |
 | Upkeep | operating modules ~0.15¢/s each + resident wages ~0.2¢/s; net ¢/s shown by the credits chip. Idle stations bleed |
 | Skirmish | tension rises fast when mood <30 near a disliked species, **or slow-burn (4/s) when sharing a tense room (harmony <−0.3) even if fed**; fights at 100. Separate rivals to stop it |

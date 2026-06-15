@@ -119,6 +119,9 @@ Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, an
 | Cargo Logistics | 250 | 2 | Storage Silo |
 | Fungal Synthesis | 300 | 2 | Vry'l food recipes |
 | Methane Life-Support | 350 | 2 | Methane Gen (Thol) |
+| Chlorine Life-Support | 400 | 2 | Chlorine Gen (Chlorithe) |
+| Ammonia Life-Support | 450 | 2 | Ammonia Gen (Naaz) |
+| Hydrogen Life-Support | 500 | 2 | Hydrogen Gen (Voltaar) |
 | Station Security | 500 | 2 | Turret |
 | Expanded Docking | 350 | 2 | Large Dock *(needs Fuel Refining)* |
 | Spaceport | 700 | 3 | Spaceport Dock *(needs Expanded Docking)* |
@@ -220,21 +223,32 @@ The first implemented rival that breathes **O₂** (the rest of the roster split
 
 ## Full relations matrix (M42 — implemented)
 Tiers each way: **LOVE +15 · LIKE +8 · KIN +4 · NEUTRAL 0 · DISLIKE −8 · HATE −15** (`src/relations.ts`). Row feels about column.
-| A \ B | Human | Drenn | Thol | Vry'l | Korro | Vorn |
-|-------|:-----:|:-----:|:----:|:-----:|:-----:|:----:|
-| **Human** | +4 | +15 | −8 | 0 | −15 | 0 |
-| **Drenn** | +15 | +4 | +8 | +8 | +8 | +8 |
-| **Thol** | 0 | +8 | +4 | +15 | −8 | +8 |
-| **Vry'l** | 0 | +8 | +15 | +4 | −15 | 0 |
-| **Korro** | −15 | 0 | −8 | −15 | +4 | 0 |
-| **Vorn** | +8 | +8 | +8 | +8 | 0 | +4 |
-Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l. Drenn (O₂) and **Vorn (CH₄)** are the universal-diplomat **trader classes** — friendly to all, neutral to prickly Korro.
+| A \ B | Hum | Drn | Thl | Vry | Kor | Vor | Chl | Naz | Vol |
+|-------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **Human** | +4 | +15 | −8 | 0 | −15 | 0 | −8 | 0 | 0 |
+| **Drenn** | +15 | +4 | +8 | +8 | +8 | +8 | +8 | +8 | +8 |
+| **Thol** | 0 | +8 | +4 | +15 | −8 | +8 | +8 | +8 | −8 |
+| **Vry'l** | 0 | +8 | +15 | +4 | −15 | 0 | −8 | +15 | 0 |
+| **Korro** | −15 | 0 | −8 | −15 | +4 | 0 | 0 | 0 | 0 |
+| **Vorn** | +8 | +8 | +8 | +8 | 0 | +4 | +8 | +8 | +8 |
+| **Chlorithe** | 0 | 0 | +8 | −8 | 0 | 0 | +4 | +15 | −8 |
+| **Naaz** | 0 | +8 | +8 | +15 | 0 | +8 | +15 | +4 | 0 |
+| **Voltaar** | 0 | 0 | −8 | 0 | 0 | 0 | −8 | 0 | +4 |
+Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l, **Chlorithe⇄Naaz, Vry'l⇄Naaz**. **Drenn (O₂)** and **Vorn (CH₄)** are the universal-diplomat trader classes; the **Naaz (NH₃)** are the resident peacemaker (dislike no one).
 
 ## Vorn — the methane trader class
 A **guest-only** visitor species (like the Drenn, but breathes **CH₄**) so methane wings earn lodging too.
 - **Profile:** CH₄ · Rations diet · Combat Power **16** · visitor only (never a resident).
 - **Lodging:** a CH₄ shuttle disembarks Vorn only when a **Hotel Room sits in a CH₄ room**; guests are gas-matched to hotels (`GUEST_POOL` in `economy.ts`: O₂ → drenn/human/vry'l, CH₄ → vorn/thol).
 - **Trait — Fuel Baron:** docking ships pay **×1.5** for fuel while any Vorn is aboard (`TRAITS.vornFuel`).
+
+## Tier-3 exotic gases & species
+Three new breathable gases (`GasKind` cl2/nh3/h2) with a generator each (research Tier-2, 2 Labs): **Chlorine Gen** (¢170, draw 10), **Ammonia Gen** (¢180, draw 10), **Hydrogen Gen** (¢190, draw 11). The atmosphere system is gas-generic, so they zone/breathe/suffocate exactly like O₂/CH₄ (mixing any two gases in a room = lethal `mixed`).
+- **Chlorithe** — Cl₂ · Rations · CP **28** · resident. Crystalline; close to Naaz, wary of Vry'l/Voltaar.
+- **Naaz** — NH₃ · Rations · CP **12** · resident **peacemaker** (dislikes no one; loves Vry'l & Chlorithe).
+- **Voltaar** — H₂ · Rations · CP **30** · resident; aloof, dislikes Thol & Chlorithe.
+- All three **immigrate as residents** (in `RESIDENT_SPECIES`) once a sealed wing of their gas has a bunk + Rations. They share the human Rations chain — the *only* gate is the exotic sealed wing.
+- **Deferred (not yet built):** cryo/temperature (Naaz's cold), explosive/corrosive hazards (H₂↔O₂, Cl₂ leaks), bespoke exotic food lines, and the **Sszra** (O₂/Live-Protein) species.
 
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.

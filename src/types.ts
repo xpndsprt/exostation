@@ -7,6 +7,9 @@ export type StructureKind =
   | "battery"
   | "o2gen"
   | "ch4gen"
+  | "cl2gen"
+  | "nh3gen"
+  | "h2gen"
   | "pod"
   | "synth"
   | "vat"
@@ -32,11 +35,11 @@ export type StructureKind =
   | "bloomgarden"
   | "orerefinery";
 
-export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn";
+export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn" | "chlorithe" | "naaz" | "voltaar";
 
 export type FoodLine = "rations" | "fungal";
 
-export type GasKind = "o2" | "ch4";
+export type GasKind = "o2" | "ch4" | "cl2" | "nh3" | "h2";
 
 // What a room's atmosphere currently is: empty, a single breathable gas, or a
 // lethal mix of incompatible gases.

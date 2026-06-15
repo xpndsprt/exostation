@@ -26,6 +26,9 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "logistics", label: "Cargo Logistics", desc: "Build Storage Silos that raise every resource cap.", cost: 250, labs: 2, tool: "silo" },
   { id: "fungal", label: "Fungal Synthesis", desc: "Set Vats to Spores and Synths to Fungal Mash — the food chain for Vry'l.", cost: 300, labs: 2 },
   { id: "methane", label: "Methane Life-Support", desc: "Build Methane Generators — a sealed CH₄ wing lets you host Thol.", cost: 350, labs: 2, tool: "ch4gen" },
+  { id: "chlorine", label: "Chlorine Life-Support", desc: "Build Chlorine Generators — a sealed Cl₂ wing lets you host the Chlorithe.", cost: 400, labs: 2, tool: "cl2gen" },
+  { id: "ammonia", label: "Ammonia Life-Support", desc: "Build Ammonia Generators — a sealed NH₃ wing lets you host the Naaz.", cost: 450, labs: 2, tool: "nh3gen" },
+  { id: "hydrogen", label: "Hydrogen Life-Support", desc: "Build Hydrogen Generators — a sealed H₂ wing lets you host the Voltaar.", cost: 500, labs: 2, tool: "h2gen" },
   { id: "security", label: "Station Security", desc: "Build Turrets that shoot down raiders before they wreck your modules.", cost: 500, labs: 2, tool: "turret" },
   { id: "largedock", label: "Expanded Docking", desc: "Build Large Docks — bigger berths land bigger ships: more guests and more fuel sold.", cost: 350, labs: 2, tool: "docklarge", requires: ["fuelrefining"] },
   // --- Doctrine fork (2 Labs): pick ONE station specialization; it permanently

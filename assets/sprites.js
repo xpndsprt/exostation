@@ -16,7 +16,7 @@
   // who. Generated from the idle/walk frames after the library is built.
   const suitUp = (rows) =>
     rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
-  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a", vorn: "#c77fe0" };
+  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a", vorn: "#c77fe0", chlorithe: "#b6e87a", naaz: "#9ab6e8", voltaar: "#e89ac4" };
 
   // Helpers for new 2x2 modules: wrap 27 content rows (each 26 chars) in a
   // bordered 32x32 box. Using .repeat() guarantees exact widths.
@@ -745,6 +745,21 @@
       states: { enabled: CH4, disabled: off(CH4) },
     },
     {
+      name: "cl2gen", tileW: 2, tileH: 2, // chlorine — green tanks (reuses the O₂ tank art)
+      palette: { k: "#11151c", d: "#3a5118", b: "#6f9a30", h: "#9bd14a", w: "#e9ffd0", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: O2, disabled: off(O2) },
+    },
+    {
+      name: "nh3gen", tileW: 2, tileH: 2, // ammonia — cold blue tanks
+      palette: { k: "#11151c", d: "#1d2f55", b: "#3a5a9a", h: "#6a8fd1", w: "#dfe8ff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: O2, disabled: off(O2) },
+    },
+    {
+      name: "h2gen", tileW: 2, tileH: 2, // hydrogen — magenta tanks
+      palette: { k: "#11151c", d: "#511d3a", b: "#9a3a6c", h: "#d16a9b", w: "#ffd0e9", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: O2, disabled: off(O2) },
+    },
+    {
       name: "vat", tileW: 2, tileH: 2,
       palette: { k: "#11151c", d: "#23492c", b: "#2e5e38", h: "#4f9d5b", g: "#4f9d5b", l: "#7fd08f", q: "#bfeccb", L: "#49d17a", o: "#3a4350" },
       states: { enabled: VAT, disabled: off(VAT) },
@@ -1021,6 +1036,78 @@
     },
 
     /* ---------- space objects (1x1) ---------- */
+    {
+      name: "chlorithe", tileW: 1, tileH: 1, // Cl₂ crystalline — green
+      palette: { k: "#11151c", s: "#cfe89a", c: "#9bd14a", b: "#5e8a2a", e: "#1a2230" },
+      states: {
+        idle: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "....kcccccck....","....kcccccck....",".....kccck......",".....kbbbk......",
+          ".....kb.bk......",".....kb.bk......",".....kk.kk......","................",
+        ],
+        walk: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "...kcccccckk....","....kcccccck....",".....kccck......",".....kbbbk......",
+          "....kb.bbk......","...kb..kbk......","..kk....kk......","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","................","...kk...........","..kssk.kkkkkk...",
+          ".kkssskccccccck.",".ksssskcccccbk..",".kkkkkkbbbbbk...","..kkkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
+    {
+      name: "naaz", tileW: 1, tileH: 1, // NH₃ ammonia — icy blue
+      palette: { k: "#11151c", s: "#bcd0f0", c: "#6a8fd1", b: "#3a5a9a", e: "#1a2230" },
+      states: {
+        idle: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "....kcccccck....","....kcccccck....",".....kccck......",".....kbbbk......",
+          ".....kb.bk......",".....kb.bk......",".....kk.kk......","................",
+        ],
+        walk: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "...kcccccckk....","....kcccccck....",".....kccck......",".....kbbbk......",
+          "....kb.bbk......","...kb..kbk......","..kk....kk......","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","................","...kk...........","..kssk.kkkkkk...",
+          ".kkssskccccccck.",".ksssskcccccbk..",".kkkkkkbbbbbk...","..kkkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
+    {
+      name: "voltaar", tileW: 1, tileH: 1, // H₂ energy-being — magenta, glowing eyes
+      palette: { k: "#11151c", s: "#f0bcd6", c: "#d16a9b", b: "#9a3a6c", e: "#fff0c0" },
+      states: {
+        idle: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "....kcccccck....","....kcccccck....",".....kccck......",".....kbbbk......",
+          ".....kb.bk......",".....kb.bk......",".....kk.kk......","................",
+        ],
+        walk: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "...kcccccckk....","....kcccccck....",".....kccck......",".....kbbbk......",
+          "....kb.bbk......","...kb..kbk......","..kk....kk......","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","................","...kk...........","..kssk.kkkkkk...",
+          ".kkssskccccccck.",".ksssskcccccbk..",".kkkkkkbbbbbk...","..kkkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
     {
       name: "asteroid", tileW: 1, tileH: 1,
       palette: { k: "#0c0f15", r: "#8a7a5c", d: "#6b5f47", l: "#a89a78", c: "#4a4234" },

@@ -30,6 +30,9 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Battery | `battery` | Stores **50 PU** of surplus for when draw exceeds supply. | 0 | 1×1 | 80 | — | charging / discharging |
 | O₂ Generator | `o2gen` | Emits **oxygen** life support into its room (O₂ species). Top brownout priority (10). | 6 | 2×2 | 90 | — | on / off / unpowered |
 | Methane Gen | `ch4gen` | Emits **methane (CH₄)** life support — a sealed CH₄ wing to host **Thol**. Top brownout priority (10). | 9 | 2×2 | 140 | **Methane Life-Support** (¢350) | on / off / unpowered |
+| Chlorine Gen | `cl2gen` | Emits **chlorine (Cl₂)** — a sealed wing for the **Chlorithe**. | 10 | 2×2 | 170 | **Chlorine Life-Support** (¢400) | on / off / unpowered |
+| Ammonia Gen | `nh3gen` | Emits **ammonia (NH₃)** — a sealed wing for the **Naaz**. | 10 | 2×2 | 180 | **Ammonia Life-Support** (¢450) | on / off / unpowered |
+| Hydrogen Gen | `h2gen` | Emits **hydrogen (H₂)** — a sealed wing for the **Voltaar**. | 11 | 2×2 | 190 | **Hydrogen Life-Support** (¢500) | on / off / unpowered |
 | Rations Synth | `synth` | Converts a base resource → a food line: **Rations** (from biomass) or **Fungal Mash** (from spores). Recipe: 2 base → 4 meals / 10s (`SYNTH`). | 5 | 2×1 | 70 | — (Fungal recipe needs **Fungal Synthesis**, ¢300) | producing / idle / input-short |
 | Bio Vat | `vat` | Grows a food base from power: **Biomass** or **Spores** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores recipe needs **Fungal Synthesis**, ¢300) | growing / unpowered |
 | Crew Quarters | `pod` | Where **resident crew** sleep. | 1 | 1×1 | 40 | — | assigned / vacant |
@@ -74,6 +77,9 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Cargo Logistics | 250 | 2 | **Storage Silo** |
 | Fungal Synthesis | 300 | 2 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | **Methane Gen** (host Thol) |
+| Chlorine Life-Support | 400 | 2 | **Chlorine Gen** (host Chlorithe) |
+| Ammonia Life-Support | 450 | 2 | **Ammonia Gen** (host Naaz) |
+| Hydrogen Life-Support | 500 | 2 | **Hydrogen Gen** (host Voltaar) |
 | Station Security | 500 | 2 | **Turret** |
 | Expanded Docking | 350 | 2 | **Large Dock** (needs Fuel Refining) |
 | Fusion Power | 600 | 3 | **Fusion Reactor** |

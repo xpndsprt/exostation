@@ -104,6 +104,54 @@ export const SPECIES: Record<Species, SpeciesDef> = {
       "Humans and Vry'l despise them and the feeling is mutual; the only peace is architecture: " +
       "give the Korro their own oxygen wing, behind a door, and let proximity do no harm.",
   },
+  chlorithe: {
+    label: "Chlorithe",
+    gas: "cl2",
+    diet: "rations",
+    accent: 0x9bd14a,
+    power: 28,
+    role: "Resident crew (Tier-3)",
+    trait: "Generalist — no special bonus (their challenge is the sealed Cl₂ wing).",
+    blurb: "Chlorine-breathing crystalline aliens. Their Cl₂ air is instantly lethal to everyone else — a corrosive wing you must seal off completely. Wary of the Vry'l, close to the Naaz.",
+    lore:
+      "The Chlorithe are a crystalline, chlorine-breathing people from a world of green " +
+      "corrosive skies — slow, deliberate, and utterly indifferent to the soft-bodied races " +
+      "around them. Their atmosphere eats through anything not built to hold it, so a Chlorithe " +
+      "wing is a sealed, hazardous island on your station. They have no quarrel with most, but " +
+      "the delicate Vry'l unsettle them; only the gentle Naaz they consider true kin.",
+  },
+  naaz: {
+    label: "Naaz",
+    gas: "nh3",
+    diet: "rations",
+    accent: 0x6a8fd1,
+    power: 12,
+    role: "Resident crew (Tier-3)",
+    trait: "Peacemaker — the Naaz hold no grudges; they get along with everyone.",
+    blurb: "Ammonia-breathing, soft-spoken aliens — the station's social glue. They need a sealed NH₃ wing, but befriend every other species and dislike none.",
+    lore:
+      "The Naaz drift through ammonia seas on a cold, dim world, and something of that calm " +
+      "comes with them — a serene, conflict-averse people who seem to like everyone they meet. " +
+      "They ask only for a sealed ammonia wing of their own; in return they soften every feud " +
+      "around them, beloved by the Vry'l and the reclusive Chlorithe alike. The closest thing " +
+      "the sector has to universal peace tends to gather wherever the Naaz settle.",
+  },
+  voltaar: {
+    label: "Voltaar",
+    gas: "h2",
+    diet: "rations",
+    accent: 0xd16a9b,
+    power: 30,
+    role: "Resident crew (Tier-3)",
+    trait: "Generalist — no special bonus (their challenge is the volatile H₂ wing).",
+    blurb: "Hydrogen-breathing energy-beings. Their H₂ atmosphere is wildly flammable — keep it far from oxygen. Powerful, aloof, and at odds with the Thol and Chlorithe.",
+    lore:
+      "The Voltaar are barely-contained patterns of plasma and current, breathing hydrogen and " +
+      "humming with restless energy. Brilliant and aloof, they regard slower species with cool " +
+      "detachment — and their volatile hydrogen air will ignite at the first whiff of oxygen, so " +
+      "their wing must sit well clear of everyone else's. They bristle at the stolid Thol and the " +
+      "crystalline Chlorithe, and rarely warm to anyone but a persistent Drenn.",
+  },
   vorn: {
     label: "Vorn",
     gas: "ch4",

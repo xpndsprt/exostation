@@ -22,7 +22,15 @@ const SP_COLOR: Record<Species, string> = {
   vryl: "#8fd14f",
   korro: "#d65a4e",
   vorn: "#b256c9",
+  chlorithe: "#9bd14a",
+  naaz: "#6a8fd1",
+  voltaar: "#d16a9b",
 };
+
+const GAS_SYM: Record<string, string> = { o2: "O₂", ch4: "CH₄", cl2: "Cl₂", nh3: "NH₃", h2: "H₂" };
+function gasLabel(g: string): string {
+  return GAS_SYM[g] ?? g;
+}
 
 interface PaletteEntry {
   t: Tool;
@@ -40,6 +48,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "battery", label: "Battery", key: "2" },
   { t: "o2gen", label: "O₂ Generator", key: "3" },
   { t: "ch4gen", label: "Methane Gen", key: "4" },
+  { t: "cl2gen", label: "Chlorine Gen", key: "" },
+  { t: "nh3gen", label: "Ammonia Gen", key: "" },
+  { t: "h2gen", label: "Hydrogen Gen", key: "" },
   { t: "synth", label: "Rations Synth", key: "5" },
   { t: "vat", label: "Bio Vat", key: "6" },
   { t: "pod", label: "Crew Quarters", key: "7" },
@@ -491,7 +502,7 @@ export function renderTutorial(world: World): void {
   const has = (k: string) => Object.values(world.structures).some((s) => s.kind === k);
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);
   const powered = world.power.supply > 0;
-  const air = Object.values(world.rooms).some((r) => r.gas === "o2" || r.gas === "ch4");
+  const air = Object.values(world.rooms).some((r) => r.gas !== "none" && r.gas !== "mixed");
   const steps: [string, boolean][] = [
     ["Seal a room — Floor, then Wall around it", sealed],
     ["Power it — a Solar Panel on the hull", powered],
@@ -590,7 +601,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
-      `<div>${SPECIES[a.species].gas === "ch4" ? "CH₄" : "O₂"} ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
+      `<div>${gasLabel(SPECIES[a.species].gas)} ${Math.round(a.o2)}%${a.suit < 100 ? ` · Suit ${Math.round(a.suit)}%` : ""} · Food ${Math.round(a.food)}% · Rest ${Math.round(a.rest)}% · Fun ${Math.round(a.fun)}%</div>` +
       moodLine +
       `<div class="muted">${a.alive ? a.task?.type ?? "idle" : "dead"}${a.guest && isFinite(a.stay) ? ` · leaves ${Math.max(0, Math.round(a.stay))}s` : ""}</div>`;
   } else if (target.kind === "structure") {
@@ -621,7 +632,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     const kind = c.type === "floor" ? (c.enclosed ? "sealed floor" : "open floor") : c.type;
     const room = c.roomId >= 0 ? world.rooms[c.roomId] : undefined;
     const gas = room?.gas || "none";
-    const air = gas === "none" ? "no air" : gas === "mixed" ? "MIXED ☠" : gas;
+    const air = gas === "none" ? "no air" : gas === "mixed" ? "MIXED ☠" : gasLabel(gas);
     html = `<div class="muted">${cx},${cy} · ${kind}${c.type === "floor" ? ` · ${air}` : ""}</div>`;
     if (room && c.type === "floor") {
       const mult = productivity(room.harmony);
@@ -640,7 +651,7 @@ export function hideTooltip(): void {
   document.getElementById("tooltip")?.classList.remove("show");
 }
 
-const GAS_LABEL: Record<string, string> = { o2: "Oxygen", ch4: "Methane" };
+const GAS_LABEL: Record<string, string> = { o2: "Oxygen", ch4: "Methane", cl2: "Chlorine", nh3: "Ammonia", h2: "Hydrogen" };
 
 // Active species requests (goals).
 export function renderRequests(world: World): void {
@@ -986,7 +997,7 @@ function renderNextFC(): void {
   drawSpeciesArt(el.querySelector(".fc-art") as HTMLCanvasElement, sp);
   (el.querySelector(".fc-name") as HTMLElement).textContent = def.label;
   (el.querySelector(".fc-role") as HTMLElement).textContent =
-    `${def.role} · breathes ${def.gas === "ch4" ? "methane (CH₄)" : "oxygen (O₂)"}`;
+    `${def.role} · breathes ${gasLabel(def.gas)}`;
   (el.querySelector(".fc-lore") as HTMLElement).textContent = def.lore;
   el.classList.add("show");
 }

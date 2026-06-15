@@ -18,6 +18,9 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Battery | 80 | 1×1 | Stores 50 PU |
 | O₂ Generator | 90 | 2×2 | Oxygen life support |
 | Methane Gen | 140 | 2×2 | CH₄ life support (Thol) |
+| Chlorine Gen | 170 | 2×2 | Cl₂ life support (Chlorithe). Unlock: Chlorine Life-Support |
+| Ammonia Gen | 180 | 2×2 | NH₃ life support (Naaz). Unlock: Ammonia Life-Support |
+| Hydrogen Gen | 190 | 2×2 | H₂ life support (Voltaar). Unlock: Hydrogen Life-Support |
 | Rations Synth | 70 | 2×1 | Biomass → meals |
 | Bio Vat | 90 | 2×2 | Grows biomass (food base) |
 | Crew Quarters | 40 | 1×1 | Resident sleeping |
@@ -57,6 +60,9 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Spaceport | 700 | 3 | Spaceport Dock (needs Expanded Docking) |
 | Fungal Synthesis | 300 | 2 | Spores/Fungal recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | Methane Gen (host Thol) |
+| Chlorine Life-Support | 400 | 2 | Chlorine Gen (host Chlorithe) |
+| Ammonia Life-Support | 450 | 2 | Ammonia Gen (host Naaz) |
+| Hydrogen Life-Support | 500 | 2 | Hydrogen Gen (host Voltaar) |
 | Station Security | 500 | 2 | Turret |
 | Fusion Power | 600 | 3 | Fusion Reactor |
 | Bulk Trade | 600 | 3 | Cargo Exchange |

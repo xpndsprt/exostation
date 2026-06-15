@@ -17,12 +17,17 @@ const KIN = 4; // mild comfort around one's own kind
 //   them (they share O₂ air, so you can't gas-zone them out) is the hard problem.
 // - Thol ⇄ Vry'l are a strong alliance (LOVE) — a productive mixed wing.
 // - Human ⇄ Drenn LOVE — the comfortable starter pairing.
+// Tier-3 additions: Chlorithe (Cl₂), Naaz (NH₃, the universal peacemaker — no
+// dislikes), Voltaar (H₂, aloof). Chlorithe ⇄ Naaz and Vry'l ⇄ Naaz LOVE;
+// Chlorithe ⇄ Vry'l and Thol ⇄ Voltaar and Chlorithe ⇄ Voltaar DISLIKE.
 export const RELATIONS: Record<Species, Record<Species, number>> = {
-  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE, vorn: NEUTRAL },
-  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE, vorn: LIKE },
-  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE, vorn: LIKE },
-  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE, vorn: NEUTRAL },
-  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN, vorn: NEUTRAL },
-  // Vorn — the methane merchants: friendly traders (like the Drenn), neutral to prickly Korro.
-  vorn: { human: LIKE, drenn: LIKE, thol: LIKE, vryl: LIKE, korro: NEUTRAL, vorn: KIN },
+  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: NEUTRAL },
+  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE },
+  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: DISLIKE },
+  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: LOVE, voltaar: NEUTRAL },
+  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN, vorn: NEUTRAL, chlorithe: NEUTRAL, naaz: NEUTRAL, voltaar: NEUTRAL },
+  vorn: { human: LIKE, drenn: LIKE, thol: LIKE, vryl: LIKE, korro: NEUTRAL, vorn: KIN, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE },
+  chlorithe: { human: NEUTRAL, drenn: NEUTRAL, thol: LIKE, vryl: DISLIKE, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: KIN, naaz: LOVE, voltaar: DISLIKE },
+  naaz: { human: NEUTRAL, drenn: LIKE, thol: LIKE, vryl: LOVE, korro: NEUTRAL, vorn: LIKE, chlorithe: LOVE, naaz: KIN, voltaar: NEUTRAL },
+  voltaar: { human: NEUTRAL, drenn: NEUTRAL, thol: DISLIKE, vryl: NEUTRAL, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: KIN },
 };
