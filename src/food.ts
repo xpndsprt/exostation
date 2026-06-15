@@ -6,6 +6,18 @@ import { storageCaps } from "./storage";
 import { beaconActive } from "./beacon";
 import { industryBoost } from "./research";
 
+// Base resources a Vat can grow (raw feedstock), keyed by the Vat's recipe.
+type Base = "biomass" | "spores" | "microbes";
+const VAT_BASE: Record<string, Base> = { biomass: "biomass", spores: "spores", microbes: "microbes" };
+// Synth recipes: each cooks one food line from one base resource.
+//   rations ← biomass · fungal ← spores · protein/exotic ← microbes
+const SYNTH_RECIPE: Record<string, { line: FoodLine; base: Base }> = {
+  rations: { line: "rations", base: "biomass" },
+  fungal: { line: "fungal", base: "spores" },
+  protein: { line: "protein", base: "microbes" },
+  exotic: { line: "exotic", base: "microbes" },
+};
+
 // room productivity multiplier for a structure's location
 function roomProd(w: World, cell: number): number {
   const r = w.cells[cell].roomId;
@@ -34,8 +46,9 @@ export function foodSystem(w: World, dt: number): void {
     const dtp = dt * roomProd(w, s.cell) * boost; // harmonious rooms (and an AI Core) produce faster
 
     if (s.kind === "vat") {
-      const full = s.recipe === "spores" ? w.stock.spores >= caps.spores : w.stock.biomass >= caps.biomass;
-      if (full) {
+      // recipe → which base resource this vat grows
+      const grows = VAT_BASE[s.recipe] ?? "biomass";
+      if (w.stock[grows] >= caps[grows]) {
         s.timer = 0; // idle at cap — no infinite stockpiles
         continue;
       }
@@ -44,19 +57,16 @@ export function foodSystem(w: World, dt: number): void {
         s.timer -= VAT.time;
         const boost = botanistIn(w, w.cells[s.cell].roomId) ? TRAITS.vrylVat : 1;
         const yield_ = Math.round(VAT.amount * boost);
-        if (s.recipe === "spores") w.stock.spores = Math.min(caps.spores, w.stock.spores + yield_);
-        else w.stock.biomass = Math.min(caps.biomass, w.stock.biomass + yield_);
+        w.stock[grows] = Math.min(caps[grows], w.stock[grows] + yield_);
       }
     } else if (s.kind === "synth") {
-      const fungal = s.recipe === "fungal";
-      const line: FoodLine = fungal ? "fungal" : "rations";
-      const base = fungal ? w.stock.spores : w.stock.biomass;
-      if (base >= SYNTH.input && w.stock.meals[line] < caps[line]) {
+      // recipe → produced food line + the base resource it consumes
+      const { line, base } = SYNTH_RECIPE[s.recipe] ?? SYNTH_RECIPE.rations;
+      if (w.stock[base] >= SYNTH.input && w.stock.meals[line] < caps[line]) {
         s.timer += dtp;
         if (s.timer >= SYNTH.time) {
           s.timer -= SYNTH.time;
-          if (fungal) w.stock.spores -= SYNTH.input;
-          else w.stock.biomass -= SYNTH.input;
+          w.stock[base] -= SYNTH.input;
           w.stock.meals[line] = Math.min(caps[line], w.stock.meals[line] + SYNTH.meals);
         }
       } else {

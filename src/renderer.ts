@@ -24,6 +24,8 @@ const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   cl2gen: [2.4, 0xd6f0a0, 0.5],
   nh3gen: [2.4, 0xbcd0f0, 0.5],
   h2gen: [2.4, 0xf0bcd6, 0.5],
+  heater: [2.6, 0xffb38a, 0.55],
+  cooler: [2.6, 0xa8e0ff, 0.45],
   rec: [2.8, 0xffd9f2, 0.5],
   lab: [2.4, 0xc9b8ff, 0.5],
   tradehub: [2.2, 0xcfeecf, 0.4],

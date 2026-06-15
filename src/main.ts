@@ -9,6 +9,7 @@ import { foodSystem } from "./food";
 import { fuelSystem } from "./fuel";
 import { overflowSystem } from "./overflow";
 import { atmosphereSystem } from "./atmosphere";
+import { hazardSystem } from "./hazards";
 import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
@@ -89,6 +90,7 @@ function simStep(world: World, dt: number): void {
   fuelSystem(world, dt);
   overflowSystem(world, dt);
   atmosphereSystem(world);
+  hazardSystem(world, dt);
   harmonySystem(world);
   agentSystem(world, dt);
   moodSystem(world, dt);
@@ -247,13 +249,21 @@ async function boot(): Promise<void> {
     onRecipe: (id) => {
       const s = world.structures[id];
       if (!s) return;
-      const next = s.kind === "synth" ? (s.recipe === "fungal" ? "rations" : "fungal") : s.kind === "vat" ? (s.recipe === "spores" ? "biomass" : "spores") : null;
-      if (next === null) return;
-      if ((next === "fungal" || next === "spores") && !isUnlocked(world, "fungal")) {
-        pushAlert("Research Fungal Synthesis at a Lab first.", "warn");
+      // Cycle within the recipes the station has actually researched. Fungal needs
+      // Fungal Synthesis; the exotic chain (Microbes / Live-Protein / Exo-Culture)
+      // needs Exobiology.
+      const fungal = isUnlocked(world, "fungal");
+      const exo = isUnlocked(world, "exobiology");
+      let list: string[] | null = null;
+      if (s.kind === "vat") list = ["biomass", ...(fungal ? ["spores"] : []), ...(exo ? ["microbes"] : [])];
+      else if (s.kind === "synth") list = ["rations", ...(fungal ? ["fungal"] : []), ...(exo ? ["protein", "exotic"] : [])];
+      if (!list) return;
+      if (list.length === 1) {
+        pushAlert(s.kind === "vat" ? "Research Fungal Synthesis or Exobiology to grow other cultures." : "Research Fungal Synthesis or Exobiology to cook other food lines.", "warn");
         return;
       }
-      s.recipe = next;
+      const i = list.indexOf(s.recipe);
+      s.recipe = list[(i + 1) % list.length];
       needRedraw = true;
     },
     onOverlay: (m) => {

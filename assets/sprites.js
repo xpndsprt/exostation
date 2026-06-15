@@ -16,7 +16,7 @@
   // who. Generated from the idle/walk frames after the library is built.
   const suitUp = (rows) =>
     rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
-  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a", vorn: "#c77fe0", chlorithe: "#b6e87a", naaz: "#9ab6e8", voltaar: "#e89ac4" };
+  const SUIT_VISOR = { human: "#7fa8e0", drenn: "#e8c349", thol: "#e8995a", vryl: "#8fd14f", korro: "#e0786a", vorn: "#c77fe0", chlorithe: "#b6e87a", naaz: "#9ab6e8", voltaar: "#e89ac4", sszra: "#7fe8d4" };
 
   // Helpers for new 2x2 modules: wrap 27 content rows (each 26 chars) in a
   // bordered 32x32 box. Using .repeat() guarantees exact widths.
@@ -815,6 +815,16 @@
       states: { enabled: MEDBAY, disabled: off(MEDBAY) },
     },
     {
+      name: "heater", tileW: 2, tileH: 2, // warms a wing — orange coils (reuses the O₂ tank art)
+      palette: { k: "#11151c", d: "#5e2a18", b: "#9a4a2e", h: "#e8794a", w: "#ffd6b0", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: O2, disabled: off(O2) },
+    },
+    {
+      name: "cooler", tileW: 2, tileH: 2, // chills a wing — icy blue coils (reuses the O₂ tank art)
+      palette: { k: "#11151c", d: "#16384e", b: "#2e6a8a", h: "#4ab0e8", w: "#d6f0ff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: O2, disabled: off(O2) },
+    },
+    {
       name: "lab", tileW: 2, tileH: 1,
       palette: { k: "#11151c", b: "#241d44", h: "#4f3f8f", w: "#bfe9ff", d: "#3a2f6b", g: "#9b7bff", L: "#49d17a", o: "#3a4350" },
       states: { enabled: LAB, disabled: off(LAB) },
@@ -1087,6 +1097,30 @@
     {
       name: "voltaar", tileW: 1, tileH: 1, // H₂ energy-being — magenta, glowing eyes
       palette: { k: "#11151c", s: "#f0bcd6", c: "#d16a9b", b: "#9a3a6c", e: "#fff0c0" },
+      states: {
+        idle: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "....kcccccck....","....kcccccck....",".....kccck......",".....kbbbk......",
+          ".....kb.bk......",".....kb.bk......",".....kk.kk......","................",
+        ],
+        walk: [
+          "................","......kkkk......",".....kssssk.....",".....kseesk.....",
+          ".....ksssskk....","......kkkk......",".....kcccck.....","....kcccccck....",
+          "...kcccccckk....","....kcccccck....",".....kccck......",".....kbbbk......",
+          "....kb.bbk......","...kb..kbk......","..kk....kk......","................",
+        ],
+        dead: [
+          "................","................","................","................",
+          "................","................","...kk...........","..kssk.kkkkkk...",
+          ".kkssskccccccck.",".ksssskcccccbk..",".kkkkkkbbbbbk...","..kkkkkkkkkk....",
+          "................","................","................","................",
+        ],
+      },
+    },
+    {
+      name: "sszra", tileW: 1, tileH: 1, // O₂ reptilian sentinel — jade scales, slit eyes
+      palette: { k: "#11151c", s: "#9fe8d4", c: "#57c2a8", b: "#2e7a68", e: "#e8d24a" },
       states: {
         idle: [
           "................","......kkkk......",".....kssssk.....",".....kseesk.....",

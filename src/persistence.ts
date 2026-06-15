@@ -132,14 +132,17 @@ function sanitize(w: World): World {
   if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
   if (!Array.isArray(w.requests)) w.requests = [];
   if (typeof w.reqTimer !== "number") w.reqTimer = 0;
-  const st = w.stock as unknown as { spores?: number; fuel?: number; meals: unknown };
+  const st = w.stock as unknown as { spores?: number; microbes?: number; fuel?: number; meals: unknown };
   if (typeof st.spores !== "number") st.spores = 0;
+  if (typeof st.microbes !== "number") st.microbes = 0;
   if (typeof st.fuel !== "number") st.fuel = 0;
-  if (typeof st.meals === "number") w.stock.meals = { rations: st.meals, fungal: 0 };
-  else if (!st.meals || typeof st.meals !== "object") w.stock.meals = { rations: 0, fungal: 0 };
+  if (typeof st.meals === "number") w.stock.meals = { rations: st.meals, fungal: 0, protein: 0, exotic: 0 };
+  else if (!st.meals || typeof st.meals !== "object") w.stock.meals = { rations: 0, fungal: 0, protein: 0, exotic: 0 };
   else {
     if (typeof w.stock.meals.rations !== "number") w.stock.meals.rations = 0;
     if (typeof w.stock.meals.fungal !== "number") w.stock.meals.fungal = 0;
+    if (typeof w.stock.meals.protein !== "number") w.stock.meals.protein = 0;
+    if (typeof w.stock.meals.exotic !== "number") w.stock.meals.exotic = 0;
   }
   for (const id in w.structures) {
     const s = w.structures[id];

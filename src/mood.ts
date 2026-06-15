@@ -1,5 +1,6 @@
 import { Agent, World } from "./types";
 import { RELATIONS } from "./relations";
+import { SPECIES } from "./species";
 import { beaconActive } from "./beacon";
 
 const PROXIMITY = 4; // Manhattan tiles — "living next to each other"
@@ -14,11 +15,13 @@ export interface MoodBreakdown {
   harmony: number; // contribution from the room's harmony
   command: number; // station-wide lift from an active Command Hub
   overflow: number; // morale hit from resources visibly going to waste at cap
+  temp: number; // comfort/discomfort from the room's climate band vs species pref
   target: number; // resulting target mood (0..100)
 }
 
 const COMMAND_LIFT = 8; // mood bonus while a Human-staffed Command Hub runs
 const OVERFLOW_HIT = -5; // morale drag while a resource is wasting at its cap (M41)
+const TEMP_HIT = -10; // morale drag while in a room of the wrong climate band
 
 // Single source of truth for what an agent's mood is pulled toward. The system
 // eases actual mood toward this; the UI reads the same breakdown for tooltips.
@@ -38,11 +41,16 @@ export function moodBreakdown(w: World, a: Agent): MoodBreakdown {
   social = Math.max(-SOCIAL_CLAMP, Math.min(SOCIAL_CLAMP, social));
   const needs = (a.food - 50) * 0.15 + (a.rest - 50) * 0.15 + (a.fun - 50) * 0.15;
   const rid = w.cells[a.cell].roomId;
-  const harmony = rid >= 0 && w.rooms[rid] ? w.rooms[rid].harmony * 10 : 0;
+  const room = rid >= 0 ? w.rooms[rid] : undefined;
+  const harmony = room ? room.harmony * 10 : 0;
   const command = beaconActive(w, "cmdhub") ? COMMAND_LIFT : 0;
   const overflow = w.overflow ? OVERFLOW_HIT : 0;
-  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command + overflow));
-  return { base: BASE, needs, social, harmony, command, overflow, target };
+  // Climate comfort: only a species in a room whose band differs from what it
+  // likes is unhappy. Most crews want "temperate" (the default), so this only
+  // bites the exotic crews — Voltaar (hot), Naaz (cold) — until you climate-control.
+  const temp = room && room.gas !== "none" && room.temp !== SPECIES[a.species].temp ? TEMP_HIT : 0;
+  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command + overflow + temp));
+  return { base: BASE, needs, social, harmony, command, overflow, temp, target };
 }
 
 // Mood blends need-satisfaction with how an agent feels about nearby neighbors

@@ -81,8 +81,12 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
   - **O₂ Generator** → oxygen (cyan) — Humans, Drenn, Vry'l, Korro.
   - **Methane Generator** → CH₄ (orange) — Thol, Vorn.
   - **Chlorine / Ammonia / Hydrogen Generators** (research-gated) → Cl₂ (green) / NH₃ (blue) / H₂ (magenta) — the Tier-3 **Chlorithe / Naaz / Voltaar**.
-- **A room with two *different* gas generators becomes "mixed" (red) and is lethal to everyone.** Keep each gas in its own room. (Lore-wise H₂ near O₂ would be explosive and Cl₂ corrosive — those hazards are a planned later layer; for now "mixed = lethal" covers it.)
+- **A room with two *different* gas generators becomes "mixed" (red) and is lethal to everyone.** Keep each gas in its own room.
 - No power or not enclosed → **no air** (vacuum).
+
+#### Tier-3 gas hazards (Cl₂ corrosive · H₂ explosive)
+- **Chlorine (Cl₂) is corrosive.** Active machinery sitting in a Cl₂ room **wears out far faster** (−0.5 condition/s on top of normal wear; life-support gens are spared). A Chlorithe wing needs **crew on hand to service it** or modules degrade and break — keep a resident or an Auto-Forge nearby.
+- **Hydrogen (H₂) is explosive.** Put an **H₂ and an O₂ generator in the *same* room** and it **detonates**: the blast wrecks the room's modules, **destroys the offending generators**, **wounds everyone present**, and **blows a hull breach**. Never mix hydrogen with oxygen in one room — keep the Voltaar's wing well clear of your O₂ rooms (a door-separated wing is safe; sharing a *room* is not).
 - **The zoning puzzle:** species that breathe different gases need **separate, sealed wings**, linked by **doors** so crew can still move around without the gases mixing. Plan your floorplan so incompatible atmospheres never share a room.
 - Crew breathe their species' gas only. In the right gas they're fine (breath recovers ~15%/s, suit refills). In the wrong gas, a mix, or vacuum, their **space suit auto-dons** and protects them — see below.
 - A crew member who ends up off their native air will **try to path to a room with their own gas** (through doors if needed) before the suit runs out.
@@ -133,13 +137,18 @@ The station now needs a working population.
 - **Hover any module** to see its **Condition** on the rollover tooltip (and full details via the Select tool).
 - **Takeaway:** every machine you add is also upkeep. Grow your resident crew alongside your station, or things start breaking down.
 
-## 6 · Food production — grown on-station, two food lines
+## 6 · Food production — grown on-station, four food lines
 Food is a two-step, **power-driven** loop, and modules have **selectable recipes** (Select → Switch recipe):
-- A **Bio Vat** grows a base resource from power — **Biomass** (default) or **Spores** — **+3 every 8s** (🌱 shows biomass/spores).
-- A **Rations Synth** converts a base into a food line — **Rations** (from biomass) or **Fungal Mash** (from spores) — **2 → 4 meals every 10s** (🍱 shows rations/fungal).
-- **Each species eats its own line:** Humans/Drenn/Thol eat **Rations**; **Vry'l eat Fungal Mash**. To host Vry'l, set a Vat to **Spores** and a Synth to **Fungal**.
-- The station starts with a **generous biomass reserve (300)**, so a Rations Synth alone feeds your crew for a long while — build **Bio Vats** later, before that reserve runs low, to make food production self-sustaining.
-- **Takeaway:** build **at least one Bio Vat per Rations Synth**. If meals stall, check both are powered (mid-priority — a brownout can shed them) and add more vats.
+- A **Bio Vat** grows a base resource from power — **Biomass** (default), **Spores**, or **Microbes** — **+3 every 8s** (🌱 shows biomass · spores · microbes).
+- A **Rations Synth** converts a base into a food line — **Rations** (biomass), **Fungal Mash** (spores), **Live-Protein** (microbes) or **Exo-Culture** (microbes) — **2 → 4 meals every 10s** (🍱 shows rations/fungal, plus protein/exotic when stocked).
+- **Each species eats its own line:**
+  - Humans / Drenn / Thol / Korro / Vorn → **Rations** (Biomass).
+  - **Vry'l** → **Fungal Mash** (Spores; needs **Fungal Synthesis**).
+  - **Sszra** (O₂ carnivore) → **Live-Protein** (Microbes; needs **Exobiology**).
+  - **Chlorithe / Naaz / Voltaar** (the exotic-gas crews) → **Exo-Culture** (Microbes; needs **Exobiology**).
+- So the exotic crews are a **two-front challenge**: a sealed gas wing *and* a Microbes→Exo-Culture/Live-Protein food chain. Spores/Fungal need **Fungal Synthesis**; Microbes/Live-Protein/Exo-Culture need **Exobiology**.
+- The station starts with a **generous biomass reserve (300)**, so a Rations Synth alone feeds your starting crew for a long while — build **Bio Vats** before it runs low.
+- **Takeaway:** build **at least one Bio Vat per Synth**, matched to the recipe you need. If meals stall, check both are powered (mid-priority — a brownout can shed them) and add more vats.
 
 ---
 
@@ -173,11 +182,18 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 | **Vry'l** | O₂ | **loves Thol** · likes Drenn · **HATES Korro** · neutral to humans | 22 | **Fungal Mash diet** — same air as humans, but need a Spore vat + a Synth set to Fungal. |
 | **Korro** | O₂ | **HATED by Humans & Vry'l** (mutual) · disliked by Thol · neutral to Drenn | **25** | Rations diet, **shares humans' air** — the pariah you can't separate by gas alone. Needs its own O₂ wing (+ Door). Strong haulers (see traits). |
 | **Vorn** | **CH₄ (methane)** | likes everyone · neutral to Korro | 16 | **Visitor only** (never resides) — the **methane Drenn**. Needs a sealed CH₄ wing with a **CH₄ Hotel Room** to lodge. *Fuel Baron:* docking ships pay **+50% for fuel** while a Vorn is aboard. Give your methane builds their own paying guests. |
-| **Chlorithe** | **Cl₂ (chlorine)** | likes Thol & **loves Naaz** · dislikes Vry'l/Voltaar | 28 | **Tier-3 resident.** Crystalline; eats Rations. Needs a fully sealed **Cl₂ wing** (Chlorine Gen). Their air is lethal to all others. |
-| **Naaz** | **NH₃ (ammonia)** | **likes everyone, dislikes no one** (loves Vry'l & Chlorithe) | 12 | **Tier-3 resident** & station peacemaker. Eats Rations. Needs a sealed **NH₃ wing** (Ammonia Gen). Great social glue across a mixed crew. |
-| **Voltaar** | **H₂ (hydrogen)** | aloof · dislikes Thol & Chlorithe | 30 | **Tier-3 resident** energy-being. Eats Rations. Needs a sealed **H₂ wing** (Hydrogen Gen) kept clear of others. Strong but standoffish. |
+| **Chlorithe** | **Cl₂ (chlorine)** | likes Thol & **loves Naaz** · dislikes Vry'l/Voltaar | 28 | **Tier-3 resident.** Crystalline; eats **Exo-Culture**. Needs a fully sealed **Cl₂ wing** (Chlorine Gen) — whose air **corrodes machinery**, so keep crew servicing it. |
+| **Naaz** | **NH₃ (ammonia)** | **likes everyone, dislikes no one** (loves Vry'l & Chlorithe) | 12 | **Tier-3 resident** & station peacemaker. Eats **Exo-Culture**. Needs a sealed **NH₃ wing** (Ammonia Gen) kept **cold** (a Cryo Unit). Great social glue across a mixed crew. |
+| **Voltaar** | **H₂ (hydrogen)** | aloof · dislikes Thol & Chlorithe | 30 | **Tier-3 resident** energy-being. Eats **Exo-Culture**. Needs a sealed **H₂ wing** (Hydrogen Gen) kept **hot** (a Heater) and **never sharing a room with O₂** (it detonates). Strong but standoffish. |
+| **Sszra** | O₂ | respects **Korro** · unnerves Humans & Vry'l (mutual) | **32** | **Resident** reptilian sentinel. **Obligate carnivore — eats only Live-Protein** (Microbes → Synth). Shares humans' air (no gas-zoning them out), so house them apart from those who flinch at them. |
 
-Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them. **Korro are the twist:** they breathe the *same* O₂ as your humans and eat the *same* Rations, so you **can't keep them apart with gas zoning** — you must give them their **own O₂ wing** (separate room, linked by a Door) or the shared room turns tense.
+Humans, Drenn, and Vry'l all breathe O₂ and co-house freely, **but Vry'l eat a different food** (Fungal Mash). **Thol must be kept in their own methane wing** — and humans resent them. **Korro are the twist:** they breathe the *same* O₂ as your humans and eat the *same* Rations, so you **can't keep them apart with gas zoning** — you must give them their **own O₂ wing** (separate room, linked by a Door) or the shared room turns tense. **Sszra** are a second same-air case: O₂ breathers who eat only **Live-Protein**, so they need their own wing both for peace *and* a dedicated carnivore food line.
+
+### 9a · Climate — heat & cold (Heater / Cryo Unit)
+Every enclosed room has a **climate band**: **temperate** by default, **hot** with a powered **Heater**, **cold** with a powered **Cryo Unit** (a Heater and Cryo in one room cancel back to temperate). A crew member in a room of the **wrong band for their species takes a −10 mood hit** (not lethal — comfort, not survival). It only matters for two crews:
+- **Voltaar** want **hot** → put a **Heater** (¢130) in their H₂ wing.
+- **Naaz** want **cold** → put a **Cryo Unit** (¢170) in their NH₃ wing.
+Everyone else is happy at temperate, so you only build climate once you start hosting Voltaar or Naaz. Both need **Climate Control** research. Hover a crew member to see the **climate** term in their mood breakdown.
 
 ### Room harmony — who you put together matters
 Beyond the proximity mood effect, each enclosed room has a **harmony** from how the species sharing it get along (Select-hover a tile to see *harmonious* / *tense*):
@@ -238,7 +254,7 @@ This is the failure state the whole game is designed around.
 ## 12 · Research & tech (M30) — where your credits go
 Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
 - **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)** · **Medicine (¢200 → Med Bay)**.
-- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
+- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · **Climate Control (¢300 → Heater + Cryo Unit)** · **Exobiology (¢350 → Microbes/Live-Protein/Exo-Culture recipes for Sszra + exotic crews)** · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
 - **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*) · **Spaceport (¢700 → Spaceport Dock; *needs Expanded Docking*)**.
 - **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
 - **Doctrine fork — 2 Labs, pick ONE (M40):** a permanent **station specialization** — choosing one **locks the other two for the rest of the run**, so credits can't buy everything. Each needs a Tier-1 prerequisite:
@@ -314,26 +330,28 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 | Food / Rest / Fun | −1.5 / −1 / −0.4 %/s; seek at <40 / <35 / <40; recover +12 (rest) / +20 (lounge) %/s |
 | Crew speed | ~4 tiles/s (A* on floor) |
 | Upkeep | machinery wears ~0.6%/s; crew service below 60%, repair ~15%/s; breaks at 0. Residents only; ~1 crew / 6 modules |
-| Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Synth 5 / Dock 5 / Trade Hub 5 / Bay 4 / Lounge 4 / Turret 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
+| Power | Solar +10, **Fusion +150**, Battery 50; draws AI Core 10 / CH₄ 9 / Cl₂ 10 / NH₃ 10 / H₂ 11 / Cryo Unit 7 / O₂ 6 / Vat 6 / Lab 6 / Cargo Exchange 6 / Fuel Refinery 6 / Synth 5 / Dock 5 / Trade Hub 5 / Heater 5 / Bay 4 / Lounge 4 / Turret 4 / Med Bay 4 / Hotel 2 / Crew Quarters 1 / Light Fixture 1 (Silo 0) |
 | Lighting | the interior is dim by default; powered **Light Fixtures** (¢30) and glowing modules light their rooms and **cast real shadows** (walls/large modules block light). Every crew member carries a **moving lamp** (~3 cells) whose shadow sweeps as they walk. Visual only — no gameplay effect |
 | Encounters | every ~55s two co-located rival/friendly species trigger a **paused choice dialog**: a clash (bad/unlucky pick → injury) or a bond (morale/income/party). Injuries also come from servicing **2+-Lab modules** (Thol much safer) |
 | Injuries & Med Bay | wounded crew **bleed ~0.5%/s** and die without care; a powered **Med Bay** (¢240; research Medicine) **heals +6%/s** station-wide. Skirmishes wound too |
-| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub/Fuel Refinery/Med Bay · Tier 2 (2 Labs) Silo/Fungal/Methane/Turret · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core (each needs a Tier-1 prereq) · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
+| Tech | Research at powered Labs — **higher tiers need MORE Labs**: Tier 1 (1 Lab) Battery/Lounge/Bot Bay/Trade Hub/Fuel Refinery/Med Bay · Tier 2 (2 Labs) Silo/Fungal/**Climate Control**/**Exobiology**/Methane/Chlorine/Ammonia/Hydrogen/Turret/Expanded Docking · Tier 3 (3 Labs) Fusion/Cargo Exchange/AI Core/Spaceport (each needs a prereq) · Tier 4 (3 Labs) the 5 Beacon modules. Each tech shows its 🔬×N Lab requirement; locked tools show "???" |
 | Doctrine fork | 2 Labs, ¢400, **pick ONE** (locks the others): **Industrialist** (+15% mining/food/repair; needs Robotics) · **Hospitality** (+50% lodging, faster guests; needs Commerce) · **Garrison** (½ raider damage, life support shielded; needs Security) |
-| Storage caps | biomass 400 · spores 250 · meals 50/line · minerals 200 · fuel 120; production idles at cap. **Near cap (≥95%) a store spoils ~2%/s and drags mood −5** until cleared. Each Storage Silo +250 to all |
+| Storage caps | biomass 400 · spores 250 · microbes 250 · meals 50/line (rations/fungal/protein/exotic) · minerals 200 · fuel 120; production idles at cap. **Near cap (≥95%) a store spoils ~2%/s and drags mood −5** until cleared. Each Storage Silo +250 to all |
+| Climate | rooms are **temperate** by default; a powered **Heater** (¢130) → **hot**, a **Cryo Unit** (¢170) → **cold** (both in one room cancel). Wrong band for a crew = **−10 mood** (comfort only). Voltaar want hot, Naaz want cold; everyone else temperate. Needs Climate Control |
+| Gas hazards | **Cl₂ corrodes** active machinery in its room (−0.5 condition/s extra; life-support gens spared). **H₂ + O₂ in one room DETONATES** — wrecks the room's modules, destroys the gens, wounds everyone, blows a breach. Door-separated wings are safe |
 | Fuel | Fuel Refinery: 2 minerals → 3 fuel / 6s (needs a Bot Bay). Docking ships buy fuel at 4¢/unit: 6 / 18 / 40 per standard / large / spaceport dock |
 | Dock tiers | Docking Port (3×3 pad, 3 guests) · Large Dock (5×5, 6 guests) · Spaceport Dock (7×7, 10 guests). Bigger berths land bigger ships, a wider guest species mix, and bigger fuel sales |
 | Incidents | start ~120s in, ~every 75–90s (escalating): surge (module offline 20s; **can hit a lone, battery-less life-support gen**) · breach (vents a room, 2+ rooms only; **crew auto-reseal for ¢120**) · market shock (×2/×0.5 for 40s) · raider (pirate craft; DPS ~8→26 scaling with station size; **destroys a module when its condition hits 0**, breaches the hull if nothing's left, **hits life support if undefended & 2+ rooms**, until a Turret kills it). Redundancy (Battery / backup gen / Turret / Garrison) is the counter |
-| Food | Bio Vat: +3 biomass / 8s · Rations Synth: 2 biomass → 4 meals / 10s |
+| Food | Bio Vat: +3 / 8s (biomass · spores · microbes) · Synth: 2 base → 4 meals / 10s. Lines: Rations (biomass) · Fungal (spores) · **Live-Protein** (microbes → Sszra) · **Exo-Culture** (microbes → Chlorithe/Naaz/Voltaar). Spores/Fungal need Fungal Synthesis; Microbes/Protein/Exo need Exobiology |
 | Mining | minerals only; asteroids spawn naturally; drone cargo 10, speed ~6 tiles/s, richness 1000 |
-| Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core 2×2, solar 1×3 (wall) |
+| Footprints | battery/quarters/silo/turret/light 1×1, synth/hotel/lab 2×1, generators/vat/bay/lounge/trade-hub/fusion/cargo-exchange/ai-core/med-bay/fuel-refinery/heater/cryo-unit 2×2, solar 1×3 (wall) |
 | Objectives | grow to 3 crew → bank ¢3000 → host 4 resident species → **bring the Sector Beacon online** (charge all 5 species signature modules). Clear all to win. Defeat if the crew die and the station can't attract anyone (~20s grace) |
 | Sector Beacon | 5 researched signature modules (one per species); each charges 0→100% only while powered + its species is in its room, and grants a unique perk (mood / trade / repair / food / mining). All 5 charged = victory |
 | Crew arrival | resident shuttle ~every 12s while a Crew Quarters is free, the bunk is in their air, and their food line is stocked; capacity = Crew Quarters. Arrival shows a toast + a pulsing ring at the dock. Not hand-placed |
 | Guests | arrive by shuttle ~20s, **3 / 6 / 10 per shuttle by dock tier** (≤ free Hotel Rooms **of the guests' gas**), pay ~1.5¢/s, stay ~90s; rate scales with Drenn reputation. **Per-gas trader class:** O₂ hotels → Drenn (+Human/Vry'l mix at big docks); CH₄ hotels → **Vorn**. Shuttle flies into the dock pad and stays docked the whole visit |
 | Trade | needs a powered Trade Hub; every ~30s buys ≤25 minerals at ~3¢ each |
 | Credits | start ¢1000; builds cost (see COSTS.md); deconstruct refunds 50% |
-| Relations | love +15 / like +8 / kin +4 / dislike −8 / hate −15; neighbor sum clamped ±45 (rivals needs); proximity 4 tiles. Human⇄Korro & Vry'l⇄Korro HATE; Thol⇄Vry'l, Human⇄Drenn, Chlorithe⇄Naaz, Vry'l⇄Naaz LOVE; Drenn & **Naaz** like all (Naaz dislike none) |
+| Relations | **10 species.** love +15 / like +8 / kin +4 / dislike −8 / hate −15; neighbor sum clamped ±45 (rivals needs); proximity 4 tiles. Human⇄Korro & Vry'l⇄Korro HATE; Thol⇄Vry'l, Human⇄Drenn, Chlorithe⇄Naaz, Vry'l⇄Naaz LOVE; **Korro⇄Sszra** respect (like); Humans/Vry'l dislike Sszra; Drenn & **Naaz** like all (Naaz dislike none) |
 | Reputation | per-species 0–100, starts 50; requests give +10–15 / expiry −6–10; ≤2 active, new ~every 50s, 120s to fulfil; Drenn rep scales guest arrival rate |
 | Upkeep | operating modules ~0.15¢/s each + resident wages ~0.2¢/s; net ¢/s shown by the credits chip. Idle stations bleed |
 | Skirmish | tension rises fast when mood <30 near a disliked species, **or slow-burn (4/s) when sharing a tense room (harmony <−0.3) even if fed**; fights at 100. Separate rivals to stop it |

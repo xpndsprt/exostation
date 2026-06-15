@@ -39,10 +39,10 @@ Species arrive over time. The further the game progresses, the stranger and hard
 |------|---------------|-----------------|--------|
 | **Tier 1 — Kindred** | Share humanity's air & food (start: **Humans**). | One shared habitat works for all of them. Easy money. | ⚙️ shipped |
 | **Tier 2 — Divergent** | Different breathing gas **or** different diet. | Need segregated atmosphere zones or dedicated food chains. | ⚙️ shipped (Vry'l, Thol) |
-| **Tier 3 — Alien** | Completely incompatible — exotic gases, hostile temperatures, inedible-to-others food. | Sealed, isolated wings. A leak is lethal to everyone nearby. | 🔭 planned |
+| **Tier 3 — Alien** | Completely incompatible — exotic gases, hostile temperatures, inedible-to-others food. | Sealed, isolated wings. A leak is lethal to everyone nearby. | ⚙️ shipped (Chlorithe, Naaz, Voltaar, Sszra) |
 
 ### Atmosphere as a hazard  *(⚙️ shipped)*
-Because species breathe different gases, **atmosphere is a resource you zone and contain**. Airlocks separate incompatible wings; a breach or a wrong door means one species' air poisons another. Designing safe adjacency and traffic flow is the central spatial puzzle. *(Shipped today as per-room zoning across **five gases** — O₂, CH₄, Cl₂, NH₃, H₂ — each with its species; the corrosive/explosive *hazard* behaviors of Cl₂/H₂ and the cryo axis are 🔭 planned.)*
+Because species breathe different gases, **atmosphere is a resource you zone and contain**. Airlocks separate incompatible wings; a breach or a wrong door means one species' air poisons another. Designing safe adjacency and traffic flow is the central spatial puzzle. *(Shipped today as per-room zoning across **five gases** — O₂, CH₄, Cl₂, NH₃, H₂ — each with its species. The corrosive/explosive **hazard** behaviors now ship too: **Cl₂ corrodes machinery** in its room, and **H₂ + O₂ in one room detonates** — see `BALANCE.md` "Atmosphere hazards". A **temperature/climate** axis (Heater / Cryo Unit; hot for Voltaar, cold for Naaz) ships as a comfort/mood layer.)*
 
 ### Relations web
 Every species holds **opinions** of every other species — some pairs **love** being neighbors (mood/trade bonuses), others **hate** it (mood penalties, refusal to dock, brawls). Room placement becomes diplomacy: who you put next to whom, who shares a corridor, who shares a bar. Mixing the wrong guests turns a profitable hotel into a riot.
@@ -75,7 +75,7 @@ The satisfying tension of *Prison Architect*'s spatial logistics meets *RimWorld
 
 # FOOD SYSTEM
 
-> ⚙️ **Shipped:** parallel **food lines** — **Standard Rations** (Bio Vat → biomass → Rations Synth) and **Fungal Mash** (spores → fungal synth, gated behind Fungal Synthesis research) — run today as separate supply chains. 🔭 **Planned:** the **food-quality tiers (Basic → Refined → Gourmet) and per-species palate** mood bonuses, plus the exotic Tier-3 food lines (Live Protein, Mineral Slurry, Cryo-Gel, Plasma Feed) — not yet built.
+> ⚙️ **Shipped:** **four food lines** run today as separate supply chains — **Standard Rations** (Bio Vat → biomass → Synth), **Fungal Mash** (spores → fungal, behind Fungal Synthesis), and the exotic chain **Live-Protein** (Sszra) + **Exo-Culture** (Chlorithe/Naaz/Voltaar), both cooked from **Microbes** behind Exobiology research. 🔭 **Planned:** the **food-quality tiers (Basic → Refined → Gourmet) and per-species palate** mood bonuses; the original per-gas exotic recipes (Mineral Slurry / Cryo-Gel / Plasma) are consolidated into the single shipped **Exo-Culture** line.
 
 Food is a parallel strategic layer to atmosphere. **Synthesizers convert base resources (gathered by mining bots) into a food line.** Different species eat different food lines, which means different base resources, different synthesizer modules, and different supply chains running in parallel.
 
@@ -83,7 +83,7 @@ Food is a parallel strategic layer to atmosphere. **Synthesizers convert base re
 - **Shared food lines = shared supply chains.** Several species eat *Standard Rations*; one synthesizer farm feeds them all. Cheap and efficient — a key reason early-game (Tier 1) is forgiving.
 - **Divergent diets = parallel chains.** A species on *Fungal Mash* needs Spores mined and a fungal synthesizer — a whole separate logistics branch just for them.
 - **Food quality upgrades are species-specific.** Synthesizers upgrade Basic → Refined → Gourmet. Upgrades raise mood **only for species with a palate**; "calorie-only" species ignore quality entirely, so investing in their food is wasted money. Knowing *who* to spoil is part of the optimization.
-- **Exotic feed is dangerous & costly.** Tier 3 food lines consume the same exotic/volatile resources as their atmospheres (ammonia, exotic ice, refined hydrogen), tying food production to the most hazardous parts of the station.
+- **Exotic feed is its own chain.** *(⚙️ shipped, simplified)* The Tier-3 crews eat **Exo-Culture** and the Sszra eat **Live-Protein**, both grown from a dedicated **Microbes** base (Bio Vat) — a parallel chain gated behind **Exobiology**, separate from the human Rations line.
 
 ### Base resources (mined by bots)
 | Resource | Source | Feeds |
@@ -128,16 +128,16 @@ Nine species across three compatibility tiers (vision). You start with **Humans*
 | **Vry'l** | Oxygen (O₂) | **Fungal Mash** | None | ⚙️ shipped (resident) | Same air as humans, but need a whole separate Spore→Fungal food chain. |
 | **Thol** | **Methane (CH₄)** | Standard Rations | Medium | ⚙️ shipped (resident) | Eat the shared food line, but need a sealed methane wing — and CH₄ is flammable. |
 | **Vorn** | **Methane (CH₄)** | Standard Rations | — | ⚙️ shipped (guest-only) | The **methane Drenn**: a CH₄-breathing merchant caste that visits a methane wing's Hotel Room. *Fuel Baron* — ships pay +50% for fuel while aboard. Gives harder (methane) builds their own lodging + fuel income. |
-| **Sszra** | Oxygen (O₂) | **Live Protein** | High | 🔭 planned | Carnivores; share air but demand a high-biomass gourmet protein chain (not implemented). |
+| **Sszra** | Oxygen (O₂) | **Live-Protein** | High | ⚙️ shipped (resident) | Obligate carnivore — share air but demand a dedicated Microbes→Live-Protein chain (Exobiology). Korro respect them; Humans & Vry'l recoil. |
 
 ### Tier 3 — Alien  (exotic sealed-gas wings)
-> ⚙️ **Shipped (gas + species):** the exotic atmospheres **Cl₂ / NH₃ / H₂** and their species (**Chlorithe / Naaz / Voltaar**) are in the build as resident crew, each needing a fully sealed wing of their gas (research-gated generators). 🔭 **Still planned:** the *deeper* exotic layers — **cryogenic temperature** (Naaz), **explosive/corrosive hazards** (H₂↔O₂, Cl₂ leaks), and the bespoke **exotic food lines** below (they currently eat Rations).
+> ⚙️ **Shipped (full):** the exotic atmospheres **Cl₂ / NH₃ / H₂** and their species (**Chlorithe / Naaz / Voltaar**) are resident crew, each needing a fully sealed gas wing (research-gated generators) **plus** their own food chain (**Exo-Culture** from Microbes, behind Exobiology). The deeper layers now ship too: **corrosion** (Cl₂ eats machinery), **detonation** (H₂ + O₂ in one room explodes), and a **climate** axis (Heater/Cryo Unit — Voltaar want hot, Naaz cold). 🔭 **Still planned:** food-quality/palate mood tiers, and per-gas bespoke recipes beyond the unified Exo-Culture.
 
-| Species | Breathes | Eats *(target → live)* | Status | Hazard *(planned)* |
+| Species | Breathes | Eats | Status | Hazard / climate |
 |---------|----------|------|--------|--------|
-| **Chlorithe** | **Chlorine (Cl₂)** | Mineral Slurry → *Rations* | ⚙️ shipped (resident) | Cl₂ lethal to all others; corrosive leaks (planned). |
-| **Naaz** | **Ammonia (NH₃)** | Cryo-Gel Feed → *Rations* | ⚙️ shipped (resident) | Cryo/temperature requirement (planned). The peacemaker. |
-| **Voltaar** | **Hydrogen (H₂)** | Plasma Feed → *Rations* | ⚙️ shipped (resident) | H₂ + O₂ = explosion (planned). Power-hungry. |
+| **Chlorithe** | **Chlorine (Cl₂)** | Exo-Culture | ⚙️ shipped (resident) | Cl₂ lethal to all others **and corrodes machinery** in its room. |
+| **Naaz** | **Ammonia (NH₃)** | Exo-Culture | ⚙️ shipped (resident) | Wants a **cold** wing (Cryo Unit). The peacemaker. |
+| **Voltaar** | **Hydrogen (H₂)** | Exo-Culture | ⚙️ shipped (resident) | **H₂ + O₂ in one room = explosion**; wants a **hot** wing (Heater). Power-hungry. |
 
 ---
 
@@ -147,7 +147,7 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 **Relations are asymmetric** — A's feeling about B is not always B's feeling about A. **Read the table by row:** each row is *how that species feels about the species in each column.*
 
-> **⚙️ Shipped vs 🔭 target.** The relations web now spans the **9 shipped species** (Humans, Drenn, Korro, Vry'l, Thol, Vorn, Chlorithe, Naaz, Voltaar) with the full LOVE/HATE (±15) tiers — only **Sszra** remains 🔭 planned. The illustrative table below predates several of these pairings; the **live, authoritative 9×9 matrix is in `src/relations.ts` / `BALANCE.md`** (e.g. Chlorithe⇄Naaz & Vry'l⇄Naaz LOVE, Naaz dislike no one).
+> **⚙️ Shipped.** The relations web now spans **all 10 species** (Humans, Drenn, Korro, Vry'l, Thol, Vorn, Chlorithe, Naaz, Voltaar, **Sszra**) with the full LOVE/HATE (±15) tiers. The illustrative table below predates several of these pairings; the **live, authoritative 10×10 matrix is in `src/relations.ts` / `BALANCE.md`** (e.g. Chlorithe⇄Naaz & Vry'l⇄Naaz LOVE, Naaz dislike no one, Korro⇄Sszra LIKE).
 >
 > | feels about → | Hum | Drn | Kor | Vry | Thl | Vrn |
 > |---------------|:---:|:---:|:---:|:---:|:---:|:---:|

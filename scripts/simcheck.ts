@@ -13,6 +13,7 @@ import { foodSystem } from "../src/food";
 import { fuelSystem } from "../src/fuel";
 import { overflowSystem } from "../src/overflow";
 import { atmosphereSystem } from "../src/atmosphere";
+import { hazardSystem } from "../src/hazards";
 import { harmonySystem } from "../src/harmony";
 import { agentSystem } from "../src/agents";
 import { moodSystem, moodBreakdown } from "../src/mood";
@@ -54,6 +55,7 @@ function step(w: World) {
   fuelSystem(w, DT);
   overflowSystem(w, DT);
   atmosphereSystem(w);
+  hazardSystem(w, DT);
   harmonySystem(w);
   agentSystem(w, DT);
   moodSystem(w, DT);
@@ -1732,8 +1734,139 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Chlorithe suffocates in an O₂ wing", o2After("o2gen") < 60);
   const w = createWorld();
   check("Chlorine/Ammonia/Hydrogen gens are research-gated", toolLock(w, "cl2gen")?.id === "chlorine" && toolLock(w, "nh3gen")?.id === "ammonia" && toolLock(w, "h2gen")?.id === "hydrogen");
-  check("Roster now has 9 species", Object.keys(SPECIES).length === 9);
+  check("Roster now has 10 species", Object.keys(SPECIES).length === 10);
   check("Naaz are the peacemakers (no dislikes)", Object.values(RELATIONS.naaz).every((v) => v >= 0));
+}
+
+// --- Exotic food chain: Microbes → Live-Protein / Exo-Culture ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "vat", 8, 8);
+  addStructure(w, "synth", 9, 6);
+  const vat = Object.values(w.structures).find((s) => s.kind === "vat")!;
+  const syn = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  vat.recipe = "microbes";
+  syn.recipe = "protein";
+  w.stock.biomass = 0;
+  w.stock.microbes = 0;
+  let sawMicrobes = false;
+  for (let i = 0; i < 400; i++) {
+    step(w);
+    if (w.stock.microbes > 0) sawMicrobes = true;
+  }
+  check("Vat (microbes) grows microbes", sawMicrobes);
+  check("Synth (protein) produces Live-Protein", w.stock.meals.protein > 0);
+  syn.recipe = "exotic";
+  for (let i = 0; i < 400; i++) step(w);
+  check("Synth (exotic) produces Exo-Culture", w.stock.meals.exotic > 0);
+}
+
+// --- Sszra: O₂ carnivore that eats only Live-Protein ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "synth", 9, 6);
+  addAgent(w, 8, 7, "sszra");
+  const s = Object.values(w.agents)[0];
+  s.food = 10;
+  w.stock.meals.rations = 5;
+  w.stock.meals.protein = 0;
+  for (let i = 0; i < 100; i++) step(w);
+  check("Sszra refuse rations (obligate carnivore)", s.food < 60 && s.alive);
+  w.stock.meals.protein = 5;
+  for (let i = 0; i < 100; i++) step(w);
+  check("Sszra eat Live-Protein", s.food > 80);
+}
+
+// --- Temperature / Cryo: climate bands + comfort mood ---
+{
+  // a powered Heater makes its room hot; a Cryo Unit makes it cold
+  const w = createWorld();
+  carve(w, 5, 5, 12, 11);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6);
+  addStructure(w, "o2gen", 6, 9);
+  addStructure(w, "heater", 9, 9);
+  for (let i = 0; i < 10; i++) step(w);
+  const heat = Object.values(w.structures).find((s) => s.kind === "heater")!;
+  const rid = w.cells[heat.cell].roomId;
+  check("A powered Heater makes the room hot", rid >= 0 && w.rooms[rid].temp === "hot");
+  eraseAt(w, heat.cell % w.w, (heat.cell / w.w) | 0);
+  addStructure(w, "cooler", 9, 9);
+  for (let i = 0; i < 10; i++) step(w);
+  const cool = Object.values(w.structures).find((s) => s.kind === "cooler")!;
+  check("A powered Cryo Unit makes the room cold", w.rooms[w.cells[cool.cell].roomId].temp === "cold");
+  check("Heater & Cryo Unit are gated behind Climate Control", toolLock(createWorld(), "heater")?.id === "climate" && toolLock(createWorld(), "cooler")?.id === "climate");
+}
+{
+  // Voltaar want a HOT wing: an un-heated H₂ room dings mood; a Heater fixes it
+  const w = createWorld();
+  carve(w, 5, 5, 12, 11);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6);
+  addStructure(w, "solar", 9, 6);
+  addStructure(w, "h2gen", 6, 9);
+  addAgent(w, 11, 7, "voltaar");
+  for (let i = 0; i < 10; i++) step(w);
+  const v = Object.values(w.agents).find((a) => a.species === "voltaar")!;
+  check("Voltaar in an un-heated wing takes a climate mood hit", v.alive && moodBreakdown(w, v).temp < 0);
+  addStructure(w, "heater", 9, 9);
+  for (let i = 0; i < 10; i++) step(w);
+  check("A Heater removes the Voltaar climate penalty", moodBreakdown(w, v).temp === 0);
+}
+
+// --- Hazards: Cl₂ corrosion + H₂/O₂ detonation ---
+{
+  const wear = (gen: "cl2gen" | "o2gen"): number => {
+    const w = createWorld();
+    carve(w, 5, 5, 11, 9);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 7, 6);
+    addStructure(w, gen, 6, 7);
+    addStructure(w, "synth", 9, 6);
+    const syn = Object.values(w.structures).find((s) => s.kind === "synth")!;
+    syn.condition = 100;
+    for (let i = 0; i < 100; i++) step(w); // no crew to repair
+    return syn.condition;
+  };
+  check("Cl₂ corrodes machinery faster than O₂", wear("cl2gen") < wear("o2gen"));
+}
+{
+  // H₂ + O₂ generators in ONE room detonate: gens destroyed + a hull breach
+  const w = createWorld();
+  carve(w, 5, 5, 12, 10);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "h2gen", 9, 8);
+  addStructure(w, "synth", 10, 6);
+  addAgent(w, 11, 7, "human");
+  const before = Object.keys(w.structures).length;
+  let breached = false;
+  let destroyed = false;
+  for (let i = 0; i < 20; i++) {
+    step(w);
+    if (w.breaches.length > 0) breached = true;
+    if (Object.keys(w.structures).length < before) destroyed = true;
+  }
+  check("H₂ + O₂ in one room detonates (generators destroyed)", destroyed);
+  check("A hydrogen ignition blows a hull breach", breached);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

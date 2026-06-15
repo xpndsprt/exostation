@@ -1,4 +1,5 @@
 import { Species, World } from "./types";
+import { SPECIES } from "./species";
 import { beaconCharged } from "./beacon";
 
 // Scenario goals, completed in order. Each reports a current value toward its
@@ -60,7 +61,8 @@ function canAttractCrew(w: World): boolean {
   }
   if (!dockPowered) return false;
   const m = w.stock.meals;
-  const fed = (g: string) => (g === "o2" ? m.rations > 0 || m.fungal > 0 : g === "ch4" ? m.rations > 0 : false);
+  // A wing of gas g can take in crew if any species breathing g has its food stocked.
+  const fed = (g: string) => Object.values(SPECIES).some((sp) => sp.gas === g && m[sp.diet] > 0);
   return [...podGases].some(fed);
 }
 

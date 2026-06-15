@@ -85,7 +85,7 @@ export function advise(world: World): Advice[] {
       if (g && g !== "none" && g !== "mixed") podGases.add(g);
     }
     const m = world.stock.meals;
-    const fed = (g: string) => (g === "o2" ? m.rations > 0 || m.fungal > 0 : g === "ch4" ? m.rations > 0 : false);
+    const fed = (g: string) => Object.values(SPECIES).some((sp) => sp.gas === g && m[sp.diet] > 0);
     const canArrive = dockPowered && [...podGases].some(fed);
     if (canArrive) out.push({ sev: "tip", text: "A crew shuttle is inbound to your free quarters." });
     else if (!dockPowered) out.push({ sev: "warn", text: "Crew can't arrive — the Docking Port is unpowered." });

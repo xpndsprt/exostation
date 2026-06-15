@@ -40,7 +40,8 @@ simStep(world, dt):              // src/main.ts
   foodSystem         // 4.  Vats grow base resources; Synths -> meals
   fuelSystem         // 4b. Fuel Refineries crack minerals -> fuel (sold to ships)
   overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
-  atmosphereSystem   // 6.  per-room gas (o2 / ch4 / mixed / none)
+  atmosphereSystem   // 6.  per-room gas (o2/ch4/cl2/nh3/h2/mixed/none) + climate band (temp)
+  hazardSystem       // 6b. Cl₂ corrodes machinery; H₂+O₂ in one room detonates
   harmonySystem      // 7.  per-room relations -> harmony (productivity + mood)
   agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
   moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
@@ -75,10 +76,11 @@ stays reproducible thereafter.
 ## Data model (real shapes — see `src/types.ts`)
 ```ts
 type CellType = "space" | "floor" | "wall" | "door"; // tile-based; "door" walks but blocks gas
-type GasKind  = "o2" | "ch4";
+type GasKind  = "o2" | "ch4" | "cl2" | "nh3" | "h2";
 type RoomGas  = "none" | GasKind | "mixed";           // mixed = lethal to everyone
-type Species  = "human" | "drenn" | "thol" | "vryl" | "korro";
-type FoodLine = "rations" | "fungal";
+type Temp     = "cold" | "temperate" | "hot";         // room climate band (Heater/Cryo)
+type Species  = "human"|"drenn"|"thol"|"vryl"|"korro"|"vorn"|"chlorithe"|"naaz"|"voltaar"|"sszra";
+type FoodLine = "rations" | "fungal" | "protein" | "exotic";
 
 interface Cell {
   type: CellType;
@@ -109,7 +111,7 @@ interface Agent {
   task: Task | null; path: number[]; moveAcc: number;  // remaining cells; sub-cell progress
 }
 
-interface Stock { minerals: number; biomass: number; spores: number; meals: Record<FoodLine, number>; }
+interface Stock { minerals: number; biomass: number; spores: number; microbes: number; fuel: number; meals: Record<FoodLine, number>; }
 // NB: there is NO water resource. Food chain is base resource -> meal line.
 
 interface World {
@@ -391,9 +393,9 @@ src/                           // FLAT — no sim/ render/ ui/ data/ split
   types.ts  config.ts
   world.ts                     // World state + create/place/erase helpers
   main.ts                      // boot, fixed-step loop, simStep, input, camera/UI wiring
-  power.ts maintenance.ts mining.ts food.ts atmosphere.ts harmony.ts
-  agents.ts mood.ts combat.ts economy.ts events.ts requests.ts objectives.ts
-  research.ts storage.ts
+  power.ts maintenance.ts mining.ts food.ts fuel.ts overflow.ts atmosphere.ts hazards.ts harmony.ts
+  agents.ts mood.ts combat.ts medical.ts encounters.ts economy.ts events.ts requests.ts objectives.ts
+  research.ts storage.ts beacon.ts audio.ts
   rooms.ts pathfind.ts placement.ts
   structures.ts species.ts relations.ts advisor.ts
   renderer.ts camera.ts ui.ts persistence.ts

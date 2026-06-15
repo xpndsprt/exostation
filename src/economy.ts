@@ -21,7 +21,7 @@ const FUEL_PRICE = 4; // credits per fuel unit a docking ship buys
 const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
 // Species that live aboard as resident crew (Drenn/Vorn only ever visit as guests).
-const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro", "chlorithe", "naaz", "voltaar"];
+const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro", "chlorithe", "naaz", "voltaar", "sszra"];
 // Visitor species per breathing gas — every gas gets its own "trader class" so a
 // methane wing draws paying guests too. The first entry is the standard-dock
 // visitor; larger berths cycle the whole list for a species mix. All entries

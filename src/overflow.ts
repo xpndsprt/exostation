@@ -24,10 +24,13 @@ export function overflowSystem(w: World, dt: number): void {
 
   w.stock.biomass = decay(w.stock.biomass, caps.biomass);
   w.stock.spores = decay(w.stock.spores, caps.spores);
+  w.stock.microbes = decay(w.stock.microbes, caps.microbes);
   w.stock.minerals = decay(w.stock.minerals, caps.minerals);
   w.stock.fuel = decay(w.stock.fuel, caps.fuel);
   w.stock.meals.rations = decay(w.stock.meals.rations, caps.rations);
   w.stock.meals.fungal = decay(w.stock.meals.fungal, caps.fungal);
+  w.stock.meals.protein = decay(w.stock.meals.protein, caps.protein);
+  w.stock.meals.exotic = decay(w.stock.meals.exotic, caps.exotic);
 
   if (wasting && !w.overflow) w.notify.push("Storage overflowing — resources are going to waste. Trade or build a Silo.");
   if (dt > 0) w.overflow = wasting; // mood reads this; freeze it on paused ticks

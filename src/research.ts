@@ -10,6 +10,7 @@ export interface UnlockDef {
   cost: number; // credits
   labs: number; // number of powered Research Labs required to research it
   tool?: StructureKind; // build tool this enables (if any)
+  tools?: StructureKind[]; // extra build tools this same unlock enables (e.g. Heater + Cryo)
   requires?: string[]; // prerequisite unlock ids that must be owned first
   excludes?: string[]; // sibling unlocks that owning this one permanently locks
 }
@@ -29,6 +30,8 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "chlorine", label: "Chlorine Life-Support", desc: "Build Chlorine Generators — a sealed Cl₂ wing lets you host the Chlorithe.", cost: 400, labs: 2, tool: "cl2gen" },
   { id: "ammonia", label: "Ammonia Life-Support", desc: "Build Ammonia Generators — a sealed NH₃ wing lets you host the Naaz.", cost: 450, labs: 2, tool: "nh3gen" },
   { id: "hydrogen", label: "Hydrogen Life-Support", desc: "Build Hydrogen Generators — a sealed H₂ wing lets you host the Voltaar.", cost: 500, labs: 2, tool: "h2gen" },
+  { id: "climate", label: "Climate Control", desc: "Build Heaters and Cryo Units to warm or chill a wing — keeps heat-loving Voltaar and cold-loving Naaz content.", cost: 300, labs: 2, tool: "heater", tools: ["heater", "cooler"] },
+  { id: "exobiology", label: "Exobiology", desc: "Set Vats to Microbes and Synths to Live-Protein or Exo-Culture — the food chains for Sszra and the exotic-gas crews.", cost: 350, labs: 2 },
   { id: "security", label: "Station Security", desc: "Build Turrets that shoot down raiders before they wreck your modules.", cost: 500, labs: 2, tool: "turret" },
   { id: "largedock", label: "Expanded Docking", desc: "Build Large Docks — bigger berths land bigger ships: more guests and more fuel sold.", cost: 350, labs: 2, tool: "docklarge", requires: ["fuelrefining"] },
   // --- Doctrine fork (2 Labs): pick ONE station specialization; it permanently
@@ -53,16 +56,21 @@ export function isUnlocked(w: World, id: string): boolean {
   return !!w.unlocked[id];
 }
 
+// Does this unlock enable the given build tool (primary or one of its extras)?
+function unlockEnables(u: UnlockDef, tool: string): boolean {
+  return u.tool === tool || !!u.tools?.includes(tool as StructureKind);
+}
+
 // The unlock that gates a build tool, if it is gated and not yet owned.
 export function toolLock(w: World, tool: string): UnlockDef | null {
-  for (const u of UNLOCKS) if (u.tool === tool && !isUnlocked(w, u.id)) return u;
+  for (const u of UNLOCKS) if (unlockEnables(u, tool) && !isUnlocked(w, u.id)) return u;
   return null;
 }
 
 // A "high-tier" module is one whose unlock needs 2+ Labs — heavier, more
 // dangerous machinery, so servicing it can injure the crew (see agents.ts).
 export function highTierModule(kind: StructureKind): boolean {
-  const u = UNLOCKS.find((x) => x.tool === kind);
+  const u = UNLOCKS.find((x) => unlockEnables(x, kind));
   return !!u && u.labs >= 2;
 }
 

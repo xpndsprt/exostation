@@ -1,8 +1,9 @@
-import { FoodLine, GasKind, Species } from "./types";
+import { FoodLine, GasKind, Species, Temp } from "./types";
 
 export interface SpeciesDef {
   label: string;
   gas: GasKind; // the atmosphere this species breathes
+  temp: Temp; // the room climate this species is comfortable in (mood, not lethal)
   diet: FoodLine; // the food line this species eats
   accent: number; // ring color for quick visual ID
   power: number; // combat power (from BALANCE.md)
@@ -25,6 +26,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   human: {
     label: "Human",
     gas: "o2",
+    temp: "temperate",
     diet: "rations",
     accent: 0x0d1016,
     power: 20,
@@ -41,6 +43,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   drenn: {
     label: "Drenn",
     gas: "o2",
+    temp: "temperate",
     diet: "rations",
     accent: 0xe8c349,
     power: 18,
@@ -57,6 +60,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   thol: {
     label: "Thol",
     gas: "ch4",
+    temp: "temperate",
     diet: "rations",
     accent: 0xd98a3a,
     power: 35,
@@ -74,6 +78,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   vryl: {
     label: "Vry'l",
     gas: "o2",
+    temp: "temperate",
     diet: "fungal",
     accent: 0x8fd14f,
     power: 22,
@@ -90,6 +95,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   korro: {
     label: "Korro",
     gas: "o2",
+    temp: "temperate",
     diet: "rations",
     accent: 0xc0453a,
     power: 25,
@@ -107,12 +113,13 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   chlorithe: {
     label: "Chlorithe",
     gas: "cl2",
-    diet: "rations",
+    temp: "temperate",
+    diet: "exotic",
     accent: 0x9bd14a,
     power: 28,
     role: "Resident crew (Tier-3)",
-    trait: "Generalist — no special bonus (their challenge is the sealed Cl₂ wing).",
-    blurb: "Chlorine-breathing crystalline aliens. Their Cl₂ air is instantly lethal to everyone else — a corrosive wing you must seal off completely. Wary of the Vry'l, close to the Naaz.",
+    trait: "Generalist — no special bonus (their challenge is the sealed Cl₂ wing + Exo-Culture food).",
+    blurb: "Chlorine-breathing crystalline aliens. Their Cl₂ air is instantly lethal to everyone else — and corrodes the very modules around it, so the wing needs constant upkeep. They eat Exo-Culture (a Vat set to Microbes → a Synth set to Exo-Culture). Wary of the Vry'l, close to the Naaz.",
     lore:
       "The Chlorithe are a crystalline, chlorine-breathing people from a world of green " +
       "corrosive skies — slow, deliberate, and utterly indifferent to the soft-bodied races " +
@@ -123,12 +130,13 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   naaz: {
     label: "Naaz",
     gas: "nh3",
-    diet: "rations",
+    temp: "cold",
+    diet: "exotic",
     accent: 0x6a8fd1,
     power: 12,
     role: "Resident crew (Tier-3)",
     trait: "Peacemaker — the Naaz hold no grudges; they get along with everyone.",
-    blurb: "Ammonia-breathing, soft-spoken aliens — the station's social glue. They need a sealed NH₃ wing, but befriend every other species and dislike none.",
+    blurb: "Ammonia-breathing, soft-spoken aliens — the station's social glue. They need a sealed NH₃ wing kept COLD (a Cryo Unit), and eat Exo-Culture. In return they befriend every other species and dislike none.",
     lore:
       "The Naaz drift through ammonia seas on a cold, dim world, and something of that calm " +
       "comes with them — a serene, conflict-averse people who seem to like everyone they meet. " +
@@ -139,12 +147,13 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   voltaar: {
     label: "Voltaar",
     gas: "h2",
-    diet: "rations",
+    temp: "hot",
+    diet: "exotic",
     accent: 0xd16a9b,
     power: 30,
     role: "Resident crew (Tier-3)",
-    trait: "Generalist — no special bonus (their challenge is the volatile H₂ wing).",
-    blurb: "Hydrogen-breathing energy-beings. Their H₂ atmosphere is wildly flammable — keep it far from oxygen. Powerful, aloof, and at odds with the Thol and Chlorithe.",
+    trait: "Generalist — no special bonus (their challenge is the volatile, HOT H₂ wing + Exo-Culture food).",
+    blurb: "Hydrogen-breathing energy-beings. Their H₂ atmosphere is wildly flammable — never mix it with O₂ in one room or it DETONATES. They run hot (a Heater keeps them happy) and eat Exo-Culture. Powerful, aloof, and at odds with the Thol and Chlorithe.",
     lore:
       "The Voltaar are barely-contained patterns of plasma and current, breathing hydrogen and " +
       "humming with restless energy. Brilliant and aloof, they regard slower species with cool " +
@@ -155,6 +164,7 @@ export const SPECIES: Record<Species, SpeciesDef> = {
   vorn: {
     label: "Vorn",
     gas: "ch4",
+    temp: "temperate",
     diet: "rations",
     accent: 0xb256c9,
     power: 16,
@@ -168,5 +178,24 @@ export const SPECIES: Record<Species, SpeciesDef> = {
       "with a room of their own air — and tip the scales of every fuel sale in your favor while " +
       "they stay. Build for the Thol, and you open your docks to the Vorn and their deep, " +
       "methane-scented purses.",
+  },
+  sszra: {
+    label: "Sszra",
+    gas: "o2",
+    temp: "temperate",
+    diet: "protein",
+    accent: 0x57c2a8,
+    power: 32,
+    role: "Resident crew",
+    trait: "Generalist — formidable, but no production bonus (their challenge is the Live-Protein chain).",
+    blurb: "Oxygen-breathing reptilian sentinels. They share humanity's air but are pure carnivores — they eat only Live-Protein (a Vat set to Microbes → a Synth set to Live-Protein), never rations. Disciplined and strong; humans and the gentle Vry'l find them unnerving, while the Korro respect a fellow predator.",
+    lore:
+      "The Sszra are an old warrior-scholar people of scales and stillness, hatched on a hot " +
+      "oxygen world where everything that lived had teeth. They breathe the same air as humans — " +
+      "you cannot wall them off behind a gas zone — but they will not touch a ration pack: the " +
+      "Sszra are obligate carnivores who eat only living protein, cultured fresh from microbial " +
+      "vats. Patient, exacting, and quietly lethal, they make superb crew for a captain who can " +
+      "feed them. Humans and the soft-spoken Vry'l flinch at their gaze; the brawling Korro, who " +
+      "understand a predator on sight, count them as the closest thing to kin a stranger can be.",
   },
 };

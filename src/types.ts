@@ -28,6 +28,8 @@ export type StructureKind =
   | "fuelrefinery"
   | "docklarge"
   | "docksuper"
+  | "heater"
+  | "cooler"
   | "medbay"
   | "cmdhub"
   | "tradenexus"
@@ -35,11 +37,15 @@ export type StructureKind =
   | "bloomgarden"
   | "orerefinery";
 
-export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn" | "chlorithe" | "naaz" | "voltaar";
+export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn" | "chlorithe" | "naaz" | "voltaar" | "sszra";
 
-export type FoodLine = "rations" | "fungal";
+export type FoodLine = "rations" | "fungal" | "protein" | "exotic";
 
 export type GasKind = "o2" | "ch4" | "cl2" | "nh3" | "h2";
+
+// Room climate band. Most species want "temperate"; a few exotic crews need their
+// wing heated (Voltaar) or chilled (Naaz). Set by powered Heater / Cryo modules.
+export type Temp = "cold" | "temperate" | "hot";
 
 // What a room's atmosphere currently is: empty, a single breathable gas, or a
 // lethal mix of incompatible gases.
@@ -126,6 +132,7 @@ export interface Stock {
   minerals: number; // mined from asteroids
   biomass: number; // grown in Vats; feedstock for Rations
   spores: number; // grown in Vats; feedstock for Fungal Mash
+  microbes: number; // grown in Vats; feedstock for exotic food (Live-Protein / Exo-Culture)
   fuel: number; // refined from minerals at a Fuel Refinery; sold to docking ships
   meals: Record<FoodLine, number>; // synthesized food, per line; eaten by crew
 }
@@ -191,6 +198,7 @@ export interface StationRequest {
 export interface RoomInfo {
   enclosed: boolean;
   gas: RoomGas;
+  temp: Temp; // climate band from powered Heater / Cryo modules (default temperate)
   harmony: number; // -1..1 from relations among occupants (synergy vs friction)
 }
 

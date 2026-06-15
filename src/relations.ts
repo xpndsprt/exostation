@@ -20,14 +20,18 @@ const KIN = 4; // mild comfort around one's own kind
 // Tier-3 additions: Chlorithe (Cl₂), Naaz (NH₃, the universal peacemaker — no
 // dislikes), Voltaar (H₂, aloof). Chlorithe ⇄ Naaz and Vry'l ⇄ Naaz LOVE;
 // Chlorithe ⇄ Vry'l and Thol ⇄ Voltaar and Chlorithe ⇄ Voltaar DISLIKE.
+// Sszra (O₂ carnivore sentinel): respected by the Korro (a fellow predator),
+// unnerving to Humans and the gentle Vry'l, and — like everyone — adored by the
+// universal diplomats (Drenn) and the peacemaking Naaz.
 export const RELATIONS: Record<Species, Record<Species, number>> = {
-  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: NEUTRAL },
-  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE },
-  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: DISLIKE },
-  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: LOVE, voltaar: NEUTRAL },
-  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN, vorn: NEUTRAL, chlorithe: NEUTRAL, naaz: NEUTRAL, voltaar: NEUTRAL },
-  vorn: { human: LIKE, drenn: LIKE, thol: LIKE, vryl: LIKE, korro: NEUTRAL, vorn: KIN, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE },
-  chlorithe: { human: NEUTRAL, drenn: NEUTRAL, thol: LIKE, vryl: DISLIKE, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: KIN, naaz: LOVE, voltaar: DISLIKE },
-  naaz: { human: NEUTRAL, drenn: LIKE, thol: LIKE, vryl: LOVE, korro: NEUTRAL, vorn: LIKE, chlorithe: LOVE, naaz: KIN, voltaar: NEUTRAL },
-  voltaar: { human: NEUTRAL, drenn: NEUTRAL, thol: DISLIKE, vryl: NEUTRAL, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: KIN },
+  human: { human: KIN, drenn: LOVE, thol: DISLIKE, vryl: NEUTRAL, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: NEUTRAL, sszra: DISLIKE },
+  drenn: { human: LOVE, drenn: KIN, thol: LIKE, vryl: LIKE, korro: LIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE, sszra: LIKE },
+  thol: { human: NEUTRAL, drenn: LIKE, thol: KIN, vryl: LOVE, korro: DISLIKE, vorn: LIKE, chlorithe: LIKE, naaz: LIKE, voltaar: DISLIKE, sszra: NEUTRAL },
+  vryl: { human: NEUTRAL, drenn: LIKE, thol: LOVE, vryl: KIN, korro: HATE, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: LOVE, voltaar: NEUTRAL, sszra: DISLIKE },
+  korro: { human: HATE, drenn: NEUTRAL, thol: DISLIKE, vryl: HATE, korro: KIN, vorn: NEUTRAL, chlorithe: NEUTRAL, naaz: NEUTRAL, voltaar: NEUTRAL, sszra: LIKE },
+  vorn: { human: LIKE, drenn: LIKE, thol: LIKE, vryl: LIKE, korro: NEUTRAL, vorn: KIN, chlorithe: LIKE, naaz: LIKE, voltaar: LIKE, sszra: LIKE },
+  chlorithe: { human: NEUTRAL, drenn: NEUTRAL, thol: LIKE, vryl: DISLIKE, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: KIN, naaz: LOVE, voltaar: DISLIKE, sszra: NEUTRAL },
+  naaz: { human: NEUTRAL, drenn: LIKE, thol: LIKE, vryl: LOVE, korro: NEUTRAL, vorn: LIKE, chlorithe: LOVE, naaz: KIN, voltaar: NEUTRAL, sszra: LIKE },
+  voltaar: { human: NEUTRAL, drenn: NEUTRAL, thol: DISLIKE, vryl: NEUTRAL, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: KIN, sszra: NEUTRAL },
+  sszra: { human: NEUTRAL, drenn: LIKE, thol: NEUTRAL, vryl: DISLIKE, korro: LIKE, vorn: NEUTRAL, chlorithe: NEUTRAL, naaz: LIKE, voltaar: NEUTRAL, sszra: KIN },
 };

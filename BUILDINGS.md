@@ -33,8 +33,8 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Chlorine Gen | `cl2gen` | Emits **chlorine (Cl₂)** — a sealed wing for the **Chlorithe**. | 10 | 2×2 | 170 | **Chlorine Life-Support** (¢400) | on / off / unpowered |
 | Ammonia Gen | `nh3gen` | Emits **ammonia (NH₃)** — a sealed wing for the **Naaz**. | 10 | 2×2 | 180 | **Ammonia Life-Support** (¢450) | on / off / unpowered |
 | Hydrogen Gen | `h2gen` | Emits **hydrogen (H₂)** — a sealed wing for the **Voltaar**. | 11 | 2×2 | 190 | **Hydrogen Life-Support** (¢500) | on / off / unpowered |
-| Rations Synth | `synth` | Converts a base resource → a food line: **Rations** (from biomass) or **Fungal Mash** (from spores). Recipe: 2 base → 4 meals / 10s (`SYNTH`). | 5 | 2×1 | 70 | — (Fungal recipe needs **Fungal Synthesis**, ¢300) | producing / idle / input-short |
-| Bio Vat | `vat` | Grows a food base from power: **Biomass** or **Spores** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores recipe needs **Fungal Synthesis**, ¢300) | growing / unpowered |
+| Rations Synth | `synth` | Converts a base → a food line: **Rations** (biomass), **Fungal Mash** (spores), **Live-Protein** (microbes, for Sszra) or **Exo-Culture** (microbes, for the exotic-gas crews). Recipe: 2 base → 4 meals / 10s (`SYNTH`). | 5 | 2×1 | 70 | — (Fungal needs **Fungal Synthesis** ¢300; Protein/Exo need **Exobiology** ¢350) | producing / idle / input-short |
+| Bio Vat | `vat` | Grows a food base from power: **Biomass**, **Spores** or **Microbes** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores needs **Fungal Synthesis** ¢300; Microbes needs **Exobiology** ¢350) | growing / unpowered |
 | Crew Quarters | `pod` | Where **resident crew** sleep. | 1 | 1×1 | 40 | — | assigned / vacant |
 | Bot Bay | `bay` | Launches / docks / recharges a **mining drone** that gathers minerals. | 4 | 2×2 | 120 | — | cycling / occupied / free |
 | Docking Port | `dock` | **Hull airlock placed on a space-facing wall.** Ships park on a 3×3 pad and bring up to 3 guests; ships buy fuel on landing. | 5 | 1×1 (wall) | 150 | — | guests arrive / free |
@@ -42,6 +42,8 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Spaceport Dock | `docksuper` | Largest berth (7×7 pad): huge ship — **10 guests** + buys **40 fuel**. | 12 | 1×1 (wall) | 900 | **Spaceport** (¢700) | guests arrive / free |
 | Fuel Refinery | `fuelrefinery` | Cracks **2 minerals → 3 fuel / 6 s** (needs a Bot Bay mining); fuel is sold to docking ships at 4¢/unit. | 6 | 2×2 | 220 | **Fuel Refining** (¢150) | refining / idle |
 | Med Bay | `medbay` | While powered, **heals all wounded crew +6 hp/s** station-wide; without one the injured bleed out. | 4 | 2×2 | 240 | **Medicine** (¢200) | active / unpowered |
+| Heater | `heater` | Warms its room to the **hot** climate band (keeps heat-loving **Voltaar** content; wrong band = −10 mood). | 5 | 2×2 | 130 | **Climate Control** (¢300) | on / off / unpowered |
+| Cryo Unit | `cooler` | Chills its room to the **cold** climate band (keeps cold-loving **Naaz** content). Heater + Cryo in one room cancel to temperate. | 7 | 2×2 | 170 | **Climate Control** (¢300) | on / off / unpowered |
 | Lounge | `rec` | Entertainment: crew **and** visitors path here to relax (restore **Fun**) and socialize when fun runs low. | 4 | 2×2 | 80 | — | busy / empty |
 | Hotel Room | `hotel` | Where **visitors** lodge; total Hotel Rooms set guest capacity and drive lodging income. | 2 | 2×1 | 60 | — | assigned / vacant |
 | Trade Hub | `tradehub` | Lets **traders dock and buy your minerals** for credits — the trade-income engine. | 5 | 2×2 | 120 | — | active / unpowered |
@@ -76,6 +78,8 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Medicine | 200 | 1 | **Med Bay** |
 | Cargo Logistics | 250 | 2 | **Storage Silo** |
 | Fungal Synthesis | 300 | 2 | **Spores**/**Fungal Mash** recipes (feed Vry'l) |
+| Climate Control | 300 | 2 | **Heater** + **Cryo Unit** (warm/chill a wing) |
+| Exobiology | 350 | 2 | **Microbes**/**Live-Protein**/**Exo-Culture** recipes (feed Sszra + exotic crews) |
 | Methane Life-Support | 350 | 2 | **Methane Gen** (host Thol) |
 | Chlorine Life-Support | 400 | 2 | **Chlorine Gen** (host Chlorithe) |
 | Ammonia Life-Support | 450 | 2 | **Ammonia Gen** (host Naaz) |

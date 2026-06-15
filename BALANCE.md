@@ -195,13 +195,15 @@ Credits are the sink; a **powered Research Lab** (¢150, draw 6) is the gate.
 |--------|:--:|---------|
 | Methane Life-Support | 350 | `ch4gen` (Thol) |
 | Fungal Synthesis | 300 | vat *spores* / synth *fungal* recipes (Vry'l) |
+| Climate Control | 300 | `heater` + `cooler` (warm/chill a wing) |
+| Exobiology | 350 | vat *microbes* / synth *protein* + *exotic* recipes (Sszra + exotic crews) |
 | Cargo Logistics | 250 | `silo` (storage) |
 | Station Security | 500 | `turret` (raider defense) |
 - Starter tools (floor/wall/door, solar, battery, o2gen, synth, pod, dock, vat, bay, rec, hotel, tradehub, lab) are never locked — onboarding is unchanged.
 - Locked tools are disabled in the palette; `applyTool` and the recipe toggle also refuse them.
 
 ## Storage caps (M32) + overflow (M41)
-Base caps: biomass **400**, spores **250**, rations **50**, fungal **50**, minerals **200**, fuel **120**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
+Base caps: biomass **400**, spores **250**, microbes **250**, rations **50**, fungal **50**, protein **50**, exotic **50**, minerals **200**, fuel **120**. Each **Storage Silo** (¢70, draw 0) adds **+250** to all. Production (vat/synth/mining unload) clamps at the cap and idles when full — no infinite stockpiles, so food/minerals stay a sizing-and-trading decision.
 - **Overflow consequences (M41):** a store **≥95% of its cap** spoils at **2%/s** of the held amount (floored at 95% — it churns just under the cap), and any store **≥99%** sets a station-wide `overflow` flag worth **−5 mood** (see modifiers) plus an amber HUD chip + toast. So overproduction wastes the inputs spent on it and annoys the crew — right-sizing production / keeping trade capacity ahead of mining is now a live cost, not free idling. Runs in `overflowSystem` between food and atmosphere.
 
 ## Station incidents (M29) + teeth (M38)
@@ -223,18 +225,19 @@ The first implemented rival that breathes **O₂** (the rest of the roster split
 
 ## Full relations matrix (M42 — implemented)
 Tiers each way: **LOVE +15 · LIKE +8 · KIN +4 · NEUTRAL 0 · DISLIKE −8 · HATE −15** (`src/relations.ts`). Row feels about column.
-| A \ B | Hum | Drn | Thl | Vry | Kor | Vor | Chl | Naz | Vol |
-|-------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **Human** | +4 | +15 | −8 | 0 | −15 | 0 | −8 | 0 | 0 |
-| **Drenn** | +15 | +4 | +8 | +8 | +8 | +8 | +8 | +8 | +8 |
-| **Thol** | 0 | +8 | +4 | +15 | −8 | +8 | +8 | +8 | −8 |
-| **Vry'l** | 0 | +8 | +15 | +4 | −15 | 0 | −8 | +15 | 0 |
-| **Korro** | −15 | 0 | −8 | −15 | +4 | 0 | 0 | 0 | 0 |
-| **Vorn** | +8 | +8 | +8 | +8 | 0 | +4 | +8 | +8 | +8 |
-| **Chlorithe** | 0 | 0 | +8 | −8 | 0 | 0 | +4 | +15 | −8 |
-| **Naaz** | 0 | +8 | +8 | +15 | 0 | +8 | +15 | +4 | 0 |
-| **Voltaar** | 0 | 0 | −8 | 0 | 0 | 0 | −8 | 0 | +4 |
-Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l, **Chlorithe⇄Naaz, Vry'l⇄Naaz**. **Drenn (O₂)** and **Vorn (CH₄)** are the universal-diplomat trader classes; the **Naaz (NH₃)** are the resident peacemaker (dislike no one).
+| A \ B | Hum | Drn | Thl | Vry | Kor | Vor | Chl | Naz | Vol | Ssz |
+|-------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **Human** | +4 | +15 | −8 | 0 | −15 | 0 | −8 | 0 | 0 | −8 |
+| **Drenn** | +15 | +4 | +8 | +8 | +8 | +8 | +8 | +8 | +8 | +8 |
+| **Thol** | 0 | +8 | +4 | +15 | −8 | +8 | +8 | +8 | −8 | 0 |
+| **Vry'l** | 0 | +8 | +15 | +4 | −15 | 0 | −8 | +15 | 0 | −8 |
+| **Korro** | −15 | 0 | −8 | −15 | +4 | 0 | 0 | 0 | 0 | +8 |
+| **Vorn** | +8 | +8 | +8 | +8 | 0 | +4 | +8 | +8 | +8 | +8 |
+| **Chlorithe** | 0 | 0 | +8 | −8 | 0 | 0 | +4 | +15 | −8 | 0 |
+| **Naaz** | 0 | +8 | +8 | +15 | 0 | +8 | +15 | +4 | 0 | +8 |
+| **Voltaar** | 0 | 0 | −8 | 0 | 0 | 0 | −8 | 0 | +4 | 0 |
+| **Sszra** | 0 | +8 | 0 | −8 | +8 | 0 | 0 | +8 | 0 | +4 |
+Strong rivalries (HATE both ways): Human⇄Korro, Vry'l⇄Korro. Strong alliances (LOVE both ways): Human⇄Drenn, Thol⇄Vry'l, **Chlorithe⇄Naaz, Vry'l⇄Naaz**. **Drenn (O₂)** and **Vorn (CH₄)** are the universal-diplomat trader classes; the **Naaz (NH₃)** are the resident peacemaker (dislike no one). **Sszra⇄Korro** like each other (predators' respect); Humans & Vry'l dislike the Sszra.
 
 ## Vorn — the methane trader class
 A **guest-only** visitor species (like the Drenn, but breathes **CH₄**) so methane wings earn lodging too.
@@ -244,11 +247,26 @@ A **guest-only** visitor species (like the Drenn, but breathes **CH₄**) so met
 
 ## Tier-3 exotic gases & species
 Three new breathable gases (`GasKind` cl2/nh3/h2) with a generator each (research Tier-2, 2 Labs): **Chlorine Gen** (¢170, draw 10), **Ammonia Gen** (¢180, draw 10), **Hydrogen Gen** (¢190, draw 11). The atmosphere system is gas-generic, so they zone/breathe/suffocate exactly like O₂/CH₄ (mixing any two gases in a room = lethal `mixed`).
-- **Chlorithe** — Cl₂ · Rations · CP **28** · resident. Crystalline; close to Naaz, wary of Vry'l/Voltaar.
-- **Naaz** — NH₃ · Rations · CP **12** · resident **peacemaker** (dislikes no one; loves Vry'l & Chlorithe).
-- **Voltaar** — H₂ · Rations · CP **30** · resident; aloof, dislikes Thol & Chlorithe.
-- All three **immigrate as residents** (in `RESIDENT_SPECIES`) once a sealed wing of their gas has a bunk + Rations. They share the human Rations chain — the *only* gate is the exotic sealed wing.
-- **Deferred (not yet built):** cryo/temperature (Naaz's cold), explosive/corrosive hazards (H₂↔O₂, Cl₂ leaks), bespoke exotic food lines, and the **Sszra** (O₂/Live-Protein) species.
+- **Chlorithe** — Cl₂ · **Exo-Culture** · CP **28** · resident. Crystalline; close to Naaz, wary of Vry'l/Voltaar.
+- **Naaz** — NH₃ (**cold**) · **Exo-Culture** · CP **12** · resident **peacemaker** (dislikes no one; loves Vry'l & Chlorithe).
+- **Voltaar** — H₂ (**hot**) · **Exo-Culture** · CP **30** · resident; aloof, dislikes Thol & Chlorithe.
+- All three **immigrate as residents** (in `RESIDENT_SPECIES`) once a sealed wing of their gas has a bunk + **Exo-Culture** stocked. They are now a real two-front challenge: a sealed gas wing **plus** the Microbes→Exo-Culture food chain (and climate for Naaz/Voltaar).
+
+## Temperature / climate (Heater · Cryo Unit)
+Each enclosed room gets a **climate band** in `atmosphereSystem` from its powered climate modules: net **Heater>Cryo → hot**, **Cryo>Heater → cold**, else **temperate** (default). Modules: **Heater** (¢130, draw 5, 2×2) and **Cryo Unit** (¢170, draw 7, 2×2), both behind **Climate Control** (¢300, 2 Labs). A crew member in a room whose band ≠ its species' preference takes **−10 mood** (`TEMP_HIT`, comfort not survival; shown as the *climate* term in the mood breakdown). Only **Voltaar** (want hot) and **Naaz** (want cold) differ from temperate, so climate only matters once you host them.
+
+## Atmosphere hazards (Cl₂ corrosive · H₂ explosive) — `hazardSystem`
+Runs right after atmosphere.
+- **Corrosion:** every powered, non-life-support module in a **Cl₂** room loses an extra **0.5 condition/s** (life-support gens spared so a wing can't go airless on its own). A Chlorithe wing needs crew/Auto-Forge upkeep.
+- **Detonation:** if one room holds a powered **H₂** generator **and** a powered **O₂** generator, it **ignites this tick** — every non-gen module there loses **70 condition**, the offending generators are **destroyed**, agents in the room are **wounded (55)**, and one bordering wall is **blown to space as a breach**. Destroying the gens stops it re-firing. Door-separated H₂/O₂ wings are safe; only sharing a room is fatal.
+
+## Sszra — the O₂ carnivore (4th O₂ resident)
+- **Profile:** O₂ · **Live-Protein** diet · CP **32** · resident (in `RESIDENT_SPECIES`); generalist (no production trait).
+- **The catch:** obligate carnivore — eats **only** Live-Protein (Vat *microbes* → Synth *protein*, behind **Exobiology**), never Rations. Shares humans' O₂, so like the Korro they can't be gas-zoned apart.
+- **Relations:** mutual **LIKE** with Korro (predators' respect); **DISLIKE** both ways with Humans and Vry'l; LIKE'd by the universal Drenn/Vorn and the peacemaking Naaz.
+
+## Exotic food lines (Exobiology)
+A new base resource **Microbes** (Vat recipe) feeds two new food lines via the Synth: **Live-Protein** (Sszra) and **Exo-Culture** (Chlorithe/Naaz/Voltaar). Same throughput as other recipes (Vat +3/8s; Synth 2 base → 4 meals/10s). Both recipes (and Microbes) gate behind **Exobiology** (¢350, 2 Labs); the recipe cycler only offers researched lines.
 
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.

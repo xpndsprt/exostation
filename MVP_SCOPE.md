@@ -149,9 +149,16 @@ The rest of the Depth Epic except replayability (M43):
 - **Tier-3 gases & species:** three new breathable gases — **Cl₂ / NH₃ / H₂** — each with a
   research-gated generator, plus their resident species **Chlorithe / Naaz / Voltaar** (sprites,
   lore, first-contact cards, a full 9×9 relations web). The atmosphere system is gas-generic, so
-  they zone/breathe/suffocate like O₂/CH₄. They share the Rations chain — the only gate is the
-  sealed exotic wing. Roster → 9 species, 5 gases. (Cryo/hazards/exotic-food + the Sszra are the
-  remaining 🔭 Tier-3 layers.)
+  they zone/breathe/suffocate like O₂/CH₄. Roster → 9 species, 5 gases.
+- **Tier-3 depth layers + Sszra:** the deferred exotic layers now ship. A **temperature/climate**
+  axis (room band hot/temperate/cold via **Heater** + **Cryo Unit**, behind **Climate Control**;
+  −10 mood for the wrong band — Voltaar want hot, Naaz cold). **Atmosphere hazards** (`hazardSystem`):
+  **Cl₂ corrodes** machinery in its room, and **H₂ + O₂ in one room detonates** (wrecks modules,
+  destroys the gens, wounds everyone, blows a breach). **Exotic food lines** — a new **Microbes**
+  Vat base feeds **Live-Protein** (Sszra) and **Exo-Culture** (Chlorithe/Naaz/Voltaar) via the Synth,
+  behind **Exobiology**; the exotic crews no longer eat Rations. And the 10th species, the **Sszra**
+  (O₂ obligate-carnivore sentinel; sprite, lore, first-contact, 10×10 relations). Roster → **10
+  species, 5 gases**.
 - **Audio:** generated SFX layer (M31) + a shuffled `assets/music/` soundtrack at ~30% volume.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
@@ -163,13 +170,12 @@ The rest of the Depth Epic except replayability (M43):
 
 ## Out of scope / planned (not yet shipped)
 
-The current roster is **9 species** — Human, Drenn, Thol, Vry'l, Korro, Vorn, **Chlorithe,
-Naaz, Voltaar** — across **5 gases** (O₂, CH₄, **Cl₂, NH₃, H₂**). Still deferred or planned:
+The current roster is **10 species** — Human, Drenn, Thol, Vry'l, Korro, Vorn, **Chlorithe,
+Naaz, Voltaar, Sszra** — across **5 gases** (O₂, CH₄, **Cl₂, NH₃, H₂**). Still deferred or planned:
 
-- **Sszra** — the last planned species (O₂ / Live-Protein), plus the *deeper* Tier-3 layers
-  the exotic species imply but don't yet have: **cryo / temperature** as a system,
-  **explosive/corrosive gas hazards** (H₂↔O₂, Cl₂), and bespoke **exotic food lines**
-  (Chlorithe/Naaz/Voltaar currently eat Rations).
+- **Deeper exotic content** — **food-quality / palate** mood tiers, and per-gas *bespoke* exotic
+  recipes beyond the unified Exo-Culture line. (The temperature, hazard, exotic-food and Sszra
+  layers that were deferred here have now shipped — see the changelog above.)
 - **Sensing & logistics** — radar / fog-of-war / survey, **drone-fleet management**, and
   **charging relays** for the power grid.
 - **EVA / spacewalk** — crew working in vacuum, **decompression spread** between rooms,

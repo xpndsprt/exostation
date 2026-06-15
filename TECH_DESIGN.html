@@ -82,7 +82,8 @@ tr:hover td { background: #eef3ff; }
   foodSystem         // 4.  Vats grow base resources; Synths -&gt; meals
   fuelSystem         // 4b. Fuel Refineries crack minerals -&gt; fuel (sold to ships)
   overflowSystem     // 5.  spoilage + overflow morale flag once stores hit cap (M41)
-  atmosphereSystem   // 6.  per-room gas (o2 / ch4 / mixed / none)
+  atmosphereSystem   // 6.  per-room gas (o2/ch4/cl2/nh3/h2/mixed/none) + climate band (temp)
+  hazardSystem       // 6b. Cl₂ corrodes machinery; H₂+O₂ in one room detonates
   harmonySystem      // 7.  per-room relations -&gt; harmony (productivity + mood)
   agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
   moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
@@ -101,10 +102,11 @@ tr:hover td { background: #eef3ff; }
 <p>There is <strong>no stored seeded PRNG</strong>. The sim avoids <code>Math.random</code> in the per-tick path: incidents and requests choose deterministically by <strong>hashing <code>world.tick</code></strong> (<code>(tick * 2654435761) &gt;&gt;&gt; 0</code>), so a given save replays identically. The one exception is <code>seedAsteroids()</code>, which uses <code>Math.random</code> <em>once</em> at new-game time to scatter asteroids — but the result is baked into the saved <code>World</code>, so it stays reproducible thereafter.</p>
 <h2>Data model (real shapes — see <code>src/types.ts</code>)</h2>
 <pre><code>type CellType = "space" | "floor" | "wall" | "door"; // tile-based; "door" walks but blocks gas
-type GasKind  = "o2" | "ch4";
+type GasKind  = "o2" | "ch4" | "cl2" | "nh3" | "h2";
 type RoomGas  = "none" | GasKind | "mixed";           // mixed = lethal to everyone
-type Species  = "human" | "drenn" | "thol" | "vryl" | "korro";
-type FoodLine = "rations" | "fungal";
+type Temp     = "cold" | "temperate" | "hot";         // room climate band (Heater/Cryo)
+type Species  = "human"|"drenn"|"thol"|"vryl"|"korro"|"vorn"|"chlorithe"|"naaz"|"voltaar"|"sszra";
+type FoodLine = "rations" | "fungal" | "protein" | "exotic";
 
 interface Cell {
   type: CellType;
@@ -135,7 +137,7 @@ interface Agent {
   task: Task | null; path: number[]; moveAcc: number;  // remaining cells; sub-cell progress
 }
 
-interface Stock { minerals: number; biomass: number; spores: number; meals: Record&lt;FoodLine, number&gt;; }
+interface Stock { minerals: number; biomass: number; spores: number; microbes: number; fuel: number; meals: Record&lt;FoodLine, number&gt;; }
 // NB: there is NO water resource. Food chain is base resource -&gt; meal line.
 
 interface World {
@@ -218,9 +220,9 @@ src/                           // FLAT — no sim/ render/ ui/ data/ split
   types.ts  config.ts
   world.ts                     // World state + create/place/erase helpers
   main.ts                      // boot, fixed-step loop, simStep, input, camera/UI wiring
-  power.ts maintenance.ts mining.ts food.ts atmosphere.ts harmony.ts
-  agents.ts mood.ts combat.ts economy.ts events.ts requests.ts objectives.ts
-  research.ts storage.ts
+  power.ts maintenance.ts mining.ts food.ts fuel.ts overflow.ts atmosphere.ts hazards.ts harmony.ts
+  agents.ts mood.ts combat.ts medical.ts encounters.ts economy.ts events.ts requests.ts objectives.ts
+  research.ts storage.ts beacon.ts audio.ts
   rooms.ts pathfind.ts placement.ts
   structures.ts species.ts relations.ts advisor.ts
   renderer.ts camera.ts ui.ts persistence.ts</code></pre>

@@ -25,12 +25,18 @@ const SP_COLOR: Record<Species, string> = {
   chlorithe: "#9bd14a",
   naaz: "#6a8fd1",
   voltaar: "#d16a9b",
+  sszra: "#57c2a8",
 };
 
 const GAS_SYM: Record<string, string> = { o2: "O₂", ch4: "CH₄", cl2: "Cl₂", nh3: "NH₃", h2: "H₂" };
 function gasLabel(g: string): string {
   return GAS_SYM[g] ?? g;
 }
+
+// Player-facing names for food lines + the Vat/Synth recipes that make them.
+const FOOD_LABEL: Record<string, string> = { rations: "Rations", fungal: "Fungal Mash", protein: "Live-Protein", exotic: "Exo-Culture" };
+const SYNTH_LABEL: Record<string, string> = { rations: "Std Rations", fungal: "Fungal Mash", protein: "Live-Protein", exotic: "Exo-Culture" };
+const VAT_LABEL: Record<string, string> = { biomass: "Biomass", spores: "Spores", microbes: "Microbes" };
 
 interface PaletteEntry {
   t: Tool;
@@ -62,6 +68,8 @@ const PALETTE: PaletteEntry[] = [
   { t: "docksuper", label: "Spaceport Dock", key: "" },
   { t: "fuelrefinery", label: "Fuel Refinery", key: "" },
   { t: "medbay", label: "Med Bay", key: "" },
+  { t: "heater", label: "Heater", key: "" },
+  { t: "cooler", label: "Cryo Unit", key: "" },
   { t: "tradehub", label: "Trade Hub", key: "M" },
   { t: "lab", label: "Research Lab", key: "R" },
   { t: "silo", label: "Storage Silo", key: "G" },
@@ -456,8 +464,17 @@ export function updateHud(world: World): void {
       chip("👥", `${residents}/${pods}${dead ? ` <span class="muted">${dead}✕</span>` : ""}`, residents > pods) +
       chip("🏨", `${guests}/${hotels}`) +
       chip("🙂", `${avgMood}%`, alive > 0 && avgMood < 35) +
-      chip("🍱", `${Math.floor(st.meals.rations)}/${Math.floor(st.meals.fungal)}`, st.meals.rations >= caps.rations * 0.95 || st.meals.fungal >= caps.fungal * 0.95) +
-      chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}`, st.biomass >= caps.biomass * 0.95) +
+      chip(
+        "🍱",
+        `${Math.floor(st.meals.rations)}/${Math.floor(st.meals.fungal)}` +
+          (st.meals.protein > 0 ? ` ·${Math.floor(st.meals.protein)}pr` : "") +
+          (st.meals.exotic > 0 ? ` ·${Math.floor(st.meals.exotic)}ex` : ""),
+        st.meals.rations >= caps.rations * 0.95 ||
+          st.meals.fungal >= caps.fungal * 0.95 ||
+          st.meals.protein >= caps.protein * 0.95 ||
+          st.meals.exotic >= caps.exotic * 0.95,
+      ) +
+      chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}${st.microbes > 0 ? ` ·${Math.floor(st.microbes)}mi` : ""}`, st.biomass >= caps.biomass * 0.95) +
       chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`, st.minerals >= caps.minerals * 0.95) +
       (st.fuel > 0 ? chip("⛽", `${Math.floor(st.fuel)}/${caps.fuel}`, st.fuel >= caps.fuel * 0.95) : "") +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
@@ -597,7 +614,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       const b = moodBreakdown(world, a);
       moodLine =
         `<div>Mood ${Math.round(a.mood)}% <span class="muted">→ ${Math.round(b.target)}</span></div>` +
-        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}${b.overflow ? ` · waste ${sgn(b.overflow)}` : ""}</div>`;
+        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}${b.overflow ? ` · waste ${sgn(b.overflow)}` : ""}${b.temp ? ` · climate ${sgn(b.temp)}` : ""}</div>`;
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +
@@ -798,7 +815,7 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
         `<div class="ent${here ? " locatable" : ""}"${here ? ` data-sp="${s}"` : ""}><div class="hd"><span class="d" style="background:${SP_COLOR[s]}"></span>${d.label}` +
         `<span class="role">${d.role}${aboard}</span></div>` +
         `<div class="stat">Reputation <b>${rep}</b><span class="rep"><i style="width:${rep}%"></i></span></div>` +
-        `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${d.diet}</b> · Power <b>${d.power}</b></div>` +
+        `<div class="stat">Breathes <b>${GAS_LABEL[d.gas] ?? d.gas}</b> · Eats <b>${FOOD_LABEL[d.diet] ?? d.diet}</b> · Power <b>${d.power}</b></div>` +
         `<div class="stat">${rel}</div>` +
         `<div class="stat" style="color:#9fd8a0">⭐ ${d.trait}</div>` +
         `<div class="blurb">${d.blurb}</div></div>`
@@ -897,10 +914,10 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
     }
     if (s.kind === "pod") html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
     else if (s.kind === "synth") {
-      html += `<div class="row"><span>Recipe</span><b>${s.recipe === "fungal" ? "Fungal Mash" : "Std Rations"}</b></div>`;
+      html += `<div class="row"><span>Recipe</span><b>${SYNTH_LABEL[s.recipe] ?? "Std Rations"}</b></div>`;
       html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
     } else if (s.kind === "vat") {
-      html += `<div class="row"><span>Grows</span><b>${s.recipe === "spores" ? "Spores" : "Biomass"}</b></div>`;
+      html += `<div class="row"><span>Grows</span><b>${VAT_LABEL[s.recipe] ?? "Biomass"}</b></div>`;
     }
     const toggleLabel = s.on ? "Turn off" : "Turn on";
     const recipeBtn = s.kind === "synth" || s.kind === "vat" ? `<button data-act="recipe">Switch recipe</button>` : "";
