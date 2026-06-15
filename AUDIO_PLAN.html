@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EXOSTATION — Sound Effects & Audio Plan (M31)</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6; color: #1c2230; background: #f6f7f9;
+  margin: 0; padding: 2.5rem 1rem;
+}
+main {
+  max-width: 920px; margin: 0 auto; background: #ffffff;
+  padding: 2.5rem 3rem; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.05);
+}
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; margin: 1.8em 0 .6em; }
+h1 { font-size: 2.1rem; margin-top: 0; border-bottom: 3px solid #2d6cdf; padding-bottom: .3em; }
+h2 { font-size: 1.55rem; border-bottom: 1px solid #e3e6ea; padding-bottom: .25em; color: #16203a; }
+h3 { font-size: 1.25rem; color: #28324a; }
+h4 { font-size: 1.05rem; color: #3a4258; }
+p { margin: .8em 0; }
+a { color: #2d6cdf; text-decoration: none; }
+a:hover { text-decoration: underline; }
+strong { color: #11151f; }
+code {
+  font-family: "SF Mono", "Cascadia Code", Consolas, Monaco, monospace;
+  background: #eef0f3; padding: .15em .4em; border-radius: 5px; font-size: .88em;
+}
+pre {
+  background: #1e2330; color: #e6e9ef; padding: 1rem 1.2rem;
+  border-radius: 8px; overflow-x: auto;
+}
+pre code { background: none; padding: 0; color: inherit; }
+blockquote {
+  margin: 1em 0; padding: .6em 1.1em; border-left: 4px solid #2d6cdf;
+  background: #f0f5ff; color: #34405c; border-radius: 0 6px 6px 0;
+}
+ul, ol { padding-left: 1.6em; margin: .7em 0; }
+li { margin: .3em 0; }
+hr { border: none; border-top: 1px solid #e3e6ea; margin: 2.2em 0; }
+table {
+  border-collapse: collapse; width: 100%; margin: 1.2em 0; font-size: .94rem;
+  overflow: hidden; border-radius: 8px; box-shadow: 0 0 0 1px #e3e6ea;
+}
+th, td { padding: .55em .8em; border-bottom: 1px solid #e9ecf0; }
+th { background: #2d6cdf; color: #fff; font-weight: 600; text-align: left; }
+tr:nth-child(even) td { background: #f8f9fb; }
+tr:hover td { background: #eef3ff; }
+@media (prefers-color-scheme: dark) {
+  body { color: #d7dbe2; background: #11141a; }
+  main { background: #1a1e26; box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+  h2 { color: #e8edf6; border-bottom-color: #2a2f3a; }
+  h3 { color: #cfd6e4; } h4 { color: #cfd6e4; }
+  strong { color: #fff; }
+  code { background: #262b36; }
+  blockquote { background: #1f2733; color: #c2cbdc; }
+  hr { border-top-color: #2a2f3a; }
+  table { box-shadow: 0 0 0 1px #2a2f3a; }
+  th, td { border-bottom-color: #2a2f3a; }
+  tr:nth-child(even) td { background: #1e232c; }
+  tr:hover td { background: #232c3a; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>EXOSTATION — Sound Effects &amp; Audio Plan (M31)</h1>
+<blockquote><strong>Status: 🔭 planned (catalog only — no audio implemented yet).</strong> This is the full wish-list of sound effects (gameplay + UI) plus ambient/music beds, to decide scope from. Nothing here is wired up; once we pick the subset, we'll add a tiny Web-Audio layer and trigger hooks. Keep this in sync as sounds land (tick them off / flip the status).</blockquote>
+<p>Each entry is <strong><code>name</code> — when it fires (code hook) — character</strong>. "Loop" marks a sustained/ambient sound; everything else is a one-shot. Most one-shots can be driven off the existing <strong><code>world.notify</code></strong> toast queue and the system events we already emit; a few need new tiny hooks (noted).</p>
+<hr>
+<h2>0 · How it will hook in (for later)</h2>
+<ul><li>A small <strong><code>src/audio.ts</code></strong>: a Web-Audio mixer with <strong>master volume + per-category buses</strong> (UI / world / alerts / ambient / music), a <strong>mute toggle</strong>, and a play(id, {volume, rate, pan?}) call. Sounds are short generated tones/noise or tiny sample files; pitch-vary one-shots slightly so repeats don't grate.</li><li><strong>Triggers:</strong> most map to events we already detect — toast pushes (<code>pushAlert</code>), <code>world.notify</code> strings, phase/objective transitions, <code>needRedraw</code> edits, ship lifecycle phases, encounter open/resolve, injury/heal. A handful need a one-line emit (marked <strong>[new hook]</strong>).</li><li><strong>Respect speed/pause:</strong> suppress ambient loops at pause; rate-limit repetitive one-shots (footsteps, build-drag) so they don't spam at 3× speed.</li><li><strong>Positional (optional later):</strong> pan/volume by camera distance for world sounds (raider beam, shuttle landing, breach).</li></ul>
+<hr>
+<h2>1 · UI &amp; build</h2>
+<ul><li><strong>ui-click</strong> — any HUD/panel button press — soft tactile tick.</li><li><strong>ui-tool-select</strong> — choosing a palette tool — light selector blip.</li><li><strong>ui-tab</strong> — collapse/expand a right-column panel (tech/requests/alienpedia) — short swish.</li><li><strong>ui-toggle</strong> — speed change / overlay toggle / module on-off — two-tone click (up vs down).</li><li><strong>build-floor</strong> — lay a Deck Tile (per drag-cell, rate-limited) — soft mechanical clink.</li><li><strong>build-wall</strong> — place a Wall — heavier metal clank.</li><li><strong>build-door</strong> — place a Door/airlock — pneumatic hiss-clunk.</li><li><strong>build-module</strong> — place any powered module — solid "thunk + power-on chirp".</li><li><strong>build-deconstruct</strong> — erase/deconstruct — reverse disassembly clatter.</li><li><strong>build-invalid</strong> — can't afford / invalid placement (ghost red) — dull error buzz.</li><li><strong>drag-tick</strong> — while drag-sizing a rectangle, per added cell — very soft tick (rate-limited).</li><li><strong>modal-open / modal-close</strong> — any dialog (saves, end banner) opens/closes — subtle whoosh.</li></ul>
+<h2>2 · Economy &amp; research</h2>
+<ul><li><strong>credits-trade</strong> — a trader buys minerals (trade payout) — bright cash chime.</li><li><strong>credits-fuel</strong> — a docking ship buys fuel — softer coin/refuel chime (lower than trade).</li><li><strong>lodging-tick</strong> — <em>optional, probably skip:</em> guests paying lodging — too frequent; better as a periodic soft cue or none.</li><li><strong>research-buy</strong> — an unlock is purchased — ascending confirmation arpeggio.</li><li><strong>research-denied</strong> — clicking a locked/too-expensive node — short "nope" tone (pairs with the toast).</li><li><strong>doctrine-pick</strong> — choosing a mutually-exclusive doctrine — weightier, "committed" chord. <strong>[new hook]</strong></li><li><strong>overflow-warn</strong> — a store hits its cap and starts spoiling — low warble (once on entering overflow).</li></ul>
+<h2>3 · Crew, needs &amp; life support</h2>
+<ul><li><strong>crew-arrive</strong> — a resident shuttle drops new crew — friendly "welcome" tone (pairs with arrival toast).</li><li><strong>guest-arrive</strong> — a guest disembarks — lighter chime variant.</li><li><strong>crew-depart</strong> — a guest leaves — soft outro blip.</li><li><strong>need-eat / need-sleep / need-relax</strong> — <em>optional, subtle:</em> an agent starts eating/sleeping/relaxing — quiet one-shots; likely skip or very low volume to avoid clutter.</li><li><strong>mood-low</strong> — station average mood crosses below the warning line — soft worried tone.</li><li><strong>o2-hum</strong> <em>(loop)</em> — ambient O₂ life-support hum in breathable O₂ rooms.</li><li><strong>ch4-hum</strong> <em>(loop)</em> — ambient methane-wing hum (deeper/eerier than O₂).</li><li><strong>suffocation-warn</strong> — a crew member's air drops critical — rising distress tone (pairs with "can't breathe" toast).</li><li><strong>crew-death</strong> — any crew/guest dies — somber low knell.</li></ul>
+<h2>4 · Ships, docking &amp; mining</h2>
+<ul><li><strong>shuttle-approach</strong> <em>(loop, fades)</em> — a shuttle is in its "in" flight phase — distant engine whoosh that grows.</li><li><strong>shuttle-land</strong> — shuttle settles on the pad (in→wait) — descending thrusters + soft touchdown thud. <strong>[hook: phase transition]</strong></li><li><strong>shuttle-takeoff</strong> — shuttle departs (wait→out) — thruster surge.</li><li><strong>pad-blink</strong> — <em>probably skip:</em> the pad guide lights; ambient-only, no sound.</li><li><strong>drone-launch</strong> — a mining drone lifts off its bay pad (docked→outbound) — small servo whirr. <strong>[hook: drone state]</strong></li><li><strong>drone-mine</strong> <em>(loop)</em> — drone extracting at an asteroid — gritty drilling/laser hum.</li><li><strong>drone-return</strong> — drone lands + unloads minerals (inbound→docked) — clunk + ore-dump rattle.</li></ul>
+<h2>5 · Combat &amp; incidents</h2>
+<ul><li><strong>alert-incident</strong> — any station incident fires — attention klaxon (1 short blast; severity-tinted).</li><li><strong>power-surge</strong> — a module trips offline from a surge — electric zap + power-down whine.</li><li><strong>brownout</strong> — power shortfall begins shedding load — warning hum drop (pairs with brownout toast).</li><li><strong>power-restored</strong> — supply recovers / brownout clears — rising power-up tone.</li><li><strong>breach-klaxon</strong> — a hull breach opens — urgent repeating alarm (the most alarming cue).</li><li><strong>breach-sealed</strong> — crew finish resealing a breach — relief "all-clear" tone.</li><li><strong>market-shock</strong> — prices spike/crash — two flavors: bright "surge" vs muted "crash".</li><li><strong>raider-inbound</strong> — a raider spawns — menacing low brass sting (pairs with "Raider inbound" toast).</li><li><strong>raider-beam</strong> <em>(loop)</em> — raider actively attacking a module — pulsing energy-weapon drone.</li><li><strong>module-destroyed</strong> — a module is wrecked by a raid — crunchy explosion/debris.</li><li><strong>turret-fire</strong> — a powered Turret shoots a raider down — sharp zap + small boom.</li><li><strong>skirmish-start</strong> — tension hits 100 and a fight erupts — tense stinger.</li><li><strong>hit-blow</strong> — a combat blow lands (rate-limited) — dull impact thwack.</li></ul>
+<h2>6 · Social encounters &amp; medical <em>(new systems)</em></h2>
+<ul><li><strong>encounter-conflict</strong> — a clash encounter dialog opens — tense rising sting (red).</li><li><strong>encounter-bond</strong> — a bond encounter dialog opens — warm friendly chime (green).</li><li><strong>encounter-choice</strong> — clicking a response button — firm select click.</li><li><strong>outcome-good</strong> — encounter resolves well (defused / bonded / party) — pleasant resolve chord.</li><li><strong>outcome-bad</strong> — encounter resolves badly (a brawl / someone injured) — harsh discordant hit.</li><li><strong>injury</strong> — a crew member becomes wounded (encounter/skirmish/risky repair) — sharp "ow" impact + wince. <strong>[hook: injure()]</strong></li><li><strong>medbay-heal</strong> — a wounded crew member fully recovers in the Med Bay — gentle restorative shimmer.</li><li><strong>wound-death</strong> — an untreated wounded crew member bleeds out — heavier, sadder knell than a normal death.</li><li><strong>repair-spark</strong> <em>(loop, optional)</em> — crew servicing machinery — intermittent welding/spark; high-tier repairs sound heavier (foreshadowing injury risk).</li></ul>
+<h2>7 · Objectives, beacon &amp; end states</h2>
+<ul><li><strong>objective-complete</strong> — an objective ladder step is cleared — satisfying progression jingle.</li><li><strong>beacon-charge</strong> <em>(loop, optional)</em> — a beacon module is active and charging — subtle building harmonic; intensifies as more modules charge.</li><li><strong>beacon-module-online</strong> — a signature module first activates (species present + powered) — distinct "system online" tone. <strong>[new hook]</strong></li><li><strong>victory</strong> — the scenario is won (all objectives, beacon charged) — full triumphant fanfare.</li><li><strong>defeat</strong> — the station is lost — descending failure sting + power-down.</li></ul>
+<h2>8 · First contact</h2>
+<ul><li><strong>first-contact</strong> — the first-ever appearance of a species opens its card — mysterious, awe-tinged sting (one signature riff; optionally a faint per-species timbre tint).</li></ul>
+<h2>9 · Ambient beds &amp; music</h2>
+<ul><li><strong>ambient-station</strong> <em>(loop)</em> — base hull/space-station room tone under everything (very low volume).</li><li><strong>ambient-power</strong> <em>(loop, optional)</em> — a faint generator/electrical bed that scales with power draw.</li><li><strong>music-calm</strong> <em>(loop)</em> — relaxed exploration/management theme during normal play.</li><li><strong>music-tension</strong> <em>(loop)</em> — layered tension bed that fades in during raids/skirmishes/breaches, out when safe (crossfade with calm).</li><li><strong>music-victory / music-defeat</strong> <em>(one-shot)</em> — end-state stingers over the banner.</li></ul>
+<hr>
+<h2>Suggested first slice (if we want a minimal, high-impact set first)</h2>
+<p>A dozen one-shots cover ~80% of the feel: <strong>ui-click, build-module, build-invalid, research-buy, crew-arrive, shuttle-land, brownout, breach-klaxon, raider-inbound, injury, objective-complete, victory/defeat</strong> — plus one <strong>ambient-station</strong> loop and a <strong>mute</strong> toggle. Everything else layers on from there.</p>
+</main>
+</body>
+</html>
