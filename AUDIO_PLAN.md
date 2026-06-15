@@ -128,6 +128,12 @@ already emit; a few need new tiny hooks (noted).
 - **first-contact** — the first-ever appearance of a species opens its card — mysterious, awe-tinged sting (one signature riff; optionally a faint per-species timbre tint).
 
 ## 9 · Ambient beds & music
+> **⚙️ Soundtrack shipped:** the MP3s in `assets/music/` are streamed in-game as a
+> background soundtrack — **shuffled with no repeats** until the whole folder has
+> played, then reshuffled (no track repeats across the seam). It plays at **~30% of
+> the SFX level** (`MUSIC_VOL`), routed through the mixer so the **🔊 mute** covers it
+> too. Drop more `.mp3`s in the folder and they're auto-included on next load.
+
 - **ambient-station** *(loop)* — base hull/space-station room tone under everything (very low volume).
 - **ambient-power** *(loop, optional)* — a faint generator/electrical bed that scales with power draw.
 - **music-calm** *(loop)* — relaxed exploration/management theme during normal play.

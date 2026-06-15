@@ -6,6 +6,7 @@
 type Bus = "ui" | "world" | "music";
 const BUS_VOL: Record<Bus, number> = { ui: 0.6, world: 0.9, music: 0.45 };
 const MASTER_VOL = 0.8;
+const MUSIC_VOL = 0.27; // soundtrack at ~30% of the SFX (world-bus) level
 const MUTE_KEY = "exo.muted";
 
 let ctx: AudioContext | null = null;
@@ -14,6 +15,13 @@ const buses = {} as Record<Bus, GainNode>;
 const buffers = new Map<string, AudioBuffer>();
 const lastAt = new Map<string, number>();
 let ready = false;
+
+// background soundtrack (streamed): shuffle the assets/music folder, play through
+// without repeats, then reshuffle and continue.
+let musicEl: HTMLAudioElement | null = null;
+let tracks: string[] = [];
+let order: number[] = [];
+let musicPos = 0;
 let muted = (() => {
   try {
     return localStorage.getItem(MUTE_KEY) === "1";
@@ -70,9 +78,52 @@ async function boot(): Promise<void> {
     );
     ready = true;
     loop("ambient-station");
+    startMusic();
   } catch {
     /* no audio available — stay silent */
   }
+}
+
+// ---- soundtrack -------------------------------------------------------------
+function shuffle(a: number[]): void {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+}
+function reshuffle(): void {
+  const last = order.length ? order[order.length - 1] : -1;
+  do {
+    shuffle(order);
+  } while (order.length > 1 && order[0] === last); // don't repeat across the seam
+  musicPos = 0;
+}
+function startMusic(): void {
+  if (!ctx || !master) return;
+  const mods = import.meta.glob("../assets/music/*.mp3", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+  tracks = Object.values(mods);
+  if (tracks.length === 0) return;
+  const gain = ctx.createGain();
+  gain.gain.value = MUSIC_VOL;
+  gain.connect(master);
+  musicEl = new Audio();
+  musicEl.preload = "auto";
+  ctx.createMediaElementSource(musicEl).connect(gain); // route through the mixer
+  musicEl.addEventListener("ended", () => {
+    musicPos++;
+    if (musicPos >= order.length) reshuffle();
+    playTrack();
+  });
+  order = tracks.map((_, i) => i);
+  reshuffle();
+  if (!muted) playTrack();
+}
+function playTrack(): void {
+  if (!musicEl || tracks.length === 0) return;
+  musicEl.src = tracks[order[musicPos]];
+  musicEl.play().catch(() => {
+    /* autoplay/availability — ignore */
+  });
 }
 
 // Play a one-shot. Same-id calls are throttled so rapid events don't machine-gun.
@@ -106,6 +157,13 @@ function loop(id: string): void {
 export function setMuted(m: boolean): void {
   muted = m;
   if (master && ctx) master.gain.setTargetAtTime(m ? 0 : MASTER_VOL, ctx.currentTime, 0.02);
+  if (musicEl) {
+    if (m) musicEl.pause();
+    else if (ready) {
+      if (!musicEl.src) playTrack();
+      else void musicEl.play().catch(() => {});
+    }
+  }
   try {
     localStorage.setItem(MUTE_KEY, m ? "1" : "0");
   } catch {
