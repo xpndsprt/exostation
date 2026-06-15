@@ -13,6 +13,19 @@ already emit; a few need new tiny hooks (noted).
 
 ---
 
+## Sourcing & generation
+- **⚙️ Generator (shipped):** `npm run gen:sfx` (`scripts/gensfx.mjs`) synthesizes
+  **every** id below to `assets/sfx/<id>.wav` + a `manifest.json` — dependency-free
+  pure-math synthesis (oscillators + noise + envelopes), so it's reproducible and
+  **CC0-clean** (no downloads, no API keys, no licensing). 56 cues, ~2.4 MB.
+- **Swap in a better sample any time:** drop a `assets/sfx/<id>.wav` of your own
+  (an AI-generated or downloaded CC0 sound) — same filename wins; the audio layer
+  just loads by id. Good sources: **ElevenLabs / Stable Audio** (text-to-SFX),
+  **Kenney.nl** (CC0 UI/sci-fi packs), **Sonniss GDC bundle**, **freesound.org**
+  (filter CC0). Keep music beds (`music-*`) as the area most worth a real sample.
+- **Alternative (no files at all):** a runtime generator like **ZzFX** can play
+  these from tiny param arrays instead of wavs — swap-in later if bundle size matters.
+
 ## 0 · How it will hook in (for later)
 - A small **`src/audio.ts`**: a Web-Audio mixer with **master volume + per-category
   buses** (UI / world / alerts / ambient / music), a **mute toggle**, and a play(id,
