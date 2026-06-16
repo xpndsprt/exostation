@@ -906,11 +906,35 @@ export function hideDragLabel(): void {
   document.getElementById("draglabel")?.classList.remove("show");
 }
 
+// The panel re-renders many times a second, so per-render button listeners get
+// wiped between mousedown and click. Use ONE delegated listener on the stable
+// panel + only rewrite the DOM when the markup actually changes.
+let infoHandlers: UIHandlers | null = null;
+let infoStructId = -1; // structure the action buttons target
+let infoWired = false;
+let lastInfoHtml = "";
+
 export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): void {
   const panel = document.getElementById("infopanel");
   if (!panel) return;
+  infoHandlers = handlers;
+  if (!infoWired) {
+    infoWired = true;
+    panel.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
+      if (!btn || !infoHandlers || infoStructId < 0) return;
+      switch (btn.dataset.act) {
+        case "remove": infoHandlers.onDeconstruct(infoStructId); break;
+        case "toggle": infoHandlers.onToggle(infoStructId); break;
+        case "recipe": infoHandlers.onRecipe(infoStructId); break;
+        case "starchart": infoHandlers.onStarChart(infoStructId); break;
+      }
+    });
+  }
+  infoStructId = sel && sel.kind === "structure" ? sel.id : -1;
   if (!sel) {
     panel.classList.remove("show");
+    lastInfoHtml = "";
     return;
   }
 
@@ -988,19 +1012,19 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       (def.draw > 0 ? `<button data-act="toggle">${toggleLabel}</button>` : "") +
       `<button class="danger" data-act="remove">Deconstruct</button></div>`;
   } else {
-    return void panel.classList.remove("show"); // sites are off-map (Star Chart) now
+    panel.classList.remove("show"); // sites are off-map (Star Chart) now
+    lastInfoHtml = "";
+    return;
   }
 
-  panel.innerHTML = html + actions;
+  // Only touch the DOM when the markup changed — keeps the action buttons stable
+  // (and therefore reliably clickable) between renders.
+  const out = html + actions;
+  if (out !== lastInfoHtml) {
+    panel.innerHTML = out;
+    lastInfoHtml = out;
+  }
   panel.classList.add("show");
-
-  if (sel.kind === "structure") {
-    const id = sel.id;
-    panel.querySelector('[data-act="remove"]')?.addEventListener("click", () => handlers.onDeconstruct(id));
-    panel.querySelector('[data-act="toggle"]')?.addEventListener("click", () => handlers.onToggle(id));
-    panel.querySelector('[data-act="recipe"]')?.addEventListener("click", () => handlers.onRecipe(id));
-    panel.querySelector('[data-act="starchart"]')?.addEventListener("click", () => handlers.onStarChart(id));
-  }
 }
 
 // ---- first-contact dialog: when a species first appears, show its portrait + lore ----
