@@ -906,32 +906,15 @@ export function hideDragLabel(): void {
   document.getElementById("draglabel")?.classList.remove("show");
 }
 
-// The panel re-renders many times a second, so per-render button listeners get
-// wiped between mousedown and click. Use ONE delegated listener on the stable
-// panel + only rewrite the DOM when the markup actually changes.
-let infoHandlers: UIHandlers | null = null;
-let infoStructId = -1; // structure the action buttons target
-let infoWired = false;
+// The panel used to re-render (and re-bind its buttons) ~10x/s, so clicks landed
+// between rebuilds and did nothing. We now only rewrite the DOM when the markup
+// actually changes, and (re)bind the action buttons at that same moment — so a
+// button stays alive (and clickable) for the whole window between changes.
 let lastInfoHtml = "";
 
 export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): void {
   const panel = document.getElementById("infopanel");
   if (!panel) return;
-  infoHandlers = handlers;
-  if (!infoWired) {
-    infoWired = true;
-    panel.addEventListener("click", (e) => {
-      const btn = (e.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
-      if (!btn || !infoHandlers || infoStructId < 0) return;
-      switch (btn.dataset.act) {
-        case "remove": infoHandlers.onDeconstruct(infoStructId); break;
-        case "toggle": infoHandlers.onToggle(infoStructId); break;
-        case "recipe": infoHandlers.onRecipe(infoStructId); break;
-        case "starchart": infoHandlers.onStarChart(infoStructId); break;
-      }
-    });
-  }
-  infoStructId = sel && sel.kind === "structure" ? sel.id : -1;
   if (!sel) {
     panel.classList.remove("show");
     lastInfoHtml = "";
@@ -1018,11 +1001,19 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
   }
 
   // Only touch the DOM when the markup changed — keeps the action buttons stable
-  // (and therefore reliably clickable) between renders.
+  // (and therefore reliably clickable) between renders. Bind the buttons right
+  // after each (re)write, so they always have a live listener.
   const out = html + actions;
   if (out !== lastInfoHtml) {
     panel.innerHTML = out;
     lastInfoHtml = out;
+    if (sel.kind === "structure") {
+      const id = sel.id;
+      panel.querySelector('[data-act="remove"]')?.addEventListener("click", () => handlers.onDeconstruct(id));
+      panel.querySelector('[data-act="toggle"]')?.addEventListener("click", () => handlers.onToggle(id));
+      panel.querySelector('[data-act="recipe"]')?.addEventListener("click", () => handlers.onRecipe(id));
+      panel.querySelector('[data-act="starchart"]')?.addEventListener("click", () => handlers.onStarChart(id));
+    }
   }
   panel.classList.add("show");
 }
