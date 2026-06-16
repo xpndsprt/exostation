@@ -469,16 +469,18 @@ async function boot(): Promise<void> {
     }
     renderer.drawCursor(world, ghost, valid, hover, anchor);
 
+    const ent = hover >= 0 ? pickEntity(hover) : null;
+    const clickable = ent && tool !== "erase"; // any non-erase tool can click a module to inspect it
+
     // cursor style
     let cursor = "default";
     if (tool === "pan") cursor = panning ? "grabbing" : "grab";
-    else if (tool === "select") cursor = "pointer";
+    else if (tool === "select" || clickable) cursor = "pointer";
     else cursor = within && canPlace(world, tool, tx, ty) ? "crosshair" : "not-allowed";
     canvas.style.cursor = cursor;
 
     // tooltip (skip while actively building)
     if (!dragging && !painting && !panning && hover >= 0) {
-      const ent = pickEntity(hover);
       const target: HoverTarget = ent ?? (tool === "select" || tool === "pan" ? { kind: "cell", cell: hover } : null);
       if (target) showTooltip(world, target, clientX, clientY);
       else hideTooltip();
@@ -490,17 +492,26 @@ async function boot(): Promise<void> {
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("pointerdown", (e) => {
     const { tx, ty } = tileAt(e.clientX, e.clientY);
+    const cell = inBounds(world, tx, ty) ? idx(world, tx, ty) : -1;
+    const ent = cell >= 0 ? pickEntity(cell) : null;
     if (e.button === 2 || state.tool === "pan") {
       panning = true;
       lastX = e.clientX;
       lastY = e.clientY;
+    } else if (state.tool !== "erase" && ent) {
+      // Clicking any module/crew opens its options — no need to switch to Select.
+      // (Erase is the exception: it deletes instead, with no panel.)
+      sel = ent;
+      needRedraw = true;
     } else if (state.tool === "select") {
-      sel = inBounds(world, tx, ty) ? pickEntity(idx(world, tx, ty)) : null;
+      sel = null; // clicked empty space with the Select tool → deselect
       needRedraw = true;
     } else if (isAreaTool(state.tool)) {
+      sel = null; // resuming a build/erase closes the inspector
       dragging = true;
-      dragStart = inBounds(world, tx, ty) ? idx(world, tx, ty) : -1;
+      dragStart = cell;
     } else {
+      sel = null;
       painting = true;
       applyTool(tx, ty);
     }

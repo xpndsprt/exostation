@@ -42,7 +42,8 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 **Inspecting**
 - **Hover** anything for a quick tooltip (no click). **Hover a crew member** to see the **mood breakdown** — *base 50 · needs ± · neighbors ± · room ±* → the value their mood is pulled toward. **Hover a room tile** to read its **harmony value and production multiplier** (e.g. *tense −0.53 → ×0.6 production*), so you can see exactly what a bad pairing costs.
-- The **Select** tool (S) opens the right-hand **info panel** with live stats and **Deconstruct** / **toggle on-off** buttons.
+- **Click any module or crew member to open its options** — the **info panel** with live stats and **Deconstruct / toggle / Switch recipe / 🛰 Star Chart** buttons. This works with **any tool except Erase** (the cursor turns into a pointer over a clickable module), so you don't have to switch tools to manage things. The **Select** tool (S) still works and clicking empty space with it deselects.
+- **Erase is the exception:** with the **Erase** tool, clicking a module **deletes it** (no options panel) — and refunds 50%. Resuming any build/erase also closes the inspector.
 
 **Time & saving**
 - **Pause / 1× / 2× / 3×** (`Space` pause, `[` / `]` slower/faster).
@@ -154,7 +155,7 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 ---
 
 ## 7 · Mining (minerals) — the Star Chart & orbital dispatch
-- There are **no asteroids on the station map**. Mining happens **out in the star system**. Build a **Bot Bay** (it comes with **one drone**), select it, and click **🛰 Star Chart** to open the orbital map.
+- There are **no asteroids on the station map**. Mining happens **out in the star system**. Build a **Bot Bay** (it comes with **one drone**), **click it** (any tool but Erase) and hit **🛰 Star Chart** to open the orbital map.
 - **The Star Chart** shows your **star** at the centre, your **station on its orbit** (the green marker), and the system's **asteroids and planets** scattered at various distances. Bodies start as **unknown contacts (`?`)** — you don't know their yield until a drone visits.
 - **Click a body, then "Dispatch / Survey"** to send that bay's drone. It **lifts off the pad, flies off-map, and returns some time later** with minerals. **The first trip both surveys it (revealing yield + remaining units) and delivers that first haul** — every trip pays off.
 - **Distance = time vs reward.** Near **asteroids** are quick (~25s round trip) with **modest hauls (8–20)**; far **planets** are slow (~70s) but bring **big hauls (40–80)**. The drone keeps re-running trips to the assigned target on its own until that body is **depleted** (each has finite richness), then idles — open the chart and pick a fresh target.
