@@ -5,38 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>EXOSTATION — Sprite Editor</title>
 <style>
+  /* R-TYPE-flavoured theme: deep bio-mechanical dark, teal glow, R/G/B accents. */
+  :root {
+    --bg: #05080e; --bg2: #0a0f18; --panel: #0e141e; --edge: #1a2730; --edge2: #243845;
+    --teal: #2fd6c3; --teal-dim: #1c8b82; --ink: #c4ccd6; --dim: #6d7c88;
+    --r: #ff4d52; --g: #49d17a; --b: #4da6ff;
+  }
   * { box-sizing: border-box; }
   body { margin: 0; height: 100vh; display: flex; flex-direction: column;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #0e1118; color: #d7dbe2; }
-  header { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-    background: #151a24; border-bottom: 1px solid #232b3a; flex-wrap: wrap; }
-  header .brand { font-weight: 700; letter-spacing: .06em; color: #6ea8ff; }
-  header label { font-size: 12px; color: #9aa3b5; }
+    font-family: "Segoe UI", Roboto, system-ui, sans-serif; color: var(--ink);
+    background: radial-gradient(1200px 720px at 72% -12%, #102531 0%, var(--bg2) 46%, var(--bg) 100%); }
+  header { display: flex; align-items: center; gap: 8px; padding: 9px 14px; flex-wrap: wrap;
+    background: linear-gradient(180deg, #0d1722, #0a0f17); border-bottom: 1px solid var(--edge);
+    box-shadow: 0 1px 0 rgba(47,214,195,.18), 0 6px 22px rgba(0,0,0,.55); }
+  header .brand { font-weight: 800; letter-spacing: .2em; color: var(--teal); font-size: 13px;
+    text-shadow: 0 0 12px rgba(47,214,195,.6); }
+  header label { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
   input, select, button { font: inherit; font-size: 13px; }
-  input[type=text] { background: #1c2230; color: #e3e7ef; border: 1px solid #2c3445; border-radius: 6px; padding: 5px 8px; width: 130px; }
-  select { background: #1c2230; color: #e3e7ef; border: 1px solid #2c3445; border-radius: 6px; padding: 5px 8px; }
-  button { background: #1c2230; color: #d7dbe2; border: 1px solid #2c3445; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-  button:hover { background: #232c3d; }
-  button.primary { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
-  button.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+  input[type=text], select { background: #0b111b; color: var(--ink); border: 1px solid var(--edge2); border-radius: 6px; padding: 5px 8px; }
+  input[type=text] { width: 130px; }
+  input[type=color] { background: #0b111b; border: 1px solid var(--edge2); border-radius: 6px; width: 42px; height: 30px; padding: 2px; cursor: pointer; }
+  input[type=range] { accent-color: var(--teal); }
+  button { background: linear-gradient(180deg, #16202e, #0f1622); color: var(--ink);
+    border: 1px solid var(--edge2); border-radius: 6px; padding: 6px 10px; cursor: pointer; letter-spacing: .02em; }
+  button:hover { border-color: var(--teal-dim); color: #e6edf3; box-shadow: inset 0 0 0 1px rgba(47,214,195,.18); }
+  button.primary { background: linear-gradient(180deg, #1f9c92, #146e67); border-color: var(--teal); color: #eafffb; }
+  button.primary:hover { background: linear-gradient(180deg, #26b8ac, #178178); }
+  button.active { background: linear-gradient(180deg, #1f9c92, #146e67); border-color: var(--teal); color: #eafffb; }
   main { flex: 1; display: flex; min-height: 0; }
-  #side { width: 234px; padding: 12px; border-right: 1px solid #232b3a; overflow-y: auto; }
-  #side h4 { margin: 14px 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6b7488; }
+  #side { width: 250px; padding: 14px; overflow-y: auto; border-right: 1px solid var(--edge);
+    background: linear-gradient(180deg, rgba(18,26,38,.55), rgba(7,11,17,.55)); }
+  #side h4 { margin: 16px 0 7px; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--teal-dim); }
   #side h4:first-child { margin-top: 0; }
   .tools { display: flex; gap: 6px; flex-wrap: wrap; }
   .swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 6px; }
-  .swatches div { aspect-ratio: 1; border-radius: 4px; border: 1px solid #2c3445; cursor: pointer; }
-  .swatches div.sel { outline: 2px solid #fff; }
-  #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 16px; }
-  canvas#cv { image-rendering: pixelated; background: #0a0e16; box-shadow: 0 0 0 1px #2c3445; cursor: crosshair; }
+  .swatches div { aspect-ratio: 1; border-radius: 4px; border: 1px solid var(--edge2); cursor: pointer; }
+  .swatches div.sel { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .indicators { display: flex; gap: 6px; }
+  .indicators button { flex: 1; font-size: 11px; font-weight: 800; letter-spacing: .1em; color: #05080e; border: none; }
+  .ind-r { background: var(--r); box-shadow: 0 0 12px rgba(255,77,82,.55); }
+  .ind-g { background: var(--g); box-shadow: 0 0 12px rgba(73,209,122,.55); }
+  .ind-b { background: var(--b); box-shadow: 0 0 12px rgba(77,166,255,.55); }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 18px;
+    background: radial-gradient(720px 520px at 50% 42%, rgba(47,214,195,.05), transparent 70%); }
+  canvas#cv { image-rendering: pixelated; background: #04060b; cursor: crosshair;
+    box-shadow: 0 0 0 1px var(--edge2), 0 0 44px rgba(0,0,0,.6), 0 0 64px rgba(47,214,195,.07); }
   .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
-  .hint { font-size: 11px; color: #6b7488; line-height: 1.5; }
-  #curcolor { width: 26px; height: 26px; border-radius: 6px; border: 1px solid #2c3445; }
+  .hint { font-size: 11px; color: var(--dim); line-height: 1.55; }
+  #curcolor { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--edge2); box-shadow: 0 0 8px rgba(0,0,0,.5); }
   #states { display: flex; gap: 6px; flex-wrap: wrap; }
   #states button.st { padding: 4px 9px; font-size: 12px; }
-  #preview { margin-top: 6px; display: flex; gap: 8px; align-items: flex-end; }
-  #preview canvas { image-rendering: pixelated; background: #0a0e16; border: 1px solid #2c3445; }
-  #preview .cap { font-size: 10px; color: #8b93a6; text-align: center; }
+  #preview { margin-top: 6px; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  #preview canvas { image-rendering: pixelated; background: #04060b; border: 1px solid var(--edge2); }
+  #preview .cap { font-size: 10px; color: var(--dim); text-align: center; }
 </style>
 </head>
 <body>
@@ -86,30 +107,38 @@
     </div>
     <h4>Color</h4>
     <div class="row">
-      <input type="color" id="color" value="#6ea8ff" />
+      <input type="color" id="color" value="#2fd6c3" />
       <div id="curcolor"></div>
       <button id="addSwatch">+ swatch</button>
     </div>
     <div class="swatches" id="swatches"></div>
+    <h4>Indicators</h4>
+    <div class="indicators">
+      <button class="ind-r" data-ind="#ff4d52">RED</button>
+      <button class="ind-g" data-ind="#49d17a">GREEN</button>
+      <button class="ind-b" data-ind="#4da6ff">BLUE</button>
+    </div>
+    <div class="hint" style="margin-top:5px">Status-light hues — red = alert, green = ok/online, blue = power.</div>
     <h4>Zoom</h4>
-    <div class="row"><input type="range" id="zoom" min="8" max="40" value="22" /></div>
+    <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
       <label><input type="checkbox" id="showTiles" checked /> tiles</label></div>
     <h4>Preview (all states)</h4>
     <div id="preview"></div>
     <h4>Notes</h4>
-    <div class="hint">One tile = 16×16. Multi-tile items expand the grid. Each
-      sprite holds named <b>states</b> (creatures: idle/walk/dead; modules:
-      enabled/disabled). Left-drag paints, right-drag erases. JSON saves every
-      state; PNG saves the current state; PNG sheet saves all states in a row.</div>
+    <div class="hint">New sprites are <b>32×32</b> per tile (multi-tile items expand
+      the grid). Loading an older 16px built-in keeps its native size. Each sprite
+      holds named <b>states</b> (creatures: idle/walk/dead; modules: enabled/disabled).
+      Left-drag paints, right-drag erases. JSON saves every state; PNG saves the
+      current state; PNG sheet saves all states in a row.</div>
   </div>
   <div id="stage"><canvas id="cv"></canvas></div>
 </main>
 
 <script src="assets/sprites.js"></script>
 <script>
-const TILE = 16;
-let ps = 22, tool = "paint", color = "#6ea8ff", showGrid = true, showTiles = true;
+const RES = 32; // new sprites are 32×32 per tile; loaded sprites keep their native res
+let ps = 14, tool = "paint", color = "#2fd6c3", showGrid = true, showTiles = true;
 // current sprite
 let sprite = newSprite("untitled", 1, 1);
 let cur = 0; // current state index
@@ -117,14 +146,14 @@ let cur = 0; // current state index
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const $ = (id) => document.getElementById(id);
-const W = () => sprite.tileW * TILE, H = () => sprite.tileH * TILE;
+const W = () => sprite.tileW * sprite.res, H = () => sprite.tileH * sprite.res;
 const px = () => sprite.states[cur].pixels;
 
 function newSprite(name, tw, th) {
-  return { name, tileW: tw, tileH: th, states: [{ name: "default", pixels: new Array(tw * th * TILE * TILE).fill(null) }] };
+  return { name, tileW: tw, tileH: th, res: RES, states: [{ name: "default", pixels: new Array(tw * th * RES * RES).fill(null) }] };
 }
 function resizeAll(tw, th) {
-  const nw = tw * TILE, nh = th * TILE, ow = sprite.tileW * TILE, oh = sprite.tileH * TILE;
+  const T = sprite.res, nw = tw * T, nh = th * T, ow = sprite.tileW * T, oh = sprite.tileH * T;
   sprite.states.forEach((s) => {
     const np = new Array(nw * nh).fill(null);
     for (let y = 0; y < Math.min(nh, oh); y++) for (let x = 0; x < Math.min(nw, ow); x++) np[y*nw+x] = s.pixels[y*ow+x];
@@ -140,18 +169,18 @@ function render() {
   const p = px();
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = p[y*w+x];
-    if (c) ctx.fillStyle = c; else ctx.fillStyle = (x + y) % 2 === 0 ? "#1a2030" : "#141a26";
+    if (c) ctx.fillStyle = c; else ctx.fillStyle = (x + y) % 2 === 0 ? "#0d1a24" : "#0a131b";
     ctx.fillRect(x*ps, y*ps, ps, ps);
   }
   if (showGrid && ps >= 12) {
-    ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(47,214,195,.07)"; ctx.lineWidth = 1;
     for (let x = 0; x <= w; x++) line(x*ps,0,x*ps,h*ps);
     for (let y = 0; y <= h; y++) line(0,y*ps,w*ps,y*ps);
   }
   if (showTiles) {
-    ctx.strokeStyle = "rgba(110,168,255,.5)"; ctx.lineWidth = 2;
-    for (let x = 0; x <= w; x += TILE) line(x*ps,0,x*ps,h*ps);
-    for (let y = 0; y <= h; y += TILE) line(0,y*ps,w*ps,y*ps);
+    ctx.strokeStyle = "rgba(47,214,195,.5)"; ctx.lineWidth = 2;
+    for (let x = 0; x <= w; x += sprite.res) line(x*ps,0,x*ps,h*ps);
+    for (let y = 0; y <= h; y += sprite.res) line(0,y*ps,w*ps,y*ps);
   }
   renderStates(); renderPreview();
 }
@@ -224,9 +253,12 @@ function ensureStates(names) {
 function updateColor() { $("curcolor").style.background = color; }
 document.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll("[data-tool]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); });
 $("color").oninput = (e) => { color = e.target.value; updateColor(); };
-const RECENT = ["#11151c","#8a93a6","#3a7bd5","#35c2c2","#c98a3a","#cf7a3a","#4f9d5b","#9b6cd5","#c05fa8","#4aa3a3","#6fcf97","#e8c349","#d98a3a","#e24b4b","#ffffff","#6ea8ff"];
+// R-Type-flavoured moody palette: void blacks, steel, teals, deep blues/purples,
+// bio greens & rust — plus the R/G/B indicators and white.
+const RECENT = ["#04060b","#0d1a24","#16324a","#2fd6c3","#1c8b82","#3a6ea8","#5a3a9a","#8a3a6c","#3a7d5a","#9a6a2a","#b4452f","#c4ccd6","#6d7c88","#ff4d52","#49d17a","#4da6ff"];
 function renderSwatches() { const box = $("swatches"); box.innerHTML = ""; RECENT.forEach((hex) => { const d = document.createElement("div"); d.style.background = hex; if (hex === color) d.classList.add("sel"); d.onclick = () => { color = hex; $("color").value = hex; updateColor(); renderSwatches(); }; box.appendChild(d); }); }
 $("addSwatch").onclick = () => { if (!RECENT.includes(color)) { RECENT.unshift(color); RECENT.pop(); renderSwatches(); } };
+document.querySelectorAll("[data-ind]").forEach((b) => b.onclick = () => { color = b.dataset.ind; $("color").value = color; updateColor(); renderSwatches(); });
 $("zoom").oninput = (e) => { ps = +e.target.value; render(); };
 $("showGrid").onchange = (e) => { showGrid = e.target.checked; render(); };
 $("showTiles").onchange = (e) => { showTiles = e.target.checked; render(); };
@@ -236,7 +268,7 @@ $("th").onchange = () => { resizeAll(+$("tw").value, +$("th").value); render(); 
 $("name").oninput = () => { sprite.name = $("name").value; };
 
 // --- export ---
-function bitmap() { return { name: sprite.name, tileW: sprite.tileW, tileH: sprite.tileH, w: W(), h: H(), states: sprite.states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) }; }
+function bitmap() { return { name: sprite.name, tileW: sprite.tileW, tileH: sprite.tileH, res: sprite.res, w: W(), h: H(), states: sprite.states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) }; }
 function download(fn, url) { const a = document.createElement("a"); a.href = url; a.download = fn; a.click(); }
 function statePng(pixels) { const w = W(), h = H(), off = document.createElement("canvas"); off.width = w; off.height = h; const o = off.getContext("2d"); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = pixels[y*w+x]; if (c) { o.fillStyle = c; o.fillRect(x,y,1,1); } } return off; }
 $("savePng").onclick = () => download(sprite.name + "_" + sprite.states[cur].name + ".png", statePng(px()).toDataURL("image/png"));
@@ -254,13 +286,16 @@ const loadLib = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || 
 const saveLibStore = (o) => localStorage.setItem(LS_KEY, JSON.stringify(o));
 
 function asciiToBitmap(s) {
-  const w = s.tileW * TILE, h = s.tileH * TILE;
+  // built-ins author at 16px/tile — derive the native res from the row length
+  const sample = s.states[Object.keys(s.states)[0]] || [];
+  const res = Math.round(((sample[0] || "").length || s.tileW * 16) / s.tileW) || 16;
+  const w = s.tileW * res, h = s.tileH * res;
   const states = Object.keys(s.states).map((sn) => {
     const rows = s.states[sn], p = new Array(w * h).fill(null);
     for (let y = 0; y < h; y++) { const row = rows[y] || ""; for (let x = 0; x < w; x++) { const ch = row[x] || "."; if (ch !== "." && s.palette[ch]) p[y*w+x] = s.palette[ch]; } }
     return { name: sn, pixels: p };
   });
-  return { name: s.name, tileW: s.tileW, tileH: s.tileH, w, h, states };
+  return { name: s.name, tileW: s.tileW, tileH: s.tileH, res, w, h, states };
 }
 function builtinBitmaps() { const out = {}; (window.SPRITES || []).forEach((s) => out[s.name] = asciiToBitmap(s)); return out; }
 function refreshLibrary() {
@@ -274,7 +309,8 @@ function refreshLibrary() {
 function loadBitmap(bm) {
   // tolerate single-state {pixels} JSON
   const states = bm.states || [{ name: "default", pixels: bm.pixels }];
-  sprite = { name: bm.name, tileW: bm.tileW, tileH: bm.tileH, states: states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) };
+  const res = bm.res || (bm.tileW && bm.w ? Math.round(bm.w / bm.tileW) : 0) || RES;
+  sprite = { name: bm.name, tileW: bm.tileW, tileH: bm.tileH, res, states: states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) };
   cur = 0; $("name").value = sprite.name; $("tw").value = sprite.tileW; $("th").value = sprite.tileH; render();
 }
 $("loadBtn").onclick = () => { const v = $("library").value; if (!v) return; const [g, k] = v.split(/:(.+)/); const bm = g === "built" ? builtinBitmaps()[k] : loadLib()[k]; if (bm) loadBitmap(bm); };
