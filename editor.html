@@ -156,6 +156,13 @@
     </div>
     <div class="row"><button id="undoBtn">↶ Undo</button></div>
     <div class="hint" style="margin-top:5px">Re-tones the art's shadows→highlights into two colours for a cohesive mood. Undo reverts the last stamp / tone / stroke.</div>
+    <h4>Outline</h4>
+    <div class="row">
+      <button id="outlineBtn">Black outline</button>
+      <label style="font-size:11px; color:var(--dim)">opacity <input type="range" id="outlineOp" min="10" max="100" value="100" style="width:64px" /></label>
+      <span id="outlineOpVal" style="font-size:11px; color:var(--dim)">100%</span>
+    </div>
+    <div class="hint" style="margin-top:5px">Wraps the art in a 1px black edge (opacity = how dark, since pixels are solid).</div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -508,6 +515,25 @@ const undoStack = [];
 function pushUndo() { undoStack.push(sprite.states.map((s) => s.pixels.slice())); if (undoStack.length > 30) undoStack.shift(); }
 function undo() { const snap = undoStack.pop(); if (!snap) return; snap.forEach((pix, i) => { if (sprite.states[i]) sprite.states[i].pixels = pix; }); render(); }
 $("undoBtn").onclick = undo;
+
+// ===== Black outline =====
+function blackOutline(op) {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const lvl = Math.round((1 - op) * 255); // black at opacity → solid grey level
+  const hex = "#" + lvl.toString(16).padStart(2, "0").repeat(3);
+  const at = (x, y) => (x >= 0 && y >= 0 && x < w && y < h) ? p[y * w + x] : null;
+  const add = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (p[y * w + x]) continue; // only empty cells become edge
+    if (at(x, y - 1) || at(x, y + 1) || at(x - 1, y) || at(x + 1, y)) add.push(y * w + x);
+  }
+  for (const i of add) p[i] = hex;
+  render();
+}
+$("outlineBtn").onclick = () => blackOutline((+$("outlineOp").value) / 100);
+$("outlineOp").oninput = (e) => { $("outlineOpVal").textContent = e.target.value + "%"; };
+
 window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
