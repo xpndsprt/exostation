@@ -41,15 +41,21 @@
     #endbanner button:hover { background: #3a78ec; }
     /* Left dock: tabbed Build / Research / Alienpedia */
     #leftpanel {
-      position: fixed; left: 12px; top: 52px; z-index: 10; width: 200px;
+      position: fixed; left: 12px; top: 52px; z-index: 10; width: 248px;
       max-height: calc(100vh - 64px); display: flex; flex-direction: column;
       background: rgba(16,20,28,.9); border: 1px solid #232b3a; border-radius: 10px;
     }
     #leftpanel .lp-tabs { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid #232b3a; }
-    #leftpanel .lp-tabs button { flex: 1; background: #1c2230; color: #aab2c4; border: 1px solid #2c3445;
-      border-radius: 7px; padding: 6px 3px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    #leftpanel .lp-tabs button:hover { background: #232c3d; color: #d7dbe2; }
-    #leftpanel .lp-tabs button.active { background: #2d6cdf; border-color: #2d6cdf; color: #fff; }
+    #leftpanel .lp-tabs button { flex: 1; background: #161b26; border: 1px solid #2c3445;
+      border-radius: 8px; padding: 9px 5px; font-size: 16px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    /* each tab carries its own warm hue (dim when idle, lit when active) */
+    #leftpanel .lp-tabs button[data-tab="palette"]    { color: #d9772e; }
+    #leftpanel .lp-tabs button[data-tab="tech"]       { color: #eda35a; }
+    #leftpanel .lp-tabs button[data-tab="alienpedia"] { color: #e8c349; }
+    #leftpanel .lp-tabs button:hover { background: #1e2533; }
+    #leftpanel .lp-tabs button[data-tab="palette"].active    { background: #c9651f; border-color: #e8741f; color: #fff; }
+    #leftpanel .lp-tabs button[data-tab="tech"].active       { background: #e8954a; border-color: #f4ad62; color: #2a1606; }
+    #leftpanel .lp-tabs button[data-tab="alienpedia"].active { background: #e8c349; border-color: #ffd24a; color: #2a2206; }
     #leftpanel .lp-pane { display: none; overflow-y: auto; padding: 8px; min-height: 0; }
     #leftpanel .lp-pane.active { display: block; }
     #palette .pal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
@@ -342,9 +348,9 @@
   </div>
   <div id="leftpanel">
     <div class="lp-tabs">
-      <button type="button" data-tab="palette" class="active">🔧 Build</button>
-      <button type="button" data-tab="tech">🔬 Research</button>
-      <button type="button" data-tab="alienpedia">👽 Species</button>
+      <button type="button" data-tab="palette" class="active">Build</button>
+      <button type="button" data-tab="tech">Research</button>
+      <button type="button" data-tab="alienpedia">Species</button>
     </div>
     <div id="palette" class="lp-pane active"></div>
     <div id="tech" class="lp-pane"></div>
