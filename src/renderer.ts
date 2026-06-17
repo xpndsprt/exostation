@@ -14,6 +14,19 @@ const SCALE = TILE / 16; // sprites are authored at 16px/tile
 // Interior baseline brightness when unlit (a multiply tint); space stays white.
 // Tuned dark + cool (our station's blue cast) so warm light pools really pop.
 const AMBIENT_RGB: [number, number, number] = [0.3, 0.33, 0.42];
+// Each room's unlit ambient is multiplied by its gas's tint, so a wing's whole
+// interior reads in that gas's mood (subtle — warm light pools still cut through):
+// O₂ a bit blue, CH₄ reddish, Cl₂ green, NH₃ indigo, H₂ magenta, mixed danger-red.
+const GAS_TINT: Record<string, [number, number, number]> = {
+  none: [1, 1, 1],
+  o2: [0.88, 0.98, 1.14],
+  ch4: [1.16, 0.88, 0.8],
+  cl2: [0.9, 1.14, 0.86],
+  nh3: [0.92, 0.9, 1.16],
+  h2: [1.14, 0.88, 1.08],
+  mixed: [1.22, 0.8, 0.8],
+};
+const GAS_CODE: Record<string, number> = { none: 0, o2: 1, ch4: 2, cl2: 3, nh3: 4, h2: 5, mixed: 6 };
 // Character lamp: a warm pool that raycasts a few cells and casts a MOVING shadow
 // as the agent traverses (the RimWorld pawn-lamp look).
 const LAMP_RADIUS = 4; // cells
@@ -347,8 +360,12 @@ export class Renderer {
     this.ensureLightTargets(world);
     let h = 2166136261 >>> 0;
     for (let i = 0; i < world.cells.length; i++) {
-      const t = world.cells[i].type;
-      h = Math.imul(h ^ (t === "space" ? 0 : t === "wall" ? 1 : t === "door" ? 2 : 3), 16777619) >>> 0;
+      const c = world.cells[i];
+      h = Math.imul(h ^ (c.type === "space" ? 0 : c.type === "wall" ? 1 : c.type === "door" ? 2 : 3), 16777619) >>> 0;
+      // include room gas so the per-gas ambient tint re-bakes when a room's gas changes
+      const rid = c.roomId;
+      const gas = rid >= 0 && world.rooms[rid] ? world.rooms[rid].gas : "none";
+      h = Math.imul(h ^ (GAS_CODE[gas] ?? 0), 16777619) >>> 0;
     }
     for (const id in world.structures) {
       const s = world.structures[id];
@@ -363,11 +380,14 @@ export class Renderer {
     for (let i = 0; i < world.cells.length; i++) {
       const o = i * 3;
       if (world.cells[i].type === "space") {
-        buf[o] = buf[o + 1] = buf[o + 2] = 1; // space: no dimming (multiply by white)
+        buf[o] = buf[o + 1] = buf[o + 2] = 1; // outside: untouched (multiply by white)
       } else {
-        buf[o] = AMBIENT_RGB[0];
-        buf[o + 1] = AMBIENT_RGB[1];
-        buf[o + 2] = AMBIENT_RGB[2];
+        const rid = world.cells[i].roomId;
+        const gas = rid >= 0 && world.rooms[rid] ? world.rooms[rid].gas : "none";
+        const t = GAS_TINT[gas] ?? GAS_TINT.none;
+        buf[o] = AMBIENT_RGB[0] * t[0];
+        buf[o + 1] = AMBIENT_RGB[1] * t[1];
+        buf[o + 2] = AMBIENT_RGB[2] * t[2];
       }
     }
     // accumulate each powered emitter, occluded by walls/modules (its own
