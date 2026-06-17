@@ -52,6 +52,7 @@ simStep(world, dt):              // src/main.ts
   eventsSystem       // 12. periodic incidents (surge/breach/shock/raid — M38 teeth)
   requestsSystem     // 13. species requests/goals, reputation
   encountersSystem   // 13b. roll a paused social encounter (conflict/bond) — player choice
+  romanceSystem      // 13c. love-couples: daily love growth, turbulence dice, thaw, implants
   beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
   objectivesSystem   // 15. scenario goal progression, win/lose
   world.tick++

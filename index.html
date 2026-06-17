@@ -354,6 +354,20 @@
     #breed .breed-yes:hover { background: #37b463; }
     #breed .breed-no { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445 !important; }
     #breed .breed-no:hover { background: #243150; }
+    /* romance dialog (fell in love / turbulence / breakup / implants) */
+    #romance { position: fixed; inset: 0; z-index: 66; display: none; align-items: center; justify-content: center;
+      background: rgba(10,6,12,.82); backdrop-filter: blur(4px); }
+    #romance.show { display: flex; }
+    #romance .rom-card { background: #15101a; border: 1px solid #3a2c40; border-radius: 16px; padding: 22px 24px;
+      width: 400px; max-width: 92vw; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,.6); }
+    #romance .rom-head { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
+    #romance .rom-a, #romance .rom-b { width: 76px; height: 76px; image-rendering: pixelated;
+      filter: drop-shadow(0 0 12px rgba(255,140,190,.4)); }
+    #romance .rom-vs { font-size: 26px; }
+    #romance .rom-title { margin: 6px 0 10px; font-size: 19px; }
+    #romance .rom-body { font-size: 13px; line-height: 1.55; color: #d8cdd6; margin: 0 0 16px; }
+    #romance .rom-go { width: 100%; background: #c64b8a; color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #romance .rom-go:hover { background: #d75c9b; }
     /* new-station intro */
     #intro { position: fixed; inset: 0; z-index: 64; display: none; align-items: center; justify-content: center;
       background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
@@ -449,6 +463,12 @@
       <button class="breed-no" type="button">Refuse</button>
       <button class="breed-yes" type="button">Allow it</button>
     </div>
+  </div></div>
+  <div id="romance"><div class="rom-card">
+    <div class="rom-head"><canvas class="rom-a"></canvas><div class="rom-vs"></div><canvas class="rom-b"></canvas></div>
+    <h3 class="rom-title"></h3>
+    <p class="rom-body"></p>
+    <button class="rom-go" type="button">Continue</button>
   </div></div>
   <div id="intro"><div class="intro-card">
     <div class="intro-tag">SECTOR ORBIT // NEW STATION</div>

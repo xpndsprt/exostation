@@ -151,6 +151,8 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 >
 > **⚙️ Shipped — reproduction (`spawn.ts`):** a content species can ask (paused dialog) to **lay a clutch of eggs** for a credit payment; the eggs hatch into a mix of **new resident younglings** and hostile **"spiders"** the crew must hunt down. See `BALANCE.md` for the numbers.
 >
+> **⚙️ Shipped — love & romance (`romance.ts`):** every crew member has an individual **name**, and two different-species crew can **rarely fall in love**. A couple **thaws the relations** between their species (the station grows more cooperative — the political web is now *dynamic*, not just innate), the pair **work harder and spend time together**, and their love runs a **calendar** with **turbulence** days that can make or break them. Cross-gas lovers can cohabit once **Breathing Implants** are researched. See `BALANCE.md` for the numbers.
+>
 > | feels about → | Hum | Drn | Kor | Vry | Thl | Vrn |
 > |---------------|:---:|:---:|:---:|:---:|:---:|:---:|
 > | **Humans** | — | ♥ | ✖ | · | – | · |

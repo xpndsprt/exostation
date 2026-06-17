@@ -116,6 +116,15 @@ The rest of the Depth Epic except replayability (M43):
   and gnaw modules until the **crew hunt them down** (the parent species hunting its own
   spawn hardest). New world state `eggs`/`pests`/`breedOffer`; new `#breed` dialog + egg &
   spider sprites; renderer `drawCritters`.
+- **Love & romance (`romance.ts` + `names.ts`):** every crew member has an individual
+  **name**; a bond encounter can **rarely** make two different-species crew **fall in love**.
+  A couple **thaws the hatred** between their species (and lifts the whole station's
+  cooperation via a per-world relation modifier), and once **truly in love** they **work
+  +50%** and **spend time together**. Love runs on a **calendar** — it grows daily but hits
+  **turbulence on days 5/15/25/35** (a dice-roll over ~100 reasons decides stay/split).
+  **Breathing Implants** (new Tier-2 tech) let a cross-gas couple cohabit. New world state
+  `couples`/`relThaw`/`romance`; `#romance` dialog; dynamic `effRelation` feeding combat,
+  harmony, mood and encounters.
 
 ### Content & polish wave *(shipped ✓)*
 - **Lighting & shadows:** the interior is dim by default; powered emitters (a

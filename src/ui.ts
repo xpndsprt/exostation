@@ -12,6 +12,7 @@ import { OBJECTIVES, currentObjective } from "./objectives";
 import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch } from "./research";
 import { BEACON_SPECIES, moduleActive } from "./beacon";
 import { encounterText, encounterChoices } from "./encounters";
+import { coupleOf } from "./romance";
 import { isMuted, setMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
@@ -681,7 +682,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
   if (target.kind === "agent") {
     const a = world.agents[target.id];
     if (!a) return hideTooltip();
-    const name = SPECIES[a.species].label;
+    const name = `${a.name} <span class="muted">· ${SPECIES[a.species].label}</span>`;
     const sgn = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(Math.round(n))}`;
     let moodLine = `<div>Mood ${Math.round(a.mood)}%</div>`;
     if (a.alive) {
@@ -973,8 +974,8 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
   if (sel.kind === "agent") {
     const a = world.agents[sel.id];
     if (!a) return void panel.classList.remove("show");
-    const name = SPECIES[a.species].label;
-    html += `<h3>${name}${a.guest ? " (guest)" : ""}</h3>`;
+    const sp = SPECIES[a.species].label;
+    html += `<h3>${a.name} <span style="font-weight:400;color:#9aa3b6">· ${sp}${a.guest ? ", guest" : ""}</span></h3>`;
     html += `<div class="row"><span>O₂</span><b>${Math.round(a.o2)}%</b></div>${bar(a.o2, a.o2 > 30 ? "#49d17a" : "#e24b4b")}`;
     if (a.suit < 100) html += `<div class="row"><span>Suit</span><b>${Math.round(a.suit)}%</b></div>${bar(a.suit, "#9fd8ff")}`;
     html += `<div class="row"><span>Food</span><b>${Math.round(a.food)}%</b></div>${bar(a.food, "#6ea8ff")}`;
@@ -986,7 +987,14 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       html += `<div class="row"><span>Health</span><b>${Math.round(a.health)}%</b></div>${bar(a.health, "#e24b4b")}`;
       html += `<div class="row"><span>Tension</span><b>${Math.round(a.tension)}%</b></div>`;
     }
-    const stateLabel = !a.alive ? "dead" : a.fighting ? "fighting" : a.task?.type ?? "idle";
+    const couple = coupleOf(world, a.id);
+    if (couple) {
+      const mate = world.agents[a.id === couple.aId ? couple.bId : couple.aId];
+      html += `<div class="row"><span>❤ In love with</span><b style="color:#ff9ec4">${mate ? mate.name : "—"}</b></div>`;
+      html += `<div class="row"><span>Love</span><b>${Math.round(couple.love)}%</b></div>${bar(couple.love, "#ff6fae")}`;
+    }
+    if (a.implantGas) html += `<div class="row"><span>Implant</span><b>breathes ${a.implantGas.toUpperCase()}</b></div>`;
+    const stateLabel = !a.alive ? "dead" : a.fighting ? "fighting" : a.task?.type === "court" ? "courting" : a.task?.type ?? "idle";
     html += `<div class="row"><span>State</span><b>${stateLabel}</b></div>`;
     if (a.guest && isFinite(a.stay))
       html += `<div class="row"><span>Leaves in</span><b>${Math.max(0, Math.round(a.stay))}s</b></div>`;
@@ -1207,6 +1215,35 @@ export function showGodDialog(species: Species, verdict: "pleased" | "wrathful" 
   v.style.color = verdict === "pleased" ? "#49d17a" : verdict === "wrathful" ? "#e24b4b" : "#aab2c4";
   const go = el.querySelector(".god-go") as HTMLButtonElement;
   const done = () => { el.classList.remove("show"); godShown = false; go.removeEventListener("click", done); onClose(); };
+  go.addEventListener("click", done);
+  el.classList.add("show");
+}
+
+// ---- romance dialog: fell in love / turbulence / breakup / implants ----
+let romanceShown = false;
+export function isRomanceOpen(): boolean {
+  return romanceShown;
+}
+export function showRomance(
+  popup: { kind: string; title: string; body: string; good: boolean; aSpecies: Species; bSpecies: Species },
+  onClose: () => void,
+): void {
+  const el = document.getElementById("romance");
+  if (!el) {
+    onClose();
+    return;
+  }
+  romanceShown = true;
+  drawSpeciesArt(el.querySelector(".rom-a") as HTMLCanvasElement, popup.aSpecies);
+  drawSpeciesArt(el.querySelector(".rom-b") as HTMLCanvasElement, popup.bSpecies);
+  (el.querySelector(".rom-vs") as HTMLElement).textContent =
+    popup.kind === "breakup" ? "💔" : popup.kind === "turbulence" ? (popup.good ? "❤️‍🔥" : "⚡") : popup.kind === "implant" ? "🧬" : "❤";
+  const title = el.querySelector(".rom-title") as HTMLElement;
+  title.textContent = popup.title;
+  title.style.color = popup.good ? "#ff9ec4" : "#9aa3b6";
+  (el.querySelector(".rom-body") as HTMLElement).textContent = popup.body;
+  const go = el.querySelector(".rom-go") as HTMLButtonElement;
+  const done = () => { el.classList.remove("show"); romanceShown = false; go.removeEventListener("click", done); onClose(); };
   go.addEventListener("click", done);
   el.classList.add("show");
 }

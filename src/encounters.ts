@@ -1,7 +1,8 @@
 import { Encounter, Species, World } from "./types";
-import { RELATIONS } from "./relations";
+import { effRelation } from "./relations";
 import { SPECIES } from "./species";
 import { injure } from "./medical";
+import { maybeFallInLove } from "./romance";
 
 // Flavor library for the encounter dialog. {A}/{B} are filled with species names.
 // A line applies to a pair when: it names both species (unordered), names one
@@ -122,7 +123,7 @@ function findEncounter(w: World): Encounter | null {
       for (let j = i + 1; j < ids.length; j++) {
         const a = w.agents[ids[i]], b = w.agents[ids[j]];
         if (a.species === b.species) continue;
-        const avg = (RELATIONS[a.species][b.species] + RELATIONS[b.species][a.species]) / 2;
+        const avg = (effRelation(w, a.species, b.species) + effRelation(w, b.species, a.species)) / 2;
         const kind = avg <= -7 ? "conflict" : avg >= 7 ? "bond" : null;
         if (!kind) continue;
         pairs.push({ kind, aId: a.id, bId: b.id, aSpecies: a.species, bSpecies: b.species, cell });
@@ -233,26 +234,31 @@ export function resolveEncounter(w: World, choice: number): string {
   }
 
   // bond
-  if (choice === 0) {
-    bump(w, enc.aId, 10);
-    bump(w, enc.bId, 10);
-    bumpRep(w, enc.aSpecies, 4);
-    bumpRep(w, enc.bSpecies, 4);
-    return `The ${A} and ${B} are firm friends now — reputation rises.`;
-  }
-  if (choice === 1) {
+  const bondMsg = (() => {
+    if (choice === 0) {
+      bump(w, enc.aId, 10);
+      bump(w, enc.bId, 10);
+      bumpRep(w, enc.aSpecies, 4);
+      bumpRep(w, enc.bSpecies, 4);
+      return `The ${A} and ${B} are firm friends now — reputation rises.`;
+    }
+    if (choice === 1) {
+      bump(w, enc.aId, 5);
+      bump(w, enc.bId, 5);
+      w.credits += 40;
+      return `They knuckled down together — a tidy ¢40 of extra work.`;
+    }
+    // party
+    if (w.credits >= 60) {
+      w.credits -= 60;
+      allCrewMood(w, 8);
+      return `The whole station unwinds — morale up across the board.`;
+    }
     bump(w, enc.aId, 5);
     bump(w, enc.bId, 5);
-    w.credits += 40;
-    return `They knuckled down together — a tidy ¢40 of extra work.`;
-  }
-  // party
-  if (w.credits >= 60) {
-    w.credits -= 60;
-    allCrewMood(w, 8);
-    return `The whole station unwinds — morale up across the board.`;
-  }
-  bump(w, enc.aId, 5);
-  bump(w, enc.bId, 5);
-  return `Couldn't fund a party, but the ${A} and ${B} enjoy the moment.`;
+    return `Couldn't fund a party, but the ${A} and ${B} enjoy the moment.`;
+  })();
+  // very rarely, a bond becomes something more — encouraging it helps the odds
+  const sparks = maybeFallInLove(w, enc.aId, enc.bId, choice === 0);
+  return sparks ? `${bondMsg} And something deeper kindles between them…` : bondMsg;
 }

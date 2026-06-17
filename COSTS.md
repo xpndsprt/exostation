@@ -61,6 +61,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Climate Control | 300 | 2 | Heater + Cryo Unit |
 | Exobiology | 350 | 2 | Microbes / Live-Protein / Exo-Culture recipes (feed Sszra + exotic crews) |
 | Expanded Docking | 350 | 2 | Large Dock (needs Fuel Refining) |
+| Breathing Implants | 400 | 2 | Cross-gas love-couples can cohabit (needs Medicine) |
 | Spaceport | 700 | 3 | Spaceport Dock (needs Expanded Docking) |
 | Fungal Synthesis | 300 | 2 | Spores/Fungal recipes (feed Vry'l) |
 | Methane Life-Support | 350 | 2 | Methane Gen (host Thol) |

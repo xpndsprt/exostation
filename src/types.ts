@@ -91,7 +91,7 @@ export interface Structure {
   faultT: number; // seconds remaining of a power-surge fault (offline); 0 = fine
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court";
 
 // An open hull breach (a vented wall cell) awaiting emergency repair by crew.
 export interface Breach {
@@ -109,6 +109,9 @@ export interface Task {
 export interface Agent {
   id: number;
   species: Species;
+  name: string; // individual given name (names.ts)
+  mateId: number; // partner in a love-couple (romance.ts), -1 if single
+  implantGas: GasKind | null; // a second gas they can breathe (cross-gas-couple implants)
   guest: boolean; // transient visitor (pays lodging, departs)
   stay: number; // seconds remaining before a guest leaves (Infinity for residents)
   cell: number;
@@ -237,6 +240,32 @@ export interface BreedOffer {
   reward: number; // credits they pay if you allow it
 }
 
+// A love-couple: two crew of (usually) different species who fell for each other.
+// Their love grows by the "day"; on turbulence days a dice-roll tests whether
+// they stay together. A thriving couple thaws relations between their two species
+// and works harder. See romance.ts.
+export interface Couple {
+  id: number;
+  aId: number; // partner agent ids
+  bId: number;
+  aSpecies: Species; // captured for thaw/dialogs even if an agent dies
+  bSpecies: Species;
+  love: number; // 0..100, grows each calm day
+  day: number; // relationship age in romance-days
+  dayAcc: number; // seconds toward the next day
+  implanted: boolean; // cross-gas implants granted (they can cohabit)
+}
+
+// A romance dialog awaiting the player (one at a time, serializable).
+export interface RomancePopup {
+  kind: "fell" | "turbulence" | "breakup" | "implant";
+  title: string;
+  body: string;
+  good: boolean; // tone of the dialog (warm vs cold)
+  aSpecies: Species; // portraits
+  bSpecies: Species;
+}
+
 export type RequestKind = "host" | "happy" | "amenity";
 
 export interface StationRequest {
@@ -311,6 +340,9 @@ export interface World {
   pests: Pest[]; // spiders hatched from bad eggs, hunted by the crew
   breedOffer: BreedOffer | null; // a pending "may we lay a clutch?" dialog
   breedTimer: number; // accumulator toward the next reproduction offer
+  couples: Couple[]; // active love-couples (romance.ts)
+  relThaw: Partial<Record<Species, Partial<Record<Species, number>>>>; // per-world relation lift from couples
+  romance: RomancePopup | null; // a pending romance dialog (fell in love / turbulence / …)
 
   tick: number;
   speed: Speed;

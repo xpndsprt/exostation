@@ -1,5 +1,5 @@
 import { Species, World } from "./types";
-import { RELATIONS } from "./relations";
+import { effRelation } from "./relations";
 
 // Room harmony: how the species currently sharing a room get along. Drives a
 // productivity multiplier (work/production) and a mood term — compatible
@@ -22,7 +22,7 @@ export function harmonySystem(w: World): void {
     let n = 0;
     for (let i = 0; i < sp.length; i++)
       for (let j = i + 1; j < sp.length; j++) {
-        sum += (RELATIONS[sp[i]][sp[j]] + RELATIONS[sp[j]][sp[i]]) / 2;
+        sum += (effRelation(w, sp[i], sp[j]) + effRelation(w, sp[j], sp[i])) / 2;
         n++;
       }
     w.rooms[key].harmony = Math.max(-1, Math.min(1, sum / n / 15));

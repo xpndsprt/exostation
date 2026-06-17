@@ -1,4 +1,4 @@
-import { Species } from "./types";
+import { Species, World } from "./types";
 
 // How species A (row) feels about species B (column). Mood deltas applied per
 // nearby neighbor. Asymmetric — see the political web in GAME_DESIGN.md.
@@ -35,3 +35,11 @@ export const RELATIONS: Record<Species, Record<Species, number>> = {
   voltaar: { human: NEUTRAL, drenn: NEUTRAL, thol: DISLIKE, vryl: NEUTRAL, korro: NEUTRAL, vorn: NEUTRAL, chlorithe: DISLIKE, naaz: NEUTRAL, voltaar: KIN, sszra: NEUTRAL },
   sszra: { human: NEUTRAL, drenn: LIKE, thol: NEUTRAL, vryl: DISLIKE, korro: LIKE, vorn: NEUTRAL, chlorithe: NEUTRAL, naaz: LIKE, voltaar: NEUTRAL, sszra: KIN },
 };
+
+// How x feels about y *right now* — the innate relation plus any thaw from active
+// love-couples (romance.ts rebuilds w.relThaw). Clamped to the LOVE/HATE range so
+// a couple can melt hostility toward cooperation but never overshoot into absurdity.
+export function effRelation(w: World, x: Species, y: Species): number {
+  const v = RELATIONS[x][y] + (w.relThaw?.[x]?.[y] ?? 0);
+  return Math.max(-15, Math.min(15, v));
+}

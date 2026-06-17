@@ -1,5 +1,5 @@
 import { World } from "./types";
-import { RELATIONS } from "./relations";
+import { effRelation } from "./relations";
 import { SPECIES } from "./species";
 import { eraseAt } from "./world";
 
@@ -28,7 +28,7 @@ export function combatSystem(w: World, dt: number): void {
     let hostileNear = false;
     for (const o of agents) {
       if (o === a) continue;
-      if (RELATIONS[a.species][o.species] < 0 && manh(w, a.cell, o.cell) <= PROXIMITY) {
+      if (effRelation(w, a.species, o.species) < 0 && manh(w, a.cell, o.cell) <= PROXIMITY) {
         hostileNear = true;
         break;
       }
@@ -52,7 +52,7 @@ export function combatSystem(w: World, dt: number): void {
     let best = Infinity;
     for (const o of agents) {
       if (o === a || !o.alive) continue;
-      if (RELATIONS[a.species][o.species] >= 0) continue;
+      if (effRelation(w, a.species, o.species) >= 0) continue;
       const d = manh(w, a.cell, o.cell);
       if (d <= FIGHT_RANGE && d < best) {
         best = d;

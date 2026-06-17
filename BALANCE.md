@@ -259,6 +259,29 @@ A thriving species offers, through a paused dialog, to lay a clutch (`spawnSyste
   parent species (they hunt their spawn hardest). Serializable (`world.eggs`,
   `world.pests`, `world.breedOffer`, `world.breedTimer`).
 
+## Love & romance (`romance.ts`)
+Every agent has an individual **name** (`names.ts`, per-species pools, picked from id).
+- **Falling in love:** when a **bond** encounter resolves, a **5%** chance (**×2** if the
+  player "encouraged the friendship") that the pair become a **couple** — *different
+  species, both resident, both single*. Forms with **love 22**; both gain **+12 mood**.
+- **The calendar:** love is tracked per **romance-day = 6 s**. Each **calm day** adds
+  **+6 love** (cap 100). **Days 5/15/25/35** are **turbulence**: each partner rolls a
+  stay-die with `p = clamp(0.45 + love/160, 0.35, 0.95)`. **Both pass →** love **+10**;
+  **one fails →** love **−18** (and breakup if it hits 0); **both fail →** breakup. A
+  breakup costs each partner **−16 mood**. ~**100** turbulence flavour reasons.
+- **Global thaw (`effRelation`/`w.relThaw`):** while any couple exists, **every** species
+  pair gets **+3** to relations; each couple's **own** two species get an extra
+  **+12 × love/100** (both directions). Final relation clamped to **[−15, 15]**. This
+  feeds combat, harmony, mood and encounter classification — so love makes the station
+  more cooperative.
+- **Truly in love (love ≥ 70):** the pair **work ×1.5** (repair throughput, `loveBoost`)
+  and **seek each other out** when idle (a `court` task — they cluster, gaining a little
+  mood). Off-need they path to a breathable cell beside their mate.
+- **Implants:** with **Breathing Implants** researched (¢400, 2 Labs, needs Medicine), a
+  **truly-in-love cross-gas** couple is fitted with implants — each agent's `implantGas`
+  is set to the partner's gas, so both can breathe **both** gases and cohabit. Serializable
+  (`world.couples`, `world.relThaw`, `world.romance`; agent `name`/`mateId`/`implantGas`).
+
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).

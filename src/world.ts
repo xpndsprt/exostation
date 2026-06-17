@@ -1,5 +1,6 @@
 import { Agent, Cell, CellType, Site, Species, Structure, StructureKind, World } from "./types";
 import { GRID_W, GRID_H } from "./config";
+import { nameFor } from "./names";
 
 export const GUEST_STAY = 90; // seconds a Drenn guest stays before leaving
 
@@ -54,6 +55,9 @@ export function createWorld(): World {
     pests: [],
     breedOffer: null,
     breedTimer: 0,
+    couples: [],
+    relThaw: {},
+    romance: null,
     tick: 0,
     speed: 1,
     nextId: 1,
@@ -350,6 +354,9 @@ export function addAgent(
   const a: Agent = {
     id,
     species,
+    name: nameFor(species, id),
+    mateId: -1,
+    implantGas: null,
     guest,
     stay: guest ? GUEST_STAY : Infinity,
     cell: idx(w, x, y),

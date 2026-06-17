@@ -1,5 +1,5 @@
 import { Agent, World } from "./types";
-import { RELATIONS } from "./relations";
+import { effRelation } from "./relations";
 import { SPECIES } from "./species";
 import { beaconActive } from "./beacon";
 
@@ -35,7 +35,7 @@ export function moodBreakdown(w: World, a: Agent): MoodBreakdown {
     const ox = o.cell % w.w;
     const oy = (o.cell / w.w) | 0;
     if (Math.abs(ax - ox) + Math.abs(ay - oy) <= PROXIMITY) {
-      social += RELATIONS[a.species][o.species];
+      social += effRelation(w, a.species, o.species);
     }
   }
   social = Math.max(-SOCIAL_CLAMP, Math.min(SOCIAL_CLAMP, social));

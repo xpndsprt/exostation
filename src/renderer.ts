@@ -748,6 +748,13 @@ export class Renderer {
       // mood dot
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;
       g.circle(cx, cy - r - 5, 2.6).fill(moodColor);
+      // in-love marker: a little pink heart beside the mood dot
+      if (a.mateId >= 0) {
+        const hx = cx + r - 1, hy = cy - r - 5;
+        g.circle(hx - 1.3, hy - 0.6, 1.4).fill(0xff6fae);
+        g.circle(hx + 1.3, hy - 0.6, 1.4).fill(0xff6fae);
+        g.poly([hx - 2.6, hy, hx + 2.6, hy, hx, hy + 2.8]).fill(0xff6fae);
+      }
       // suit bar
       if (a.suit < 100) {
         const bw = r * 2;

@@ -34,6 +34,7 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "exobiology", label: "Exobiology", desc: "Set Vats to Microbes and Synths to Live-Protein or Exo-Culture — the food chains for Sszra and the exotic-gas crews.", cost: 350, labs: 2 },
   { id: "security", label: "Station Security", desc: "Build Turrets that shoot down raiders before they wreck your modules.", cost: 500, labs: 2, tool: "turret" },
   { id: "largedock", label: "Expanded Docking", desc: "Build Large Docks — bigger berths land bigger ships: more guests and more fuel sold.", cost: 350, labs: 2, tool: "docklarge", requires: ["fuelrefining"] },
+  { id: "implants", label: "Breathing Implants", desc: "Fit cross-gas lovers with implants so each can breathe the other's air — couples of different gases can finally live and work together.", cost: 400, labs: 2, requires: ["medicine"] },
   // --- Doctrine fork (2 Labs): pick ONE station specialization; it permanently
   // locks the other two. ¢ can no longer buy the whole tree in a single run. ---
   { id: "doc_industry", label: "Industrialist Doctrine", desc: "Specialize: +15% mining, food & repair across the station. Locks the other doctrines.", cost: 400, labs: 2, requires: ["robotics"], excludes: ["doc_hospitality", "doc_garrison"] },

@@ -7,6 +7,13 @@ import { productivity } from "./harmony";
 import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 import { industryBoost, highTierModule } from "./research";
 import { injure } from "./medical";
+import { loveBoost } from "./romance";
+
+// What gas an agent can breathe: its native gas, plus a partner's gas if they
+// carry cross-gas love-implants.
+function breathes(a: Agent, gas: string | undefined): boolean {
+  return gas === SPECIES[a.species].gas || (a.implantGas != null && gas === a.implantGas);
+}
 
 const REPAIR_INJURY_RATE = 0.03; // per-second injury chance servicing a high-tier module
 
@@ -49,7 +56,7 @@ export function agentSystem(w: World, dt: number): void {
 
     const cell = w.cells[a.cell];
     const room = cell.roomId >= 0 ? w.rooms[cell.roomId] : undefined;
-    const breathable = !!room && room.gas === SPECIES[a.species].gas;
+    const breathable = !!room && breathes(a, room.gas);
     if (breathable) {
       a.o2 = Math.min(100, a.o2 + O2_RECOVER * dt);
       a.suit = Math.min(100, a.suit + SUIT_RECHARGE * dt);
@@ -90,7 +97,20 @@ function advanceMovement(a: Agent, dt: number): void {
 
 function nativeAt(w: World, a: Agent, cell: number): boolean {
   const r = w.cells[cell].roomId;
-  return r >= 0 && w.rooms[r]?.gas === SPECIES[a.species].gas;
+  return r >= 0 && breathes(a, w.rooms[r]?.gas);
+}
+
+// A walkable cell next to a mate that the courting agent can breathe in.
+function courtSpot(w: World, a: Agent, mateCell: number): number {
+  const x = mateCell % w.w, y = (mateCell / w.w) | 0;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const nx = x + dx, ny = y + dy;
+    if (!inBounds(w, nx, ny)) continue;
+    const ci = idx(w, nx, ny);
+    const c = w.cells[ci];
+    if ((c.type === "floor" || c.type === "door") && nativeAt(w, a, ci)) return ci;
+  }
+  return -1;
 }
 
 function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
@@ -156,7 +176,7 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
         if (s) {
           const room = w.cells[a.cell].roomId;
           const prod = room >= 0 && w.rooms[room] ? productivity(w.rooms[room].harmony) : 1;
-          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod * aiBoost(w) * industryBoost(w);
+          const rate = REPAIR_RATE * (a.species === "thol" ? TRAITS.tholRepair : 1) * prod * aiBoost(w) * industryBoost(w) * loveBoost(w, a.id);
           s.condition = Math.min(100, s.condition + rate * dt);
           // servicing heavy, high-tier machinery (2+ Lab unlocks) risks injury;
           // Thol engineers are far more careful with it.
@@ -242,6 +262,28 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       a.task = { type: "service", target: job.cell, structureId: job.id };
       a.path = job.path;
       return;
+    }
+  }
+
+  // Lovers spend their free time together. With no pressing need or job, a
+  // partnered agent heads to their mate — if there's a spot they can breathe.
+  // Truly-in-love crew thus cluster, and (via loveBoost) work harder when they do.
+  if (a.mateId >= 0) {
+    const mate = w.agents[a.mateId];
+    if (mate && mate.alive) {
+      if (manhattan(w, a.cell, mate.cell) <= 1) {
+        a.mood = Math.min(100, a.mood + 1.5 * dt); // the contentment of company
+        return;
+      }
+      const spot = courtSpot(w, a, mate.cell);
+      if (spot >= 0) {
+        const p = findPath(w, a.cell, spot);
+        if (p) {
+          a.task = { type: "court", target: spot };
+          a.path = p;
+          return;
+        }
+      }
     }
   }
 

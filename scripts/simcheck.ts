@@ -21,6 +21,8 @@ import { combatSystem } from "../src/combat";
 import { medicalSystem, injure } from "../src/medical";
 import { resolveEncounter, encounterText } from "../src/encounters";
 import { spawnSystem, resolveBreed, BREED_REWARD, PEST_HEALTH } from "../src/spawn";
+import { romanceSystem, maybeFallInLove, coupleOf, loveBoost, isTrulyInLove, ROMANCE_DAY, LOVE_START, LOVE_PER_DAY } from "../src/romance";
+import { effRelation } from "../src/relations";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
@@ -66,6 +68,7 @@ function step(w: World) {
   spawnSystem(w, DT);
   medicalSystem(w, DT);
   economySystem(w, DT);
+  romanceSystem(w, DT);
   godsSystem(w, DT);
   requestsSystem(w, DT);
   beaconSystem(w, DT);
@@ -2072,6 +2075,108 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   w.pests.push({ id: w.nextId++, species: "human", cell: idx(w, 7, 8), health: PEST_HEALTH, moveAcc: 0 });
   for (let i = 0; i < 50; i++) spawnSystem(w, 0.1);
   check("An un-hunted spider gnaws a module's condition", syn.condition < 100);
+}
+
+// --- Love & romance: couples, the calendar, thaw, work boost, implants ---
+function newCrew(): { w: World; a: number; b: number } {
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 8, 6, "korro");
+  const ids = Object.values(w.agents).map((x) => x.id);
+  return { w, a: ids[0], b: ids[1] };
+}
+function forceCouple(w: World, a: number, b: number) {
+  for (let i = 0; i < 4000 && !coupleOf(w, a); i++) {
+    w.romance = null;
+    maybeFallInLove(w, a, b, true);
+  }
+  w.romance = null;
+  return coupleOf(w, a);
+}
+{
+  const { w, a, b } = newCrew();
+  const c = forceCouple(w, a, b);
+  check("A bond can (rarely) become a love-couple", !!c);
+  check("Both partners record the mate", w.agents[a].mateId === b && w.agents[b].mateId === a);
+}
+{
+  // a couple thaws hate between their own two species AND lifts every pair a little
+  const { w, a, b } = newCrew();
+  forceCouple(w, a, b);
+  check("A love-couple thaws their own species' hatred", effRelation(w, "human", "korro") > -15);
+  check("A love-couple warms the whole station (global thaw)", effRelation(w, "human", "thol") > -8);
+}
+{
+  // calm days grow love; with no couple there's no thaw
+  const wnone = createWorld();
+  romanceSystem(wnone, 0.1);
+  check("No couples ⇒ no relation thaw", effRelation(wnone, "human", "korro") === -15);
+
+  const { w, a, b } = newCrew();
+  const c = forceCouple(w, a, b)!;
+  c.day = 0; c.dayAcc = 0; c.love = 30;
+  for (let d = 0; d < 4; d++) romanceSystem(w, ROMANCE_DAY); // 4 calm days (exact day steps)
+  check("Love grows over calm days", c.day === 4 && c.love === 30 + 4 * LOVE_PER_DAY);
+}
+{
+  // day 5 is turbulence — a dialog always fires (dice decides stay/split)
+  const { w, a, b } = newCrew();
+  const c = forceCouple(w, a, b)!;
+  c.day = 4; c.dayAcc = 0; c.love = 95; w.romance = null;
+  for (let i = 0; i < ROMANCE_DAY * 10 + 2; i++) romanceSystem(w, 0.1);
+  check("A turbulence day raises a romance dialog", w.romance !== null);
+  check("Turbulence dialog is a turbulence/breakup card",
+    !!w.romance && (w.romance.kind === "turbulence" || w.romance.kind === "breakup"));
+}
+{
+  // truly-in-love (love >= 70) crew work +50%
+  const { w, a, b } = newCrew();
+  const c = forceCouple(w, a, b)!;
+  c.love = 40;
+  check("Below the threshold, no work boost", loveBoost(w, a) === 1 && !isTrulyInLove(w, a));
+  c.love = 80;
+  check("Truly in love ⇒ +50% work boost", loveBoost(w, a) === 1.5 && isTrulyInLove(w, a));
+}
+{
+  // implants: cross-gas lovers get breathing implants once researched + truly in love
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human"); // O₂
+  addAgent(w, 8, 6, "thol"); // CH₄ — cross-gas couple
+  const ids = Object.values(w.agents).map((x) => x.id);
+  const c = forceCouple(w, ids[0], ids[1])!;
+  c.love = 80; c.implanted = false; c.day = 1; c.dayAcc = 0; w.romance = null;
+  romanceSystem(w, 0.1); // no implants tech yet
+  check("No Implants tech ⇒ no implants granted", !c.implanted && w.agents[ids[0]].implantGas === null);
+  w.unlocked.implants = true;
+  w.romance = null;
+  romanceSystem(w, 0.1);
+  check("Implants tech ⇒ cross-gas lovers get implants", c.implanted);
+  check("Each partner can now breathe the other's gas",
+    w.agents[ids[0]].implantGas === SPECIES.thol.gas && w.agents[ids[1]].implantGas === SPECIES.human.gas);
+  check("Implant grant raises a dialog", !!w.romance && w.romance.kind === "implant");
+}
+{
+  // an implanted off-gas partner survives in the other's wing
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8); // an O₂ room
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  for (let i = 0; i < 20; i++) step(w); // fill with O₂
+  addAgent(w, 7, 7, "thol"); // a Thol stuck in O₂
+  const thol = Object.values(w.agents).find((x) => x.species === "thol")!;
+  thol.implantGas = "o2"; // implanted to breathe oxygen
+  let survived = true;
+  for (let i = 0; i < 200; i++) { step(w); if (!thol.alive) survived = false; }
+  check("An implanted partner survives in the other's air", survived && thol.o2 > 80);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

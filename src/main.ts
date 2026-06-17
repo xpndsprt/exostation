@@ -19,6 +19,7 @@ import { combatSystem } from "./combat";
 import { medicalSystem } from "./medical";
 import { encountersSystem } from "./encounters";
 import { spawnSystem, resolveBreed } from "./spawn";
+import { romanceSystem } from "./romance";
 import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
@@ -66,6 +67,8 @@ import {
   isGodOpen,
   showBreedOffer,
   isBreedOpen,
+  showRomance,
+  isRomanceOpen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -115,6 +118,7 @@ function simStep(world: World, dt: number): void {
   storySystem(world, dt);
   requestsSystem(world, dt);
   encountersSystem(world, dt);
+  romanceSystem(world, dt);
   beaconSystem(world, dt);
   objectivesSystem(world, dt);
   world.tick++;
@@ -816,6 +820,20 @@ async function boot(): Promise<void> {
           if (msg) pushAlert(msg, accept ? "info" : "warn");
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
           needRedraw = true;
+        });
+      }
+      // a romance milestone (fell in love / turbulence / breakup / implants)
+      if (
+        world.romance && world.phase === "playing" &&
+        !isRomanceOpen() && !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()
+      ) {
+        const rp = world.romance;
+        world.romance = null;
+        const resumeSpeed = world.speed || 1;
+        setSpeed(world, 0);
+        audio.play(rp.good ? "outcome-good" : "outcome-bad");
+        showRomance(rp, () => {
+          if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
       }
       renderer.draw(world, sc, overlay);

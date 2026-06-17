@@ -1,6 +1,7 @@
 import { World } from "./types";
 import { defaultRecipe, seedSolarSystem } from "./world";
 import { SPECIES } from "./species";
+import { nameFor } from "./names";
 
 const PREFIX = "exostation.save.";
 const LEGACY = "exostation.save.v1";
@@ -111,6 +112,9 @@ function sanitize(w: World): World {
     else if (a.stay == null) a.stay = 0;
     if (typeof a.fun !== "number") a.fun = 100;
     if (typeof a.injured !== "boolean") a.injured = false;
+    if (typeof a.name !== "string") a.name = nameFor(a.species, +id);
+    if (typeof a.mateId !== "number") a.mateId = -1;
+    if (a.implantGas === undefined) a.implantGas = null;
   }
   if (!Array.isArray(w.seen)) w.seen = [];
   if (!Array.isArray(w.welcomed)) w.welcomed = [];
@@ -143,6 +147,9 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.pests)) w.pests = [];
   if (w.breedOffer === undefined) w.breedOffer = null;
   if (typeof w.breedTimer !== "number") w.breedTimer = 0;
+  if (!Array.isArray(w.couples)) w.couples = [];
+  if (!w.relThaw || typeof w.relThaw !== "object") w.relThaw = {};
+  if (w.romance === undefined) w.romance = null;
   const st = w.stock as unknown as { spores?: number; microbes?: number; fuel?: number; meals: unknown };
   if (typeof st.spores !== "number") st.spores = 0;
   if (typeof st.microbes !== "number") st.microbes = 0;
