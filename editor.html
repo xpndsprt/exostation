@@ -136,6 +136,7 @@
     <div class="hint" style="margin-top:5px">Pick a part, choose the <b>Stamp</b> tool, click to place. ⟳ rotates the selection.</div>
     <h4>Tone mapping</h4>
     <div id="tonePresets" class="tones"></div>
+    <div class="row" style="margin-top:6px"><label style="font-size:11px; color:var(--dim)">Strength</label><input type="range" id="toneMix" min="0" max="100" value="50" style="flex:1" /><span id="toneMixVal" style="font-size:11px; color:var(--dim); width:30px; text-align:right">50%</span></div>
     <div class="row" style="margin-top:6px">
       <input type="color" id="toneLo" value="#0a0e16" title="shadow colour" />
       <input type="color" id="toneHi" value="#6ea8ff" title="highlight colour" />
@@ -438,13 +439,15 @@ function hexToRgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 1
 function rgbToHex(r, g, b) { const f = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0"); return "#" + f(r) + f(g) + f(b); }
 function applyTone(lo, hi, all) {
   pushUndo();
+  const m = (parseInt($("toneMix").value, 10) || 0) / 100; // blend toward the toned colour
   const [lr, lg, lb] = hexToRgb(lo), [hr, hg, hb] = hexToRgb(hi);
   const states = all ? sprite.states : [sprite.states[cur]];
   states.forEach((st) => {
     for (let i = 0; i < st.pixels.length; i++) {
       const c = st.pixels[i]; if (!c) continue;
       const [r, g, b] = hexToRgb(c); const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      st.pixels[i] = rgbToHex(lr + (hr - lr) * L, lg + (hg - lg) * L, lb + (hb - lb) * L);
+      const tr = lr + (hr - lr) * L, tg = lg + (hg - lg) * L, tb = lb + (hb - lb) * L; // full duotone
+      st.pixels[i] = rgbToHex(r + (tr - r) * m, g + (tg - g) * m, b + (tb - b) * m); // mix with original
     }
   });
   render();
@@ -459,6 +462,7 @@ function renderTones() {
   });
 }
 $("toneApply").onclick = () => applyTone($("toneLo").value, $("toneHi").value, $("toneAll").checked);
+$("toneMix").oninput = (e) => { $("toneMixVal").textContent = e.target.value + "%"; };
 
 // ===== Undo (snapshot before destructive ops) =====
 const undoStack = [];
