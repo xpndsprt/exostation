@@ -189,14 +189,53 @@ function makeTexture(px: Px, w: number, h: number): Texture {
   (t.source as unknown as { scaleMode: string }).scaleMode = "nearest";
   return t;
 }
+// ---- cohesive tone-mapping pass (the editor's duotone-blend, applied to every
+// module/ship sprite at build time so the station reads as one designed set).
+// Grouped by feel; species creatures, lamps and the species-tinted bunks are
+// left untouched so identity/colour cues survive. TONE_STR=0 fully disables it.
+const TONE_STR = 0.55;
+const TONE_DUO: Record<string, [string, string]> = {
+  steel: ["#0e1420", "#aeb9c8"], // hull, walls, floor, generators, docks, silo, ships (default)
+  rust: ["#1a0d06", "#cf8a4a"], // doors, fuel/forge/ore industry, pirate raider
+  bio: ["#0a1a11", "#8fd14f"], // life: vats, synth, bloom garden, trader
+  plasma: ["#160a22", "#c463e6"], // weapons + research/AI energy: turret, lab, AI core, fusion, beacons
+};
+// Outside the station is "void" — that's the space background (COLORS.space), not
+// a sprite, so it's left as-is. Creatures, lamps, the species-tinted bunks and the
+// clean Med Bay keep their own colours.
+function toneCatOf(name: string): keyof typeof TONE_DUO | null {
+  if (name in SPECIES || name === "pod" || name === "hotel" || name === "lamp" || name === "asteroid" || name === "medbay") return null;
+  if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "raider"].includes(name)) return "rust";
+  if (["vat", "synth", "bloomgarden", "trader"].includes(name)) return "bio";
+  if (["turret", "lab", "aicore", "fusion", "cmdhub", "tradenexus"].includes(name)) return "plasma";
+  return "steel";
+}
+function hx2rgb(h: string): [number, number, number] { const s = h.replace("#", ""); return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)]; }
+function rgb2hx(r: number, g: number, b: number): string { const f = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0"); return "#" + f(r) + f(g) + f(b); }
+function tonePalette(name: string, palette: Record<string, string>): Record<string, string> {
+  const cat = toneCatOf(name);
+  if (!cat || TONE_STR <= 0) return palette;
+  const [lo, hi] = TONE_DUO[cat], [lr, lg, lb] = hx2rgb(lo), [hr, hg, hb] = hx2rgb(hi);
+  const out: Record<string, string> = {};
+  for (const k in palette) {
+    const c = palette[k];
+    if (typeof c !== "string" || c[0] !== "#") { out[k] = c; continue; }
+    const [r, g, b] = hx2rgb(c), L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const tr = lr + (hr - lr) * L, tg = lg + (hg - lg) * L, tb = lb + (hb - lb) * L;
+    out[k] = rgb2hx(r + (tr - r) * TONE_STR, g + (tg - g) * TONE_STR, b + (tb - b) * TONE_STR);
+  }
+  return out;
+}
+
 function buildTextures(): void {
   if (TEX.size) return;
   const list = (window as unknown as { SPRITES?: any[] }).SPRITES || [];
   for (const s of list) {
     const w = s.tileW * 16;
     const h = s.tileH * 16;
+    const pal = tonePalette(s.name, s.palette);
     for (const st of Object.keys(s.states)) {
-      TEX.set(`${s.name}:${st}`, makeTexture(asciiPixels(s.states[st], s.palette, w, h), w, h));
+      TEX.set(`${s.name}:${st}`, makeTexture(asciiPixels(s.states[st], pal, w, h), w, h));
     }
   }
 }
