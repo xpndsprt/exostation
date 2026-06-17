@@ -61,6 +61,8 @@ import {
   refreshStarChart,
   showIntro,
   renderStory,
+  showGodDialog,
+  isGodOpen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -782,6 +784,17 @@ async function boot(): Promise<void> {
           audio.play(/wound|hurt|brawl|sideways/i.test(msg) ? "outcome-bad" : "outcome-good");
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
           needRedraw = true;
+        });
+      }
+      // a god has rendered a verdict → pause and show its dialog (with portrait)
+      if (world.godVerdict && world.phase === "playing" && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()) {
+        const gv = world.godVerdict;
+        world.godVerdict = null;
+        const resumeSpeed = world.speed || 1;
+        setSpeed(world, 0);
+        audio.play(gv.verdict === "wrathful" ? "outcome-bad" : "outcome-good");
+        showGodDialog(gv.species, gv.verdict, () => {
+          if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
       }
       renderer.draw(world, sc, overlay);

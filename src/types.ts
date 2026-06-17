@@ -251,6 +251,7 @@ export interface World {
   ships: Ship[];
   gods: God[]; // active race-gods drifting past (gods.ts)
   godTimer: number; // accumulator toward the next god visit
+  godVerdict: { species: Species; verdict: "pleased" | "wrathful" | "neutral" } | null; // pending god-dialog popup
   rooms: Record<number, RoomInfo>;
   power: PowerState;
   stock: Stock;

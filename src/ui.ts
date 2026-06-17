@@ -16,6 +16,7 @@ import { isMuted, setMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 import { currentYear } from "./story";
+import { GODS } from "./gods";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -1179,6 +1180,34 @@ export function showEncounter(enc: Encounter, onChoose: (choice: number) => void
       onChoose(i);
     }, { once: true });
   });
+  el.classList.add("show");
+}
+
+// ---- god dialog: a race-god's verdict, with its creature portrait ----
+let godShown = false;
+export function isGodOpen(): boolean {
+  return godShown;
+}
+export function showGodDialog(species: Species, verdict: "pleased" | "wrathful" | "neutral", onClose: () => void): void {
+  const el = document.getElementById("god");
+  if (!el) {
+    onClose();
+    return;
+  }
+  godShown = true;
+  drawSpeciesArt(el.querySelector(".god-art") as HTMLCanvasElement, "god_" + species);
+  (el.querySelector(".god-name") as HTMLElement).textContent = `${GODS[species]} — god of the ${SPECIES[species].label}`;
+  const v = el.querySelector(".god-verdict") as HTMLElement;
+  v.textContent =
+    verdict === "pleased"
+      ? "It is pleased. A gift of credits and minerals descends upon the station."
+      : verdict === "wrathful"
+        ? "It is wrathful. One of your modules is unmade before your eyes."
+        : "It watches in silence, and finds you neither worthy nor wanting.";
+  v.style.color = verdict === "pleased" ? "#49d17a" : verdict === "wrathful" ? "#e24b4b" : "#aab2c4";
+  const go = el.querySelector(".god-go") as HTMLButtonElement;
+  const done = () => { el.classList.remove("show"); godShown = false; go.removeEventListener("click", done); onClose(); };
+  go.addEventListener("click", done);
   el.classList.add("show");
 }
 

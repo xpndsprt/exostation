@@ -119,6 +119,7 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.ships)) w.ships = [];
   if (!Array.isArray(w.gods)) w.gods = [];
   if (typeof w.godTimer !== "number") w.godTimer = 0;
+  if (w.godVerdict === undefined) w.godVerdict = null;
   if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
   if (typeof w.crewTimer !== "number") w.crewTimer = 0;
   if (typeof w.creditRate !== "number") w.creditRate = 0;

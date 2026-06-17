@@ -1199,4 +1199,44 @@
     s.states.suitidle = suitUp(s.states.idle);
     s.states.suitwalk = suitUp(s.states.walk);
   }
+
+  // ---- race-god creature portraits (alien sea-life) — shown in the god dialog
+  // and drifting through space. Built procedurally on a 32×32 grid, auto-outlined.
+  function god2(draw) {
+    const W = 32, H = 32, g = Array.from({ length: H }, () => Array(W).fill("."));
+    const px = (x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < W && y < H) g[y][x] = ch; };
+    const disc = (cx, cy, r, ch) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) px(cx + x, cy + y, ch); };
+    const ell = (cx, cy, rx, ry, ch) => { for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) px(cx + x, cy + y, ch); };
+    const line = (x0, y0, x1, y1, ch) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) px(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, ch); };
+    draw({ px, disc, ell, line });
+    const isB = (x, y) => x >= 0 && y >= 0 && x < W && y < H && g[y][x] !== "." && g[y][x] !== "k";
+    const out = g.map((r) => r.slice());
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (g[y][x] === "." && (isB(x - 1, y) || isB(x + 1, y) || isB(x, y - 1) || isB(x, y + 1))) out[y][x] = "k";
+    return out.map((r) => r.join(""));
+  }
+  const GOD_ART = {
+    human: god2((d) => { for (let k = 0; k < 8; k++) { const a = -1.1 + k * 0.32; d.disc(15 + Math.cos(a) * 7, 15 + Math.sin(a) * 7, 3, "b"); } d.ell(22, 9, 3, 2, "b"); d.px(25, 9, "c"); d.disc(10, 25, 2, "b"); d.disc(12, 27, 2, "b"); d.px(20, 9, "e"); }), // seahorse
+    drenn: god2((d) => { d.ell(16, 17, 9, 7, "b"); d.ell(16, 17, 6, 4, "c"); d.ell(16, 7, 3, 2, "a"); d.ell(7, 16, 3, 2, "a"); d.ell(25, 16, 3, 2, "a"); d.ell(10, 25, 2, 2, "a"); d.ell(22, 25, 2, 2, "a"); d.px(16, 6, "e"); }), // turtle
+    korro: god2((d) => { d.disc(16, 12, 7, "b"); d.px(13, 11, "e"); d.px(19, 11, "e"); for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; d.line(16, 18, 16 + Math.cos(a) * 12, 25 + Math.sin(a) * 6, "b"); } }), // octopus
+    thol: god2((d) => { d.ell(16, 17, 8, 5, "b"); d.disc(7, 12, 3, "a"); d.disc(25, 12, 3, "a"); for (let k = -2; k <= 2; k++) { d.line(10, 19, 5, 23 + k, "a"); d.line(22, 19, 27, 23 + k, "a"); } d.px(13, 15, "e"); d.px(19, 15, "e"); }), // crab
+    vryl: god2((d) => { d.ell(16, 12, 8, 6, "b"); d.ell(16, 11, 8, 2, "c"); for (let k = -3; k <= 3; k++) d.line(16 + k * 2, 17, 16 + k * 2 + k, 28, "b"); }), // jellyfish
+    vorn: god2((d) => { for (let k = 0; k < 18; k++) { const a = k * 0.55, r = 2 + k * 0.85; d.disc(16 + Math.cos(a) * r * 0.55, 16 + Math.sin(a) * r * 0.55, Math.max(1, 3 - k * 0.12), "b"); } }), // nautilus
+    chlorithe: god2((d) => { for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 - Math.PI / 2; d.line(16, 16, 16 + Math.cos(a) * 13, 16 + Math.sin(a) * 13, "b"); d.disc(16 + Math.cos(a) * 13, 16 + Math.sin(a) * 13, 2, "b"); } d.disc(16, 16, 4, "c"); }), // starfish
+    naaz: god2((d) => { for (let x = -13; x <= 13; x++) { const span = Math.max(0, 8 - Math.abs(x) * 0.55); for (let y = -span; y <= span; y++) d.px(16 + x, 14 + y, "b"); } d.line(16, 20, 16, 30, "b"); d.px(12, 12, "e"); d.px(20, 12, "e"); }), // manta ray
+    voltaar: god2((d) => { d.ell(14, 18, 8, 6, "b"); d.disc(8, 18, 3, "b"); d.line(20, 12, 25, 5, "c"); d.disc(25, 4, 2, "e"); d.px(12, 16, "e"); }), // anglerfish
+    sszra: god2((d) => { for (let x = 3; x < 29; x++) { const y = 16 + Math.sin(x * 0.5) * 6; d.disc(x, y, 2, "b"); } d.px(28, Math.round(16 + Math.sin(29 * 0.5) * 6), "e"); }), // eel
+  };
+  const GOD_PAL = {
+    human: { k: "#11151c", b: "#f0a06a", c: "#ffd0a0", a: "#e08a5a", e: "#1a2230" },
+    drenn: { k: "#11151c", b: "#6fae6f", c: "#3f7a3f", a: "#cfae7a", e: "#1a2230" },
+    korro: { k: "#11151c", b: "#c0564a", c: "#e0786a", a: "#8a2f28", e: "#ffe06a" },
+    thol: { k: "#11151c", b: "#d98a3a", c: "#b06a20", a: "#8a5320", e: "#1a2230" },
+    vryl: { k: "#11151c", b: "#8fd14f", c: "#cfeccb", a: "#5a8f3a", e: "#1a2230" },
+    vorn: { k: "#11151c", b: "#c79bd5", c: "#e0c0ec", a: "#9a6cae", e: "#1a2230" },
+    chlorithe: { k: "#11151c", b: "#9bd14a", c: "#e9ffd0", a: "#6f9a30", e: "#1a2230" },
+    naaz: { k: "#11151c", b: "#6a8fd1", c: "#a8c0ec", a: "#3a5a9a", e: "#ffe06a" },
+    voltaar: { k: "#11151c", b: "#d16a9b", c: "#f0bcd6", a: "#9a3a6c", e: "#ffffff" },
+    sszra: { k: "#11151c", b: "#57c2a8", c: "#9fe8d4", a: "#2e7a68", e: "#e8d24a" },
+  };
+  for (const sp of Object.keys(GOD_ART)) window.SPRITES.push({ name: "god_" + sp, tileW: 2, tileH: 2, palette: GOD_PAL[sp], states: { default: GOD_ART[sp] } });
 })();

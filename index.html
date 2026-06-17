@@ -324,6 +324,19 @@
     #starchart .sc-dispatch:hover:not(:disabled) { background: #3a78ec; }
     #starchart .sc-dispatch:disabled { background: #2a3445; color: #6b7488; cursor: default; }
     #starchart .sc-hint { color: #8b93a6; font-size: 11.5px; line-height: 1.45; }
+    /* god dialog */
+    #god { position: fixed; inset: 0; z-index: 66; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
+    #god.show { display: flex; }
+    #god .god-card { background: #121826; border: 1px solid #2c3445; border-radius: 16px; padding: 22px 24px;
+      width: 380px; max-width: 92vw; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,.6); }
+    #god .god-art { width: 128px; height: 128px; image-rendering: pixelated; margin: 0 auto 6px; display: block;
+      filter: drop-shadow(0 0 16px rgba(179,156,255,.5)); }
+    #god .god-tag { color: #b39cff; font-size: 10.5px; letter-spacing: .22em; }
+    #god .god-name { margin: 4px 0 10px; font-size: 19px; color: #eef2f8; }
+    #god .god-verdict { font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; }
+    #god .god-go { width: 100%; background: #2d6cdf; color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    #god .god-go:hover { background: #3a78ec; }
     /* new-station intro */
     #intro { position: fixed; inset: 0; z-index: 64; display: none; align-items: center; justify-content: center;
       background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
@@ -402,6 +415,13 @@
         <div class="sc-hint"></div>
       </div>
     </div>
+  </div></div>
+  <div id="god"><div class="god-card">
+    <canvas class="god-art"></canvas>
+    <div class="god-tag">A GOD VISITS</div>
+    <h3 class="god-name"></h3>
+    <p class="god-verdict"></p>
+    <button class="god-go" type="button">Continue</button>
   </div></div>
   <div id="intro"><div class="intro-card">
     <div class="intro-tag">SECTOR ORBIT // NEW STATION</div>

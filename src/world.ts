@@ -20,6 +20,7 @@ export function createWorld(): World {
     ships: [],
     gods: [],
     godTimer: 0,
+    godVerdict: null,
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Generous starting biomass so the synth feeds crew for a long while — the

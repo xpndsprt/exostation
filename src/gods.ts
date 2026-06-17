@@ -52,24 +52,25 @@ function judge(w: World, g: God): void {
   const name = GODS[g.species];
   const label = SPECIES[g.species].label;
   if (mood < 0) { g.verdict = "none"; return; } // species left mid-visit
+  const announce = (v: "pleased" | "wrathful" | "neutral") => { w.godVerdict = { species: g.species, verdict: v }; };
   if (mood >= GOOD) {
     w.credits += GIFT_CREDITS;
     w.stock.minerals = Math.min(storageCaps(w).minerals, w.stock.minerals + GIFT_MINERALS);
-    g.verdict = "pleased";
+    g.verdict = "pleased"; announce("pleased");
     w.notify.push(`${name} is pleased with the ${label} — a gift of ¢${GIFT_CREDITS} and ${GIFT_MINERALS} minerals.`);
   } else if (mood <= BAD) {
     const victim = wrathTarget(w);
     if (victim >= 0) {
       const k = w.structures[w.cells[victim]?.structureId]?.kind;
       eraseAt(w, victim % w.w, (victim / w.w) | 0);
-      g.verdict = "wrathful";
+      g.verdict = "wrathful"; announce("wrathful");
       w.notify.push(`${name} is wrathful — the ${label} suffer, and it unmakes your ${k ? STRUCTURES[k].label : "module"}.`);
     } else {
-      g.verdict = "neutral";
+      g.verdict = "neutral"; announce("neutral");
       w.notify.push(`${name} glares at the wretched ${label} — but finds nothing to take.`);
     }
   } else {
-    g.verdict = "neutral";
+    g.verdict = "neutral"; announce("neutral");
     w.notify.push(`${name} watches the ${label} in silence, unmoved.`);
   }
 }
