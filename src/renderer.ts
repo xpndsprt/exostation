@@ -204,9 +204,11 @@ const TONE_DUO: Record<string, [string, string]> = {
 // a sprite, so it's left as-is. Creatures, lamps, the species-tinted bunks and the
 // clean Med Bay keep their own colours.
 function toneCatOf(name: string): keyof typeof TONE_DUO | null {
-  if (name in SPECIES || name === "pod" || name === "hotel" || name === "lamp" || name === "asteroid" || name === "medbay") return null;
-  if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "raider"].includes(name)) return "rust";
-  if (["vat", "synth", "bloomgarden", "trader"].includes(name)) return "bio";
+  // untoned: creatures, lamps, species-tinted bunks, the clean Med Bay, and the
+  // hero ships (their authored palettes carry intentional engine glow / colour).
+  if (name in SPECIES || ["pod", "hotel", "lamp", "asteroid", "medbay", "shuttle", "trader", "raider"].includes(name)) return null;
+  if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "heater"].includes(name)) return "rust";
+  if (["vat", "synth", "bloomgarden", "tradehub", "cargoex"].includes(name)) return "bio";
   if (["turret", "lab", "aicore", "fusion", "cmdhub", "tradenexus"].includes(name)) return "plasma";
   return "steel";
 }

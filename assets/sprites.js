@@ -102,37 +102,36 @@
   function shuttle3() {
     const W = 48, H = 48, cx = 23.5;
     const g = Array.from({ length: H }, () => Array(W).fill("."));
-    const fill = (x0, x1, y, ch) => {
-      for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W) g[y][x] = ch;
-    };
-    // fuselage: narrow nose → full mid → tapered tail
-    for (let y = 5; y <= 43; y++) {
+    const fill = (x0, x1, y, ch) => { for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = ch; };
+    const rect = (x0, x1, y0, y1, ch) => { for (let y = y0; y <= y1; y++) fill(x0, x1, y, ch); };
+    // a heavier dropship (nose UP): blunt fuselage + twin outboard engine nacelles
+    for (let y = 4; y <= 45; y++) {
       let half;
-      if (y < 15) half = 1 + (y - 5) * 0.7;
-      else if (y < 34) half = 8;
-      else half = 8 - (y - 34) * 0.5;
-      half = Math.max(1, half);
-      fill(cx - half, cx + half, y, "h");
+      if (y < 13) half = 2 + (y - 4) * 0.8; // rounded nose
+      else if (y < 37) half = 9; // wide body
+      else half = 9 - (y - 37) * 0.6; // slight taper
+      fill(cx - Math.max(1, half), cx + Math.max(1, half), y, "h");
     }
-    // swept wings: leading edge near the body, trailing edge flaring out at y=34
-    for (let y = 23; y <= 34; y++) {
-      const outer = 8 + ((y - 23) / 11) * 12; // 8 → 20
-      fill(cx - outer, cx - 8, y, "h");
-      fill(cx + 8, cx + outer, y, "h");
-    }
-    // cockpit glass near the nose
-    for (let y = 12; y <= 20; y++) fill(cx - 3, cx + 3, y, "g");
-    // hull shadow on the rear half
-    for (let y = 34; y <= 43; y++) fill(cx - 7, cx + 7, y, "d");
-    // engine nozzles + exhaust glow at the tail
-    for (let y = 41; y <= 45; y++) {
-      fill(cx - 6, cx - 3, y, "d");
-      fill(cx + 3, cx + 6, y, "d");
-    }
-    for (let y = 44; y <= 47; y++) {
-      fill(cx - 6, cx - 3, y, "f");
-      fill(cx + 3, cx + 6, y, "f");
-    }
+    // outboard engine nacelles (pods) flanking the hull
+    rect(cx - 17, cx - 11, 16, 44, "h");
+    rect(cx + 11, cx + 17, 16, 44, "h");
+    // pylons joining the pods to the fuselage
+    rect(cx - 11, cx - 8, 25, 31, "d");
+    rect(cx + 8, cx + 11, 25, 31, "d");
+    // cockpit canopy near the nose
+    for (let y = 12; y <= 20; y++) fill(cx - 4, cx + 4, y, "g");
+    // glowing intakes at the front of each nacelle
+    rect(cx - 16, cx - 12, 17, 21, "c");
+    rect(cx + 12, cx + 16, 17, 21, "c");
+    // hull paneling/shadow on the rear
+    rect(cx - 8, cx + 8, 33, 43, "d");
+    // bright highlight stripe down the spine
+    for (let y = 6; y <= 40; y++) fill(cx - 1, cx, y, "w");
+    // exhaust: nacelles + central twin
+    rect(cx - 16, cx - 12, 44, 47, "f");
+    rect(cx + 12, cx + 16, 44, 47, "f");
+    rect(cx - 6, cx - 3, 45, 47, "f");
+    rect(cx + 3, cx + 6, 45, 47, "f");
     // trace a 1px outline: any empty cell touching the hull becomes an edge
     const isBody = (x, y) => x >= 0 && x < W && y >= 0 && y < H && g[y][x] !== "." && g[y][x] !== "k";
     const out = g.map((row) => row.slice());
@@ -149,33 +148,34 @@
   function raider3() {
     const W = 48, H = 48, cx = 23.5;
     const g = Array.from({ length: H }, () => Array(W).fill("."));
-    const fill = (x0, x1, y, ch) => {
-      for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W) g[y][x] = ch;
-    };
-    // solid delta/arrowhead: sharp nose widening to a broad swept tail
-    for (let y = 6; y <= 42; y++) {
-      const outer = 1 + ((y - 6) / 36) * 22; // 1 → 23
-      fill(cx - outer, cx + outer, y, "h");
+    const fill = (x0, x1, y, ch) => { for (let x = Math.ceil(x0); x <= Math.floor(x1); x++) if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = ch; };
+    const rect = (x0, x1, y0, y1, ch) => { for (let y = y0; y <= y1; y++) fill(x0, x1, y, ch); };
+    // a mean swept interceptor (nose UP): sharp central spike + broad delta wings
+    for (let y = 3; y <= 44; y++) {
+      const half = y < 34 ? 1 + (y - 3) * 0.18 : 6.5 - (y - 34) * 0.3;
+      fill(cx - Math.max(1, half), cx + Math.max(1, half), y, "h");
     }
-    // trailing-edge notch — carve a shallow V out of the back for a jagged look
-    for (let y = 37; y <= 42; y++) {
-      const notch = ((y - 37) / 5) * 9;
-      fill(cx - notch, cx + notch, y, ".");
+    // swept delta wings widening to sharp outboard tips
+    for (let y = 16; y <= 40; y++) {
+      const t = (y - 16) / 24;
+      const outer = 4 + t * 19; // 4 → 23
+      const inner = 4 + t * 4;
+      fill(cx - outer, cx - inner, y, "h");
+      fill(cx + inner, cx + outer, y, "h");
     }
     // rear hull shading
-    for (let y = 28; y <= 36; y++) fill(cx - 9, cx + 9, y, "d");
-    // cockpit: a red glowing slit near the nose
-    for (let y = 10; y <= 18; y++) fill(cx - 1.5, cx + 1.5, y, "c");
-    // red wing flashes near the swept tips
-    for (let y = 24; y <= 32; y++) {
-      fill(cx - 17, cx - 12, y, "r");
-      fill(cx + 12, cx + 17, y, "r");
-    }
-    // twin engine glow at the back
-    for (let y = 36; y <= 41; y++) {
-      fill(cx - 8, cx - 5, y, "f");
-      fill(cx + 5, cx + 8, y, "f");
-    }
+    rect(cx - 7, cx + 7, 26, 38, "d");
+    // trailing-edge V notch — jagged predator tail (carve through hull + shading)
+    for (let y = 35; y <= 41; y++) { const n = ((y - 35) / 6) * 9; fill(cx - n, cx + n, y, "."); }
+    // red glowing cockpit slit near the nose
+    for (let y = 8; y <= 16; y++) fill(cx - 1.5, cx + 1.5, y, "c");
+    // red wing flashes near the tips
+    for (let y = 24; y <= 34; y++) { fill(cx - 21, cx - 16, y, "r"); fill(cx + 16, cx + 21, y, "r"); }
+    // outboard engine pods + central twin — red exhaust
+    rect(cx - 20, cx - 16, 38, 46, "f");
+    rect(cx + 16, cx + 20, 38, 46, "f");
+    rect(cx - 5, cx - 2, 42, 47, "f");
+    rect(cx + 2, cx + 5, 42, 47, "f");
     const isBody = (x, y) => x >= 0 && x < W && y >= 0 && y < H && g[y][x] !== "." && g[y][x] !== "k";
     const out = g.map((row) => row.slice());
     for (let y = 0; y < H; y++)
@@ -1158,13 +1158,13 @@
       ] },
     },
     {
-      name: "shuttle", tileW: 3, tileH: 3,
-      palette: { k: "#11151c", h: "#b9c2d0", d: "#7a8395", g: "#6ea8ff", f: "#ffb347" },
+      name: "shuttle", tileW: 3, tileH: 3, // steel dropship: canopy, intakes, spine highlight
+      palette: { k: "#11151c", h: "#9aa6b8", d: "#586679", g: "#7fc0ff", f: "#ffb347", c: "#86e6ff", w: "#eef4fb" },
       states: { default: SHUTTLE_ART },
     },
     {
-      name: "trader", tileW: 3, tileH: 3,
-      palette: { k: "#11151c", h: "#6fcf97", d: "#3f8a64", g: "#bdf0d2", f: "#ffd27a" },
+      name: "trader", tileW: 3, tileH: 3, // green commerce hauler
+      palette: { k: "#11151c", h: "#6fcf97", d: "#3f8a64", g: "#bdf0d2", f: "#ffd27a", c: "#bff0e0", w: "#eafff2" },
       states: { default: SHUTTLE_ART },
     },
     {
