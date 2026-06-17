@@ -24,7 +24,7 @@ import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
-import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule } from "../src/research";
+import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule, lodgingUnlocked } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
@@ -863,6 +863,9 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   addStructure(w, "pod", 9, 7);
   addStructure(w, "pod", 10, 7); // capacity 2
   addDock(w, 11, 6);
+  // lodging is prepped per species now: one bunk for each, and Korro lodging unlocked
+  w.unlocked.robotics = true;
+  Object.values(w.structures).filter((s) => s.kind === "pod").forEach((p, i) => (p.recipe = i === 0 ? "human" : "korro"));
   addAgent(w, 6, 7, "human"); // one human already aboard
   let korro = 0;
   for (let i = 0; i < 1000; i++) {
@@ -1634,6 +1637,9 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   addStructure(w, "ch4gen", 6, 7); // methane wing
   addStructure(w, "hotel", 8, 8); // a CH₄ hotel room
   addDock(w, 11, 7);
+  // prep the hotel for Vorn (their lodging unlocks with Methane Life-Support)
+  w.unlocked.methane = true;
+  Object.values(w.structures).find((s) => s.kind === "hotel")!.recipe = "vorn";
   w.stock.meals.rations = 50;
   let vorn = 0;
   for (let i = 0; i < 2000 && vorn === 0; i++) {
@@ -1889,6 +1895,42 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   }
   check("H₂ + O₂ in one room detonates (generators destroyed)", destroyed);
   check("A hydrogen ignition blows a hull breach", breached);
+}
+
+// --- Species-prepped lodging: a bunk only houses the species it's prepped for ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "pod", 8, 7);
+  const pod = Object.values(w.structures).find((s) => s.kind === "pod")!;
+  pod.recipe = "human";
+  addAgent(w, 7, 7, "korro");
+  const korro = Object.values(w.agents)[0];
+  let slept = false;
+  for (let i = 0; i < 200; i++) {
+    korro.rest = 5; // keep it wanting sleep
+    step(w);
+    if (pod.occupantId === korro.id) slept = true;
+  }
+  check("A Korro won't use a human-prepped bunk", !slept);
+  pod.recipe = "korro";
+  for (let i = 0; i < 200; i++) {
+    korro.rest = 5;
+    step(w);
+    if (pod.occupantId === korro.id) slept = true;
+  }
+  check("A Korro uses a Korro-prepped bunk", slept);
+}
+{
+  // lodging gating: Human & Drenn are free; others need their host research
+  const w = createWorld();
+  check("Human & Drenn lodging is free", lodgingUnlocked(w, "human") && lodgingUnlocked(w, "drenn"));
+  check("Thol lodging is gated until researched", !lodgingUnlocked(w, "thol"));
+  w.unlocked.methane = true;
+  check("Methane Life-Support unlocks Thol lodging", lodgingUnlocked(w, "thol"));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

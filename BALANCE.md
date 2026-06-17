@@ -281,9 +281,21 @@ Runs right after atmosphere.
 ## Exotic food lines (Exobiology)
 A new base resource **Microbes** (Vat recipe) feeds two new food lines via the Synth: **Live-Protein** (Sszra) and **Exo-Culture** (Chlorithe/Naaz/Voltaar). Same throughput as other recipes (Vat +3/8s; Synth 2 base → 4 meals/10s). Both recipes (and Microbes) gate behind **Exobiology** (¢350, 2 Labs); the recipe cycler only offers researched lines.
 
+## Species-prepped lodging
+Crew Quarters and Hotel Rooms each store a **prepped species** in their `recipe`
+field — **only that species sleeps/lodges there**, and only if the room sits in
+that species' gas. Capacity is therefore **per species**, not a global pool.
+- **Reassign** via Select → "Reassign species" (cycles the assignable species).
+- **Gating** (`lodgingUnlocked`): **Human & Drenn are free**; every other species
+  is gated by the research that lets you host it — Korro `robotics`, Vry'l `fungal`,
+  Thol/Vorn `methane`, Chlorithe `chlorine`, Naaz `ammonia`, Voltaar `hydrogen`,
+  Sszra `exobiology`.
+- Assignable: Crew Quarters → the 8 resident species; Hotel Rooms → the 5 visitor
+  classes (Drenn/Human/Vry'l/Vorn/Thol). Defaults: pod→Human, hotel→Drenn.
+
 ## Crew immigration (M24)
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.
-- **Gates (all required):** a powered Docking Port · a free Crew Quarters (capacity = pods) · a bunk located in a room of the species' gas · `stock.meals[diet] > 0`.
+- **Gates (all required):** a powered Docking Port · a **free Crew Quarters prepped for that species** (capacity counted per species) · the bunk in a room of the species' gas · `stock.meals[diet] > 0`.
 - **Cadence:** one arrival per **12 s** while a slot is open; if no slot/eligible species, the timer holds at the threshold so a new resident appears within a tick of conditions becoming true.
 - **Species choice:** among eligible species (gas + food satisfied), the one with the **fewest currently aboard** is brought, nudging toward a diverse crew.
 - **Resident species:** Humans, Thol, Vry'l. **Drenn are visitors only** (hotel guests), never residents.

@@ -311,9 +311,9 @@ interface Found {
 }
 
 function claimBunk(w: World, a: Agent, start: number, kind: Structure["kind"]): Found | null {
-  // only bunks the agent can actually breathe at
+  // only bunks prepped for this species that it can actually breathe at
   const bunks = Object.values(w.structures).filter(
-    (s) => s.kind === kind && s.occupantId < 0 && nativeAt(w, a, s.cell),
+    (s) => s.kind === kind && s.occupantId < 0 && s.recipe === a.species && nativeAt(w, a, s.cell),
   );
   bunks.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const b of bunks) {

@@ -21,7 +21,9 @@ const FUEL_PRICE = 4; // credits per fuel unit a docking ship buys
 const CREW_INTERVAL = 12; // seconds between resident-crew shuttle arrivals
 
 // Species that live aboard as resident crew (Drenn/Vorn only ever visit as guests).
-const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro", "chlorithe", "naaz", "voltaar", "sszra"];
+export const RESIDENT_SPECIES: Species[] = ["human", "thol", "vryl", "korro", "chlorithe", "naaz", "voltaar", "sszra"];
+// Visitor species you can prep a Hotel Room for (the union of the gas guest pools).
+export const HOTEL_SPECIES: Species[] = ["drenn", "human", "vryl", "vorn", "thol"];
 // Visitor species per breathing gas — every gas gets its own "trader class" so a
 // methane wing draws paying guests too. The first entry is the standard-dock
 // visitor; larger berths cycle the whole list for a species mix. All entries
@@ -101,25 +103,25 @@ export function economySystem(w: World, dt: number): void {
   const hospitality = activeDoctrine(w) === "hospitality";
   w.credits += guests * LODGING_RATE * (hospitality ? 1.5 : 1) * dt; // Hospitality doctrine
 
-  let pods = 0; // crew capacity = Crew Quarters
   let hasTradeHub = false; // a powered Trade Hub lets traders buy minerals
   let hasCargoEx = false; // a Cargo Exchange: bigger/faster/better trades
-  const podGases = new Set<string>(); // gases of rooms that contain a bunk
-  const hotelsByGas: Record<string, number> = {}; // hotel rooms per breathable gas
-  const docks = [];
+  // Lodging is prepped per species (the room's `recipe`). A bunk only counts if it
+  // sits in that species' breathable gas. Capacity is therefore per species.
+  const podCap: Partial<Record<Species, number>> = {}; // Crew Quarters by prepped species
+  const hotelCap: Partial<Record<Species, number>> = {}; // Hotel Rooms by prepped species
+  const docks: Structure[] = [];
   let operating = 0; // powered, running modules — they cost upkeep
   for (const id in w.structures) {
     const s = w.structures[id];
     if (STRUCTURES[s.kind].draw > 0 && s.powered) operating++;
-    if (s.kind === "hotel") {
+    if (s.kind === "pod" || s.kind === "hotel") {
+      const sp = s.recipe as Species;
+      if (!SPECIES[sp]) continue;
       const rid = w.cells[s.cell].roomId;
       const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
-      if (gas === "o2" || gas === "ch4") hotelsByGas[gas] = (hotelsByGas[gas] || 0) + 1;
-    } else if (s.kind === "pod") {
-      pods++;
-      const rid = w.cells[s.cell].roomId;
-      const gas = rid >= 0 ? w.rooms[rid]?.gas : undefined;
-      if (gas) podGases.add(gas);
+      if (gas !== SPECIES[sp].gas) continue; // prepped, but not breathable here
+      const cap = s.kind === "pod" ? podCap : hotelCap;
+      cap[sp] = (cap[sp] || 0) + 1;
     } else if (isDock(s.kind)) docks.push(s);
     else if (s.kind === "tradehub" && s.powered) hasTradeHub = true;
     else if (s.kind === "cargoex" && s.powered) hasCargoEx = true;
@@ -142,7 +144,11 @@ export function economySystem(w: World, dt: number): void {
     inboundByGas[g] = (inboundByGas[g] || 0) + (sh.guests ?? 0);
   }
   const freeByGas: Record<string, number> = {};
-  for (const g of GASES) freeByGas[g] = (hotelsByGas[g] || 0) - (guestsByGas[g] || 0) - (inboundByGas[g] || 0);
+  for (const g of GASES) {
+    let cap = 0; // sum of prepped-hotel capacity across species breathing this gas
+    for (const k in hotelCap) if (SPECIES[k as Species].gas === g) cap += hotelCap[k as Species] || 0;
+    freeByGas[g] = cap - (guestsByGas[g] || 0) - (inboundByGas[g] || 0);
+  }
   const interval = SPAWN_INTERVAL * (hospitality ? 0.7 : 1) * Math.max(0.5, Math.min(1.5, 1 + (50 - getRep(w, "drenn")) / 100));
   for (const dock of docks) {
     if (!dock.powered) continue;
@@ -166,7 +172,7 @@ export function economySystem(w: World, dt: number): void {
   // slot opens later the shuttle comes as soon as the next interval ticks.
   w.crewTimer += dt;
   if (w.crewTimer >= CREW_INTERVAL) {
-    const arrived = tryCrewArrival(w, docks, residents, pods, podGases, resCount);
+    const arrived = tryCrewArrival(w, docks, podCap, resCount);
     w.crewTimer = arrived ? 0 : CREW_INTERVAL; // hold ready until a slot frees
   }
 
@@ -193,21 +199,19 @@ export function economySystem(w: World, dt: number): void {
 function tryCrewArrival(
   w: World,
   docks: Structure[],
-  residents: number,
-  pods: number,
-  podGases: Set<string>,
+  podCap: Partial<Record<Species, number>>,
   resCount: Partial<Record<Species, number>>,
 ): boolean {
-  if (residents >= pods) return false; // no free bunk
   // need a powered dock whose landing pad is free right now (one ship per pad)
   const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0 && !dockBusy(w, d));
   if (!dock) return false;
   const access = accessCell(w, dock);
   if (access < 0) return false;
 
-  // Who can we host right now: a bunk in their gas + food of their line stocked.
+  // Who can we host: a species with a FREE bunk prepped for it (capacity above the
+  // number already aboard) and food of their line stocked.
   const eligible = RESIDENT_SPECIES.filter(
-    (sp) => podGases.has(SPECIES[sp].gas) && w.stock.meals[SPECIES[sp].diet] > 0,
+    (sp) => (podCap[sp] || 0) > (resCount[sp] || 0) && w.stock.meals[SPECIES[sp].diet] > 0,
   );
   if (eligible.length === 0) return false;
   // Favour diversity: bring whichever eligible species has the fewest aboard.
@@ -266,25 +270,26 @@ function dropGuests(w: World, sh: Ship): void {
   const access = accessCell(w, dock);
   if (access < 0) return;
   const gas: GasKind = sh.gas ?? "o2";
-  // free hotels in this gas right now (a room may have been removed mid-flight)
-  let hotels = 0;
-  let guests = 0;
-  for (const id in w.structures) {
-    const s = w.structures[id];
-    if (s.kind !== "hotel") continue;
-    const rid = w.cells[s.cell].roomId;
-    if ((rid >= 0 ? w.rooms[rid]?.gas : undefined) === gas) hotels++;
-  }
-  for (const id in w.agents) {
-    const a = w.agents[id];
-    if (a.alive && a.guest && SPECIES[a.species].gas === gas) guests++;
-  }
-  const room = Math.max(0, hotels - guests);
-  const n = Math.min(sh.guests ?? 0, room);
-  const pool = GUEST_POOL[gas];
-  const variety = (sh.size ?? 1) >= 2; // large/super docks bring a species mix
-  for (let i = 0; i < n; i++) {
-    const sp = variety ? pool[i % pool.length] : pool[0];
-    addAgent(w, access % w.w, (access / w.w) | 0, sp, true);
+  // Disembark only into hotels PREPPED for each species (in its gas). Walk this
+  // gas's visitor classes, filling each species' free prepped hotels in turn.
+  let remaining = sh.guests ?? 0;
+  for (const sp of GUEST_POOL[gas]) {
+    if (remaining <= 0) break;
+    if (!SPECIES[sp]) continue;
+    let cap = 0;
+    for (const id in w.structures) {
+      const s = w.structures[id];
+      if (s.kind !== "hotel" || s.recipe !== sp) continue;
+      const rid = w.cells[s.cell].roomId;
+      if ((rid >= 0 ? w.rooms[rid]?.gas : undefined) === SPECIES[sp].gas) cap++;
+    }
+    let have = 0;
+    for (const id in w.agents) {
+      const a = w.agents[id];
+      if (a.alive && a.guest && a.species === sp) have++;
+    }
+    const n = Math.min(remaining, Math.max(0, cap - have));
+    for (let i = 0; i < n; i++) addAgent(w, access % w.w, (access / w.w) | 0, sp, true);
+    remaining -= n;
   }
 }

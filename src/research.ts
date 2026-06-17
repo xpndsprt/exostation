@@ -1,4 +1,4 @@
-import { StructureKind, World } from "./types";
+import { Species, StructureKind, World } from "./types";
 
 // Tech unlocks bought with credits at a powered Research Lab. They gate the
 // optional/advanced content so the roster and systems become a progression
@@ -54,6 +54,24 @@ export const UNLOCKS: UnlockDef[] = [
 
 export function isUnlocked(w: World, id: string): boolean {
   return !!w.unlocked[id];
+}
+
+// Lodging (Crew Quarters / Hotel Rooms) is prepped per-species. Human & Drenn are
+// free; every other species' lodging is gated by the research that lets you host
+// them anyway, so you can only prep a room for a species you've unlocked.
+const LODGING_GATE: Partial<Record<Species, string>> = {
+  korro: "robotics",
+  vryl: "fungal",
+  thol: "methane",
+  vorn: "methane",
+  chlorithe: "chlorine",
+  naaz: "ammonia",
+  voltaar: "hydrogen",
+  sszra: "exobiology",
+};
+export function lodgingUnlocked(w: World, sp: Species): boolean {
+  const gate = LODGING_GATE[sp];
+  return !gate || isUnlocked(w, gate);
 }
 
 // Does this unlock enable the given build tool (primary or one of its extras)?

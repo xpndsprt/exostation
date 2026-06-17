@@ -996,8 +996,14 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       html += `<div class="row"><span>Beacon charge</span><b>${Math.round(s.timer)}%</b></div>${bar(s.timer, "#b39cff")}`;
       html += `<div class="row"><span></span><b style="color:${act ? "#49d17a" : "#e8a33d"}">${act ? "charging" : `needs a ${SPECIES[BEACON_SPECIES[s.kind]!].label} aboard`}</b></div>`;
     }
-    if (s.kind === "pod") html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
-    else if (s.kind === "synth") {
+    if (s.kind === "pod") {
+      const sp = SPECIES[s.recipe as Species];
+      html += `<div class="row"><span>Prepped for</span><b style="color:${SP_COLOR[s.recipe as Species] ?? "#e3e7ef"}">${sp ? sp.label : "—"}</b></div>`;
+      html += `<div class="row"><span>Occupant</span><b>${s.occupantId >= 0 ? "in use" : "free"}</b></div>`;
+    } else if (s.kind === "hotel") {
+      const sp = SPECIES[s.recipe as Species];
+      html += `<div class="row"><span>Prepped for</span><b style="color:${SP_COLOR[s.recipe as Species] ?? "#e3e7ef"}">${sp ? sp.label : "—"}</b></div>`;
+    } else if (s.kind === "synth") {
       html += `<div class="row"><span>Recipe</span><b>${SYNTH_LABEL[s.recipe] ?? "Std Rations"}</b></div>`;
       html += `<div class="row"><span>Cooking</span><b>${Math.round(s.timer * 10)}%</b></div>`;
     } else if (s.kind === "vat") {
@@ -1021,7 +1027,12 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
         html += `<div class="row"><span>Target</span><b>${site.discovered ? `${site.name} · ${Math.round(site.richness)} left` : `${site.name} (unknown)`}</b></div>`;
     }
     const toggleLabel = s.on ? "Turn off" : "Turn on";
-    const recipeBtn = s.kind === "synth" || s.kind === "vat" ? `<button data-act="recipe">Switch recipe</button>` : "";
+    const recipeBtn =
+      s.kind === "synth" || s.kind === "vat"
+        ? `<button data-act="recipe">Switch recipe</button>`
+        : s.kind === "pod" || s.kind === "hotel"
+          ? `<button data-act="recipe">Reassign species</button>`
+          : "";
     const starBtn = s.kind === "bay" ? `<button data-act="starchart">🛰 Star Chart</button>` : "";
     actions =
       `<div class="actions">` +

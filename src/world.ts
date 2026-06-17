@@ -52,8 +52,10 @@ export function createWorld(): World {
 
 export const idx = (w: World, x: number, y: number): number => y * w.w + x;
 
+// For lodging (pod/hotel) the `recipe` field stores the species the room is
+// prepped for — only that species may sleep there. Defaults: crew→human, hotel→drenn.
 export const defaultRecipe = (kind: StructureKind): string =>
-  kind === "vat" ? "biomass" : kind === "synth" ? "rations" : "";
+  kind === "vat" ? "biomass" : kind === "synth" ? "rations" : kind === "pod" ? "human" : kind === "hotel" ? "drenn" : "";
 
 export const inBounds = (w: World, x: number, y: number): boolean =>
   x >= 0 && y >= 0 && x < w.w && y < w.h;

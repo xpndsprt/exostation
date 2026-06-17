@@ -1,5 +1,6 @@
 import { World } from "./types";
 import { defaultRecipe, seedSolarSystem } from "./world";
+import { SPECIES } from "./species";
 
 const PREFIX = "exostation.save.";
 const LEGACY = "exostation.save.v1";
@@ -150,6 +151,8 @@ function sanitize(w: World): World {
     if (typeof s.condition !== "number") s.condition = 100;
     if (typeof s.servicedBy !== "number") s.servicedBy = -1;
     if (typeof s.recipe !== "string") s.recipe = defaultRecipe(s.kind);
+    // lodging now stores a prepped species in `recipe`; backfill legacy "" bunks
+    if ((s.kind === "pod" || s.kind === "hotel") && !(s.recipe in SPECIES)) s.recipe = defaultRecipe(s.kind);
     if (typeof s.faultT !== "number") s.faultT = 0;
   }
   // Sites became orbital bodies (no grid cell). A legacy save has on-grid sites

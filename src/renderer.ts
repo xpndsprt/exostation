@@ -1,5 +1,5 @@
 import { CanvasSource, Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
-import { World, Structure, StructureKind } from "./types";
+import { World, Structure, StructureKind, Species } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
 import { exteriorCell } from "./world";
@@ -570,6 +570,12 @@ export class Renderer {
         sp.y = y;
         if (s.kind === "fusion" && !s.powered) sp.tint = 0x55617a; // out of fuel — dimmed
         this.structsC.addChild(sp);
+      }
+      // lodging: a small chip in the prepped species' colour
+      if (s.kind === "pod" || s.kind === "hotel") {
+        const acc = SPECIES[s.recipe as Species]?.accent;
+        if (acc !== undefined)
+          this.structFx.rect(x + 2, y + 2, 6, 6).fill(acc).stroke({ width: 1, color: 0xe6edf3, alpha: 0.5 });
       }
       // wear bar on worn-but-running machinery
       if (def.draw > 0 && s.condition > 0 && s.condition < SERVICE_THRESHOLD) {

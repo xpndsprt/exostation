@@ -16,12 +16,12 @@ import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { medicalSystem } from "./medical";
 import { encountersSystem } from "./encounters";
-import { economySystem } from "./economy";
+import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
 import { beaconSystem } from "./beacon";
 import { objectivesSystem } from "./objectives";
-import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch } from "./research";
+import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch, lodgingUnlocked } from "./research";
 import { updateSeen } from "./advisor";
 import { resolveEncounter } from "./encounters";
 import * as audio from "./audio";
@@ -64,7 +64,7 @@ import {
 import { TILE, COLORS, SIM_HZ } from "./config";
 import { STRUCTURES, costOf, isDock } from "./structures";
 import { SPECIES } from "./species";
-import { HoverTarget, OverlayMode, Phase, Selection, Speed, StructureKind, UIState, World } from "./types";
+import { HoverTarget, OverlayMode, Phase, Selection, Species, Speed, StructureKind, UIState, World } from "./types";
 
 const STEP = 1 / SIM_HZ;
 
@@ -263,6 +263,19 @@ async function boot(): Promise<void> {
     onRecipe: (id) => {
       const s = world.structures[id];
       if (!s) return;
+      // Crew Quarters / Hotel Rooms cycle the SPECIES they're prepped for (only that
+      // species sleeps there). You can prep for any species whose lodging is unlocked.
+      if (s.kind === "pod" || s.kind === "hotel") {
+        const opts = (s.kind === "pod" ? RESIDENT_SPECIES : HOTEL_SPECIES).filter((sp) => lodgingUnlocked(world, sp));
+        if (opts.length <= 1) {
+          pushAlert("Research more species to prep this room for them.", "warn");
+          return;
+        }
+        const i = opts.indexOf(s.recipe as Species);
+        s.recipe = opts[(i + 1) % opts.length];
+        needRedraw = true;
+        return;
+      }
       // Cycle within the recipes the station has actually researched. Fungal needs
       // Fungal Synthesis; the exotic chain (Microbes / Live-Protein / Exo-Culture)
       // needs Exobiology.
