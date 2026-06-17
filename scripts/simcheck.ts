@@ -26,6 +26,7 @@ import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
 import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule, lodgingUnlocked } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
+import { godsSystem, GODS } from "../src/gods";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
@@ -62,6 +63,7 @@ function step(w: World) {
   combatSystem(w, DT);
   medicalSystem(w, DT);
   economySystem(w, DT);
+  godsSystem(w, DT);
   requestsSystem(w, DT);
   beaconSystem(w, DT);
   objectivesSystem(w, DT);
@@ -1931,6 +1933,42 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Thol lodging is gated until researched", !lodgingUnlocked(w, "thol"));
   w.unlocked.methane = true;
   check("Methane Life-Support unlocks Thol lodging", lodgingUnlocked(w, "thol"));
+}
+
+// --- Race-gods: visit + judge a species' contentment ---
+{
+  check("Every species has a god", Object.keys(GODS).length === 10 && Object.values(GODS).every(Boolean));
+}
+{
+  // a content species → the god gifts credits + minerals
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human");
+  Object.values(w.agents)[0].mood = 90;
+  w.gods.push({ species: "human", x: w.w / 2, y: w.h / 2, vx: 0, vy: 0, t: 11.95, judged: false, verdict: "none" });
+  const cr0 = w.credits, min0 = w.stock.minerals;
+  for (let i = 0; i < 5; i++) godsSystem(w, 0.1); // crosses the judge time
+  check("A pleased god gifts credits + minerals", w.credits > cr0 && w.stock.minerals > min0);
+  check("Pleased verdict recorded", w.gods[0]?.verdict === "pleased");
+}
+{
+  // a wretched species → the god unmakes a module (but spares life support)
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 9, 7);
+  addAgent(w, 7, 6, "human");
+  Object.values(w.agents)[0].mood = 8;
+  const before = Object.keys(w.structures).length;
+  w.gods.push({ species: "human", x: w.w / 2, y: w.h / 2, vx: 0, vy: 0, t: 11.95, judged: false, verdict: "none" });
+  for (let i = 0; i < 5; i++) godsSystem(w, 0.1);
+  check("A wrathful god unmakes a module", Object.keys(w.structures).length < before);
+  check("Wrath spares life support", Object.values(w.structures).some((s) => s.kind === "o2gen"));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

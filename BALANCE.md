@@ -229,6 +229,17 @@ First incident at **120 s**, then every **90 s** (shrinks 5 s per 10 min, floor 
 | Raider | a pirate ship parks at a dock for **18 s**; DPS = **min(26, 8 + 0.4·poweredModules)** (scales with station value), ×**0.5** under Garrison doctrine. Chews a random non-life-support module's condition; **at 0 condition the module is destroyed (erased)** with a toast + a red attack beam in the renderer. Targets **life support too** when **no Turret has ever been built**, the station has **2+ rooms**, and the doctrine isn't Garrison. With no targetable module left it **breaches a hull wall** instead. A powered **Turret** destroys the raider instantly (before any hit) |
 - **Redundancy is the counter (M38), not blanket immunity:** life support can be hurt by a surge or raid *only* when the player skipped the cheap defenses (Battery / backup generator / Turret / Garrison). A beginner's single room is still spared (breach & raider-LS both gated on ≥2 rooms).
 
+## Race-gods (`gods.ts`)
+Each species has a Q-like god (`GODS` map). Once that race is aboard, its god
+drifts across the map (`godsSystem`): first no sooner than **180 s**, then **every
+150 s**, one at a time, entering from a side at **3 cells/s** and judging at
+**t = 12 s** (drifted over the station). It reads the **average mood of that
+species' living members**: **≥ 60 → gift ¢250 + 60 minerals**; **≤ 40 → erase one
+random non-life-support powered module** (life support spared); otherwise nothing.
+Verdict shows as a green/red ring; gods are drawn ship-sized with a distinct
+per-race form + aura (renderer `drawGods`). Serializable (`world.gods`,
+`world.godTimer`).
+
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).

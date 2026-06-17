@@ -263,6 +263,7 @@ export class Renderer {
   private dronesC = new Container();
   private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
+  private godsFx = new Graphics(); // race-gods drifting through space
   // lightmap: per-cell light buffer blitted to a W×H canvas, then drawn as a
   // bilinear-smoothed multiply sprite over the interior (soft RimWorld-style pools).
   private lightSprite = new Sprite();
@@ -292,7 +293,7 @@ export class Renderer {
     this.lightSprite.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
-      this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC,
+      this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx,
       this.lightSprite, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
@@ -336,6 +337,7 @@ export class Renderer {
     this.drawAgents(world);
     this.drawDrones(world);
     this.drawShips(world);
+    this.drawGods(world);
     this.bakeStatic(world); // placed-light shadows — recomputed only on change
     this.updateHeadlights(world); // moving per-character lamps — every frame
     this.drawOverlay(world, overlay);
@@ -822,6 +824,73 @@ export class Renderer {
         sp.y = y;
         this.dronesC.addChild(sp);
       }
+    }
+  }
+
+  // Race-gods drift through space, ship-sized and glowing, each a distinct form.
+  private drawGods(world: World): void {
+    const g = this.godsFx;
+    g.clear();
+    const pulse = 0.5 + 0.5 * Math.sin(((world.tick % 30) / 30) * Math.PI * 2);
+    for (const god of world.gods) {
+      const cx = god.x * TILE, cy = god.y * TILE, R = TILE * 1.9;
+      const col = DWELL_TINT[god.species] ?? 0xffffff;
+      // divine aura
+      g.circle(cx, cy, R * 1.6).fill({ color: col, alpha: 0.05 + 0.04 * pulse });
+      g.circle(cx, cy, R * 1.15).fill({ color: col, alpha: 0.09 + 0.05 * pulse });
+      this.godForm(g, cx, cy, R, god.species, col);
+      if (god.judged && god.verdict !== "none") {
+        const vc = god.verdict === "pleased" ? 0x49d17a : god.verdict === "wrathful" ? 0xe24b4b : 0x8b93a6;
+        g.circle(cx, cy, R * 1.75).stroke({ width: 2, color: vc, alpha: 0.55 });
+      }
+    }
+  }
+  private godForm(g: Graphics, cx: number, cy: number, R: number, sp: string, col: number): void {
+    const dark = 0x0a0e16;
+    const poly = (pts: number[][]) => g.poly(pts.flat());
+    switch (sp) {
+      case "human": // shrimp: curled segmented body + tail fan + eye
+        for (let k = 0; k < 5; k++) { const a = -0.6 + k * 0.5; g.circle(cx + Math.cos(a) * R * 0.5, cy + Math.sin(a) * R * 0.5, R * (0.5 - k * 0.06)).fill(col); }
+        poly([[cx - R * 0.7, cy + R * 0.2], [cx - R * 1.15, cy - R * 0.1], [cx - R * 1.15, cy + R * 0.55]]); g.fill(col);
+        g.circle(cx + R * 0.5, cy - R * 0.25, 2.5).fill(dark);
+        break;
+      case "drenn": // metal safe + dial
+        g.roundRect(cx - R * 0.8, cy - R * 0.8, R * 1.6, R * 1.6, R * 0.18).fill(col).stroke({ width: 2, color: dark });
+        g.circle(cx, cy, R * 0.32).fill(dark); g.circle(cx, cy, R * 0.2).fill(col);
+        g.rect(cx - R * 0.04, cy - R * 0.55, R * 0.08, R * 0.3).fill(dark);
+        break;
+      case "thol": // molten anvil-diamond
+        poly([[cx, cy - R * 0.9], [cx + R * 0.9, cy], [cx, cy + R * 0.9], [cx - R * 0.9, cy]]); g.fill(col);
+        g.rect(cx - R * 0.6, cy - R * 0.1, R * 1.2, R * 0.2).fill(0xffe06a);
+        break;
+      case "vryl": // spore cloud
+        for (const [dx, dy, r] of [[0, 0, 0.7], [0.6, -0.3, 0.45], [-0.6, 0.2, 0.5], [0.25, 0.6, 0.4], [-0.3, -0.6, 0.4]]) g.circle(cx + dx * R, cy + dy * R, R * r).fill(col);
+        break;
+      case "korro": { // craggy boulder
+        const p: number[][] = []; for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2 + 0.3; const r = R * (0.85 + ((k * 7) % 3) * 0.06); p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } poly(p); g.fill(col);
+        break;
+      }
+      case "vorn": // gold coin
+        g.ellipse(cx, cy, R * 0.95, R * 0.95).fill(col); g.ellipse(cx, cy, R * 0.62, R * 0.62).stroke({ width: 2, color: dark });
+        break;
+      case "chlorithe": // sharp crystal
+        poly([[cx, cy - R], [cx + R * 0.5, cy - R * 0.2], [cx + R * 0.32, cy + R * 0.9], [cx - R * 0.32, cy + R * 0.9], [cx - R * 0.5, cy - R * 0.2]]); g.fill(col);
+        break;
+      case "naaz": // jelly-orb + tendrils
+        g.circle(cx, cy - R * 0.2, R * 0.7).fill(col);
+        for (let k = -2; k <= 2; k++) g.moveTo(cx + k * R * 0.25, cy + R * 0.25).lineTo(cx + k * R * 0.25 + R * 0.12, cy + R * 1.1).stroke({ width: 3, color: col, alpha: 0.8 });
+        break;
+      case "voltaar": { // plasma star
+        const p: number[][] = []; for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; const r = k % 2 ? R * 0.4 : R; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } poly(p); g.fill(col);
+        g.circle(cx, cy, R * 0.3).fill(0xffffff);
+        break;
+      }
+      case "sszra": // great slitted eye
+        g.ellipse(cx, cy, R, R * 0.7).fill(col); g.ellipse(cx, cy, R * 0.5, R * 0.5).fill(dark);
+        g.ellipse(cx, cy, R * 0.12, R * 0.42).fill(0xffe06a);
+        break;
+      default:
+        g.circle(cx, cy, R * 0.8).fill(col);
     }
   }
 

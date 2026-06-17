@@ -10,6 +10,7 @@ import { fuelSystem } from "./fuel";
 import { overflowSystem } from "./overflow";
 import { atmosphereSystem } from "./atmosphere";
 import { hazardSystem } from "./hazards";
+import { godsSystem } from "./gods";
 import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
@@ -102,6 +103,7 @@ function simStep(world: World, dt: number): void {
   medicalSystem(world, dt);
   economySystem(world, dt);
   eventsSystem(world, dt);
+  godsSystem(world, dt);
   requestsSystem(world, dt);
   encountersSystem(world, dt);
   beaconSystem(world, dt);

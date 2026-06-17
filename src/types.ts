@@ -196,6 +196,20 @@ export interface Encounter {
   variant?: number; // index into the flavor pool for this pair+kind (stable text)
 }
 
+// A race's "god" — a Q-like, ship-sized being that drifts through space and visits
+// once its race is aboard. It judges that species' contentment: pleased → gifts,
+// wrathful → unmakes a module. One per species (see GODS in gods.ts).
+export interface God {
+  species: Species;
+  x: number; // cell-space float position (drifts across the map)
+  y: number;
+  vx: number; // drift velocity (cells/s)
+  vy: number;
+  t: number; // seconds since it appeared
+  judged: boolean; // has it delivered its verdict this visit?
+  verdict: "none" | "pleased" | "wrathful" | "neutral"; // for the renderer flourish
+}
+
 export type RequestKind = "host" | "happy" | "amenity";
 
 export interface StationRequest {
@@ -235,6 +249,8 @@ export interface World {
   drones: Record<number, Drone>;
   sites: Record<number, Site>;
   ships: Ship[];
+  gods: God[]; // active race-gods drifting past (gods.ts)
+  godTimer: number; // accumulator toward the next god visit
   rooms: Record<number, RoomInfo>;
   power: PowerState;
   stock: Stock;

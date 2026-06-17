@@ -167,6 +167,11 @@ The rest of the Depth Epic except replayability (M43):
   bodies are **finite** and deplete; **planets** are far/slow/rich, **asteroids** near/fast/modest;
   every body gives the same resource (minerals), only the amount differs (`seedSolarSystem`,
   `mining.ts` `docked→outbound→transit→inbound`, star-chart canvas in `ui.ts`).
+- **Race-gods:** each species has a Q-like, ship-sized **god** (`gods.ts`) that drifts
+  through space and visits once its race is aboard (~every 150s). It judges that species'
+  average mood — **pleased (≥60) gifts ¢250 + 60 minerals**, **wrathful (≤40) unmakes a
+  non-life-support module**, else watches. Distinct per-race forms (Human=shrimp, Drenn=safe,
+  …) drawn with auras + a verdict ring. Hosting a race becomes a standing obligation.
 - **Audio:** generated SFX layer (M31) + a shuffled `assets/music/` soundtrack at ~30% volume.
 - **Cinematic arrivals:** powered Docking Ports project a **3×3 landing pad** (blinking
   guide lights) into space; a 3×3 shuttle flies in from off-screen, decelerates onto the
