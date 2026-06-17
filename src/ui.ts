@@ -132,6 +132,19 @@ export function setupUI(state: UIState, world: World, handlers: UIHandlers): voi
   buildOverlayControls(handlers);
   buildSaveControls(world, handlers);
   setupCollapse();
+  setupTabs();
+}
+
+// Left dock: Build / Research / Species tabs share one panel; clicking a tab
+// shows that pane and hides the others.
+function showTab(id: string): void {
+  document.querySelectorAll<HTMLElement>("#leftpanel .lp-pane").forEach((p) => p.classList.toggle("active", p.id === id));
+  document.querySelectorAll<HTMLButtonElement>("#leftpanel .lp-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+}
+function setupTabs(): void {
+  document.querySelectorAll<HTMLButtonElement>("#leftpanel .lp-tabs button").forEach((btn) => {
+    btn.addEventListener("click", () => showTab(btn.dataset.tab || "palette"));
+  });
 }
 
 // Lower-right panels (Tech, Requests, Alienpedia, Advisor) fold/unfold when you
@@ -212,6 +225,7 @@ export function setActiveTool(tool: Tool, state: UIState): void {
   state.tool = tool;
   for (const [, b] of toolButtons) b.classList.remove("active");
   toolButtons.get(tool)?.classList.add("active");
+  showTab("palette"); // picking a tool (incl. via hotkey) reveals the Build tab
 }
 
 // Lock un-researched tools: show their name as "???" (keep the price), and

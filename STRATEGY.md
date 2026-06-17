@@ -32,8 +32,11 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 - **Capacity chips:** 👥 **crew / Crew Quarters** and 🏨 **guests / Hotel Rooms** show population vs capacity at a glance (the crew chip turns red if you somehow exceed it). 🙂 is station-average mood.
 - If your **whole crew dies and the station can no longer attract anyone** (no powered dock / no bunk in air / no food), you **lose** after a short grace period — a banner offers a fresh start.
 
+**The left dock (tabbed)**
+- The whole left panel has three tabs — **🔧 Build · 🔬 Research · 👽 Species** — click one to switch the view. Picking any build tool (incl. via hotkey) snaps you back to **Build**.
+
 **Building**
-- Pick a tool from the left **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
+- On the **Build** tab, pick a tool from the **palette** (each shows its **hotkey**). The **ghost preview** tints **green = placeable, red = blocked**; the cursor becomes **⊘** where you can't build.
 - **Floor / Wall / Erase** support **drag-rectangle** — drag out a room and the label shows the size **and running ¢ cost** (red if you can't afford it). **Floor and Erase fill the whole rectangle; Wall traces only the perimeter** (a hollow box) — so you can drag one rectangle to wall a room without filling its interior with walls. Drag **Floor** first to lay the deck, then drag **Wall** around the same area.
 - **Door** and modules place on a single click. **Modules have footprints** (e.g. generators/vats/bays/lounges are 2×2, the synth/hotel/lab 2×1, quarters/batteries/silo/turret 1×1) — the ghost shows the full footprint and turns red if it won't fit on clear floor. The **Solar** ghost marks its **wall-mounted base** so you can see which way it faces before placing.
 - **Find your modules:** **double-click a build tool** in the palette to pan-cycle the camera through every instance you've placed (and select each).
@@ -53,9 +56,9 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **First run**
 - A **Getting Started** checklist appears top-center on a fresh game and ticks off as you *seal → power → add O₂ → synth → quarters → dock*. It disappears once your first crew arrive (or hit **Skip**).
 
-**Alienpedia + Advisor (lower-right)**
+**Species (Alienpedia) + Advisor**
 - **First contact:** the very first time a species ever appears on your station, the game **pauses and shows a portrait + backstory card** for them. Dismiss with **Continue** (multiple new arrivals queue up). Afterwards they live in the Alienpedia.
-- The **Alienpedia** (top) is a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
+- The **Alienpedia** lives under the **👽 Species** tab (left dock) — a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
 - The **Advisor** (bottom-centre) shows your **current goal** (the 🎯 progress bar, at the top of the panel) and your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 
 ---
@@ -215,7 +218,7 @@ Each species (except generalist Humans) brings a **bonus**, so a mixed station o
 Traits show in the **Alienpedia** (⭐ line). The catch is always the cost: Thol need a methane wing, Vry'l need a fungal food chain, **Korro need their own O₂ wing away from Humans** — weigh the bonus against the infrastructure.
 
 ### Reputation & requests (M23) — keep each species happy with you
-Every species you've hosted holds a **reputation** of your station (0–100, starts at **50**), shown as a bar in the **Alienpedia**. It rises and falls through **requests** — short goals each species posts in the **📋 REQUESTS** panel (top-right):
+Every species you've hosted holds a **reputation** of your station (0–100, starts at **50**), shown as a bar in the **Alienpedia**. It rises and falls through **requests** — short goals each species posts in the **📋 REQUESTS** panel (bottom-right):
 - **Host *N* of us aboard** — have at least N of that species on the station.
 - **Keep us content** — get that species' average mood to **≥ 60**.
 - **Build us a Lounge** — have a Lounge (rec module) somewhere on the station.
@@ -256,7 +259,7 @@ This is the failure state the whole game is designed around.
 ---
 
 ## 12 · Research & tech (M30) — where your credits go
-Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and a 🔬 **TECH** panel (top of the right column) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
+Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and the 🔬 **Research** tab (left dock) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
 - **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)** · **Medicine (¢200 → Med Bay)**.
 - **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · **Climate Control (¢300 → Heater + Cryo Unit)** · **Exobiology (¢350 → Microbes/Live-Protein/Exo-Culture recipes for Sszra + exotic crews)** · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
 - **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*) · **Spaceport (¢700 → Spaceport Dock; *needs Expanded Docking*)**.
