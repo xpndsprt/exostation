@@ -20,6 +20,7 @@ import { moodSystem, moodBreakdown } from "../src/mood";
 import { combatSystem } from "../src/combat";
 import { medicalSystem, injure } from "../src/medical";
 import { resolveEncounter, encounterText } from "../src/encounters";
+import { spawnSystem, resolveBreed, BREED_REWARD, PEST_HEALTH } from "../src/spawn";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
@@ -62,6 +63,7 @@ function step(w: World) {
   agentSystem(w, DT);
   moodSystem(w, DT);
   combatSystem(w, DT);
+  spawnSystem(w, DT);
   medicalSystem(w, DT);
   economySystem(w, DT);
   godsSystem(w, DT);
@@ -1983,6 +1985,93 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Year count starts at 1+", currentYear(w) >= 1);
   w.tick = 1000; // 100 in-world years at 10 ticks/yr
   check("Year count advances with ticks", currentYear(w) === 101);
+}
+
+// --- Reproduction: contented species lay clutches that hatch young + spiders ---
+{
+  // a contented species (2+ residents, high mood) is offered a clutch
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 6, "human");
+  addAgent(w, 8, 6, "human");
+  for (const id in w.agents) w.agents[id].mood = 90;
+  w.tick = 2000; // past BREED_FIRST
+  w.breedTimer = 10_000; // force a roll this call
+  spawnSystem(w, 0.1);
+  check("A contented species is offered a clutch", w.breedOffer !== null && w.breedOffer!.species === "human");
+}
+{
+  // accepting lays the clutch and pays credits
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "human");
+  w.breedOffer = { species: "human", eggs: 5, reward: BREED_REWARD };
+  const c0 = w.credits;
+  resolveBreed(w, true);
+  check("Accepting a clutch lays the eggs", w.eggs.length === 5);
+  check("Accepting a clutch pays the offered credits", w.credits === c0 + BREED_REWARD);
+  check("The clutch offer clears once answered", w.breedOffer === null);
+}
+{
+  // refusing lays nothing and disheartens the species
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "human");
+  const a = Object.values(w.agents)[0];
+  a.mood = 80;
+  w.reputation.human = 50;
+  w.breedOffer = { species: "human", eggs: 5, reward: BREED_REWARD };
+  resolveBreed(w, false);
+  check("Refusing a clutch lays no eggs", w.eggs.length === 0);
+  check("Refusing dents the species' reputation", (w.reputation.human ?? 50) < 50);
+  check("Refusing dents the species' mood", a.mood < 80);
+}
+{
+  // eggs incubate, then hatch into a mix of young (crew) + spiders
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  for (let i = 0; i < 6; i++) w.eggs.push({ id: w.nextId++, species: "human", cell: idx(w, 6 + i, 6), t: 0.05 });
+  const before = Object.values(w.agents).length;
+  spawnSystem(w, 0.1); // incubation elapses → all hatch
+  const young = Object.values(w.agents).length - before;
+  const spiders = w.pests.length;
+  check("A clutch hatches (no eggs left)", w.eggs.length === 0);
+  check("Hatchlings split into young + spiders summing to the clutch", young + spiders === 6);
+}
+{
+  // crew hunt down and kill a spider (the parent species hunts hardest)
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  w.pests.push({ id: w.nextId++, species: "human", cell: idx(w, 9, 6), health: PEST_HEALTH, moveAcc: 0 });
+  addAgent(w, 9, 7, "human");
+  addAgent(w, 8, 6, "human");
+  let killed = false;
+  for (let i = 0; i < 200; i++) {
+    spawnSystem(w, 0.1);
+    if (w.pests.length === 0) { killed = true; break; }
+  }
+  check("The crew hunt down and kill a spider", killed);
+}
+{
+  // an un-hunted spider gnaws on machinery
+  const w = createWorld();
+  carve(w, 5, 5, 14, 12);
+  recomputeRooms(w);
+  addStructure(w, "synth", 7, 7);
+  const syn = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  syn.condition = 100;
+  w.pests.push({ id: w.nextId++, species: "human", cell: idx(w, 7, 8), health: PEST_HEALTH, moveAcc: 0 });
+  for (let i = 0; i < 50; i++) spawnSystem(w, 0.1);
+  check("An un-hunted spider gnaws a module's condition", syn.condition < 100);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

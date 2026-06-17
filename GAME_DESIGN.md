@@ -149,6 +149,8 @@ Every species holds an opinion of every other. Co-housing or routing rivals thro
 
 > **⚙️ Shipped.** The relations web now spans **all 10 species** (Humans, Drenn, Korro, Vry'l, Thol, Vorn, Chlorithe, Naaz, Voltaar, **Sszra**) with the full LOVE/HATE (±15) tiers. The illustrative table below predates several of these pairings; the **live, authoritative 10×10 matrix is in `src/relations.ts` / `BALANCE.md`** (e.g. Chlorithe⇄Naaz & Vry'l⇄Naaz LOVE, Naaz dislike no one, Korro⇄Sszra LIKE).
 >
+> **⚙️ Shipped — reproduction (`spawn.ts`):** a content species can ask (paused dialog) to **lay a clutch of eggs** for a credit payment; the eggs hatch into a mix of **new resident younglings** and hostile **"spiders"** the crew must hunt down. See `BALANCE.md` for the numbers.
+>
 > | feels about → | Hum | Drn | Kor | Vry | Thl | Vrn |
 > |---------------|:---:|:---:|:---:|:---:|:---:|:---:|
 > | **Humans** | — | ♥ | ✖ | · | – | · |

@@ -210,6 +210,33 @@ export interface God {
   verdict: "none" | "pleased" | "wrathful" | "neutral"; // for the renderer flourish
 }
 
+// A clutch of eggs a comfortable species lays (with your blessing) in the empty
+// floor cells of your station. After an incubation it hatches — see spawn.ts.
+export interface Egg {
+  id: number;
+  species: Species; // who laid it (and who its young/hunters will be)
+  cell: number; // floor cell it sits on
+  t: number; // seconds remaining until it hatches
+}
+
+// A hostile creature ("spider") hatched from a bad egg. It roams, bites crew and
+// gnaws modules; the parent species (and the rest of the crew) hunt it down.
+export interface Pest {
+  id: number;
+  species: Species; // the clutch it came from — that species hunts it hardest
+  cell: number;
+  health: number; // 0..100
+  moveAcc: number; // 0..1 movement accumulator
+}
+
+// A pending reproduction offer: a contented species asks to lay a clutch and
+// offers credits for your blessing. Paused dialog; one at a time (serializable).
+export interface BreedOffer {
+  species: Species;
+  eggs: number; // size of the clutch they want to lay
+  reward: number; // credits they pay if you allow it
+}
+
 export type RequestKind = "host" | "happy" | "amenity";
 
 export interface StationRequest {
@@ -280,6 +307,10 @@ export interface World {
   welcomed: Species[]; // species the Chronicler has already welcomed aboard
   story: string; // the Chronicler's current narrative line (story.ts)
   storyTimer: number; // accumulator toward the next chronicle entry
+  eggs: Egg[]; // incubating clutches laid by contented species (spawn.ts)
+  pests: Pest[]; // spiders hatched from bad eggs, hunted by the crew
+  breedOffer: BreedOffer | null; // a pending "may we lay a clutch?" dialog
+  breedTimer: number; // accumulator toward the next reproduction offer
 
   tick: number;
   speed: Speed;

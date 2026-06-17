@@ -18,6 +18,7 @@ import { moodSystem } from "./mood";
 import { combatSystem } from "./combat";
 import { medicalSystem } from "./medical";
 import { encountersSystem } from "./encounters";
+import { spawnSystem, resolveBreed } from "./spawn";
 import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
@@ -63,6 +64,8 @@ import {
   renderStory,
   showGodDialog,
   isGodOpen,
+  showBreedOffer,
+  isBreedOpen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -105,6 +108,7 @@ function simStep(world: World, dt: number): void {
   moodSystem(world, dt);
   combatSystem(world, dt);
   medicalSystem(world, dt);
+  spawnSystem(world, dt);
   economySystem(world, dt);
   eventsSystem(world, dt);
   godsSystem(world, dt);
@@ -795,6 +799,23 @@ async function boot(): Promise<void> {
         audio.play(gv.verdict === "wrathful" ? "outcome-bad" : "outcome-good");
         showGodDialog(gv.species, gv.verdict, () => {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
+        });
+      }
+      // a contented species asks to lay a clutch → pause for the player's answer
+      if (
+        world.breedOffer && world.phase === "playing" &&
+        !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()
+      ) {
+        const bo = world.breedOffer;
+        const resumeSpeed = world.speed || 1;
+        setSpeed(world, 0);
+        audio.play("encounter-bond");
+        showBreedOffer(bo.species, bo.eggs, bo.reward, (accept) => {
+          const msg = resolveBreed(world, accept);
+          audio.play(accept ? "outcome-good" : "outcome-bad");
+          if (msg) pushAlert(msg, accept ? "info" : "warn");
+          if (world.phase === "playing") setSpeed(world, resumeSpeed);
+          needRedraw = true;
         });
       }
       renderer.draw(world, sc, overlay);

@@ -1239,4 +1239,26 @@
     sszra: { k: "#11151c", b: "#57c2a8", c: "#9fe8d4", a: "#2e7a68", e: "#e8d24a" },
   };
   for (const sp of Object.keys(GOD_ART)) window.SPRITES.push({ name: "god_" + sp, tileW: 2, tileH: 2, palette: GOD_PAL[sp], states: { default: GOD_ART[sp] } });
+
+  // ---- reproduction: an egg clutch, and the spiders that hatch from bad eggs ----
+  window.SPRITES.push({
+    name: "egg", tileW: 1, tileH: 1,
+    palette: { k: "#1a1410", b: "#e8d8b0", h: "#fff6e0" },
+    states: { default: [
+      "................","................","......hkk.......",".....khbbk......",
+      ".....kbbbk......","......kkk.......","...hkk...hkk....","..khbbk.khbbk...",
+      "..kbbbk.kbbbk...","...kkk...kkk....","................",".....hkk........",
+      "....khbbk.......","....kbbbk.......",".....kkk........","................",
+    ] },
+  });
+  window.SPRITES.push({
+    name: "spider", tileW: 1, tileH: 1,
+    palette: { k: "#0c0e12", b: "#3a2233", e: "#ff3b3b" },
+    states: { default: [
+      "................","....k......k....","...k.k....k.k...","....k.kkkk.k....",
+      ".....kbbbbk.....","...kkbbbbbbkk...","..k.kbeebebk.k..",".k..kbbbbbbk..k.",
+      ".k..kbbbbbbk..k.","..k.kkbbbbkk.k..","...k..kkkk..k...","..k..k....k..k..",
+      ".k...k....k...k.",".....k....k.....","................","................",
+    ] },
+  });
 })();

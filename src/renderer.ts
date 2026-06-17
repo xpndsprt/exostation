@@ -257,6 +257,8 @@ export class Renderer {
   private shadowsC = new Container(); // module drop-shadows (below structures)
   private structsC = new Container();
   private structFx = new Graphics();
+  private critterC = new Container(); // eggs + spiders (below crew)
+  private critterFx = new Graphics();
   private agentsC = new Container();
   private agentFx = new Graphics();
   private dronesFx = new Graphics(); // route lines
@@ -294,7 +296,7 @@ export class Renderer {
     this.lightSprite.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
-      this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
+      this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
       this.lightSprite, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
@@ -335,6 +337,7 @@ export class Renderer {
     this.drawAtmosphere(world);
     // Asteroids/planets live off-map in the Star Chart now — nothing on the grid.
     this.drawStructures(world);
+    this.drawCritters(world);
     this.drawAgents(world);
     this.drawDrones(world);
     this.drawShips(world);
@@ -668,6 +671,51 @@ export class Renderer {
       cy += (ny - cy) * a.moveAcc;
     }
     return [cx, cy];
+  }
+
+  // Eggs (incubating clutches) and spiders (hatched vermin the crew hunt).
+  private drawCritters(world: World): void {
+    this.critterC.removeChildren();
+    const g = this.critterFx;
+    g.clear();
+    const pulse = 0.5 + 0.5 * Math.sin(((world.tick % 18) / 18) * Math.PI * 2);
+    const center = (cell: number): [number, number] => [
+      (cell % world.w) * TILE + TILE / 2,
+      ((cell / world.w) | 0) * TILE + TILE / 2,
+    ];
+    for (const e of world.eggs ?? []) {
+      const [cx, cy] = center(e.cell);
+      const ready = e.t < 8; // about to hatch — glow brighter
+      g.circle(cx, cy, TILE * 0.42).fill({ color: ready ? 0xe24b4b : 0xe8c349, alpha: (ready ? 0.16 : 0.08) + 0.08 * pulse });
+      const t = tex("egg", "default");
+      if (t) {
+        const sp = new Sprite(t);
+        sp.scale.set(SCALE);
+        sp.anchor.set(0.5);
+        sp.x = cx;
+        sp.y = cy;
+        this.critterC.addChild(sp);
+      }
+    }
+    for (const p of world.pests ?? []) {
+      const [cx, cy] = center(p.cell);
+      g.circle(cx, cy, TILE * 0.4).fill({ color: 0xff3b3b, alpha: 0.05 + 0.05 * pulse });
+      const t = tex("spider", "default");
+      if (t) {
+        const sp = new Sprite(t);
+        sp.scale.set(SCALE);
+        sp.anchor.set(0.5);
+        sp.x = cx;
+        sp.y = cy;
+        this.critterC.addChild(sp);
+      }
+      // health bar while wounded
+      if (p.health < 40) {
+        const r = TILE * 0.32;
+        g.rect(cx - r, cy - r - 6, r * 2, 2).fill(0x11151c);
+        g.rect(cx - r, cy - r - 6, r * 2 * (p.health / 40), 2).fill(0xe24b4b);
+      }
+    }
   }
 
   private drawAgents(world: World): void {

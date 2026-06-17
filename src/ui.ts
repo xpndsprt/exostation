@@ -1211,6 +1211,47 @@ export function showGodDialog(species: Species, verdict: "pleased" | "wrathful" 
   el.classList.add("show");
 }
 
+// ---- breed offer: a contented species asks to lay a clutch (with payment) ----
+let breedShown = false;
+export function isBreedOpen(): boolean {
+  return breedShown;
+}
+export function showBreedOffer(
+  species: Species,
+  eggs: number,
+  reward: number,
+  onChoose: (accept: boolean) => void,
+): void {
+  const el = document.getElementById("breed");
+  if (!el) {
+    onChoose(false);
+    return;
+  }
+  breedShown = true;
+  drawSpeciesArt(el.querySelector(".breed-art") as HTMLCanvasElement, species);
+  const label = SPECIES[species].label;
+  (el.querySelector(".breed-name") as HTMLElement).textContent = `The ${label} wish to breed`;
+  (el.querySelector(".breed-body") as HTMLElement).textContent =
+    `Content aboard your station, the ${label} ask leave to lay a clutch of about ${eggs} eggs in your empty quarters. ` +
+    `They offer ¢${reward} for your blessing. The clutch will incubate for a while — most will hatch as new ${label} crew, ` +
+    `but a few always come up wrong, hatching as spiders the ${label} will have to hunt down.`;
+  const yes = el.querySelector(".breed-yes") as HTMLButtonElement;
+  const no = el.querySelector(".breed-no") as HTMLButtonElement;
+  yes.textContent = `Allow it (+¢${reward})`;
+  const pick = (accept: boolean) => () => {
+    el.classList.remove("show");
+    breedShown = false;
+    yes.removeEventListener("click", yesH);
+    no.removeEventListener("click", noH);
+    onChoose(accept);
+  };
+  const yesH = pick(true);
+  const noH = pick(false);
+  yes.addEventListener("click", yesH);
+  no.addEventListener("click", noH);
+  el.classList.add("show");
+}
+
 // ---- Star Chart: the Bot Bay's orbital dispatch dialog (non-pausing) ----
 const SC_SIZE = 520; // canvas px (square)
 let scOpen = false;

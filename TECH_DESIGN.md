@@ -46,6 +46,7 @@ simStep(world, dt):              // src/main.ts
   agentSystem        // 8.  needs decay, suit/o2, utility task selection, movement
   moodSystem         // 9.  ease mood toward needs+social+harmony(+overflow) target
   combatSystem       // 10. tension -> skirmishes, deaths, collateral
+  spawnSystem        // 10a. reproduction: clutch offers, eggs hatch -> young + spiders crew hunt
   medicalSystem      // 10b. injured heal at a powered Med Bay; bleed out without one
   economySystem      // 11. upkeep sink, lodging, trade, immigration shuttles
   eventsSystem       // 12. periodic incidents (surge/breach/shock/raid — M38 teeth)

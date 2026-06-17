@@ -109,6 +109,14 @@ The rest of the Depth Epic except replayability (M43):
   Human⇄Drenn), and neighbor weight was raised to **rival needs** — layout politics now
   drive real decisions (the same-air Korro needs its own wing).
 
+### Society wave *(shipped ✓)*
+- **Reproduction (`spawn.ts`):** a thriving species (≥2 residents, avg mood ≥70) offers —
+  via a paused dialog — to lay a **clutch of eggs** for **¢1000**. Eggs incubate, then hatch
+  into a mix of **new resident younglings** and **"spiders"**: hostile vermin that bite crew
+  and gnaw modules until the **crew hunt them down** (the parent species hunting its own
+  spawn hardest). New world state `eggs`/`pests`/`breedOffer`; new `#breed` dialog + egg &
+  spider sprites; renderer `drawCritters`.
+
 ### Content & polish wave *(shipped ✓)*
 - **Lighting & shadows:** the interior is dim by default; powered emitters (a
   **Light Fixture** + generators/lounge/etc.) light their rooms via **grid

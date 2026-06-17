@@ -240,6 +240,25 @@ Verdict shows as a green/red ring; gods are drawn ship-sized with a distinct
 per-race form + aura (renderer `drawGods`). Serializable (`world.gods`,
 `world.godTimer`).
 
+## Reproduction — clutches, young & spiders (`spawn.ts`)
+A thriving species offers, through a paused dialog, to lay a clutch (`spawnSystem`
+→ `breedRoll`/`resolveBreed`):
+- **Trigger:** ≥ **2** living residents of a species, **average mood ≥ 70**, and
+  empty interior floor to nest in. First offer no sooner than **120 s**, then a
+  roll **every 90 s** (re-checks in **12 s** when nobody's ready); **one at a time**.
+- **Offer:** a clutch of **4–7 eggs** for a flat **¢1000**. Allow → bank ¢1000,
+  eggs laid on empty floor nearest their own kind. Refuse → **−8 reputation, −10
+  mood** to that species.
+- **Hatch:** each egg incubates **60 s**, then independently **50 %** becomes a new
+  resident youngling (`addAgent`) and **50 %** a **spider** (pest). No floor for a
+  youngling → it hatches as a spider instead.
+- **Spiders** (`Pest`, **40 HP**, **2.2 cells/s**): stalk the nearest person; at
+  melee **bite −5 health/s** (can kill — `killAgent` frees its claims); with no
+  crew within **2** tiles, **gnaw −10 condition/s** off adjacent machinery. Crew
+  within **2** tiles deal **power × 0.5 HP/s** each, **×1.8** for the spider's own
+  parent species (they hunt their spawn hardest). Serializable (`world.eggs`,
+  `world.pests`, `world.breedOffer`, `world.breedTimer`).
+
 ## Korro — same-air rival (M25)
 The first implemented rival that breathes **O₂** (the rest of the roster splits by gas), so room-harmony/tension finally engages for co-habiting species.
 - **Profile:** O₂ · Rations · Combat Power **25** · resident crew (immigrates like Humans/Thol/Vry'l).

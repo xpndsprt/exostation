@@ -337,6 +337,23 @@
     #god .god-verdict { font-size: 13.5px; line-height: 1.55; margin: 0 0 16px; }
     #god .god-go { width: 100%; background: #2d6cdf; color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 14px; font-weight: 600; cursor: pointer; }
     #god .god-go:hover { background: #3a78ec; }
+    /* breed offer (a contented species asks to lay a clutch) */
+    #breed { position: fixed; inset: 0; z-index: 66; display: none; align-items: center; justify-content: center;
+      background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
+    #breed.show { display: flex; }
+    #breed .breed-card { background: #121826; border: 1px solid #2c3445; border-radius: 16px; padding: 22px 24px;
+      width: 400px; max-width: 92vw; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,.6); }
+    #breed .breed-art { width: 96px; height: 96px; image-rendering: pixelated; margin: 0 auto 4px; display: block;
+      filter: drop-shadow(0 0 12px rgba(120,220,150,.45)); }
+    #breed .breed-tag { color: #7fdc96; font-size: 10.5px; letter-spacing: .22em; }
+    #breed .breed-name { margin: 4px 0 10px; font-size: 19px; color: #eef2f8; }
+    #breed .breed-body { font-size: 13px; line-height: 1.55; color: #cdd4e0; margin: 0 0 16px; }
+    #breed .breed-choices { display: flex; gap: 8px; }
+    #breed .breed-choices button { flex: 1; border: none; border-radius: 9px; padding: 11px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+    #breed .breed-yes { background: #2f9e57; color: #fff; }
+    #breed .breed-yes:hover { background: #37b463; }
+    #breed .breed-no { background: #1c2230; color: #c3cbdc; border: 1px solid #2c3445 !important; }
+    #breed .breed-no:hover { background: #243150; }
     /* new-station intro */
     #intro { position: fixed; inset: 0; z-index: 64; display: none; align-items: center; justify-content: center;
       background: rgba(6,9,16,.82); backdrop-filter: blur(4px); }
@@ -422,6 +439,16 @@
     <h3 class="god-name"></h3>
     <p class="god-verdict"></p>
     <button class="god-go" type="button">Continue</button>
+  </div></div>
+  <div id="breed"><div class="breed-card">
+    <canvas class="breed-art"></canvas>
+    <div class="breed-tag">A SPECIES THRIVES</div>
+    <h3 class="breed-name"></h3>
+    <p class="breed-body"></p>
+    <div class="breed-choices">
+      <button class="breed-no" type="button">Refuse</button>
+      <button class="breed-yes" type="button">Allow it</button>
+    </div>
   </div></div>
   <div id="intro"><div class="intro-card">
     <div class="intro-tag">SECTOR ORBIT // NEW STATION</div>

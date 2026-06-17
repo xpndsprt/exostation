@@ -139,6 +139,10 @@ function sanitize(w: World): World {
   if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
   if (!Array.isArray(w.requests)) w.requests = [];
   if (typeof w.reqTimer !== "number") w.reqTimer = 0;
+  if (!Array.isArray(w.eggs)) w.eggs = [];
+  if (!Array.isArray(w.pests)) w.pests = [];
+  if (w.breedOffer === undefined) w.breedOffer = null;
+  if (typeof w.breedTimer !== "number") w.breedTimer = 0;
   const st = w.stock as unknown as { spores?: number; microbes?: number; fuel?: number; meals: unknown };
   if (typeof st.spores !== "number") st.spores = 0;
   if (typeof st.microbes !== "number") st.microbes = 0;
