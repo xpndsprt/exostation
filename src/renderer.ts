@@ -1,5 +1,5 @@
 import { CanvasSource, Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
-import { World, Structure, StructureKind, Species } from "./types";
+import { World, Structure, StructureKind, Species, Ship } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
 import { exteriorCell } from "./world";
@@ -963,26 +963,64 @@ export class Renderer {
       }
     }
 
-    // ship positions: shuttles fly along the dock's outward axis. "in" eases out
-    // toward the pad from off-screen, "out" eases away; legacy/raiders just sit.
-    const ease = (p: number) => 1 - Math.pow(1 - p, 3); // decelerate
-    const FAR = TILE * 16; // off-screen approach distance
-    const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number; scale?: number }[] = [];
-    for (const ship of world.ships) {
+    // Star-Trek-style flight: a shuttle banks in along a wide orbital ARC around
+    // the station (engines lit), lines up on the dock's outward axis, then CUTS
+    // thrust and coasts — drifting slowly straight onto the pad. Departure mirrors
+    // it: drift off the pad, ignite, then bank away into the arc. Raiders/legacy
+    // ships just sit on the pad.
+    const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const smooth = (t: number) => { const c = clamp01(t); return c * c * (3 - 2 * c); };
+    const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
+    const FAR = TILE * 18; // arc entry radius (off-screen)
+    const STANDOFF = TILE * 9; // where the arc ends and the engine-off coast begins
+    const ORBIT = TILE * 5; // arc-centre offset inside the hull (pad radius)
+    const ARC = 2.4; // radians swept while circling the station
+    // Position (and thrust 0..1) of a ship at flight progress `prog`.
+    const flightPos = (ship: Ship, prog: number): { x: number; y: number; thrust: number } => {
       const padX = (ship.cell % world.w) * TILE + TILE / 2 + (ship.dx ?? 0) * TILE;
       const padY = ((ship.cell / world.w) | 0) * TILE + TILE / 2 + (ship.dy ?? 0) * TILE;
-      let dist = 0;
-      if (ship.phase === "in") dist = FAR * (1 - ease(ship.prog ?? 0));
-      else if (ship.phase === "out") dist = FAR * (1 - ease(1 - (ship.prog ?? 0)));
-      const x = padX + (ship.dx ?? 0) * dist;
-      const y = padY + (ship.dy ?? 0) * dist;
-      // nose points inward (toward the hull): -dir. Sprite art faces up (-y).
-      const rot = ship.dx || ship.dy ? Math.atan2(-(ship.dy ?? 0), -(ship.dx ?? 0)) + Math.PI / 2 : 0;
+      if (ship.phase !== "in" && ship.phase !== "out") return { x: padX, y: padY, thrust: 0 };
+      const axis = Math.atan2(ship.dy ?? 0, ship.dx ?? 0); // outward (away from hull)
+      const ox = padX - (ship.dx ?? 0) * ORBIT, oy = padY - (ship.dy ?? 0) * ORBIT; // arc centre
+      const dir = ship.cell % 2 === 0 ? 1 : -1; // bank left or right, stable per pad
+      let ang = axis, rad = ORBIT, thrust = 0;
+      const p = clamp01(prog);
+      if (ship.phase === "in") {
+        if (p < 0.6) { const u = easeOut(p / 0.6); ang = axis + dir * ARC * (1 - u); rad = lerp(FAR, STANDOFF, u); thrust = 1; }
+        else { const v = smooth((p - 0.6) / 0.4); ang = axis; rad = lerp(STANDOFF, ORBIT, v); thrust = 0; } // engines off — drift in
+      } else {
+        if (p < 0.35) { const v = smooth(p / 0.35); ang = axis; rad = lerp(ORBIT, STANDOFF, v); thrust = p / 0.35; } // ignite, lift off
+        else { const u = (p - 0.35) / 0.65; ang = axis + dir * ARC * u; rad = lerp(STANDOFF, FAR, easeOut(u)); thrust = 1; } // bank away
+      }
+      return { x: ox + Math.cos(ang) * rad, y: oy + Math.sin(ang) * rad, thrust };
+    };
+    const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number; scale?: number }[] = [];
+    for (const ship of world.ships) {
+      const here = flightPos(ship, ship.prog ?? 0);
+      const ahead = flightPos(ship, clamp01((ship.prog ?? 0) + 0.02));
+      const x = here.x, y = here.y;
+      // nose points along the direction of travel (banking); fall back to facing
+      // the hull when stationary. Sprite art faces up (-y).
+      let hx = ahead.x - x, hy = ahead.y - y;
+      if (Math.hypot(hx, hy) < 0.01) { hx = -(ship.dx ?? 0); hy = -(ship.dy ?? 0); }
+      const rot = hx || hy ? Math.atan2(hy, hx) + Math.PI / 2 : 0;
+      const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
       // arrival ring around a parked shuttle
       if (ship.phase === "wait" || ship.phase === undefined) {
         const r = TILE * (0.55 + 0.22 * Math.sin(phase * Math.PI * 2));
         const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
         g.circle(x, y, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
+      }
+      // engine plume behind the nose while thrusting (off during the coast → drift)
+      if (here.thrust > 0.03 && !ship.hostile) {
+        const len = Math.hypot(hx, hy) || 1;
+        const fxu = hx / len, fyu = hy / len;
+        for (let k = 1; k <= 4; k++) {
+          const f = k / 4;
+          const tx = x - fxu * TILE * 1.1 * f * sizeMul, ty = y - fyu * TILE * 1.1 * f * sizeMul;
+          g.circle(tx, ty, (1 - f) * 4.5 * sizeMul + 1).fill({ color: f < 0.4 ? 0xfff0c0 : 0xff8a3a, alpha: here.thrust * (1 - f) * 0.55 });
+        }
       }
       // raider attack beam — a pulsing red bolt to the module it's wrecking
       if (ship.hostile && (world.raidTarget ?? -1) >= 0) {
@@ -991,8 +1029,6 @@ export class Renderer {
         g.moveTo(x, y).lineTo(tx, ty).stroke({ width: 2.5, color: 0xff5a3a, alpha: 0.5 + 0.4 * Math.abs(Math.sin(phase * Math.PI * 2)) });
         g.circle(tx, ty, TILE * (0.3 + 0.12 * Math.sin(phase * Math.PI * 2))).stroke({ width: 2, color: 0xff3b2a, alpha: 0.85 });
       }
-      // raiders fly the pirate craft; bigger berths land bigger shuttles
-      const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
       sprites.push({
         t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
         x, y, c: true, rot, scale: SCALE * sizeMul,

@@ -671,6 +671,30 @@ export function hideEndBanner(): void {
   document.getElementById("endbanner")?.classList.remove("show");
 }
 
+// The defeat screen: a post-mortem (why the station died) and a brutal letter
+// from the Emperor, with a single Continue button at the bottom (→ new station).
+let defeatShown = false;
+export function isDefeatOpen(): boolean {
+  return defeatShown;
+}
+export function showDefeat(reasons: string[], letter: string, onContinue: () => void): void {
+  const el = document.getElementById("defeat");
+  if (!el) {
+    onContinue();
+    return;
+  }
+  defeatShown = true;
+  (el.querySelector(".def-reasons") as HTMLElement).innerHTML =
+    `<h4>Cause of death</h4><ul>${reasons.map((r) => `<li>${r}</li>`).join("")}</ul>`;
+  (el.querySelector(".def-letter") as HTMLElement).innerHTML =
+    letter.split("\n\n").map((p) => `<p>${p}</p>`).join("");
+  const go = el.querySelector(".def-go") as HTMLButtonElement;
+  const done = () => { el.classList.remove("show"); defeatShown = false; go.removeEventListener("click", done); onContinue(); };
+  go.addEventListener("click", done);
+  el.scrollTop = 0;
+  el.classList.add("show");
+}
+
 // Compact hover tooltip.
 export function showTooltip(world: World, target: HoverTarget, x: number, y: number): void {
   const tip = document.getElementById("tooltip");

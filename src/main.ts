@@ -20,6 +20,7 @@ import { medicalSystem } from "./medical";
 import { encountersSystem } from "./encounters";
 import { spawnSystem, resolveBreed } from "./spawn";
 import { romanceSystem } from "./romance";
+import { defeatReasons, emperorLetter } from "./defeat";
 import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { eventsSystem } from "./events";
 import { requestsSystem } from "./requests";
@@ -69,6 +70,7 @@ import {
   isBreedOpen,
   showRomance,
   isRomanceOpen,
+  showDefeat,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -228,8 +230,14 @@ async function boot(): Promise<void> {
     known.clear();
     prevPhase = "playing";
     prevObjectiveIx = world.objectiveIx;
+    // Wipe any leftover UI from the previous station: close every open modal/dialog
+    // and reset the camera zoom so the fresh scene starts from a clean slate.
+    for (const m of ["god", "encounter", "breed", "romance", "defeat", "starchart", "saves", "endbanner", "firstcontact"])
+      document.getElementById(m)?.classList.remove("show");
+    cam.scale = createCamera().scale;
     setSpeed(world, 1);
     recenter();
+    renderer.clearCursor();
     needRedraw = true;
     launchIntro(); // a deliberate new station always gets the briefing
   };
@@ -758,7 +766,7 @@ async function boot(): Promise<void> {
       } else if (world.phase === "lost") {
         setSpeed(world, 0);
         audio.play("defeat");
-        showEndBanner("lost", "New station", restart);
+        showDefeat(defeatReasons(world), emperorLetter(world), restart);
       } else {
         hideEndBanner();
       }

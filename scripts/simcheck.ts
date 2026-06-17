@@ -23,6 +23,7 @@ import { resolveEncounter, encounterText } from "../src/encounters";
 import { spawnSystem, resolveBreed, BREED_REWARD, PEST_HEALTH } from "../src/spawn";
 import { romanceSystem, maybeFallInLove, coupleOf, loveBoost, isTrulyInLove, ROMANCE_DAY, LOVE_START, LOVE_PER_DAY } from "../src/romance";
 import { effRelation } from "../src/relations";
+import { defeatReasons, emperorLetter } from "../src/defeat";
 import { economySystem } from "../src/economy";
 import { requestsSystem, getRep } from "../src/requests";
 import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
@@ -2223,6 +2224,22 @@ function forceCouple(w: World, a: number, b: number) {
     if (syn.condition >= 60) fixed = true;
   }
   check("Crew patrol to discover and fix an out-of-sight fault", fixed);
+}
+
+// --- Defeat screen: post-mortem reasons + the Emperor's letter ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 6, 6, "human");
+  Object.values(w.agents)[0].alive = false; // a wipe
+  w.stock.meals = { rations: 0, fungal: 0, protein: 0, exotic: 0 };
+  const reasons = defeatReasons(w);
+  check("Defeat lists at least one cause", reasons.length >= 1);
+  check("Defeat names the crew wipe", reasons.some((r) => /dead|resident/i.test(r)));
+  check("Defeat names the empty larder", reasons.some((r) => /larder|eat/i.test(r)));
+  const letter = emperorLetter(w);
+  check("Emperor's letter is addressed and signed", /Commander/.test(letter) && /Emperor/.test(letter));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
