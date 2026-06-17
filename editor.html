@@ -46,6 +46,13 @@
   .ind-r { background: var(--r); box-shadow: 0 0 12px rgba(255,77,82,.55); }
   .ind-g { background: var(--g); box-shadow: 0 0 12px rgba(73,209,122,.55); }
   .ind-b { background: var(--b); box-shadow: 0 0 12px rgba(77,166,255,.55); }
+  .compgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 6px; }
+  .compgrid canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; background: #0a121c;
+    border: 1px solid var(--edge2); border-radius: 4px; cursor: pointer; }
+  .compgrid canvas:hover { border-color: var(--teal-dim); }
+  .compgrid canvas.sel { outline: 2px solid var(--teal); outline-offset: 1px; }
+  .tones { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .tones button { flex: 1 1 46px; font-size: 10.5px; padding: 5px 4px; font-weight: 600; }
   #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 18px;
     background: radial-gradient(720px 520px at 50% 42%, rgba(47,214,195,.05), transparent 70%); }
   canvas#cv { image-rendering: pixelated; background: #04060b; cursor: crosshair;
@@ -104,6 +111,7 @@
       <button data-tool="erase">Erase</button>
       <button data-tool="pick">Pick</button>
       <button data-tool="fill">Fill</button>
+      <button data-tool="stamp">Stamp</button>
     </div>
     <h4>Color</h4>
     <div class="row">
@@ -119,6 +127,23 @@
       <button class="ind-b" data-ind="#4da6ff">BLUE</button>
     </div>
     <div class="hint" style="margin-top:5px">Status-light hues — red = alert, green = ok/online, blue = power.</div>
+    <h4>Components</h4>
+    <div class="row">
+      <select id="compCat"></select>
+      <button id="compRotate" title="Rotate the selected part 90°">⟳ rotate</button>
+    </div>
+    <div id="compGrid" class="compgrid"></div>
+    <div class="hint" style="margin-top:5px">Pick a part, choose the <b>Stamp</b> tool, click to place. ⟳ rotates the selection.</div>
+    <h4>Tone mapping</h4>
+    <div id="tonePresets" class="tones"></div>
+    <div class="row" style="margin-top:6px">
+      <input type="color" id="toneLo" value="#0a0e16" title="shadow colour" />
+      <input type="color" id="toneHi" value="#6ea8ff" title="highlight colour" />
+      <button id="toneApply">Apply</button>
+      <label style="font-size:11px; color:var(--dim)"><input type="checkbox" id="toneAll" /> all states</label>
+    </div>
+    <div class="row"><button id="undoBtn">↶ Undo</button></div>
+    <div class="hint" style="margin-top:5px">Re-tones the art's shadows→highlights into two colours for a cohesive mood. Undo reverts the last stamp / tone / stroke.</div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -218,6 +243,7 @@ function cellAt(e) {
 function apply(e, erasing) {
   const c = cellAt(e); if (!c) return; const p = px();
   if (tool === "pick") { const v = p[c.i]; if (v) { color = v; $("color").value = v; updateColor(); } return; }
+  if (tool === "stamp") { stampAt(c.x, c.y); return; }
   if (tool === "fill") { flood(c.x, c.y, erasing ? null : color); render(); return; }
   p[c.i] = (tool === "erase" || erasing) ? null : color; render();
 }
@@ -227,7 +253,11 @@ function flood(x, y, to) {
   while (st.length) { const [cx, cy] = st.pop(); if (cx<0||cy<0||cx>=w||cy>=h) continue; if (p[cy*w+cx] !== from) continue; p[cy*w+cx] = to; st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
 }
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
-cv.addEventListener("pointerdown", (e) => { painting = true; eraseDrag = e.button === 2; apply(e, eraseDrag); });
+cv.addEventListener("pointerdown", (e) => {
+  if (tool === "stamp") { apply(e, false); return; } // single placement, no drag
+  pushUndo(); // one snapshot per stroke
+  painting = true; eraseDrag = e.button === 2; apply(e, eraseDrag);
+});
 window.addEventListener("pointerup", () => painting = false);
 window.addEventListener("pointermove", (e) => { if (painting) apply(e, eraseDrag); });
 
@@ -251,7 +281,8 @@ function ensureStates(names) {
 
 // --- tools/color ---
 function updateColor() { $("curcolor").style.background = color; }
-document.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { tool = b.dataset.tool; document.querySelectorAll("[data-tool]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); });
+function setTool(t) { tool = t; document.querySelectorAll("[data-tool]").forEach((x) => x.classList.toggle("active", x.dataset.tool === t)); }
+document.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => setTool(b.dataset.tool));
 $("color").oninput = (e) => { color = e.target.value; updateColor(); };
 // R-Type-flavoured moody palette: void blacks, steel, teals, deep blues/purples,
 // bio greens & rust — plus the R/G/B indicators and white.
@@ -318,6 +349,128 @@ $("saveLib").onclick = () => { const o = loadLib(); const bm = bitmap(); o[bm.na
 $("importBtn").onclick = () => $("importFile").click();
 $("importFile").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { loadBitmap(JSON.parse(r.result)); } catch { alert("Bad JSON"); } }; r.readAsText(f); };
 
+// ===== Components (stampable parts) =====
+// Each part is rows of chars → its own little palette ('.' = transparent). Stamp
+// them onto the canvas, then refine with custom pixels. Styles span industrial
+// metal, fiery engines, glowing tech and organic/alien growths.
+const COMPONENTS = {
+  Pipes: [
+    { name: "Pipe", pal: { a: "#39455a", b: "#76869c" }, rows: ["aaaaaaaa", "bbbbbbbb", "aaaaaaaa"] },
+    { name: "T-pipe", pal: { a: "#39455a", b: "#76869c" }, rows: ["aaaaa", "bbbbb", "aabaa", "aabaa", "aabaa"] },
+    { name: "Valve", pal: { a: "#39455a", b: "#76869c", c: "#e8a33d" }, rows: ["..a..", "aaaaa", "abcba", "aaaaa", "..a.."] },
+    { name: "Conduit", pal: { a: "#22303f", c: "#7fe9ff" }, rows: ["aaaaaaaa", "acacacac", "aaaaaaaa"] },
+  ],
+  Engines: [
+    { name: "Nozzle", pal: { d: "#2a1d12", h: "#7a5230", f: "#ff8a3a", y: "#ffe06a" }, rows: ["dhhhhd", "dhhhhd", "dffffd", ".dffd.", ".dyyd.", "..ff.."] },
+    { name: "Thrusters", pal: { h: "#5a6678", d: "#2a1d12", f: "#ff8a3a" }, rows: ["hhhhhhh", "dfdfdfd", "f.f.f.f", ".f.f.f."] },
+    { name: "Intake", pal: { d: "#1a2230", h: "#4a5566", c: "#7fe9ff" }, rows: ["dddddd", "hcccch", "hcccch", "dddddd"] },
+    { name: "Reactor", pal: { d: "#10202a", h: "#2e6a7a", c: "#7fe9ff", w: "#e6ffff" }, rows: [".dddd.", "dhhhhd", "dhwwhd", "dhwwhd", "dhhhhd", ".dddd."] },
+  ],
+  Hull: [
+    { name: "Plate", pal: { b: "#3a4350", h: "#5a6678", y: "#8a93a6" }, rows: ["hhhhhhhh", "hbbbbbbh", "hbybbybh", "hbbbbbbh", "hbbbbbbh", "hbybbybh", "hbbbbbbh", "hhhhhhhh"] },
+    { name: "Vent", pal: { a: "#222a36", b: "#5a6678" }, rows: ["aaaaaaaa", "bbbbbbbb", "aaaaaaaa", "bbbbbbbb", "aaaaaaaa"] },
+    { name: "Window", pal: { k: "#11151c", b: "#3a4350", c: "#7fb0e8", w: "#dff0ff" }, rows: ["kkkkkkk", "kbcccbk", "kcwwwck", "kbcccbk", "kkkkkkk"] },
+    { name: "Fin", pal: { d: "#2a3340", h: "#5a6678", c: "#e24b4b" }, rows: ["h.....", "hh....", "hhc...", "hhhc..", "hhhhc.", "hhhhhc"] },
+  ],
+  Alien: [
+    { name: "Rib tube", pal: { d: "#2a1830", m: "#5a3a6c", l: "#9a6cc0" }, rows: ["dddddddd", "mlmlmlml", "llllllll", "mlmlmlml", "dddddddd"] },
+    { name: "Bio-pod", pal: { d: "#10261c", m: "#2f6e4a", l: "#7fd0a0" }, rows: ["..dd..", ".dmmd.", "dmllmd", "dmllmd", ".dmmd.", "..dd.."] },
+    { name: "Spine", pal: { d: "#241018", m: "#6c2a3a", l: "#c05a6c" }, rows: ["dmmd", "mllm", "dmmd", "mllm", "dmmd", "mllm"] },
+    { name: "Chitin", pal: { d: "#1a1410", m: "#5a4a2a", l: "#b09a5a" }, rows: ["dmmmmd", "mllllm", "dmllmd", "ddmmdd"] },
+  ],
+};
+let compCat = Object.keys(COMPONENTS)[0];
+let curComp = null; // { pal, rows } — the selected part (rotatable copy)
+
+function rotate90(rows) {
+  const h = rows.length, w = rows[0].length, out = [];
+  for (let x = 0; x < w; x++) { let r = ""; for (let y = h - 1; y >= 0; y--) r += rows[y][x]; out.push(r); }
+  return out;
+}
+function drawPart(canvas, comp, scale) {
+  const h = comp.rows.length, w = comp.rows[0].length;
+  canvas.width = w * scale; canvas.height = h * scale;
+  const o = canvas.getContext("2d");
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const ch = comp.rows[y][x]; if (ch !== "." && comp.pal[ch]) { o.fillStyle = comp.pal[ch]; o.fillRect(x * scale, y * scale, scale, scale); } }
+}
+function renderCompCat() {
+  const sel = $("compCat"); sel.innerHTML = "";
+  Object.keys(COMPONENTS).forEach((k) => { const o = document.createElement("option"); o.value = k; o.textContent = k; sel.appendChild(o); });
+  sel.value = compCat;
+}
+function renderCompGrid() {
+  const box = $("compGrid"); box.innerHTML = "";
+  COMPONENTS[compCat].forEach((comp) => {
+    const c = document.createElement("canvas");
+    const sc = Math.max(2, Math.floor(40 / Math.max(comp.rows.length, comp.rows[0].length)));
+    drawPart(c, comp, sc);
+    c.title = comp.name;
+    c.onclick = () => {
+      curComp = { pal: comp.pal, rows: comp.rows.slice() };
+      setTool("stamp");
+      box.querySelectorAll("canvas").forEach((x) => x.classList.remove("sel"));
+      c.classList.add("sel");
+    };
+    box.appendChild(c);
+  });
+}
+function stampAt(x, y) {
+  if (!curComp) return;
+  pushUndo();
+  const p = px(), W_ = W(), H_ = H();
+  for (let ry = 0; ry < curComp.rows.length; ry++) for (let rx = 0; rx < curComp.rows[ry].length; rx++) {
+    const ch = curComp.rows[ry][rx]; if (ch === "." || !curComp.pal[ch]) continue;
+    const cx = x + rx, cy = y + ry; if (cx < 0 || cy < 0 || cx >= W_ || cy >= H_) continue;
+    p[cy * W_ + cx] = curComp.pal[ch];
+  }
+  render();
+}
+$("compCat").onchange = (e) => { compCat = e.target.value; renderCompGrid(); };
+$("compRotate").onclick = () => { if (curComp) { curComp.rows = rotate90(curComp.rows); } };
+
+// ===== Tone mapping (luminance → duotone) =====
+const TONES = [
+  { n: "Void", lo: "#070b14", hi: "#6ea8ff" }, { n: "Steel", lo: "#14181f", hi: "#c4ccd6" },
+  { n: "Rust", lo: "#1c0e06", hi: "#e8a05a" }, { n: "Bio", lo: "#0a1a10", hi: "#8fd14f" },
+  { n: "Plasma", lo: "#160a1e", hi: "#d16ad0" }, { n: "Ice", lo: "#0a1622", hi: "#a8e0ff" },
+];
+function hexToRgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+function rgbToHex(r, g, b) { const f = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0"); return "#" + f(r) + f(g) + f(b); }
+function applyTone(lo, hi, all) {
+  pushUndo();
+  const [lr, lg, lb] = hexToRgb(lo), [hr, hg, hb] = hexToRgb(hi);
+  const states = all ? sprite.states : [sprite.states[cur]];
+  states.forEach((st) => {
+    for (let i = 0; i < st.pixels.length; i++) {
+      const c = st.pixels[i]; if (!c) continue;
+      const [r, g, b] = hexToRgb(c); const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      st.pixels[i] = rgbToHex(lr + (hr - lr) * L, lg + (hg - lg) * L, lb + (hb - lb) * L);
+    }
+  });
+  render();
+}
+function renderTones() {
+  const box = $("tonePresets"); box.innerHTML = "";
+  TONES.forEach((t) => {
+    const b = document.createElement("button");
+    b.textContent = t.n; b.style.background = "linear-gradient(180deg," + t.lo + "," + t.hi + ")"; b.style.color = "#fff"; b.style.borderColor = t.hi;
+    b.onclick = () => { $("toneLo").value = t.lo; $("toneHi").value = t.hi; applyTone(t.lo, t.hi, $("toneAll").checked); };
+    box.appendChild(b);
+  });
+}
+$("toneApply").onclick = () => applyTone($("toneLo").value, $("toneHi").value, $("toneAll").checked);
+
+// ===== Undo (snapshot before destructive ops) =====
+const undoStack = [];
+function pushUndo() { undoStack.push(sprite.states.map((s) => s.pixels.slice())); if (undoStack.length > 30) undoStack.shift(); }
+function undo() { const snap = undoStack.pop(); if (!snap) return; snap.forEach((pix, i) => { if (sprite.states[i]) sprite.states[i].pixels = pix; }); render(); }
+$("undoBtn").onclick = undo;
+window.addEventListener("keydown", (e) => {
+  if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+});
+
+renderCompCat(); renderCompGrid(); renderTones();
 updateColor(); renderSwatches(); refreshLibrary(); render();
 </script>
 </body>
