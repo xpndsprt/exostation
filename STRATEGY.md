@@ -51,7 +51,8 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Time & saving**
 - **Pause / 1× / 2× / 3×** (`Space` pause, `[` / `]` slower/faster).
 - **Saves** (top bar) opens a panel with an **Autosave slot + 3 named slots** — each with **Save / Load / Delete** and a timestamp. The game **autosaves every 30s**; a manual save flashes **Saved ✓**. The same panel has **↻ New Station** to wipe the live station and start over (with a confirm).
-- **Intro briefing:** the first time you ever play — and whenever you start a **New Station** — a pop-up explains the win goal (the **Sector Beacon**), gas zoning, and the species political web. A plain page reload won't re-show it.
+- **Intro briefing:** every time the game starts (and on **New Station**) a pop-up explains the win goal (the **Sector Beacon**), gas zoning, and the species political web. Dismiss with **Begin**.
+- **Star Chart shortcut:** press **K** to open the orbital mining chart from anywhere (uses your first Bot Bay; with none, it just shows the system map).
 
 **First run**
 - A **Getting Started** checklist appears top-center on a fresh game and ticks off as you *seal → power → add O₂ → synth → quarters → dock*. It disappears once your first crew arrive (or hit **Skip**).

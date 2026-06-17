@@ -58,7 +58,6 @@ import {
   isStarChartOpen,
   refreshStarChart,
   showIntro,
-  introSeen,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -351,7 +350,7 @@ async function boot(): Promise<void> {
 
   setupUI(state, world, handlers);
   applyCam();
-  if (!introSeen()) launchIntro(); // first-ever run gets the briefing (reloads don't re-nag)
+  launchIntro(); // show the briefing on every fresh game start
 
   const tileAt = (clientX: number, clientY: number): { tx: number; ty: number } => {
     const rect = canvas.getBoundingClientRect();
@@ -580,6 +579,11 @@ async function boot(): Promise<void> {
       needRedraw = true;
     } else if (k === "escape") {
       setActiveTool("select", state);
+    } else if (k === "k") {
+      // quick-open the Star Chart from anywhere (uses the first Bot Bay; with none,
+      // it still opens the system map for a look)
+      const bay = Object.values(world.structures).find((s) => s.kind === "bay");
+      handlers.onStarChart(bay ? bay.id : -1);
     } else if (TOOL_KEYS[k]) {
       setActiveTool(TOOL_KEYS[k], state);
     }
