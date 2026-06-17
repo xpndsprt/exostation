@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
+import { CanvasSource, Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
 import { World, Structure, StructureKind } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
@@ -9,13 +9,16 @@ import { SERVICE_THRESHOLD } from "./maintenance";
 const SCALE = TILE / 16; // sprites are authored at 16px/tile
 
 // --- lighting / shadows (2D grid shadowcasting; see LIGHTING_PLAN.md) ---
+// The per-cell light buffer is painted as a SMOOTH (bilinear) multiply lightmap,
+// so pools and shadow edges feather like RimWorld rather than reading as squares.
 // Interior baseline brightness when unlit (a multiply tint); space stays white.
-const AMBIENT_RGB: [number, number, number] = [0.5, 0.52, 0.58];
-// Character lamp: a small warm pool that raycasts ~3 cells and casts a MOVING
-// shadow as the agent traverses (the RimWorld pawn-lamp look).
-const LAMP_RADIUS = 3; // cells
-const LAMP_COLOR: [number, number, number] = [1.0, 0.92, 0.74];
-const LAMP_INTENSITY = 0.95;
+// Tuned dark + cool (our station's blue cast) so warm light pools really pop.
+const AMBIENT_RGB: [number, number, number] = [0.3, 0.33, 0.42];
+// Character lamp: a warm pool that raycasts a few cells and casts a MOVING shadow
+// as the agent traverses (the RimWorld pawn-lamp look).
+const LAMP_RADIUS = 4; // cells
+const LAMP_COLOR: [number, number, number] = [1.0, 0.9, 0.7];
+const LAMP_INTENSITY = 1.0;
 // modules that emit light while powered: [radius in CELLS, color, intensity]
 const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
@@ -199,7 +202,13 @@ export class Renderer {
   private dronesC = new Container();
   private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
-  private lighting = new Graphics(); // lightmap: per-cell multiply rects over the interior
+  // lightmap: per-cell light buffer blitted to a W×H canvas, then drawn as a
+  // bilinear-smoothed multiply sprite over the interior (soft RimWorld-style pools).
+  private lightSprite = new Sprite();
+  private lightCanvas: HTMLCanvasElement | null = null;
+  private lightCtx: CanvasRenderingContext2D | null = null;
+  private lightImg: ImageData | null = null;
+  private lightSource: CanvasSource | null = null;
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
@@ -219,11 +228,11 @@ export class Renderer {
 
   constructor(world: Container, _pixi: PixiRenderer) {
     buildTextures();
-    this.lighting.blendMode = "multiply";
+    this.lightSprite.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC,
-      this.lighting, this.overlay, this.selection, this.cursor,
+      this.lightSprite, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
   }
@@ -275,10 +284,24 @@ export class Renderer {
   // (Re)allocate the per-cell light buffers for this grid size.
   private ensureLightTargets(world: World): void {
     const n = world.w * world.h * 3;
-    if (this.staticBuf.length === n) return;
+    if (this.staticBuf.length === n && this.lightCanvas) return;
     this.staticBuf = new Float32Array(n);
     this.workBuf = new Float32Array(n);
     this.bakeSig = ""; // force a rebake
+    // one canvas pixel per cell; the sprite scales it up ×TILE with bilinear
+    // filtering, so the lightmap feathers into soft pools instead of hard squares.
+    const cv = document.createElement("canvas");
+    cv.width = world.w;
+    cv.height = world.h;
+    const ctx = cv.getContext("2d")!;
+    this.lightCanvas = cv;
+    this.lightCtx = ctx;
+    this.lightImg = ctx.createImageData(world.w, world.h);
+    const src = new CanvasSource({ resource: cv, scaleMode: "linear" });
+    this.lightSource = src;
+    this.lightSprite.texture = new Texture({ source: src });
+    this.lightSprite.scale.set(TILE);
+    this.lightSprite.position.set(0, 0);
   }
 
   // The integer origin cell of a structure's footprint (nearest cell to centroid).
@@ -378,17 +401,23 @@ export class Renderer {
       const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
       this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque);
     }
-    const g = this.lighting;
-    g.clear();
-    const W = world.w;
+    // Blit the light buffer into the W×H canvas (one texel per cell). Space stays
+    // white (multiply by 1 = full-bright vacuum); interior carries the dimming.
+    const img = this.lightImg!;
+    const data = img.data; // Uint8ClampedArray — float assigns auto-clamp+round
     for (let i = 0; i < world.cells.length; i++) {
-      if (world.cells[i].type === "space") continue; // leave vacuum at full brightness
-      const o = i * 3;
-      const r = Math.min(255, buf[o] * 255) | 0;
-      const gg = Math.min(255, buf[o + 1] * 255) | 0;
-      const b = Math.min(255, buf[o + 2] * 255) | 0;
-      g.rect((i % W) * TILE, ((i / W) | 0) * TILE, TILE, TILE).fill(((r << 16) | (gg << 8) | b) >>> 0);
+      const p = i * 4, o = i * 3;
+      data[p + 3] = 255;
+      if (world.cells[i].type === "space") {
+        data[p] = data[p + 1] = data[p + 2] = 255;
+      } else {
+        data[p] = buf[o] * 255;
+        data[p + 1] = buf[o + 1] * 255;
+        data[p + 2] = buf[o + 2] * 255;
+      }
     }
+    this.lightCtx!.putImageData(img, 0, 0);
+    this.lightSource!.update();
   }
 
   // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.
