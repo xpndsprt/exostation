@@ -480,6 +480,9 @@ const TONES = [
   { n: "Void", lo: "#070b14", hi: "#6ea8ff" }, { n: "Steel", lo: "#14181f", hi: "#c4ccd6" },
   { n: "Rust", lo: "#1c0e06", hi: "#e8a05a" }, { n: "Bio", lo: "#0a1a10", hi: "#8fd14f" },
   { n: "Plasma", lo: "#160a1e", hi: "#d16ad0" }, { n: "Ice", lo: "#0a1622", hi: "#a8e0ff" },
+  // optimistic / chill sci-fi moods — bright, warm and reassuring
+  { n: "Sunrise", lo: "#2a1530", hi: "#ffd27a" }, { n: "Aqua", lo: "#072028", hi: "#86f0d8" },
+  { n: "Bloom", lo: "#22101c", hi: "#ffb6d2" },
 ];
 function hexToRgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
 function rgbToHex(r, g, b) { const f = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0"); return "#" + f(r) + f(g) + f(b); }
