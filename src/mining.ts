@@ -8,8 +8,8 @@ import { industryBoost } from "./research";
 // Drone trip timing. A round trip to a body is one off-map "transit" leg whose
 // length scales with the body's orbital distance, bracketed by short lift-off /
 // descent animations on the pad.
-const OUT_FLY = 1.5; // s — lift off the pad toward space
-const IN_FLY = 1.5; // s — descend onto the pad and unload
+const OUT_FLY = 2.4; // s — ignite, lift, turn, then zoom off the pad (cinematic)
+const IN_FLY = 2.2; // s — streak in, decelerate, turn upright, settle on the pad
 const TRIP_BASE = 18; // s — transit time for a body at dist 0
 const TRIP_SPAN = 55; // s — extra transit time at dist 1 (so far planets are slow)
 

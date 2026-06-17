@@ -644,9 +644,16 @@ export class Renderer {
     // space (outbound), vanish off-map (transit), descend back onto the pad
     // (inbound). The exit point is several tiles beyond the pad along its outward
     // normal, so the drone climbs away into the void and shrinks as it goes.
+    // Cinematic launch/return:
+    //   outbound — engines ignite, a slow lift off the pad, a turn toward the exit
+    //   heading, then a thrusting zoom off-map (shrinks + fades).
+    //   inbound  — the reverse: streak in, decelerate, turn upright, settle on the pad.
     const easeIn = (t: number) => t * t;
     const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
-    const EXIT = 7; // tiles beyond the pad where the drone leaves the screen
+    const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    const smooth = (t: number) => { const c = clamp01(t); return c * c * (3 - 2 * c); };
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const EXIT = 8; // tiles beyond the pad where the drone leaves the screen
     for (const id in world.drones) {
       const d = world.drones[id];
       if (d.state === "transit") continue; // off-map — invisible
@@ -659,20 +666,54 @@ export class Renderer {
       const dyn = ((pc / world.w) | 0) - ((bay.cell / world.w) | 0);
       const ux = Math.sign(dxn) || 0;
       const uy = Math.sign(dyn) || (ux === 0 ? -1 : 0); // default: straight up
-      const ex = px + ux * EXIT * TILE;
-      const ey = py + uy * EXIT * TILE;
-      const te = d.state === "outbound" ? easeIn(d.t) : d.state === "inbound" ? easeOut(1 - d.t) : 0; // docked = on the pad
-      const x = px + (ex - px) * te;
-      const y = py + (ey - py) * te;
-      const fade = 1 - te;
+      const ex = px + ux * EXIT * TILE, ey = py + uy * EXIT * TILE;
+      const hx = px + ux * 0.7 * TILE, hy = py + uy * 0.7 * TILE; // hover just off the pad
+      const heading = Math.atan2(ux, -uy); // drone art faces "up" at rotation 0
+
+      let x = px, y = py, rot = 0, glow = 0, trail = 0, vis = 1, alpha = 1;
+      if (d.state === "outbound") {
+        const lift = smooth(clamp01(d.t / 0.4)); // slow lift + turn over the first 40%
+        const zoom = easeIn(clamp01((d.t - 0.4) / 0.6)); // accelerate away after
+        if (zoom <= 0) { x = lerp(px, hx, lift); y = lerp(py, hy, lift); }
+        else { x = lerp(hx, ex, zoom); y = lerp(hy, ey, zoom); }
+        rot = lerp(0, heading, lift);
+        glow = clamp01(d.t / 0.22); // engines ignite
+        trail = 0.3 + 1.7 * zoom;
+        vis = 1 - 0.45 * zoom;
+        alpha = 1 - 0.55 * zoom;
+      } else if (d.state === "inbound") {
+        // d.t: 0 at the exit point → 1 on the pad
+        const land = smooth(clamp01((d.t - 0.6) / 0.4)); // settle + turn upright at the end
+        const approach = easeOut(clamp01(d.t / 0.6)); // streak in, decelerating
+        if (land <= 0) { x = lerp(ex, hx, approach); y = lerp(ey, hy, approach); }
+        else { x = lerp(hx, px, land); y = lerp(hy, py, land); }
+        rot = lerp(heading, 0, land);
+        glow = 1 - 0.85 * land;
+        trail = 0.3 + 1.7 * (1 - approach);
+        vis = 0.55 + 0.45 * approach;
+        alpha = 0.45 + 0.55 * approach;
+      }
+
       if (d.state !== "docked")
-        g.moveTo(px, py).lineTo(ex, ey).stroke({ width: 1, color: COLORS.route, alpha: 0.35 });
+        g.moveTo(px, py).lineTo(ex, ey).stroke({ width: 1, color: COLORS.route, alpha: 0.22 });
+
+      // thruster plume behind the drone (opposite the heading) + engine glow
+      if (glow > 0.02) {
+        for (let k = 1; k <= 5; k++) {
+          const f = k / 5;
+          const tx = x - ux * trail * TILE * f, ty = y - uy * trail * TILE * f;
+          g.circle(tx, ty, (1 - f) * 5 * vis + 1).fill({ color: f < 0.4 ? 0xfff0c0 : 0xff8a3a, alpha: glow * (1 - f) * 0.6 });
+        }
+        g.circle(x - ux * 3, y - uy * 3, 3 * vis + 1.5).fill({ color: 0xffd27a, alpha: glow * 0.5 });
+      }
+
       const t = tex("drone", d.cargo > 0 ? "laden" : "empty");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE * (0.5 + 0.5 * fade)); // shrink as it climbs away
+        sp.scale.set(SCALE * vis);
         sp.anchor.set(0.5);
-        sp.alpha = 0.35 + 0.65 * fade;
+        sp.rotation = rot;
+        sp.alpha = alpha;
         sp.x = x;
         sp.y = y;
         this.dronesC.addChild(sp);
