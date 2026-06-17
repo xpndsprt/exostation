@@ -29,9 +29,9 @@ const GAS_TINT: Record<string, [number, number, number]> = {
 const GAS_CODE: Record<string, number> = { none: 0, o2: 1, ch4: 2, cl2: 3, nh3: 4, h2: 5, mixed: 6 };
 // Character lamp: a warm pool that raycasts a few cells and casts a MOVING shadow
 // as the agent traverses (the RimWorld pawn-lamp look).
-const LAMP_RADIUS = 4; // cells
+const LAMP_RADIUS = 5.5; // cells — a touch wider so the pool fades over more cells
 const LAMP_COLOR: [number, number, number] = [1.0, 0.9, 0.7];
-const LAMP_INTENSITY = 1.0;
+const LAMP_INTENSITY = 0.95;
 // modules that emit light while powered: [radius in CELLS, color, intensity]
 const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
@@ -73,6 +73,14 @@ function rgbf(c: number): [number, number, number] {
 function falloff(d: number, r: number): number {
   const f = 1 - d / r;
   return f <= 0 ? 0 : f * f; // smooth-ish edge
+}
+// A gentler curve for the character headlamp: a fuller core that eases to zero
+// with a flat tail at the rim (cubic smoothstep), so the pool fades gracefully
+// into the dark instead of ending in a visible disc.
+function softFalloff(d: number, r: number): number {
+  const t = 1 - d / r;
+  if (t <= 0) return 0;
+  return t * t * (3 - 2 * t); // smoothstep: flat at centre, flat (→0) at the edge
 }
 
 // Symmetric recursive shadowcasting (the roguelike FOV algorithm): visit() fires
@@ -473,7 +481,7 @@ export class Renderer {
       const a = world.agents[id];
       if (!a.alive) continue;
       const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
-      this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque);
+      this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque, softFalloff);
     }
     // Blit the light buffer into the W×H canvas (one texel per cell). Space stays
     // white (multiply by 1 = full-bright vacuum); interior carries the dimming.
@@ -495,12 +503,12 @@ export class Renderer {
   }
 
   // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.
-  private accumulate(world: World, buf: Float32Array, ox: number, oy: number, radius: number, lr: number, lg: number, lb: number, intensity: number, opaque: Opaque): void {
+  private accumulate(world: World, buf: Float32Array, ox: number, oy: number, radius: number, lr: number, lg: number, lb: number, intensity: number, opaque: Opaque, fall: (d: number, r: number) => number = falloff): void {
     shadowcast(ox, oy, radius, opaque, (x, y, dist) => {
       if (x < 0 || y < 0 || x >= world.w || y >= world.h) return;
       const i = y * world.w + x;
       if (world.cells[i].type === "space") return; // don't light open vacuum
-      const f = falloff(dist, radius) * intensity;
+      const f = fall(dist, radius) * intensity;
       if (f <= 0) return;
       const o = i * 3;
       buf[o] += lr * f;
