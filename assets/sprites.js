@@ -788,7 +788,8 @@
     },
     {
       name: "hotel", tileW: 2, tileH: 1,
-      palette: { k: "#11151c", b: "#9b6caf", h: "#c99bd5", w: "#f0dcf5", p: "#e8c349", q: "#caa6da", g: "#c0b0cc", y: "#ffe9a8" },
+      // neutral palette so a hotel can be tinted in its prepped species' colour
+      palette: { k: "#11151c", b: "#4a5364", h: "#6a7486", w: "#d8dee8", p: "#aeb8c8", q: "#c2cad6", g: "#8a93a6", y: "#eef2f8" },
       states: { default: HOTEL },
     },
     {
@@ -890,7 +891,9 @@
     /* ---------- habitation (1x1) ---------- */
     {
       name: "pod", tileW: 1, tileH: 1,
-      palette: { k: "#11151c", b: "#6e4f9b", h: "#9b6cd5", p: "#cdb6ee", s: "#1a2230" },
+      // neutral greys/whites so the renderer can tint a cabin in its prepped
+      // species' colour (the dark frame stays dark under any tint).
+      palette: { k: "#11151c", b: "#4a5364", h: "#5a6678", p: "#cfd6e2", s: "#222a38" },
       states: { default: [
         "kkkkkkkkkkkkkkkk","kbbbbbbbbbbbbbbk","kbssssssssssssbk","kbssssssssssssbk",
         "kbsppppppppppsbk","kbsppppppppppsbk","kbsppppppppppsbk","kbsppppppppppsbk",

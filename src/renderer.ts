@@ -42,6 +42,13 @@ const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
 
 // A "solid" module (2×2 machine, or a Silo) blocks light and casts a shadow;
 // thin furniture (pods, hotels, synth, lamp, docks, solar) does not.
+// Bright per-species tints for lodging, so a cabin/hotel reads as its prepped
+// species at a glance (matches the UI species colours).
+const DWELL_TINT: Partial<Record<Species, number>> = {
+  human: 0x8fb8ff, drenn: 0xe8c349, thol: 0xe09a4a, vryl: 0x9fe06a, korro: 0xe06a5e,
+  vorn: 0xc06ad8, chlorithe: 0xb6e85a, naaz: 0x7fa8e8, voltaar: 0xe07fb0, sszra: 0x6fd6bc,
+};
+
 function blocksLight(kind: StructureKind): boolean {
   const d = STRUCTURES[kind];
   return d.w * d.h >= 4 || kind === "silo";
@@ -569,6 +576,7 @@ export class Renderer {
         sp.x = x;
         sp.y = y;
         if (s.kind === "fusion" && !s.powered) sp.tint = 0x55617a; // out of fuel — dimmed
+        if (s.kind === "pod" || s.kind === "hotel") sp.tint = DWELL_TINT[s.recipe as Species] ?? 0xffffff;
         this.structsC.addChild(sp);
       }
       // lodging: a small chip in the prepped species' colour
