@@ -165,6 +165,7 @@
 <script>
 const RES = 32; // new sprites are 32×32 per tile; loaded sprites keep their native res
 let ps = 14, tool = "paint", color = "#2fd6c3", showGrid = true, showTiles = true;
+let hover = null; // {x,y} cell under the cursor, for the stamp preview
 // current sprite
 let sprite = newSprite("untitled", 1, 1);
 let cur = 0; // current state index
@@ -207,6 +208,19 @@ function render() {
     ctx.strokeStyle = "rgba(47,214,195,.5)"; ctx.lineWidth = 2;
     for (let x = 0; x <= w; x += sprite.res) line(x*ps,0,x*ps,h*ps);
     for (let y = 0; y <= h; y += sprite.res) line(0,y*ps,w*ps,y*ps);
+  }
+  // stamp preview: ghost the selected part + a blue outline at the cursor
+  if (tool === "stamp" && curComp && hover) {
+    const rows = curComp.rows, pal = curComp.pal, ox = hover.x, oy = hover.y;
+    ctx.globalAlpha = 0.5;
+    for (let ry = 0; ry < rows.length; ry++) for (let rx = 0; rx < rows[ry].length; rx++) {
+      const ch = rows[ry][rx]; if (ch === "." || !pal[ch]) continue;
+      const cx = ox + rx, cy = oy + ry; if (cx < 0 || cy < 0 || cx >= w || cy >= h) continue;
+      ctx.fillStyle = pal[ch]; ctx.fillRect(cx * ps, cy * ps, ps, ps);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#6ea8ff"; ctx.lineWidth = 2;
+    ctx.strokeRect(ox * ps + 1, oy * ps + 1, rows[0].length * ps - 2, rows.length * ps - 2);
   }
   renderStates(); renderPreview();
 }
@@ -261,6 +275,8 @@ cv.addEventListener("pointerdown", (e) => {
 });
 window.addEventListener("pointerup", () => painting = false);
 window.addEventListener("pointermove", (e) => { if (painting) apply(e, eraseDrag); });
+cv.addEventListener("pointermove", (e) => { const c = cellAt(e); hover = c ? { x: c.x, y: c.y } : null; if (tool === "stamp") render(); });
+cv.addEventListener("pointerleave", () => { if (hover) { hover = null; if (tool === "stamp") render(); } });
 
 // --- states UI ---
 function addState(name, copyFrom) {
