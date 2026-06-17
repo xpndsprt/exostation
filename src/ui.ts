@@ -1212,8 +1212,10 @@ export function showStarChart(world: World, bayId: number, onDispatch: (siteId: 
       if (scWorld) refreshStarChart(scWorld);
     });
     el.querySelector(".sc-dispatch")?.addEventListener("click", () => {
+      // commit the target and CLOSE — the drone then launches on the map, not
+      // behind the open dialog.
       if (scSelected >= 0 && scDispatch) scDispatch(scSelected);
-      if (scWorld) refreshStarChart(scWorld);
+      closeStarChart();
     });
   }
   el.classList.add("show");

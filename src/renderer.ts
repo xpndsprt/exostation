@@ -653,7 +653,6 @@ export class Renderer {
     const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
     const smooth = (t: number) => { const c = clamp01(t); return c * c * (3 - 2 * c); };
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-    const EXIT = 8; // tiles beyond the pad where the drone leaves the screen
     for (const id in world.drones) {
       const d = world.drones[id];
       if (d.state === "transit") continue; // off-map — invisible
@@ -666,6 +665,11 @@ export class Renderer {
       const dyn = ((pc / world.w) | 0) - ((bay.cell / world.w) | 0);
       const ux = Math.sign(dxn) || 0;
       const uy = Math.sign(dyn) || (ux === 0 ? -1 : 0); // default: straight up
+      // EXIT = tiles to the actual map edge along the heading (+margin), so the
+      // drone keeps accelerating visibly off the map instead of vanishing at the hull.
+      const cx = pc % world.w, cy = (pc / world.w) | 0;
+      const edge = ux > 0 ? world.w - cx : ux < 0 ? cx + 1 : uy > 0 ? world.h - cy : cy + 1;
+      const EXIT = edge + 4;
       const ex = px + ux * EXIT * TILE, ey = py + uy * EXIT * TILE;
       const hx = px + ux * 0.7 * TILE, hy = py + uy * 0.7 * TILE; // hover just off the pad
       const heading = Math.atan2(ux, -uy); // drone art faces "up" at rotation 0
@@ -678,9 +682,9 @@ export class Renderer {
         else { x = lerp(hx, ex, zoom); y = lerp(hy, ey, zoom); }
         rot = lerp(0, heading, lift);
         glow = clamp01(d.t / 0.22); // engines ignite
-        trail = 0.3 + 1.7 * zoom;
-        vis = 1 - 0.45 * zoom;
-        alpha = 1 - 0.55 * zoom;
+        trail = 0.3 + 2.2 * zoom; // long plume at full burn
+        vis = 1 - 0.3 * zoom;
+        alpha = 1 - 0.35 * zoom;
       } else if (d.state === "inbound") {
         // d.t: 0 at the exit point → 1 on the pad
         const land = smooth(clamp01((d.t - 0.6) / 0.4)); // settle + turn upright at the end
@@ -689,9 +693,9 @@ export class Renderer {
         else { x = lerp(hx, px, land); y = lerp(hy, py, land); }
         rot = lerp(heading, 0, land);
         glow = 1 - 0.85 * land;
-        trail = 0.3 + 1.7 * (1 - approach);
-        vis = 0.55 + 0.45 * approach;
-        alpha = 0.45 + 0.55 * approach;
+        trail = 0.3 + 2.2 * (1 - approach);
+        vis = 0.7 + 0.3 * approach;
+        alpha = 0.65 + 0.35 * approach;
       }
 
       if (d.state !== "docked")
