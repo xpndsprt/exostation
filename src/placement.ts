@@ -1,5 +1,5 @@
 import { StructureKind, Tool, World } from "./types";
-import { idx, inBounds, canDock } from "./world";
+import { idx, inBounds, canDock, canBay } from "./world";
 import { STRUCTURES, costOf, isDock } from "./structures";
 
 const STRUCTURE_KINDS = new Set([
@@ -58,6 +58,19 @@ export function solarFootprint(w: World, x: number, y: number): number[] | null 
   return null;
 }
 
+// The 2 cells a hull-mounted Bot Bay would occupy at (x,y) — [wall, interior] —
+// or null if it doesn't fit (used for the placement preview).
+export function bayFootprint(w: World, x: number, y: number): number[] | null {
+  if (!canBay(w, x, y)) return null;
+  for (const [dx, dy] of NEIGHBORS) {
+    const sx = x + dx, sy = y + dy, ix = x - dx, iy = y - dy;
+    if (!inBounds(w, sx, sy) || !inBounds(w, ix, iy)) continue;
+    if (w.cells[idx(w, sx, sy)].type === "space" && w.cells[idx(w, ix, iy)].type === "floor" && w.cells[idx(w, ix, iy)].structureId < 0)
+      return [idx(w, x, y), idx(w, ix, iy)];
+  }
+  return null;
+}
+
 // Footprint cells for a sized module placed with (x,y) as its top-left corner.
 // Returns the occupied cells (all must be free floor) or null if it doesn't fit.
 export function footprintCells(w: World, kind: StructureKind, x: number, y: number): number[] | null {
@@ -82,6 +95,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (!inBounds(w, x, y)) return false;
   if (w.credits < costOf(tool)) return false; // can't afford it
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
+  if (tool === "bay") return canBay(w, x, y); // hull-mounted, like a dock
   if (tool in STRUCTURES && isDock(tool as StructureKind)) return canDock(w, x, y);
   if (tool in STRUCTURES) return footprintCells(w, tool as StructureKind, x, y) !== null;
   const c = w.cells[idx(w, x, y)];

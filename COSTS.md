@@ -26,7 +26,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Crew Quarters | 40 | 1×1 | Resident sleeping |
 | Hotel Room | 60 | 2×1 | Visitor lodging (= guest capacity) |
 | Lounge | 80 | 2×2 | Entertainment / recreation |
-| Bot Bay | 120 | 2×2 | Mining drone (minerals) |
+| Bot Bay | 120 | 1×2 (wall) | Mining drone; hull-mounted on a space-facing wall |
 | Docking Port | 150 | wall | Hull airlock; guests + ship berth (3×3 pad) |
 | Large Dock | 400 | wall | Bigger berth (5×5 pad): more guests + fuel sold. Unlock: Expanded Docking |
 | Spaceport Dock | 900 | wall | Largest berth (7×7 pad): huge ships, most guests + fuel. Unlock: Spaceport |

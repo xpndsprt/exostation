@@ -217,6 +217,49 @@ export function addDock(w: World, x: number, y: number, kind: StructureKind = "d
   return true;
 }
 
+// A Bot Bay mounts on a space-facing hull wall (like a Docking Port) but occupies
+// 1×2: the wall cell + the interior floor cell directly behind it. Drones launch
+// out through the wall into space; crew service it from the interior cell.
+export function canBay(w: World, x: number, y: number): boolean {
+  if (!inBounds(w, x, y)) return false;
+  const c = w.cells[idx(w, x, y)];
+  if (c.type !== "wall" || c.structureId >= 0) return false;
+  for (const [dx, dy] of ADJ) {
+    const sx = x + dx, sy = y + dy; // space side
+    const ix = x - dx, iy = y - dy; // interior side (opposite)
+    if (!inBounds(w, sx, sy) || !inBounds(w, ix, iy)) continue;
+    if (w.cells[idx(w, sx, sy)].type !== "space") continue;
+    const ic = w.cells[idx(w, ix, iy)];
+    if (ic.type === "floor" && ic.structureId < 0) return true;
+  }
+  return false;
+}
+
+// Place a Bot Bay on a valid hull wall. Returns true on success.
+export function addBay(w: World, x: number, y: number): boolean {
+  if (!canBay(w, x, y)) return false;
+  let interior = -1;
+  for (const [dx, dy] of ADJ) {
+    const sx = x + dx, sy = y + dy, ix = x - dx, iy = y - dy;
+    if (!inBounds(w, sx, sy) || !inBounds(w, ix, iy)) continue;
+    if (w.cells[idx(w, sx, sy)].type === "space" && w.cells[idx(w, ix, iy)].type === "floor" && w.cells[idx(w, ix, iy)].structureId < 0) {
+      interior = idx(w, ix, iy);
+      break;
+    }
+  }
+  if (interior < 0) return false;
+  const wall = idx(w, x, y);
+  const id = w.nextId++;
+  w.structures[id] = {
+    id, kind: "bay", cell: wall, cells: [wall, interior],
+    on: true, powered: false, occupantId: -1, timer: 0, condition: 100, servicedBy: -1, recipe: "", faultT: 0,
+  };
+  w.cells[wall].structureId = id;
+  w.cells[interior].structureId = id;
+  spawnDrone(w, id);
+  return true;
+}
+
 // Designations for generated bodies (asteroid prefix + planet names).
 const PLANET_NAMES = ["Veil", "Kestrel", "Oort", "Tannhauser", "Cinder", "Halcyon", "Mistral", "Erebus"];
 const AST_LETTERS = "ABCDEFGHJKLMNPRSTVXZ";

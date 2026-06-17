@@ -1,6 +1,6 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
-import { createWorld, setCell, addStructureMulti, addDock, seedSolarSystem, eraseAt, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructureMulti, addDock, addBay, seedSolarSystem, eraseAt, inBounds, idx } from "./world";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -26,7 +26,7 @@ import { updateSeen } from "./advisor";
 import { resolveEncounter } from "./encounters";
 import * as audio from "./audio";
 import { saveWorld, loadWorld, deleteSave } from "./persistence";
-import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells } from "./placement";
+import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
 import { Renderer } from "./renderer";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -393,6 +393,8 @@ async function boot(): Promise<void> {
     } else if (tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       if (fp) ok = addStructureMulti(world, "solar", fp);
+    } else if (tool === "bay") {
+      ok = addBay(world, tx, ty); // hull-mounted, like a dock
     } else if (isDock(tool as StructureKind)) {
       ok = addDock(world, tx, ty, tool as StructureKind);
     } else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
@@ -458,6 +460,11 @@ async function boot(): Promise<void> {
       ghost = fp ?? [hover];
       valid = fp !== null;
       if (fp) anchor = fp[0]; // the wall-mounted base, so the facing is unmistakable
+    } else if (hover >= 0 && tool === "bay") {
+      const fp = bayFootprint(world, tx, ty);
+      ghost = fp ?? [hover];
+      valid = fp !== null;
+      if (fp) anchor = fp[0]; // the hull wall cell
     } else if (hover >= 0 && tool in STRUCTURES && !isDock(tool as StructureKind)) {
       const fp = footprintCells(world, tool as StructureKind, tx, ty);
       ghost = fp ?? [hover];

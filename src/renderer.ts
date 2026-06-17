@@ -534,6 +534,31 @@ export class Renderer {
         continue;
       }
 
+      // Bot Bay: a hull-mounted 1×2 hangar — rotate the sprite so its opening
+      // faces space (cells = [wall, interior]; wall − interior points outward).
+      if (s.kind === "bay") {
+        let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+        for (const cc of s.cells) {
+          const cx = cc % world.w, cy = (cc / world.w) | 0;
+          minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
+          miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
+        }
+        const t = tex("bay", s.powered ? "enabled" : "disabled");
+        if (t) {
+          const sp = new Sprite(t);
+          sp.scale.set(SCALE);
+          sp.anchor.set(0.5);
+          sp.x = ((minx + maxx + 1) / 2) * TILE;
+          sp.y = ((miny + maxy + 1) / 2) * TILE;
+          const d = s.cells[0] - s.cells[1]; // wall − interior = toward space
+          sp.rotation = d === 1 ? Math.PI / 2 : d === -1 ? -Math.PI / 2 : d === world.w ? Math.PI : 0;
+          this.structsC.addChild(sp);
+        }
+        if (s.condition > 0 && s.condition < SERVICE_THRESHOLD)
+          this.structFx.rect(minx * TILE + 3, (maxy + 1) * TILE - 5, ((maxx - minx + 1) * TILE - 6) * (s.condition / 100), 3).fill(0xe8a33d);
+        continue;
+      }
+
       const state = def.draw > 0 ? (s.powered ? "enabled" : "disabled") : "default";
       const t = tex(s.kind, state);
       const x = (s.cell % world.w) * TILE;

@@ -27,7 +27,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   synth: { label: "Rations Synth", color: 0xcf7a3a, gen: 0, draw: 5, battery: 0, priority: 5, w: 2, h: 1, cost: 70 },
   pod: { label: "Crew Quarters", color: 0x9b6cd5, gen: 0, draw: 1, battery: 0, priority: 2, w: 1, h: 1, cost: 40 },
   vat: { label: "Bio Vat", color: 0x4f9d5b, gen: 0, draw: 6, battery: 0, priority: 4, w: 2, h: 2, cost: 90 },
-  bay: { label: "Bot Bay", color: 0x4aa3a3, gen: 0, draw: 4, battery: 0, priority: 3, w: 2, h: 2, cost: 120 },
+  bay: { label: "Bot Bay", color: 0x4aa3a3, gen: 0, draw: 4, battery: 0, priority: 3, w: 1, h: 2, cost: 120 },
   dock: { label: "Docking Port", color: 0x5a8ad5, gen: 0, draw: 5, battery: 0, priority: 1, w: 1, h: 1, cost: 150 },
   docklarge: { label: "Large Dock", color: 0x5a8ad5, gen: 0, draw: 8, battery: 0, priority: 1, w: 1, h: 1, cost: 400 },
   docksuper: { label: "Spaceport Dock", color: 0x5a8ad5, gen: 0, draw: 12, battery: 0, priority: 1, w: 1, h: 1, cost: 900 },
