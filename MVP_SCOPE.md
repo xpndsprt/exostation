@@ -125,6 +125,11 @@ The rest of the Depth Epic except replayability (M43):
   **Breathing Implants** (new Tier-2 tech) let a cross-gas couple cohabit. New world state
   `couples`/`relThaw`/`romance`; `#romance` dialog; dynamic `effRelation` feeding combat,
   harmony, mood and encounters.
+- **Eyesight & vision cones (`agents.ts`):** every crew member has a personal **sight
+  range** (2–5 tiles) and a **facing vision cone**; they only spot and service module
+  faults that are **within sight and in front of them**. With an unseen fault somewhere
+  they **patrol** their wing until it comes into view; with nothing wrong they stand idle.
+  Renderer draws each agent's cone.
 
 ### Content & polish wave *(shipped ✓)*
 - **Lighting & shadows:** the interior is dim by default; powered emitters (a

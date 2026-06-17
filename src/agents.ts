@@ -72,7 +72,7 @@ export function agentSystem(w: World, dt: number): void {
       }
     }
 
-    advanceMovement(a, dt);
+    advanceMovement(w, a, dt);
 
     // A departing guest that reached the dock leaves the station.
     if (a.task && a.task.type === "leave" && a.path.length === 0 && a.cell === a.task.target) {
@@ -85,11 +85,16 @@ export function agentSystem(w: World, dt: number): void {
   }
 }
 
-function advanceMovement(a: Agent, dt: number): void {
+function advanceMovement(w: World, a: Agent, dt: number): void {
   if (a.path.length === 0) return;
   a.moveAcc += SPEED * dt;
   while (a.moveAcc >= 1 && a.path.length > 0) {
-    a.cell = a.path.shift() as number;
+    const next = a.path.shift() as number;
+    // record facing from the step taken (drives the vision cone + fault spotting)
+    const dx = (next % w.w) - (a.cell % w.w);
+    const dy = ((next / w.w) | 0) - ((a.cell / w.w) | 0);
+    if (dx || dy) { a.faceX = Math.sign(dx); a.faceY = Math.sign(dy); }
+    a.cell = next;
     a.moveAcc -= 1;
   }
   if (a.path.length === 0) a.moveAcc = 0;
@@ -98,6 +103,34 @@ function advanceMovement(a: Agent, dt: number): void {
 function nativeAt(w: World, a: Agent, cell: number): boolean {
   const r = w.cells[cell].roomId;
   return r >= 0 && breathes(a, w.rooms[r]?.gas);
+}
+
+// Can this agent actually SEE a cell right now? Within their personal sight range
+// and in the forward arc of their facing (or anywhere when standing still and
+// looking around). This is how crew spot a faulty module — out of sight, out of mind.
+function canSee(w: World, a: Agent, cell: number): boolean {
+  const d = manhattan(w, a.cell, cell);
+  if (d > a.sight) return false;
+  if (d <= 1) return true; // right on top of it
+  if (a.faceX === 0 && a.faceY === 0) return true; // idle: looking all around
+  const vx = (cell % w.w) - (a.cell % w.w);
+  const vy = ((cell / w.w) | 0) - ((a.cell / w.w) | 0);
+  return vx * a.faceX + vy * a.faceY > 0; // ahead of them
+}
+
+// A random walkable cell in the agent's own air, for idle wandering (sweeping
+// their vision cone around the wing until a fault comes into view).
+function wanderStep(w: World, a: Agent): number {
+  const x = a.cell % w.w, y = (a.cell / w.w) | 0;
+  const opts: number[] = [];
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const nx = x + dx, ny = y + dy;
+    if (!inBounds(w, nx, ny)) continue;
+    const ci = idx(w, nx, ny);
+    const c = w.cells[ci];
+    if ((c.type === "floor" || c.type === "door") && nativeAt(w, a, ci)) opts.push(ci);
+  }
+  return opts.length ? opts[Math.floor(Math.random() * opts.length)] : -1;
 }
 
 // A walkable cell next to a mate that the courting agent can breathe in.
@@ -299,8 +332,32 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
         a.path = p;
       }
     }
+    return;
   }
-  // else: idle (stand)
+
+  // Otherwise: patrol. If a module somewhere needs servicing but is out of this
+  // resident's sight, they roam their wing — sweeping their vision cone around
+  // until the fault comes into view. With nothing to find, they stand idle.
+  if (!a.guest && a.path.length === 0 && hasUnseenWork(w, a)) {
+    const step = wanderStep(w, a);
+    if (step >= 0 && step !== a.cell) a.path = [step];
+  }
+}
+
+// Is there worn machinery this resident can't currently see (so it's worth a
+// patrol to go look for it)? Keeps idle crew still when everything's healthy.
+function hasUnseenWork(w: World, a: Agent): boolean {
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    if (
+      STRUCTURES[s.kind].draw > 0 &&
+      s.condition < SERVICE_THRESHOLD &&
+      (s.servicedBy < 0 || s.servicedBy === a.id) &&
+      !canSee(w, a, s.cell)
+    )
+      return true;
+  }
+  return false;
 }
 
 function releaseTask(w: World, a: Agent): void {
@@ -408,7 +465,8 @@ function claimService(w: World, a: Agent, start: number): Found | null {
     (s) =>
       STRUCTURES[s.kind].draw > 0 &&
       s.condition < SERVICE_THRESHOLD &&
-      (s.servicedBy < 0 || s.servicedBy === a.id),
+      (s.servicedBy < 0 || s.servicedBy === a.id) &&
+      canSee(w, a, s.cell), // they only fix faults they can actually see
   );
   jobs.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const s of jobs) {

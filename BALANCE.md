@@ -259,6 +259,17 @@ A thriving species offers, through a paused dialog, to lay a clutch (`spawnSyste
   parent species (they hunt their spawn hardest). Serializable (`world.eggs`,
   `world.pests`, `world.breedOffer`, `world.breedTimer`).
 
+## Eyesight & vision cones (`agents.ts`)
+Each agent has a personal **sight** range — `2 + rand(0..3)` tiles (so **2–5**), **+1**
+for Sszra sentinels — and a **facing** (`faceX/faceY`, set from the last step taken).
+A crew member can **see** a cell when it's within `sight` tiles **and** in the forward
+arc (dot-product > 0 of the offset with facing); anything ≤1 tile, or while standing
+still (facing 0,0 — "looking around"), is always visible. **`claimService` only
+considers faults the crew can see**, so out-of-sight machinery goes unnoticed. A
+resident with **unseen worn machinery** (`hasUnseenWork`) **patrols** — random one-cell
+steps through its own breathable air — sweeping its cone until a fault comes into view;
+with nothing wrong it stands idle. Renderer draws a faint cone per agent.
+
 ## Love & romance (`romance.ts`)
 Every agent has an individual **name** (`names.ts`, per-species pools, picked from id).
 - **Falling in love:** when a **bond** encounter resolves, a **5%** chance (**×2** if the

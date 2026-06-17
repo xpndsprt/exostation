@@ -994,6 +994,8 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
       html += `<div class="row"><span>Love</span><b>${Math.round(couple.love)}%</b></div>${bar(couple.love, "#ff6fae")}`;
     }
     if (a.implantGas) html += `<div class="row"><span>Implant</span><b>breathes ${a.implantGas.toUpperCase()}</b></div>`;
+    const sightLabel = a.sight <= 2 ? "short-sighted" : a.sight >= 5 ? "sharp-eyed" : "average";
+    html += `<div class="row"><span>Eyesight</span><b>${a.sight} tiles · ${sightLabel}</b></div>`;
     const stateLabel = !a.alive ? "dead" : a.fighting ? "fighting" : a.task?.type === "court" ? "courting" : a.task?.type ?? "idle";
     html += `<div class="row"><span>State</span><b>${stateLabel}</b></div>`;
     if (a.guest && isFinite(a.stay))

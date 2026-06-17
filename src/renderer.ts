@@ -742,6 +742,16 @@ export class Renderer {
       }
       if (!a.alive) continue;
       const r = TILE * 0.32;
+      // personal vision cone — how far/where they spot faulty modules
+      if (a.faceX || a.faceY) {
+        const ang = Math.atan2(a.faceY, a.faceX);
+        const half = 0.6;
+        const rad = (a.sight ?? 3) * TILE;
+        g.moveTo(cx, cy);
+        g.arc(cx, cy, rad, ang - half, ang + half);
+        g.lineTo(cx, cy);
+        g.fill({ color: 0xfff0c0, alpha: 0.055 });
+      }
       if (a.guest) g.circle(cx, cy, r).stroke({ width: 2, color: COLORS.guest, alpha: 0.9 });
       if (suited) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
       if (a.food < 40 || a.rest < 40) g.circle(cx, cy, r + 3).stroke({ width: 2, color: COLORS.needLow });

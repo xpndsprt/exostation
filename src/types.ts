@@ -112,6 +112,9 @@ export interface Agent {
   name: string; // individual given name (names.ts)
   mateId: number; // partner in a love-couple (romance.ts), -1 if single
   implantGas: GasKind | null; // a second gas they can breathe (cross-gas-couple implants)
+  sight: number; // personal vision range (tiles): how far they spot faulty modules
+  faceX: number; // facing direction (last movement); 0,0 = looking around (omni)
+  faceY: number;
   guest: boolean; // transient visitor (pays lodging, departs)
   stay: number; // seconds remaining before a guest leaves (Infinity for residents)
   cell: number;

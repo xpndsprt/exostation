@@ -115,6 +115,9 @@ function sanitize(w: World): World {
     if (typeof a.name !== "string") a.name = nameFor(a.species, +id);
     if (typeof a.mateId !== "number") a.mateId = -1;
     if (a.implantGas === undefined) a.implantGas = null;
+    if (typeof a.sight !== "number") a.sight = 2 + Math.floor(Math.random() * 4);
+    if (typeof a.faceX !== "number") a.faceX = 0;
+    if (typeof a.faceY !== "number") a.faceY = 0;
   }
   if (!Array.isArray(w.seen)) w.seen = [];
   if (!Array.isArray(w.welcomed)) w.welcomed = [];

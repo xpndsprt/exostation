@@ -357,6 +357,11 @@ export function addAgent(
     name: nameFor(species, id),
     mateId: -1,
     implantGas: null,
+    // a personal eyesight spec: some are sharp-eyed (5), some short-sighted (2).
+    // Sszra sentinels see a tile farther. This is how they spot faulty modules.
+    sight: (2 + Math.floor(Math.random() * 4)) + (species === "sszra" ? 1 : 0),
+    faceX: 0,
+    faceY: 0,
     guest,
     stay: guest ? GUEST_STAY : Infinity,
     cell: idx(w, x, y),

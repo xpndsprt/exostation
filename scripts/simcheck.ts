@@ -2179,5 +2179,51 @@ function forceCouple(w: World, a: number, b: number) {
   check("An implanted partner survives in the other's air", survived && thol.o2 > 80);
 }
 
+// --- Vision cones: crew spot faults by sight, and patrol to find unseen ones ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 7, "human");
+  const h = Object.values(w.agents)[0];
+  check("Crew have a personal eyesight range", h.sight >= 2 && h.sight <= 6);
+}
+{
+  // idle crew with nothing wrong stand still — no needless wandering
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 6, 7);
+  addAgent(w, 7, 7, "human");
+  const h = Object.values(w.agents)[0];
+  for (let i = 0; i < 40; i++) step(w); // settle (air fills)
+  const at = h.cell;
+  for (let i = 0; i < 60; i++) step(w);
+  check("Idle crew with no faults stand still (no needless wandering)", h.cell === at);
+}
+{
+  // a fault out of sight is found by patrolling and then fixed
+  const w = createWorld();
+  carve(w, 5, 5, 16, 9); // a long hall
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "synth", 14, 6); // far end
+  const syn = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  for (let i = 0; i < 30; i++) step(w); // fill air
+  syn.condition = 30; // break it, far from the crew
+  addAgent(w, 7, 8, "human");
+  const h = Object.values(w.agents)[0];
+  h.sight = 2; // short-sighted: must get close to spot it
+  let fixed = false;
+  for (let i = 0; i < 3000 && !fixed; i++) {
+    step(w);
+    if (syn.condition >= 60) fixed = true;
+  }
+  check("Crew patrol to discover and fix an out-of-sight fault", fixed);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);
