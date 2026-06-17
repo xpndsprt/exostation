@@ -276,6 +276,9 @@ export interface World {
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests
   seen: Species[]; // every species that has ever visited the station
+  welcomed: Species[]; // species the Chronicler has already welcomed aboard
+  story: string; // the Chronicler's current narrative line (story.ts)
+  storyTimer: number; // accumulator toward the next chronicle entry
 
   tick: number;
   speed: Speed;

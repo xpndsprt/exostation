@@ -27,6 +27,7 @@ import { objectivesSystem, currentObjective } from "../src/objectives";
 import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule, lodgingUnlocked } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { godsSystem, GODS } from "../src/gods";
+import { storySystem, currentYear } from "../src/story";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
@@ -1969,6 +1970,19 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   for (let i = 0; i < 5; i++) godsSystem(w, 0.1);
   check("A wrathful god unmakes a module", Object.keys(w.structures).length < before);
   check("Wrath spares life support", Object.values(w.structures).some((s) => s.kind === "o2gen"));
+}
+
+// --- The Chronicler (storyteller) + year count ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addAgent(w, 7, 6, "human");
+  storySystem(w, 0.1);
+  check("Chronicler welcomes a newly-present race", w.story.includes("Human") && w.welcomed.includes("human"));
+  check("Year count starts at 1+", currentYear(w) >= 1);
+  w.tick = 1000; // 100 in-world years at 10 ticks/yr
+  check("Year count advances with ticks", currentYear(w) === 101);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

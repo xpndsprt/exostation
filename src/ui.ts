@@ -15,6 +15,7 @@ import { encounterText, encounterChoices } from "./encounters";
 import { isMuted, setMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
+import { currentYear } from "./story";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -38,6 +39,15 @@ function gasLabel(g: string): string {
 const FOOD_LABEL: Record<string, string> = { rations: "Rations", fungal: "Fungal Mash", protein: "Live-Protein", exotic: "Exo-Culture" };
 const SYNTH_LABEL: Record<string, string> = { rations: "Std Rations", fungal: "Fungal Mash", protein: "Live-Protein", exotic: "Exo-Culture" };
 const VAT_LABEL: Record<string, string> = { biomass: "Biomass", spores: "Spores", microbes: "Microbes" };
+
+// The Chronicler panel (top): the storyteller's current narrative line.
+export function renderStory(world: World): void {
+  const el = document.getElementById("storyteller");
+  if (!el) return;
+  if (!world.story) { el.classList.remove("show"); return; }
+  el.innerHTML = `<div class="st-h">⟡ THE CHRONICLER</div><div class="st-text">${world.story}</div>`;
+  el.classList.add("show");
+}
 
 interface PaletteEntry {
   t: Tool;
@@ -479,6 +489,7 @@ export function updateHud(world: World): void {
     const rate = world.creditRate;
     const rateStr = `${rate >= 0 ? "+" : "−"}${Math.abs(rate).toFixed(1)}/s`;
     status.innerHTML =
+      chip("📅", `Yr ${currentYear(world)}`) +
       chip("¢", `<b>${Math.floor(world.credits)}</b> <span class="muted">${rateStr}</span>`, rate < -0.05) +
       chip(
         "⚡",

@@ -11,6 +11,7 @@ import { overflowSystem } from "./overflow";
 import { atmosphereSystem } from "./atmosphere";
 import { hazardSystem } from "./hazards";
 import { godsSystem } from "./gods";
+import { storySystem } from "./story";
 import { harmonySystem } from "./harmony";
 import { agentSystem } from "./agents";
 import { moodSystem } from "./mood";
@@ -59,6 +60,7 @@ import {
   isStarChartOpen,
   refreshStarChart,
   showIntro,
+  renderStory,
   TOOL_KEYS,
   UIHandlers,
 } from "./ui";
@@ -104,6 +106,7 @@ function simStep(world: World, dt: number): void {
   economySystem(world, dt);
   eventsSystem(world, dt);
   godsSystem(world, dt);
+  storySystem(world, dt);
   requestsSystem(world, dt);
   encountersSystem(world, dt);
   beaconSystem(world, dt);
@@ -792,6 +795,7 @@ async function boot(): Promise<void> {
       renderAdvisor(world);
       renderObjective(world);
       renderTutorial(world);
+      renderStory(world);
       needRedraw = false;
     }
   });
