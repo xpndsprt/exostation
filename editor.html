@@ -53,6 +53,16 @@
   .compgrid canvas.sel { outline: 2px solid var(--teal); outline-offset: 1px; }
   .tones { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .tones button { flex: 1 1 46px; font-size: 10.5px; padding: 5px 4px; font-weight: 600; }
+  /* voxel 3D preview */
+  #vox { position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center;
+    background: rgba(4,6,12,.86); backdrop-filter: blur(4px); }
+  #vox.show { display: flex; }
+  #vox .vox-card { background: #0c121c; border: 1px solid var(--edge2); border-radius: 14px; padding: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.6); }
+  #vox .vox-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  #vox .vox-tag { color: var(--teal); font-size: 11px; letter-spacing: .18em; font-weight: 700; flex: 1; text-shadow: 0 0 10px rgba(47,214,195,.5); }
+  #vox #voxClose { background: #1c2230; color: var(--ink); border: 1px solid var(--edge2); border-radius: 7px; width: 28px; height: 28px; cursor: pointer; }
+  #vox canvas { width: 480px; height: 480px; max-width: 78vw; max-height: 68vh; border-radius: 10px; border: 1px solid var(--edge); background: #05070d; cursor: grab; display: block; }
+  #vox .hint { margin-top: 6px; }
   #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 18px;
     background: radial-gradient(720px 520px at 50% 42%, rgba(47,214,195,.05), transparent 70%); }
   canvas#cv { image-rendering: pixelated; background: #04060b; cursor: crosshair;
@@ -81,6 +91,7 @@
   <select id="th"><option>1</option><option>2</option><option>3</option></select>
   <button id="newBtn">New</button>
   <span style="flex:1"></span>
+  <button id="voxBtn" title="Extrude this tile into a 3D voxel preview">🧊 3D</button>
   <button id="savePng" class="primary">PNG</button>
   <button id="saveSheet" class="primary">PNG sheet</button>
   <button id="saveJson" class="primary">JSON</button>
@@ -160,6 +171,16 @@
   </div>
   <div id="stage"><canvas id="cv"></canvas></div>
 </main>
+
+<div id="vox"><div class="vox-card">
+  <div class="vox-head">
+    <span class="vox-tag">VOXEL 3D — current tile</span>
+    <label style="font-size:11px; color:var(--dim)">Depth <input type="range" id="voxDepth" min="1" max="16" value="6" /></label>
+    <button id="voxClose" type="button" title="Close">✕</button>
+  </div>
+  <canvas id="voxCv"></canvas>
+  <div class="hint">Drag to orbit · 3-point studio lighting · editor preview only (no game effect).</div>
+</div></div>
 
 <script src="assets/sprites.js"></script>
 <script>
@@ -491,6 +512,75 @@ window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
 });
+
+// ===== Voxelize: extrude the current tile into a slab and render it 3D =====
+// Editor-only preview. Surface-face extraction (interior/occluded faces culled),
+// painter's-sorted, shaded by a fixed 3-point studio rig so orbiting feels lit.
+let voxD = 6, voxYaw = 0.7, voxPitch = -0.5, voxDrag = null;
+function nrm(a, b, c) { const l = Math.hypot(a, b, c) || 1; return [a / l, b / l, c / l]; }
+const VOX_LIGHTS = [
+  { d: nrm(-0.5, 0.85, 0.6), c: [1.0, 0.96, 0.88], i: 1.0 },  // key: upper-left, front, warm
+  { d: nrm(0.85, 0.15, 0.4), c: [0.5, 0.62, 0.85], i: 0.5 },  // fill: right, cool
+  { d: nrm(0.0, 0.45, -0.9), c: [0.85, 0.6, 0.95], i: 0.45 }, // back/rim: behind, violet
+];
+const VOX_AMB = 0.2;
+const VOX_FACES = [
+  { n: [0, 0, 1], o: [0, 0, 1], c: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]] },
+  { n: [0, 0, -1], o: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]] },
+  { n: [1, 0, 0], o: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]] },
+  { n: [-1, 0, 0], o: [-1, 0, 0], c: [[0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0]] },
+  { n: [0, 1, 0], o: [0, 1, 0], c: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]] },
+  { n: [0, -1, 0], o: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
+];
+function renderVox() {
+  const cvx = $("voxCv"); if (!cvx) return;
+  const S = Math.min(cvx.clientWidth || 480, cvx.clientHeight || 480) || 480;
+  cvx.width = S; cvx.height = S;
+  const o = cvx.getContext("2d"); o.fillStyle = "#05070d"; o.fillRect(0, 0, S, S);
+  const w = W(), h = H(), p = px(), D = voxD;
+  const occ = (x, y, z) => x >= 0 && y >= 0 && x < w && y < h && z >= 0 && z < D && !!p[y * w + x];
+  const cosY = Math.cos(voxYaw), sinY = Math.sin(voxYaw), cosP = Math.cos(voxPitch), sinP = Math.sin(voxPitch);
+  const rot = (x, y, z) => { const y1 = y * cosP - z * sinP, z1 = y * sinP + z * cosP; return [x * cosY + z1 * sinY, y1, -x * sinY + z1 * cosY]; };
+  const scale = S / (Math.max(w, h, D) * 1.5);
+  const cxw = w / 2, cyw = h / 2, czw = D / 2;
+  const proj = (x, y, z) => { const r = rot(x - cxw, y - cyw, z - czw); return [S / 2 + r[0] * scale, S / 2 - r[1] * scale, r[2]]; };
+  const quads = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const base = p[y * w + x]; if (!base) continue;
+    const [br, bg, bb] = hexToRgb(base);
+    for (let z = 0; z < D; z++) {
+      for (const f of VOX_FACES) {
+        if (occ(x + f.o[0], y + f.o[1], z + f.o[2])) continue; // hidden face
+        const rn = rot(f.n[0], f.n[1], f.n[2]);
+        let sr = VOX_AMB, sg = VOX_AMB, sb = VOX_AMB;
+        for (const L of VOX_LIGHTS) { const nl = Math.max(0, rn[0] * L.d[0] + rn[1] * L.d[1] + rn[2] * L.d[2]) * L.i; sr += nl * L.c[0]; sg += nl * L.c[1]; sb += nl * L.c[2]; }
+        const pts = f.c.map((cc) => proj(x + cc[0], y + cc[1], z + cc[2]));
+        quads.push({ pts, depth: (pts[0][2] + pts[1][2] + pts[2][2] + pts[3][2]) / 4, col: rgbToHex(br * sr, bg * sg, bb * sb) });
+      }
+    }
+  }
+  quads.sort((a, b) => a.depth - b.depth); // painter's: far → near
+  for (const q of quads) {
+    o.beginPath(); o.moveTo(q.pts[0][0], q.pts[0][1]);
+    for (let k = 1; k < 4; k++) o.lineTo(q.pts[k][0], q.pts[k][1]);
+    o.closePath(); o.fillStyle = q.col; o.fill(); o.strokeStyle = q.col; o.lineWidth = 1; o.stroke();
+  }
+}
+$("voxBtn").onclick = () => { $("vox").classList.add("show"); renderVox(); };
+$("voxClose").onclick = () => $("vox").classList.remove("show");
+$("voxDepth").oninput = (e) => { voxD = +e.target.value; renderVox(); };
+(function () {
+  const c = $("voxCv");
+  c.addEventListener("pointerdown", (e) => { voxDrag = { x: e.clientX, y: e.clientY }; c.style.cursor = "grabbing"; });
+  window.addEventListener("pointerup", () => { if (voxDrag) { voxDrag = null; c.style.cursor = "grab"; } });
+  window.addEventListener("pointermove", (e) => {
+    if (!voxDrag) return;
+    voxYaw += (e.clientX - voxDrag.x) * 0.01;
+    voxPitch = Math.max(-1.4, Math.min(1.4, voxPitch + (e.clientY - voxDrag.y) * 0.01));
+    voxDrag = { x: e.clientX, y: e.clientY };
+    renderVox();
+  });
+})();
 
 renderCompCat(); renderCompGrid(); renderTones();
 updateColor(); renderSwatches(); refreshLibrary(); render();
