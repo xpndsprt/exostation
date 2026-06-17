@@ -345,7 +345,9 @@ function loadBitmap(bm) {
   sprite = { name: bm.name, tileW: bm.tileW, tileH: bm.tileH, res, states: states.map((s) => ({ name: s.name, pixels: s.pixels.slice() })) };
   cur = 0; $("name").value = sprite.name; $("tw").value = sprite.tileW; $("th").value = sprite.tileH; render();
 }
-$("loadBtn").onclick = () => { const v = $("library").value; if (!v) return; const [g, k] = v.split(/:(.+)/); const bm = g === "built" ? builtinBitmaps()[k] : loadLib()[k]; if (bm) loadBitmap(bm); };
+function loadSelected() { const v = $("library").value; if (!v) return; const [g, k] = v.split(/:(.+)/); const bm = g === "built" ? builtinBitmaps()[k] : loadLib()[k]; if (bm) loadBitmap(bm); }
+$("loadBtn").onclick = loadSelected;
+$("library").onchange = loadSelected; // pick from the dropdown → load immediately
 $("saveLib").onclick = () => { const o = loadLib(); const bm = bitmap(); o[bm.name] = bm; saveLibStore(o); refreshLibrary(); alert("Saved “" + bm.name + "” to library."); };
 $("importBtn").onclick = () => $("importFile").click();
 $("importFile").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { loadBitmap(JSON.parse(r.result)); } catch { alert("Bad JSON"); } }; r.readAsText(f); };
