@@ -18,6 +18,7 @@ export function createWorld(): World {
     agents: {},
     drones: {},
     sites: {},
+    stars: [],
     ships: [],
     gods: [],
     godTimer: 0,
@@ -276,34 +277,78 @@ export function addBay(w: World, x: number, y: number): boolean {
   return true;
 }
 
-// Designations for generated bodies (asteroid prefix + planet names).
-const PLANET_NAMES = ["Veil", "Kestrel", "Oort", "Tannhauser", "Cinder", "Halcyon", "Mistral", "Erebus"];
+// Designations for generated bodies (asteroid prefix + planet names + moons).
+const PLANET_NAMES = ["Veil", "Kestrel", "Oort", "Tannhauser", "Cinder", "Halcyon", "Mistral", "Erebus", "Solace", "Vantage"];
 const AST_LETTERS = "ABCDEFGHJKLMNPRSTVXZ";
+const ROMAN = ["I", "II", "III", "IV"];
 
-// Populate the star system with unknown orbital bodies — many near/modest
-// asteroids and a few far/rich planets. All start undiscovered (a drone reveals
-// each on its first visit). Called once for a fresh game (not from createWorld,
-// so tests stay deterministic). Uses Math.random — fine because the result is saved.
-export function seedSolarSystem(w: World, asteroids = 14, planets = 4): void {
+// Orbital speed (radians/sec) for a body at orbit radius `dist`: inner bodies
+// sweep faster (a crude Kepler feel). Direction varies so the field isn't uniform.
+function orbSpeedFor(dist: number, dir: number): number {
+  const period = 45 + dist * 240; // seconds for a full orbit
+  return dir * ((Math.PI * 2) / period);
+}
+
+// Populate the star system: one or two stars, several orbiting planets (some with
+// moons), an asteroid belt, and scattered rocks of widely varying mineral wealth.
+// Everything orbits and starts undiscovered (a drone reveals each on first visit).
+// Called once for a fresh game (not from createWorld, so tests stay deterministic).
+export function seedSolarSystem(w: World, asteroids = 22, planets = 6): void {
   const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-  for (let i = 0; i < asteroids; i++) {
-    const dist = rnd(0.08, 0.6); // near-ish
+  const ang = () => Math.random() * Math.PI * 2;
+  const dir = () => (Math.random() < 0.5 ? 1 : -1);
+
+  // --- star(s): ~40% of systems are binaries ---
+  w.stars = [];
+  if (Math.random() < 0.4) {
+    const sep = 0.05, sp = (Math.PI * 2) / 30, a0 = ang();
+    w.stars.push({ angle: a0, dist: sep, orbSpeed: sp, color: "#ffd27a", r: 6 });
+    w.stars.push({ angle: a0 + Math.PI, dist: sep, orbSpeed: sp, color: "#ff9a6a", r: 5 });
+  } else {
+    w.stars.push({ angle: 0, dist: 0, orbSpeed: 0, color: "#ffe9a8", r: 7 });
+  }
+
+  // --- planets, each possibly with moons ---
+  for (let i = 0; i < planets; i++) {
+    const dist = rnd(0.3, 0.95);
+    const pid = addBody(w, "planet", {
+      angle: ang(), dist, orbSpeed: orbSpeedFor(dist, dir()),
+      yield: Math.round(rnd(35, 90)),
+      richness: Math.round(rnd(500, 1600)),
+      name: PLANET_NAMES[i % PLANET_NAMES.length],
+    });
+    const moons = Math.floor(rnd(0, 2.6)); // 0–2 moons
+    for (let m = 0; m < moons; m++) {
+      addBody(w, "moon", {
+        angle: ang(), dist: rnd(0.045, 0.085), orbSpeed: orbSpeedFor(0.05, dir()) * 2.2, parent: pid,
+        yield: Math.round(rnd(10, 30)),
+        richness: Math.round(rnd(120, 380)),
+        name: `${PLANET_NAMES[i % PLANET_NAMES.length]} ${ROMAN[m] ?? "V"}`,
+      });
+    }
+  }
+
+  // --- an asteroid belt (a ring at a mid radius) ---
+  const belt = rnd(0.42, 0.6);
+  const beltN = Math.floor(asteroids * 0.45);
+  for (let i = 0; i < beltN; i++) {
+    const dist = belt + rnd(-0.03, 0.03);
     addBody(w, "asteroid", {
-      angle: Math.random() * Math.PI * 2,
-      dist,
-      yield: Math.round(rnd(8, 20)),
-      richness: Math.round(rnd(120, 320)),
-      name: `${AST_LETTERS[Math.floor(Math.random() * AST_LETTERS.length)]}X-${Math.floor(rnd(10, 99))}`,
+      angle: ang(), dist, orbSpeed: orbSpeedFor(belt, 1), // belt drifts together
+      yield: Math.round(rnd(8, 18)),
+      richness: Math.round(rnd(100, 280)),
+      name: `${AST_LETTERS[Math.floor(Math.random() * AST_LETTERS.length)]}-${Math.floor(rnd(100, 999))}`,
     });
   }
-  for (let i = 0; i < planets; i++) {
-    const dist = rnd(0.62, 0.98); // far out
-    addBody(w, "planet", {
-      angle: Math.random() * Math.PI * 2,
-      dist,
-      yield: Math.round(rnd(40, 80)),
-      richness: Math.round(rnd(600, 1400)),
-      name: PLANET_NAMES[i % PLANET_NAMES.length],
+  // --- scattered rocks: a few are rich metallic finds, most are lean ---
+  for (let i = beltN; i < asteroids; i++) {
+    const dist = rnd(0.12, 0.92);
+    const metallic = Math.random() < 0.25; // a rich strike
+    addBody(w, "asteroid", {
+      angle: ang(), dist, orbSpeed: orbSpeedFor(dist, dir()),
+      yield: metallic ? Math.round(rnd(30, 55)) : Math.round(rnd(5, 16)),
+      richness: metallic ? Math.round(rnd(300, 600)) : Math.round(rnd(70, 220)),
+      name: `${AST_LETTERS[Math.floor(Math.random() * AST_LETTERS.length)]}X-${Math.floor(rnd(10, 99))}`,
     });
   }
 }
@@ -312,18 +357,20 @@ export function seedSolarSystem(w: World, asteroids = 14, planets = 4): void {
 export function addBody(
   w: World,
   kind: Site["kind"],
-  opts: { angle: number; dist: number; yield: number; richness: number; name?: string },
+  opts: { angle: number; dist: number; yield: number; richness: number; name?: string; orbSpeed?: number; parent?: number },
 ): number {
   const id = w.nextId++;
   w.sites[id] = {
     id,
     kind,
-    name: opts.name ?? `${kind === "planet" ? "P" : "AX"}-${id}`,
+    name: opts.name ?? `${kind === "planet" ? "P" : kind === "moon" ? "M" : "AX"}-${id}`,
     angle: opts.angle,
     dist: opts.dist,
     discovered: false,
     richness: opts.richness,
     yield: opts.yield,
+    orbSpeed: opts.orbSpeed ?? 0,
+    parent: opts.parent ?? -1,
   };
   return id;
 }

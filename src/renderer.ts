@@ -831,7 +831,7 @@ export class Renderer {
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
     for (const id in world.drones) {
       const d = world.drones[id];
-      if (d.state === "transit") continue; // off-map — invisible
+      if (d.state === "transit" || d.state === "lost") continue; // off-map / destroyed — invisible
       const bay = world.structures[d.bayId];
       if (!bay) continue;
       const pc = padCell.get(bay.id) ?? bay.cell;

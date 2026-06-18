@@ -146,7 +146,7 @@ export interface Stock {
 // Drones fly OFF the map to orbital bodies (no on-grid asteroids). The trip is:
 // docked → outbound (lift off the pad toward space) → transit (off-map, to the
 // body and back) → inbound (descend onto the pad, unload) → docked.
-export type DroneState = "docked" | "outbound" | "transit" | "inbound";
+export type DroneState = "docked" | "outbound" | "transit" | "inbound" | "lost";
 
 export interface Drone {
   id: number;
@@ -161,17 +161,29 @@ export interface Drone {
 // drone to it from the Star Chart. Unknown until a drone first visits ("discovered"),
 // at which point its yield/richness are revealed. Every body gives minerals; the
 // only difference is how much (yield/trip) and how much is left (richness).
-export type SiteKind = "asteroid" | "planet";
+export type SiteKind = "asteroid" | "planet" | "moon";
 
 export interface Site {
   id: number;
   kind: SiteKind;
   name: string; // designation shown on the chart, e.g. "AX-7" / "Veil"
-  angle: number; // 0..2π position around the star map
-  dist: number; // 0..1 normalized orbital distance (→ trip time + chart radius)
+  angle: number; // current angle around its primary (advances each tick — it orbits)
+  dist: number; // orbit radius: 0..1 around the star, or a small fraction for a moon
   discovered: boolean; // revealed once a drone has visited
   richness: number; // remaining units (hidden until discovered)
   yield: number; // units delivered per trip (hidden until discovered)
+  orbSpeed: number; // radians/sec it travels around its primary (signed)
+  parent: number; // site id it orbits as a moon, or -1 if it orbits the star/barycentre
+}
+
+// A star at the system centre — one (central) or two (a binary pair orbiting the
+// barycentre). Cosmetic: drones mine Sites, not stars.
+export interface Star {
+  angle: number; // position around the barycentre (0 for a lone star)
+  dist: number; // separation from centre (0 for a lone star)
+  orbSpeed: number; // radians/sec around the barycentre
+  color: string; // draw colour
+  r: number; // draw radius (chart units)
 }
 
 export interface Ship {
@@ -307,6 +319,7 @@ export interface World {
   agents: Record<number, Agent>;
   drones: Record<number, Drone>;
   sites: Record<number, Site>;
+  stars: Star[]; // the system's star(s) — one central, or a binary pair
   ships: Ship[];
   gods: God[]; // active race-gods drifting past (gods.ts)
   godTimer: number; // accumulator toward the next god visit

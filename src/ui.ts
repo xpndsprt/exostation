@@ -1,5 +1,5 @@
 import { Encounter, HoverTarget, OverlayMode, Selection, Site, Speed, Species, Tool, UIState, World } from "./types";
-import { transitSeconds } from "./mining";
+import { transitSeconds, systemDist, REBUILD_COST } from "./mining";
 import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
@@ -1390,7 +1390,17 @@ function closeStarChart(): void {
 
 const SC_ASTEROID = "#9a8a64";
 const SC_PLANET = "#6fa8d0";
+const SC_MOON = "#8a93a6";
 const SC_UNKNOWN = "#566074";
+
+// Mineral grade by per-trip yield — drives both the dot colour and the label, so
+// the chart shows "various levels of minerals on various bodies" at a glance.
+function gradeColor(y: number): string {
+  return y >= 30 ? "#d8b463" : y >= 16 ? SC_ASTEROID : "#7a7158";
+}
+function gradeLabel(y: number): string {
+  return y >= 50 ? "Mineral-rich" : y >= 30 ? "Ore-rich" : y >= 16 ? "Moderate" : "Lean";
+}
 
 export function refreshStarChart(world: World): void {
   if (!scOpen) return;
@@ -1419,24 +1429,37 @@ export function refreshStarChart(world: World): void {
   }
   ctx.globalAlpha = 1;
 
-  // the star + the station's orbit ring
-  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
-  glow.addColorStop(0, "#ffe9a8");
-  glow.addColorStop(1, "rgba(255,210,122,0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 30, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffd27a";
-  ctx.beginPath();
-  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
-  ctx.fill();
+  // --- the system's star(s): one central sun, or a binary pair ---
+  const starPos = (st: { angle: number; dist: number }): [number, number] =>
+    st.dist <= 0 ? [cx, cy] : [cx + Math.cos(st.angle) * st.dist * r0 * 1.4, cy + Math.sin(st.angle) * st.dist * r0 * 1.4];
+  const stars = world.stars ?? [];
+  for (const st of stars) {
+    const [sx, sy] = starPos(st);
+    const gl = ctx.createRadialGradient(sx, sy, 0, sx, sy, st.r * 4.2);
+    gl.addColorStop(0, st.color);
+    gl.addColorStop(1, "rgba(255,210,122,0)");
+    ctx.fillStyle = gl;
+    ctx.beginPath();
+    ctx.arc(sx, sy, st.r * 4.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = st.color;
+    ctx.beginPath();
+    ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (stars.length === 0) {
+    ctx.fillStyle = "#ffd27a";
+    ctx.beginPath();
+    ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // the station's orbit ring + station marker (top of its orbit)
   ctx.strokeStyle = "rgba(110,168,255,0.35)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(cx, cy, r0, 0, Math.PI * 2);
   ctx.stroke();
-  // the station sits on its orbit (top)
   const stx = cx;
   const sty = cy - r0;
   ctx.fillStyle = "#49d17a";
@@ -1445,16 +1468,55 @@ export function refreshStarChart(world: World): void {
   scHits = [];
   const drone = scDrone(world);
 
+  // position of a body: planets/asteroids around the centre; a moon rides around
+  // its parent planet's current position.
+  const moonR = (s: Site) => 15 + s.dist * 130;
+  const posOf = (s: Site): [number, number] => {
+    if (s.parent >= 0 && world.sites[s.parent]) {
+      const p = world.sites[s.parent];
+      const px = cx + Math.cos(p.angle) * bodyR(p), py = cy + Math.sin(p.angle) * bodyR(p);
+      return [px + Math.cos(s.angle) * moonR(s), py + Math.sin(s.angle) * moonR(s)];
+    }
+    const r = bodyR(s);
+    return [cx + Math.cos(s.angle) * r, cy + Math.sin(s.angle) * r];
+  };
+
+  // faint orbit rings — star-orbiting bodies around the centre, moons around planets
+  ctx.lineWidth = 1;
   for (const id in world.sites) {
     const s = world.sites[id];
-    const r = bodyR(s);
-    const x = cx + Math.cos(s.angle) * r;
-    const y = cy + Math.sin(s.angle) * r;
+    if (s.parent >= 0) {
+      const p = world.sites[s.parent];
+      if (!p) continue;
+      const px = cx + Math.cos(p.angle) * bodyR(p), py = cy + Math.sin(p.angle) * bodyR(p);
+      ctx.strokeStyle = "rgba(120,140,170,0.12)";
+      ctx.beginPath();
+      ctx.arc(px, py, moonR(s), 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = "rgba(120,140,170,0.10)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, bodyR(s), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  // the bodies themselves
+  for (const id in world.sites) {
+    const s = world.sites[id];
+    const [x, y] = posOf(s);
     const known = s.discovered;
     const depleted = known && s.richness <= 0;
-    const col = depleted ? "#3a4150" : !known ? SC_UNKNOWN : s.kind === "planet" ? SC_PLANET : SC_ASTEROID;
-    const rad = s.kind === "planet" ? 8 : 5;
-    // selection ring
+    const col = depleted
+      ? "#3a4150"
+      : !known
+        ? SC_UNKNOWN
+        : s.kind === "planet"
+          ? SC_PLANET
+          : s.kind === "moon"
+            ? SC_MOON
+            : gradeColor(s.yield);
+    const rad = s.kind === "planet" ? 8 : s.kind === "moon" ? 4 : 5;
     if (s.id === scSelected) {
       ctx.strokeStyle = "#6ea8ff";
       ctx.lineWidth = 2;
@@ -1466,7 +1528,6 @@ export function refreshStarChart(world: World): void {
     ctx.beginPath();
     ctx.arc(x, y, rad, 0, Math.PI * 2);
     ctx.fill();
-    // label
     ctx.fillStyle = known ? "#c3cbdc" : "#6b7488";
     ctx.font = "10px system-ui, sans-serif";
     ctx.textAlign = "center";
@@ -1475,12 +1536,10 @@ export function refreshStarChart(world: World): void {
   }
 
   // the bay's drone, drawn en route along its target line (out then back)
-  if (drone && drone.siteId >= 0) {
+  if (drone && drone.siteId >= 0 && drone.state !== "lost") {
     const s = world.sites[drone.siteId];
     if (s) {
-      const r = bodyR(s);
-      const tx = cx + Math.cos(s.angle) * r;
-      const ty = cy + Math.sin(s.angle) * r;
+      const [tx, ty] = posOf(s);
       ctx.strokeStyle = "rgba(110,168,255,0.5)";
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1489,13 +1548,11 @@ export function refreshStarChart(world: World): void {
       ctx.stroke();
       ctx.setLineDash([]);
       if (drone.state === "transit") {
-        const frac = Math.min(1, drone.t / transitSeconds(s.dist));
+        const frac = Math.min(1, drone.t / transitSeconds(systemDist(world, s)));
         const p = frac < 0.5 ? frac * 2 : (1 - frac) * 2; // out, then back
-        const dxp = stx + (tx - stx) * p;
-        const dyp = sty + (ty - sty) * p;
         ctx.fillStyle = "#dfe6f2";
         ctx.beginPath();
-        ctx.arc(dxp, dyp, 3.5, 0, Math.PI * 2);
+        ctx.arc(stx + (tx - stx) * p, sty + (ty - sty) * p, 3.5, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -1505,16 +1562,17 @@ export function refreshStarChart(world: World): void {
   const sel = scSelected >= 0 ? world.sites[scSelected] : undefined;
   const selEl = el.querySelector(".sc-sel") as HTMLElement;
   if (sel) {
-    const trip = Math.round(transitSeconds(sel.dist));
-    const kindLabel = sel.kind === "planet" ? "Planet" : "Asteroid";
+    const trip = Math.round(transitSeconds(systemDist(world, sel)));
+    const kindLabel = sel.kind === "planet" ? "Planet" : sel.kind === "moon" ? "Moon" : "Asteroid";
+    const risk = Math.round((0.02 + systemDist(world, sel) * 0.06) * 100);
     selEl.innerHTML =
       `<div class="sc-name">${sel.discovered ? sel.name : "Unknown contact"}</div>` +
-      `<div class="sc-stat">${kindLabel} · ~${trip}s round trip</div>` +
+      `<div class="sc-stat">${kindLabel} · ~${trip}s round trip · ~${risk}% loss risk</div>` +
       (sel.discovered
-        ? `<div class="sc-stat">Yield <b>${sel.yield}</b>/trip · <b>${Math.round(sel.richness)}</b> left${sel.richness <= 0 ? " (depleted)" : ""}</div>`
+        ? `<div class="sc-stat">${gradeLabel(sel.yield)} · Yield <b>${sel.yield}</b>/trip · <b>${Math.round(sel.richness)}</b> left${sel.richness <= 0 ? " (depleted)" : ""}</div>`
         : `<div class="sc-stat">Yield unknown — send a drone to survey it.</div>`);
   } else {
-    selEl.innerHTML = `<div class="sc-stat">Select an asteroid or planet to send the drone.</div>`;
+    selEl.innerHTML = `<div class="sc-stat">Select a body to send the drone. Each trip risks the drone — a loss costs ¢${REBUILD_COST} to rebuild.</div>`;
   }
 
   const btn = el.querySelector(".sc-dispatch") as HTMLButtonElement;
@@ -1525,6 +1583,7 @@ export function refreshStarChart(world: World): void {
 
   const hint = el.querySelector(".sc-hint") as HTMLElement;
   if (!drone) hint.textContent = "This bay has no drone.";
+  else if (drone.state === "lost") hint.textContent = `Drone lost — the Bay is fabricating a replacement (¢${REBUILD_COST}).`;
   else if (drone.state === "docked") hint.textContent = drone.siteId >= 0 ? "Drone ready — it will launch shortly." : "Drone idle — pick a target.";
   else if (drone.state === "transit") hint.textContent = "Drone is out mining — new orders apply on its return.";
   else hint.textContent = drone.state === "outbound" ? "Drone launching…" : "Drone returning…";

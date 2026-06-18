@@ -8,7 +8,7 @@ import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
 import { powerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
-import { miningSystem, transitSeconds } from "../src/mining";
+import { miningSystem, transitSeconds, systemDist, REBUILD_COST, REBUILD_TIME } from "../src/mining";
 import { foodSystem } from "../src/food";
 import { fuelSystem } from "../src/fuel";
 import { overflowSystem } from "../src/overflow";
@@ -36,6 +36,13 @@ import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
 import { World } from "../src/types";
+
+// Deterministic RNG: the sim uses Math.random for variety (drone loss, system
+// seeding, encounters). Stub it with a seeded LCG so the suite is reproducible.
+// reseed() lets a test pin an identical sequence across paired runs.
+let _seed = 0x1a2b3c4d;
+function reseed(n: number): void { _seed = n >>> 0; }
+Math.random = () => { _seed = (_seed * 1664525 + 1013904223) >>> 0; return _seed / 4294967296; };
 
 // Minimal localStorage shim so persistence works under tsx/node.
 (globalThis as unknown as { localStorage: Storage }).localStorage = (() => {
@@ -599,8 +606,53 @@ check("Footprint over an occupied tile is rejected", footprintCells(wf2, "vat", 
 const wa2 = createWorld();
 check("Fresh world has no orbital bodies", Object.keys(wa2.sites).length === 0);
 seedSolarSystem(wa2, 8, 2);
-check("seedSolarSystem populates the star system", Object.keys(wa2.sites).length === 10);
+check("seedSolarSystem populates the star system", Object.keys(wa2.sites).length >= 10);
 check("Seeded bodies start undiscovered", Object.values(wa2.sites).every((s) => !s.discovered));
+check("System has at least one star", wa2.stars.length >= 1);
+check("System has planets and asteroids", Object.values(wa2.sites).some((s) => s.kind === "planet") && Object.values(wa2.sites).some((s) => s.kind === "asteroid"));
+
+// --- expanded star map: orbits, moons, drone loss + rebuild ---
+{
+  // bodies orbit: a body with orbSpeed advances its angle each tick
+  const w = createWorld();
+  const id = addBody(w, "asteroid", { angle: 0, dist: 0.3, yield: 10, richness: 100, orbSpeed: 0.5 });
+  const a0 = w.sites[id].angle;
+  miningSystem(w, 0.1);
+  check("Bodies orbit (angle advances)", w.sites[id].angle !== a0);
+
+  // a moon's trip distance tracks its parent planet, not its tiny moon orbit
+  const wp = createWorld();
+  const pid = addBody(wp, "planet", { angle: 0, dist: 0.8, yield: 60, richness: 1000 });
+  const mid = addBody(wp, "moon", { angle: 0, dist: 0.06, yield: 20, richness: 200, parent: pid });
+  check("A moon orbits a parent planet", wp.sites[mid].parent === pid);
+  check("A moon's trip distance tracks its planet", systemDist(wp, wp.sites[mid]) > 0.8 && systemDist(wp, wp.sites[mid]) < 0.9);
+
+  // a lost drone is rebuilt by the bay for a fee once it can afford it
+  const wl = createWorld();
+  carve(wl, 5, 5, 9, 8);
+  recomputeRooms(wl);
+  addStructure(wl, "bay", 7, 6);
+  const dl = Object.values(wl.drones)[0];
+  dl.state = "lost";
+  dl.t = REBUILD_TIME;
+  wl.credits = REBUILD_COST + 100;
+  const before = wl.credits;
+  miningSystem(wl, 0.1);
+  check("A lost drone is rebuilt to docked", dl.state === "docked");
+  check("Rebuilding a drone costs the fee", before - wl.credits === REBUILD_COST);
+
+  // …but not while the station can't pay for it
+  const wpoor = createWorld();
+  carve(wpoor, 5, 5, 9, 8);
+  recomputeRooms(wpoor);
+  addStructure(wpoor, "bay", 7, 6);
+  const dp = Object.values(wpoor.drones)[0];
+  dp.state = "lost";
+  dp.t = REBUILD_TIME;
+  wpoor.credits = REBUILD_COST - 50;
+  miningSystem(wpoor, 0.1);
+  check("A lost drone stays lost while unaffordable", dp.state === "lost");
+}
 
 // --- Door crossing: agents transit a door without oscillating (suit covers it) ---
 const wdoor = createWorld();
@@ -902,6 +954,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   // Korro's Hauler trait lets mining drones carry more, so a station with a
   // Korro out-mines an identical one without (more uptime per trip).
   function mineRun(withKorro: boolean): number {
+    reseed(42); // identical RNG (and drone-loss pattern) across both runs
     const w = createWorld();
     carve(w, 5, 5, 9, 8);
     recomputeRooms(w);

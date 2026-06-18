@@ -190,10 +190,21 @@ function sanitize(w: World): World {
       d.t = 0;
       d.cargo = 0;
     }
+  } else {
+    // backfill orbit fields on pre-orbit saves (kept bodies, just static before)
+    for (const id in w.sites) {
+      const s = w.sites[id];
+      if (typeof s.orbSpeed !== "number") s.orbSpeed = 0;
+      if (typeof s.parent !== "number") s.parent = -1;
+    }
   }
+  // a system needs at least one star to draw — give pre-star saves a lone sun
+  if (!Array.isArray(w.stars)) w.stars = [];
+  if (w.stars.length === 0 && Object.keys(w.sites).length > 0)
+    w.stars.push({ angle: 0, dist: 0, orbSpeed: 0, color: "#ffe9a8", r: 7 });
   for (const id in w.drones) {
     const d = w.drones[id];
-    if (!["docked", "outbound", "transit", "inbound"].includes(d.state)) {
+    if (!["docked", "outbound", "transit", "inbound", "lost"].includes(d.state)) {
       d.state = "docked"; // old "mining" state retired
       d.t = 0;
     }
