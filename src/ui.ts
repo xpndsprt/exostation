@@ -4,7 +4,7 @@ import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
 import { RELATIONS } from "./relations";
-import { advise } from "./advisor";
+import { adviseByAI, AIAdvisor } from "./advisor";
 import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
@@ -922,27 +922,33 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
   if (newList) newList.scrollTop = prevScroll;
 }
 
-// Lower-right advisor board: species seen so far + the AI's next-step guidance.
+// Lower-centre advisory board, now broken into AI components: a STATION AI for
+// infrastructure plus one AI per species aboard, each speaking only for its own.
 export function renderAdvisor(world: World): void {
   const el = document.getElementById("advisor");
   if (!el) return;
-  const seen = world.seen.length
-    ? world.seen
-        .map(
-          (s) =>
-            `<span class="sp"><span class="d" style="background:${SP_COLOR[s]}"></span>${SPECIES[s].label}</span>`,
-        )
-        .join("")
-    : `<span class="muted">none yet</span>`;
-  const advice = advise(world)
-    .slice(0, 4)
-    .map((a) => `<li class="${a.sev}"><span class="mk"></span><span>${a.text}</span></li>`)
-    .join("");
+  const card = (ai: AIAdvisor): string => {
+    const isStation = ai.species === "station";
+    const color = isStation ? "#6ea8ff" : SP_COLOR[ai.species as Species];
+    const limit = isStation ? 4 : 2;
+    const items = ai.advice
+      .slice(0, limit)
+      .map((a) => `<li class="${a.sev}"><span class="mk"></span><span>${a.text}</span></li>`)
+      .join("");
+    const label = isStation ? `🤖 ${ai.name}` : ai.name;
+    return (
+      `<div class="ai${isStation ? " station" : ""}">` +
+      `<div class="aihead"><span class="d" style="background:${color};color:${color}"></span>${label}</div>` +
+      `<ul class="advice" style="color:#cdd4e2">${items}</ul></div>`
+    );
+  };
+  const ais = adviseByAI(world);
+  const station = ais.filter((a) => a.species === "station");
+  const species = ais.filter((a) => a.species !== "station");
   el.innerHTML =
-    `<h3>🤖 ADVISOR</h3>` +
+    `<h3>🤖 STATION ADVISORS</h3>` +
     objectiveHtml(world) +
-    `<div class="seen">${seen}</div>` +
-    `<ul class="advice">${advice}</ul>`;
+    `<div class="ais">${station.map(card).join("")}${species.map(card).join("")}</div>`;
 }
 
 export function showDragLabel(text: string, x: number, y: number, bad = false): void {

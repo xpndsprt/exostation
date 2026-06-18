@@ -1,11 +1,21 @@
-import { Species, World } from "./types";
+import { Agent, Species, World } from "./types";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
+import { RELATIONS } from "./relations";
 
 export type Severity = "critical" | "warn" | "tip";
 export interface Advice {
   sev: Severity;
   text: string;
+}
+
+// An "AI" persona giving advice. The STATION AI watches infrastructure and danger
+// for the whole station; each species AI represents one species aboard and speaks
+// only for "its" people (in the first person — "our", "we").
+export interface AIAdvisor {
+  species: Species | "station";
+  name: string; // e.g. "STATION AI", "VRY'L AI"
+  advice: Advice[];
 }
 
 const RANK: Record<Severity, number> = { critical: 0, warn: 1, tip: 2 };
@@ -29,32 +39,29 @@ function isNative(world: World, cell: number, species: Species): boolean {
   return rid >= 0 && world.rooms[rid]?.gas === SPECIES[species].gas;
 }
 
-// Rule-based "AI" advisor: inspect the whole world and surface the most useful
-// next steps, most urgent first. Returns a prioritized list (caller trims).
-export function advise(world: World): Advice[] {
+// How a species gets fed — named per food line so each AI can point at its chain.
+const FOOD_CHAIN: Record<string, string> = {
+  rations: "a Rations Synth turns biomass into meals",
+  fungal: "set a Bio Vat to Spores and a Synth to Fungal",
+  protein: "set a Bio Vat to Microbes and a Synth to Live-Protein",
+  exotic: "set a Bio Vat to Microbes and a Synth to Exo-Culture",
+};
+const TEMP_FIX: Record<string, string> = { hot: "add a Heater to their wing", cold: "add a Cryo Unit to their wing" };
+
+// ---- STATION AI: global infrastructure, danger, build-order, economy ----
+function stationAdvice(world: World): Advice[] {
   const out: Advice[] = [];
   const agents = Object.values(world.agents).filter((a) => a.alive);
   const structures = Object.values(world.structures);
   const has = (k: string) => structures.some((s) => s.kind === k);
   const p = world.power;
 
-  // --- critical: active danger ---
   if (p.brownout) out.push({ sev: "critical", text: "Power shortfall — add a Solar Panel or Battery." });
   if (Object.values(world.rooms).some((r) => r.gas === "mixed"))
     out.push({ sev: "critical", text: "A room has MIXED gases (lethal) — keep different gas generators in separate rooms." });
-  if (agents.some((a) => a.fighting))
-    out.push({ sev: "critical", text: "Skirmish in progress — separate hostile species and raise morale." });
-  if (agents.some((a) => a.o2 < 40 || (a.suit < 25 && !isNative(world, a.cell, a.species))))
-    out.push({ sev: "critical", text: "Crew are losing air — fix power/atmosphere or get them to their gas." });
-  if (agents.some((a) => a.food < 35 && world.stock.meals[SPECIES[a.species].diet] === 0))
-    out.push({ sev: "critical", text: "Crew are starving — no meals of their food type." });
-  if (agents.some((a) => a.alive && a.species === "vryl") && world.stock.meals.fungal === 0)
-    out.push({ sev: "warn", text: "Vry'l eat Fungal Mash — set a Bio Vat to Spores and a Synth to Fungal." });
   if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))
-    out.push({ sev: "critical", text: "A module has broken down — crew (residents) must repair it." });
+    out.push({ sev: "critical", text: "A module has broken down — crew must repair it." });
 
-  // crew vs upkeep: residents do the maintenance; visitors don't. Crew now
-  // immigrate by shuttle, so the fix is infrastructure, not hand-placing them.
   const residents = agents.filter((a) => !a.guest).length;
   const machines = structures.filter((s) => STRUCTURES[s.kind].draw > 0).length;
   if (machines > 0 && residents === 0)
@@ -62,7 +69,7 @@ export function advise(world: World): Advice[] {
   else if (residents > 0 && machines > residents * 6)
     out.push({ sev: "tip", text: "Lots of machinery per crew — add Crew Quarters so more residents arrive to keep upkeep pace." });
 
-  // --- progression: the single next build-order gap ---
+  // single next build-order gap
   const sealed = Object.values(world.rooms).some((r) => r.enclosed);
   if (!sealed) out.push({ sev: "warn", text: "Seal a room: lay Floor, then enclose it with Wall." });
   else if (!has("solar")) out.push({ sev: "warn", text: "Place a Solar Panel to power the station." });
@@ -72,8 +79,7 @@ export function advise(world: World): Advice[] {
   else if (!has("dock")) out.push({ sev: "warn", text: "Build a Docking Port — a shuttle uses it to bring resident crew (and Drenn guests)." });
   else if (!has("vat")) out.push({ sev: "warn", text: "Build a Bio Vat to keep growing food before the starting biomass runs out." });
 
-  // crew capacity is free but nobody is coming — name the blocking gate (or
-  // confirm a shuttle is inbound). Mirrors the immigration gates in economy.ts.
+  // crew capacity free but nobody coming — name the blocking gate
   const podCount = structures.filter((s) => s.kind === "pod").length;
   if (has("dock") && podCount > residents) {
     const dockPowered = structures.some((s) => s.kind === "dock" && s.powered);
@@ -93,44 +99,125 @@ export function advise(world: World): Advice[] {
     else out.push({ sev: "warn", text: "No meals in stock — power a Synth and a shuttle will bring crew to your free quarters." });
   }
 
-  // mining & trade (minerals economy)
-  if (has("vat") && !has("bay"))
-    out.push({ sev: "tip", text: "Mine minerals: build a Bot Bay near an asteroid." });
+  // mining & trade
+  if (has("vat") && !has("bay")) out.push({ sev: "tip", text: "Mine minerals: build a Bot Bay and dispatch its drone from the Star Chart." });
   if (has("bay") && !has("tradehub") && world.stock.minerals > 40)
     out.push({ sev: "tip", text: "Build a Trade Hub so traders buy your minerals for credits." });
 
-  // --- quality / risk ---
-  if (agents.length > 0) {
-    const avgMood = agents.reduce((s, a) => s + a.mood, 0) / agents.length;
-    if (avgMood < 40)
-      out.push({ sev: "warn", text: "Morale is low — improve food/rest or separate disliked species." });
-    const avgFun = agents.reduce((s, a) => s + a.fun, 0) / agents.length;
-    if (!has("rec") && agents.length > 1)
-      out.push({ sev: "tip", text: "Build a Lounge so crew and visitors can relax and socialize." });
-    else if (has("rec") && avgFun < 35)
-      out.push({ sev: "warn", text: "Everyone's bored — add another Lounge for recreation." });
-  }
-  if (agents.some((a) => a.tension > 50))
-    out.push({ sev: "warn", text: "Tension is rising — keep disliked species apart." });
+  // recreation infrastructure + rivals sharing a room
+  if (!has("rec") && agents.length > 1) out.push({ sev: "tip", text: "Build a Lounge so crew and visitors can relax and socialize." });
   if (Object.values(world.rooms).some((r) => r.harmony < -0.3))
     out.push({ sev: "warn", text: "Rivals share a room — productivity and mood suffer. Separate them, or group friends for a buff." });
   if (has("solar") && !has("battery") && p.supply - p.draw < 4)
     out.push({ sev: "tip", text: "Power margin is thin — add a Battery for safety." });
 
-  // --- opportunity ---
-  const pods = structures.filter((s) => s.kind === "pod").length;
+  // lodging opportunity
   const hotels = structures.filter((s) => s.kind === "hotel").length;
   const guests = agents.filter((a) => a.guest).length;
-  if (has("dock") && pods > 0 && residents >= pods)
-    out.push({ sev: "tip", text: "All Crew Quarters full — add more so the shuttle can bring extra crew." });
   if (has("dock") && hotels > 0 && guests >= hotels)
     out.push({ sev: "tip", text: "All Hotel Rooms occupied — add Hotel Rooms to host more paying guests." });
   else if (has("dock") && hotels === 0 && residents > 0)
-    out.push({ sev: "tip", text: "Add Hotel Rooms to lodge paying Drenn guests for income." });
+    out.push({ sev: "tip", text: "Add Hotel Rooms to lodge paying guests for income." });
 
   if (out.length === 0)
     out.push({ sev: "tip", text: "Station stable. Expand: more Crew Quarters to grow, Hotel Rooms for income, or host a new species." });
-
   out.sort((a, b) => RANK[a.sev] - RANK[b.sev]);
   return out;
+}
+
+// ---- a single species' AI: speaks only for its own people ----
+function speciesAdvice(world: World, sp: Species, mine: Agent[]): Advice[] {
+  const out: Advice[] = [];
+  const def = SPECIES[sp];
+  const structures = Object.values(world.structures);
+  const m = world.stock.meals;
+  const residents = mine.filter((a) => !a.guest);
+
+  // life-or-death first
+  if (mine.some((a) => a.fighting))
+    out.push({ sev: "critical", text: "We're trading blows — separate us from our rivals and raise morale, fast." });
+  if (mine.some((a) => a.o2 < 40 || (a.suit < 25 && !isNative(world, a.cell, sp))))
+    out.push({ sev: "critical", text: `We're losing air outside our ${def.gas.toUpperCase()} wing — get us back to breathable rooms.` });
+  if (mine.some((a) => a.injured))
+    out.push({ sev: "warn", text: "One of us is wounded — a Med Bay will heal us before we bleed out." });
+  if (mine.some((a) => a.food < 35) && m[def.diet] === 0)
+    out.push({ sev: "critical", text: `We're starving — no ${def.diet} stocked. ${cap(FOOD_CHAIN[def.diet])}.` });
+  else if (m[def.diet] === 0)
+    out.push({ sev: "warn", text: `No ${def.diet} in our larder — ${FOOD_CHAIN[def.diet]}.` });
+
+  // comfort
+  const avgMood = mine.reduce((s, a) => s + a.mood, 0) / mine.length;
+  if (avgMood < 40) out.push({ sev: "warn", text: "Our morale is low — better food, rest, recreation, or fewer rivals nearby." });
+  const rival = mine.some((a) => a.tension > 50);
+  if (rival) {
+    const foe = nearestFoe(world, sp);
+    out.push({ sev: "warn", text: foe ? `Tension is rising — keep us apart from the ${SPECIES[foe].label}.` : "Tension is rising — keep us apart from species we dislike." });
+  }
+  // climate (mood, not lethal)
+  const wrongTemp = mine.some((a) => {
+    const rid = world.cells[a.cell].roomId;
+    const room = rid >= 0 ? world.rooms[rid] : undefined;
+    return room && room.gas === def.gas && room.temp !== def.temp;
+  });
+  if (wrongTemp && def.temp !== "temperate") out.push({ sev: "tip", text: `We prefer it ${def.temp} — ${TEMP_FIX[def.temp]}.` });
+
+  // lodging — only residents bunk in Crew Quarters; guests use Hotels
+  if (residents.length > 0) {
+    let cap2 = 0;
+    for (const s of structures) {
+      if (s.kind !== "pod" || s.recipe !== sp) continue;
+      const rid = world.cells[s.cell].roomId;
+      if ((rid >= 0 ? world.rooms[rid]?.gas : undefined) === def.gas) cap2++;
+    }
+    if (cap2 < residents.length)
+      out.push({ sev: "tip", text: `Not enough bunks prepped for us — set Crew Quarters (in ${def.gas.toUpperCase()}) to ${def.label}.` });
+  }
+
+  // thriving → may want to breed
+  if (mine.length >= 2 && avgMood >= 70)
+    out.push({ sev: "tip", text: "We're thriving — give us empty floor and we may ask to raise a brood." });
+
+  if (out.length === 0) out.push({ sev: "tip", text: "All nominal. We're content." });
+  out.sort((a, b) => RANK[a.sev] - RANK[b.sev]);
+  return out;
+}
+
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+// The species present aboard that `sp` most dislikes (for "keep us apart" lines).
+function nearestFoe(world: World, sp: Species): Species | null {
+  const present = new Set<Species>();
+  for (const id in world.agents) if (world.agents[id].alive) present.add(world.agents[id].species);
+  let foe: Species | null = null;
+  let worst = 0;
+  for (const o of present) {
+    if (o === sp) continue;
+    const r = RELATIONS[sp][o];
+    if (r < worst) { worst = r; foe = o; }
+  }
+  return foe;
+}
+
+// Break the advisory down into AI components: the STATION AI plus one AI per
+// species currently aboard (each speaking only for its own people).
+export function adviseByAI(world: World): AIAdvisor[] {
+  const out: AIAdvisor[] = [{ species: "station", name: "STATION AI", advice: stationAdvice(world) }];
+  const bySpecies = new Map<Species, Agent[]>();
+  for (const id in world.agents) {
+    const a = world.agents[id];
+    if (!a.alive) continue;
+    (bySpecies.get(a.species) ?? bySpecies.set(a.species, []).get(a.species)!).push(a);
+  }
+  // stable order: by first-seen so the cards don't jump around
+  const order = world.seen.filter((s) => bySpecies.has(s));
+  for (const s of bySpecies.keys()) if (!order.includes(s)) order.push(s);
+  for (const sp of order) out.push({ species: sp, name: `${SPECIES[sp].label.toUpperCase()} AI`, advice: speciesAdvice(world, sp, bySpecies.get(sp)!) });
+  return out;
+}
+
+// Flattened, prioritized advice across every AI (back-compat for callers/tests).
+export function advise(world: World): Advice[] {
+  const all = adviseByAI(world).flatMap((ai) => ai.advice);
+  all.sort((a, b) => RANK[a.sev] - RANK[b.sev]);
+  return all;
 }

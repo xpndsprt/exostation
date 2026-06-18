@@ -220,6 +220,15 @@
     #advisor .advice li.warn .mk { background: #e8a33d; }
     #advisor .advice li.tip .mk { background: #49d17a; }
     #advisor .advice li.critical span:last-child { color: #ffb4b4; }
+    /* per-AI components: STATION AI + one card per species aboard */
+    #advisor .ais { display: flex; flex-flow: row wrap; gap: 8px; align-items: flex-start; }
+    #advisor .ai { flex: 1 1 240px; background: #131922; border: 1px solid #232b3a; border-radius: 9px; padding: 6px 9px 8px; }
+    #advisor .ai.station { border-color: #2f3e5e; background: #141c2a; }
+    #advisor .aihead { display: flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .1em;
+      font-weight: 700; color: #aeb8cc; margin: 0 0 5px; }
+    #advisor .aihead .d { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+    #advisor .ai .advice { flex-flow: column; }
+    #advisor .ai .advice li { flex: none; font-size: 12.5px; }
     /* objective goal bar, now hosted inside the advisor */
     #advisor .goalbar { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding-bottom: 8px;
       border-bottom: 1px solid #232b3a; font-size: 13px; color: #c3cbdc; flex-wrap: wrap; }
