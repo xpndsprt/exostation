@@ -1885,6 +1885,29 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   const c0 = encounterText({ kind: "conflict", aId: 0, bId: 1, aSpecies: "human", bSpecies: "korro", cell: 0, variant: 0 });
   check("Encounter text fills in the species names", c0.body.includes("Human") && c0.body.includes("Korro"));
 }
+{
+  // "deal" encounters move money on accept; refusing just sours the pair
+  const w = createWorld();
+  w.credits = 1000;
+  w.encounter = { kind: "deal", aId: 1, bId: 2, aSpecies: "human", bSpecies: "drenn", cell: 0, variant: 2 }; // "Side hustle" pays +110
+  resolveEncounter(w, 0);
+  check("Accepting a paying deal adds credits", w.credits === 1110);
+  check("Resolving a deal clears the encounter", w.encounter === null);
+}
+{
+  // "complaint" encounters fix or break a real module
+  const w = createWorld();
+  carve(w, 5, 5, 9, 8);
+  recomputeRooms(w);
+  addStructure(w, "synth", 7, 6);
+  const syn = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  syn.condition = 20;
+  w.credits = 1000;
+  w.encounter = { kind: "complaint", aId: 1, bId: 1, aSpecies: "human", bSpecies: "human", cell: 0, variant: 0, subjectId: syn.id, subjectKind: "synth" };
+  resolveEncounter(w, 0); // authorize repair
+  check("Authorizing a complaint repair services the module", syn.condition === 100);
+  check("Authorizing a repair costs credits", w.credits < 1000);
+}
 
 // --- Tier-3 exotic gases + species ---
 {

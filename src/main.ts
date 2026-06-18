@@ -32,7 +32,7 @@ import { resolveEncounter } from "./encounters";
 import * as audio from "./audio";
 import { saveWorld, loadWorld, deleteSave, serializeWorld, parseSave } from "./persistence";
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
-import { Renderer } from "./renderer";
+import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -138,7 +138,8 @@ async function boot(): Promise<void> {
   // Force WebGL: dynamic CanvasSource texture re-uploads (the lighting buffer,
   // updated every frame via source.update()) don't reliably refresh on the WebGPU
   // backend, which left the multiply-lightmap blank → a black screen. WebGL is
-  // plenty for 2D and avoids the "Failed to create WebGPU Context Provider" warning.
+  // plenty for 2D. (The benign "Failed to create WebGPU Context Provider" probe
+  // log is cosmetic — see notes; do NOT hide navigator.gpu, it can break init.)
   await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
@@ -158,6 +159,18 @@ async function boot(): Promise<void> {
   const cam = createCamera();
   const renderer = new Renderer(worldContainer, app.renderer);
   renderer.drawGrid(world.w, world.h);
+
+  // WebGL context-loss recovery. The browser only restores a lost context if we
+  // preventDefault the loss; on restore we rebuild textures + force every cached
+  // (draw-on-change) layer to repaint, so the static tiles/shadows/lightmap come
+  // back too — not just the per-frame crew. Without this, ~60% of the scene (the
+  // baked layers) stays blank after a context blip.
+  app.canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); console.warn("WebGL context lost — awaiting restore"); }, false);
+  app.canvas.addEventListener("webglcontextrestored", () => {
+    console.warn("WebGL context restored — rebuilding scene");
+    try { renderer.restoreContext(); } catch (err) { console.error(err); }
+    needRedraw = true;
+  }, false);
 
   const state: UIState = { tool: "floor" };
   let sel: Selection = null;
@@ -786,6 +799,7 @@ async function boot(): Promise<void> {
       clearInterval(autosaveTimer);
       try {
         app.destroy(true, { children: true });
+        resetTextures(); // drop the shared texture cache so the next boot rebuilds on the fresh context
       } catch {
         /* ignore */
       }

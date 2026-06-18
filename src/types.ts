@@ -213,13 +213,17 @@ export interface Ship {
 // response in a paused dialog. The choice definitions/outcomes live in encounters.ts;
 // only the instance (who + which kind) is stored on the world (serializable).
 export interface Encounter {
-  kind: "conflict" | "bond";
+  // conflict/bond = clash or friendship between two crew; deal = a (costed or
+  // paying) proposal from a friendly pair; complaint = a gripe about one module.
+  kind: "conflict" | "bond" | "deal" | "complaint";
   aId: number; // first agent
   bId: number; // second agent
   aSpecies: Species; // captured for the dialog text/portrait (agents may move/die)
   bSpecies: Species;
   cell: number; // where it happened
-  variant?: number; // index into the flavor pool for this pair+kind (stable text)
+  variant?: number; // index into the flavor/scenario pool for this kind (stable text)
+  subjectId?: number; // module the encounter is about (complaint), or undefined
+  subjectKind?: StructureKind; // captured module kind, for the dialog text ({M})
 }
 
 // A race's "god" — a Q-like, ship-sized being that drifts through space and visits

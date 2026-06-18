@@ -23,20 +23,22 @@
   const B = (n) => "b".repeat(n);
   const D = (n) => "d".repeat(n);
 
-  // --- wall autotile set (32px/tile): thin directional bulkheads (d = recessed
-  // hull, k edge, m body, h highlight). The renderer picks one by neighbour mask. ---
-  const WSTRUT = "kh" + "m".repeat(8) + "hk"; // 12-wide vertical strut profile
-  const WROW = D(10) + WSTRUT + D(10); // vertical strut segment (32 wide)
-  // a 12-tall horizontal bulkhead band: top edge, highlight, body, bottom edge.
-  const HBAND = ["k", "h", ...Array(9).fill("m"), "k"]; // one char per row
-  const WALL_STRAIGHT = [
-    ...Array(10).fill(D(32)),
-    ...HBAND.map((c) => c.repeat(32)),
-    ...Array(10).fill(D(32)),
+  // --- wall autotile set (32px, BIOMECHANICAL): a ribbed bone spine over a dark
+  // recess — Giger vertebrae read through Moebius-clean panel lines. Renderer picks
+  // one by neighbour mask. d = recess hull, k = groove/edge, m = body, h = bone. ---
+  const VBODY = "khmmmkkmmmhk"; // 12-wide vertical strut: bone flanks, dark spine groove
+  const VRIB = "khhhmkkmhhhk"; // a vertebra — brighter bone bulge across the strut
+  // a column of strut segments with vertebrae every 5 rows (pairs read as ribs).
+  const strutRows = (n) => Array.from({ length: n }, (_, i) => D(10) + ((i % 5 === 2 || i % 5 === 3) ? VRIB : VBODY) + D(10));
+  // horizontal bulkhead beam (12 rows × 32): bone ridges top/bottom, a central
+  // spine groove, and vertical rib ticks crossing the body.
+  const RIBBED = "mmmk".repeat(8); // body row with periodic rib ticks
+  const HBEAM = [
+    "k".repeat(32), "h".repeat(32), "m".repeat(32), RIBBED, "m".repeat(32),
+    "k".repeat(32), "k".repeat(32),
+    "m".repeat(32), RIBBED, "m".repeat(32), "h".repeat(32), "k".repeat(32),
   ];
-  // Connects N + E as a TRUE quarter-circle arc: an annulus band centred on the
-  // top-right corner (32,0), radii 10..22, so its top/right openings land on the
-  // strut columns/rows and meet the straight struts cleanly. (k edges, h highlight.)
+  // Connects N + E as a TRUE quarter-circle arc — a curved rib bridging the struts.
   const arcCorner = (cx, cy) => {
     const rows = [];
     for (let y = 0; y < 32; y++) {
@@ -44,34 +46,34 @@
       for (let x = 0; x < 32; x++) {
         const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
         const r = Math.sqrt(dx * dx + dy * dy);
-        s += r < 10 || r > 22 ? "d" : r < 12 ? "k" : r < 14 ? "h" : r < 20 ? "m" : "k";
+        // inner/outer recess, k edges, h bone ridge, k spine groove down the middle, m body
+        s += r < 10 || r > 22 ? "d" : r < 11.5 ? "k" : r < 13 ? "h" : r < 15.5 || r > 20.5 ? "k" : r < 17 || r > 19 ? "m" : "k";
       }
       rows.push(s);
     }
     return rows;
   };
   const WALL_CORNER = arcCorner(32, 0); // base = N + E (renderer rotates for the others)
-  const WALL_T = [ // connects N + E + S (vertical strut + east arm)
-    ...Array(10).fill(WROW),
-    ...HBAND.map((c) => D(10) + c.repeat(22)),
-    ...Array(10).fill(WROW),
+  const WALL_T = [ // connects N + E + S (vertical spine + east beam)
+    ...strutRows(10),
+    ...HBEAM.map((r) => D(10) + r.slice(10)),
+    ...strutRows(10),
   ];
-  const WALL_CROSS = [
-    ...Array(10).fill(WROW),
-    ...HBAND.map((c) => c.repeat(32)),
-    ...Array(10).fill(WROW),
-  ];
-  const WALL_END = [ // a capped stub pointing N
-    ...Array(18).fill(WROW),
+  const WALL_STRAIGHT = [ ...Array(10).fill(D(32)), ...HBEAM, ...Array(10).fill(D(32)) ];
+  const WALL_CROSS = [ ...strutRows(10), ...HBEAM, ...strutRows(10) ];
+  const WALL_END = [ // a capped stub pointing N — a vertebra tipped with a bone cap
+    ...strutRows(18),
     D(10) + "k" + "h".repeat(10) + "k" + D(10),
     D(10) + "k".repeat(12) + D(10),
     ...Array(12).fill(D(32)),
   ];
-  const WALL_NODE = (function () { // isolated post — a 12×12 beveled box, centred
+  const WALL_NODE = (function () { // isolated post — a single bone vertebra
     const post = [
       "k".repeat(12),
       "k" + "h".repeat(10) + "k",
-      ...Array(8).fill("k" + "h" + "m".repeat(8) + "h" + "k"),
+      "k" + "h" + "mmmkk".repeat(1) + "mmm" + "h" + "k",
+      ...Array(6).fill("k" + "h" + "mmmkkmmm" + "h" + "k"),
+      "k" + "h" + "mmmkk".repeat(1) + "mmm" + "h" + "k",
       "k" + "h".repeat(10) + "k",
       "k".repeat(12),
     ];
@@ -81,7 +83,54 @@
       ...Array(10).fill(D(32)),
     ];
   })();
-  const WALL_PAL = { d: "#1b212b", k: "#3a4250", m: "#8a93a6", h: "#b4bcca" };
+  // bone-on-charcoal ramp (the duotone steel pass reinforces it across the station)
+  const WALL_PAL = { d: "#171c26", k: "#0b0e14", m: "#7f7468", h: "#cfc6b6" };
+
+  // Biomechanical floor plate (32×32): a panel with a beveled inset, a dashed
+  // vertebral cross-seam and corner rivets — Moebius-clean, Giger-boned by the tone.
+  function floorTile() {
+    const R = 32, out = [];
+    for (let y = 0; y < R; y++) {
+      let s = "";
+      for (let x = 0; x < R; x++) {
+        let ch = "m";
+        if (x === 0 || y === 0) ch = "d"; // top/left inset shadow
+        else if (x === R - 1 || y === R - 1) ch = "r"; // bottom/right lit edge
+        else if ((x === 4 || x === 27) && (y === 4 || y === 27)) ch = "r"; // rivets
+        else if (y === 15 || y === 16) ch = x % 4 < 2 ? "d" : "m"; // dashed rib seam (E-W)
+        else if (x === 15 || x === 16) ch = y % 4 < 2 ? "d" : "m"; // dashed rib seam (N-S)
+        s += ch;
+      }
+      out.push(s);
+    }
+    return out;
+  }
+
+  // Biomechanical door (32×32): twin ribbed leaves meeting on a central seam with
+  // hazard bands; opening retracts them to the jambs and bares the dark shaft.
+  function doorArt(open) {
+    const R = 32, out = [];
+    for (let y = 0; y < R; y++) {
+      let s = "";
+      for (let x = 0; x < R; x++) {
+        let ch;
+        if (x < 2 || x >= R - 2) ch = "k"; // side jambs
+        else if (open) {
+          ch = x < 7 || x >= R - 7 ? "b" : "g"; // leaf stubs + open shaft
+          if (x === 6 || x === R - 7) ch = "k";
+        } else {
+          ch = "b"; // leaf body
+          if (x === 15 || x === 16) ch = "g"; // central meeting seam
+          else if (y % 5 === 0) ch = "g"; // horizontal rib grooves
+          if ((y === 14 || y === 17) && x > 5 && x < 26) ch = "y"; // hazard bands
+        }
+        if (y < 1 || y >= R - 1) ch = "k"; // lintel + sill
+        s += ch;
+      }
+      out.push(s);
+    }
+    return out;
+  }
   const box2 = (rows) => [
     "................................",
     ".." + "k".repeat(28) + "..",
@@ -694,13 +743,8 @@
     /* ---------- structural tiles (1x1) ---------- */
     {
       name: "floor", tileW: 1, tileH: 1,
-      palette: { d: "#222a36", m: "#2b3645", r: "#3a4658" },
-      states: { default: [
-        "dddddddddddddddd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dmmrmmmmmmmmrmmd",
-        "dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd",
-        "dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd",
-        "dmmrmmmmmmmmrmmd","dmmmmmmmmmmmmmmd","dmmmmmmmmmmmmmmd","dddddddddddddddd",
-      ] },
+      palette: { d: "#1a2029", m: "#2b3038", r: "#444b54" },
+      states: { default: floorTile() },
     },
     {
       name: "wall", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_STRAIGHT },
@@ -713,20 +757,7 @@
     {
       name: "door", tileW: 1, tileH: 1,
       palette: { k: "#11151c", b: "#33506e", g: "#1a2230", y: "#e8c349" },
-      states: {
-        closed: [
-          "kkkkkkkkkkkkkkkk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk",
-          "kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kyyyyyyggyyyyyyk",
-          "kyyyyyyggyyyyyyk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk",
-          "kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kbbbbbbggbbbbbbk","kkkkkkkkkkkkkkkk",
-        ],
-        open: [
-          "kkkkkkkkkkkkkkkk","kbbg........gbbk","kbbg........gbbk","kbbg........gbbk",
-          "kbbg........gbbk","kbbg........gbbk","kbbg........gbbk","kyyg........gyyk",
-          "kyyg........gyyk","kbbg........gbbk","kbbg........gbbk","kbbg........gbbk",
-          "kbbg........gbbk","kbbg........gbbk","kbbg........gbbk","kkkkkkkkkkkkkkkk",
-        ],
-      },
+      states: { closed: doorArt(false), open: doorArt(true) },
     },
     {
       name: "battery", tileW: 1, tileH: 1,

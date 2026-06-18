@@ -258,12 +258,15 @@ function makeHeightTexture(px: Px, w: number, h: number, base: number): Texture 
 // module/ship sprite at build time so the station reads as one designed set).
 // Grouped by feel; species creatures, lamps and the species-tinted bunks are
 // left untouched so identity/colour cues survive. TONE_STR=0 fully disables it.
-const TONE_STR = 0.55;
+// Biomechanical duotone (Giger × Mœbius): a unified skin pulled toward bone-on-
+// charcoal hull, oxidized bronze industry, sinew greens and biolum plasma. Bumped
+// strength so the whole station reads as one designed biomech organism.
+const TONE_STR = 0.62;
 const TONE_DUO: Record<string, [string, string]> = {
-  steel: ["#0e1420", "#aeb9c8"], // hull, walls, floor, generators, docks, silo, ships (default)
-  rust: ["#1a0d06", "#cf8a4a"], // doors, fuel/forge/ore industry, pirate raider
-  bio: ["#0a1a11", "#8fd14f"], // life: vats, synth, bloom garden, trader
-  plasma: ["#160a22", "#c463e6"], // weapons + research/AI energy: turret, lab, AI core, fusion, beacons
+  steel: ["#0c1018", "#cfc6b4"], // hull, walls, floor, generators, docks, silo, ships — bone on charcoal
+  rust: ["#160a06", "#c2823f"], // doors, fuel/forge/ore industry, raider — oxidized bronze
+  bio: ["#091610", "#86c66f"], // life: vats, synth, bloom garden, trader — sinew green
+  plasma: ["#130a1e", "#b06ad8"], // weapons + research/AI energy — biolum violet
 };
 // Outside the station is "void" — that's the space background (COLORS.space), not
 // a sprite, so it's left as-is. Creatures, lamps, the species-tinted bunks and the
@@ -292,6 +295,20 @@ function tonePalette(name: string, palette: Record<string, string>): Record<stri
     out[k] = rgb2hx(r + (tr - r) * TONE_STR, g + (tg - g) * TONE_STR, b + (tb - b) * TONE_STR);
   }
   return out;
+}
+
+// Drop the module-level texture caches (the old GPU textures are dead after a lost
+// context / dev HMR teardown) so the next build re-uploads on a fresh context.
+export function resetTextures(): void {
+  for (const t of TEX.values()) { try { t.destroy(true); } catch { /* ignore */ } }
+  for (const t of HTEX.values()) { try { t.destroy(true); } catch { /* ignore */ } }
+  TEX.clear();
+  HTEX.clear();
+}
+// Clear + immediately rebuild — used on WebGL context restore.
+function rebuildTextures(): void {
+  resetTextures();
+  buildTextures();
 }
 
 function buildTextures(): void {
@@ -412,6 +429,17 @@ export class Renderer {
     ])
       world.addChild(layer);
     this.heightC.visible = false;
+  }
+
+  // Recover from a lost-then-restored WebGL context: rebuild the sprite textures on
+  // the fresh context and invalidate every "draw only on change" cache so the static
+  // layers (tiles, structure shadows, lightmap, height field) repaint — otherwise
+  // they'd stay blank while only the per-frame layers (crew) come back.
+  restoreContext(): void {
+    rebuildTextures();
+    this.lastTileSig = -1;
+    this.heightSig = -1;
+    this.bakeSig = "";
   }
 
   // Toggle the height-field inspector (the grayscale occluder map the shadow pass

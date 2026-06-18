@@ -1,8 +1,55 @@
 import { Encounter, Species, World } from "./types";
 import { effRelation } from "./relations";
 import { SPECIES } from "./species";
+import { STRUCTURES } from "./structures";
 import { injure } from "./medical";
 import { maybeFallInLove } from "./romance";
+
+// ---- "deal" scenarios: two friendly crew bring you a proposal about real station
+// life. `c` = net credits if you back it (negative = it costs you; positive = it
+// pays). Backing it lifts both their moods + reputation; refusing sours them. ----
+interface Deal { title: string; body: string; c: number; }
+const DEALS: Deal[] = [
+  { title: "Lounge upgrade", body: "A {A} and a {B} want to chip in for a proper sound system in the Lounge — they'll cover half if you cover the rest.", c: -70 },
+  { title: "Import a delicacy", body: "The {A} and the {B} miss home cooking and ask you to fund a one-off delicacy shipment on the next trader.", c: -90 },
+  { title: "Side hustle", body: "A {A} and a {B} have been carving trinkets on their off-hours and want to sell them to docking crews — they'll cut you in.", c: 110 },
+  { title: "Salvage tip", body: "The {A} and the {B} know coordinates for a drifting cargo pod and want a drone run to grab it — could pay off.", c: 90 },
+  { title: "Card night", body: "A {A} and a {B} want to run a station card night in the Lounge — a small float for prizes, big morale.", c: -45 },
+  { title: "Supply contract", body: "The {A} and the {B} brokered a little supply contract with a passing freighter — sign off and it pays out.", c: 130 },
+  { title: "Corridor garden", body: "A {A} and a {B} want to turn a dead-end corridor into a planted nook — needs materials.", c: -60 },
+  { title: "Brew operation", body: "The {A} and the {B} propose a (totally above-board) fermenting setup off a spare Bio Vat — sells well to guests.", c: 100 },
+  { title: "Feast day", body: "A {A} and a {B} want to throw a feast for the whole crew — costly, but everyone would love it.", c: -120 },
+  { title: "Barter market", body: "The {A} and the {B} want to run a weekly barter market by the docks — takes a little seed money.", c: -50 },
+  { title: "Favor for a trader", body: "A {A} and a {B} can do a quick favor for a docking captain who's offering a tidy tip.", c: 80 },
+  { title: "Commission a mural", body: "The {A} and the {B} want to commission a mural for the mess — pure morale, costs a bit.", c: -55 },
+  { title: "Tournament", body: "A {A} and a {B} want to organize a low-grav tournament in the Lounge — buy-in for prizes.", c: -65 },
+  { title: "Resale flip", body: "The {A} and the {B} spotted underpriced ore at the last dock and want a small float to flip it.", c: 95 },
+  { title: "Cultural exchange", body: "A {A} and a {B} want to host a cultural exchange evening — costs a little, warms relations.", c: -40 },
+  { title: "Repair side-gig", body: "The {A} and the {B} want to offer repairs to passing ships for cash — approve it and it pays.", c: 120 },
+];
+
+// ---- "complaint" scenarios: one crew member gripes that a specific module ({M})
+// is acting up. Authorizing the fix costs `fix` credits and services the module;
+// brushing it off sours them and risks the module actually breaking. ----
+interface Complaint { title: string; body: string; fix: number; }
+const COMPLAINTS: Complaint[] = [
+  { title: "Rattling module", body: "A {A} says the {M} has rattled all shift and it's setting their teeth on edge. Fix it?", fix: 50 },
+  { title: "Burnt-wiring smell", body: "A {A} swears the {M} smells of burnt wiring and won't go near it until it's checked.", fix: 60 },
+  { title: "Tripping breaker", body: "A {A} reports the {M} keeps tripping the breaker — it'll fail if it isn't serviced.", fix: 55 },
+  { title: "Running hot", body: "A {A} complains the {M} runs far too hot and the whole wing is sweltering.", fix: 50 },
+  { title: "Leaky seal", body: "A {A} found a seep around the {M} and wants it sealed before it gets worse.", fix: 65 },
+  { title: "Filthy module", body: "A {A} refuses to work the {M} until someone cleans the grime caked into it.", fix: 40 },
+  { title: "Too loud to sleep", body: "A {A} can't sleep for the noise the {M} throws off all night. Service it?", fix: 45 },
+  { title: "Jamming up", body: "A {A} says the {M} jams every other cycle and they're done fighting it.", fix: 55 },
+  { title: "Sparking", body: "A {A} saw the {M} throw sparks and backed away — wants it looked at now.", fix: 70 },
+  { title: "Maddening hum", body: "A {A} is at their wit's end over the pitch the {M} hums at. Tune it?", fix: 45 },
+  { title: "Shaking the deck", body: "A {A} says the {M} vibrates the whole deck plate and bolts are working loose.", fix: 60 },
+  { title: "Glitching out", body: "A {A} reports the {M} keeps glitching mid-task and ruining their work.", fix: 55 },
+  { title: "Overdue service", body: "A {A} points out the {M} is long overdue for service and it shows.", fix: 50 },
+  { title: "Flickering the lights", body: "A {A} says the {M} flickers the lights every time it kicks in.", fix: 50 },
+  { title: "Cramped around it", body: "A {A} grumbles the {M} is jammed into too tight a space to work safely.", fix: 40 },
+  { title: "Coolant stink", body: "A {A} says the {M} reeks of coolant and gives them a headache by shift's end.", fix: 60 },
+];
 
 // Flavor library for the encounter dialog. {A}/{B} are filled with species names.
 // A line applies to a pair when: it names both species (unordered), names one
@@ -126,14 +173,38 @@ function findEncounter(w: World): Encounter | null {
         const avg = (effRelation(w, a.species, b.species) + effRelation(w, b.species, a.species)) / 2;
         const kind = avg <= -7 ? "conflict" : avg >= 7 ? "bond" : null;
         if (!kind) continue;
-        pairs.push({ kind, aId: a.id, bId: b.id, aSpecies: a.species, bSpecies: b.species, cell });
+        // a friendly pair sometimes brings a proposal (a "deal") instead of a chat
+        const k: Encounter["kind"] = kind === "bond" && Math.random() < 0.45 ? "deal" : kind;
+        pairs.push({ kind: k, aId: a.id, bId: b.id, aSpecies: a.species, bSpecies: b.species, cell });
       }
   }
-  if (pairs.length === 0) return null;
-  const pick = pairs[Math.floor(Math.random() * pairs.length)];
-  const pool = flavorPool(pick.kind, pick.aSpecies, pick.bSpecies);
-  pick.variant = pool.length ? Math.floor(Math.random() * pool.length) : 0; // chosen once, stable text
+  // a lone crew member can also gripe that a specific module is acting up
+  const complaint = findComplaint(w);
+  const opts = complaint ? [...pairs, complaint] : pairs;
+  if (opts.length === 0) return null;
+  const pick = opts[Math.floor(Math.random() * opts.length)];
+  pick.variant = poolSize(pick) ? Math.floor(Math.random() * poolSize(pick)) : 0; // stable text
   return pick;
+}
+
+// Pick a living resident and a real module they can complain about (a worn one if
+// any, else any powered machine). Returns a "complaint" encounter or null.
+function findComplaint(w: World): Encounter | null {
+  const crew = Object.values(w.agents).filter((a) => a.alive && !a.guest);
+  if (crew.length === 0) return null;
+  const mods = Object.values(w.structures).filter((s) => STRUCTURES[s.kind].draw > 0);
+  if (mods.length === 0) return null;
+  const worn = mods.filter((s) => s.condition < 60);
+  const m = (worn.length ? worn : mods)[Math.floor(Math.random() * (worn.length ? worn.length : mods.length))];
+  const a = crew[Math.floor(Math.random() * crew.length)];
+  return { kind: "complaint", aId: a.id, bId: a.id, aSpecies: a.species, bSpecies: a.species, cell: a.cell, subjectId: m.id, subjectKind: m.kind };
+}
+
+// How many variants the encounter's text pool has (for picking a stable variant).
+function poolSize(e: Encounter): number {
+  if (e.kind === "deal") return DEALS.length;
+  if (e.kind === "complaint") return COMPLAINTS.length;
+  return flavorPool(e.kind, e.aSpecies, e.bSpecies).length;
 }
 
 export interface EncounterChoice {
@@ -143,6 +214,22 @@ export interface EncounterChoice {
 
 // The player-facing choices for the dialog (labels filled with the species names).
 export function encounterChoices(enc: Encounter): EncounterChoice[] {
+  if (enc.kind === "deal") {
+    const d = DEALS[(enc.variant ?? 0) % DEALS.length];
+    return [
+      d.c < 0
+        ? { label: `Back it (−¢${-d.c})`, hint: "Both cheer up and reputation rises." }
+        : { label: `Approve it (earns ¢${d.c})`, hint: "Both happy — and it pays out." },
+      { label: "Turn them down", hint: "They're let down — morale & reputation dip." },
+    ];
+  }
+  if (enc.kind === "complaint") {
+    const c = COMPLAINTS[(enc.variant ?? 0) % COMPLAINTS.length];
+    return [
+      { label: `Authorize repair (−¢${c.fix})`, hint: "Services the module; they're relieved." },
+      { label: "Brush it off", hint: "Saves the credits, but they sour — and it may break." },
+    ];
+  }
   if (enc.kind === "conflict") {
     return [
       { label: "Defuse it calmly", hint: "Usually works — small morale lift. Slight risk it fails." },
@@ -158,6 +245,17 @@ export function encounterChoices(enc: Encounter): EncounterChoice[] {
 }
 
 export function encounterText(enc: Encounter): { title: string; body: string } {
+  if (enc.kind === "deal") {
+    const d = DEALS[(enc.variant ?? 0) % DEALS.length];
+    const A = SPECIES[enc.aSpecies].label, B = SPECIES[enc.bSpecies].label;
+    return { title: d.title, body: d.body.replace(/\{A\}/g, A).replace(/\{B\}/g, B) };
+  }
+  if (enc.kind === "complaint") {
+    const c = COMPLAINTS[(enc.variant ?? 0) % COMPLAINTS.length];
+    const A = SPECIES[enc.aSpecies].label;
+    const M = enc.subjectKind ? STRUCTURES[enc.subjectKind].label : "module";
+    return { title: c.title, body: c.body.replace(/\{A\}/g, A).replace(/\{M\}/g, M) };
+  }
   const x = enc.aSpecies, y = enc.bSpecies;
   const pool = flavorPool(enc.kind, x, y);
   const f = pool.length ? pool[(enc.variant ?? 0) % pool.length] : undefined;
@@ -201,6 +299,41 @@ export function resolveEncounter(w: World, choice: number): string {
   w.encounter = null;
   if (!enc) return "";
   const A = SPECIES[enc.aSpecies].label, B = SPECIES[enc.bSpecies].label;
+
+  if (enc.kind === "deal") {
+    const d = DEALS[(enc.variant ?? 0) % DEALS.length];
+    if (choice === 0) {
+      if (d.c < 0 && w.credits < -d.c) {
+        bump(w, enc.aId, -3); bump(w, enc.bId, -3);
+        return `You couldn't fund the ${A} & ${B} venture — they're deflated.`;
+      }
+      w.credits += d.c;
+      bump(w, enc.aId, 8); bump(w, enc.bId, 8);
+      bumpRep(w, enc.aSpecies, 3); bumpRep(w, enc.bSpecies, 3);
+      return d.c < 0
+        ? `You backed the ${A} & ${B} (−¢${-d.c}). Morale and goodwill rise.`
+        : `The ${A} & ${B} venture pays out (+¢${d.c}). Everyone's pleased.`;
+    }
+    bump(w, enc.aId, -6); bump(w, enc.bId, -6);
+    bumpRep(w, enc.aSpecies, -3); bumpRep(w, enc.bSpecies, -3);
+    return `You turned the ${A} and ${B} down. They're disheartened.`;
+  }
+
+  if (enc.kind === "complaint") {
+    const c = COMPLAINTS[(enc.variant ?? 0) % COMPLAINTS.length];
+    const m = enc.subjectId != null ? w.structures[enc.subjectId] : undefined;
+    const M = enc.subjectKind ? STRUCTURES[enc.subjectKind].label : "module";
+    if (choice === 0) {
+      if (w.credits < c.fix) { bump(w, enc.aId, -4); return `No credits to service the ${M} — the ${A} is unimpressed.`; }
+      w.credits -= c.fix;
+      if (m) { m.condition = 100; m.faultT = 0; }
+      bump(w, enc.aId, 6);
+      return `You had the ${M} serviced (−¢${c.fix}). The ${A} is satisfied.`;
+    }
+    bump(w, enc.aId, -6);
+    if (m && Math.random() < 0.4) { m.condition = 0; return `You brushed off the ${A} — and the ${M} broke down.`; }
+    return `You brushed the ${A} off. They're sullen about the ${M}.`;
+  }
 
   if (enc.kind === "conflict") {
     if (choice === 0) {

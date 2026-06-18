@@ -1226,7 +1226,8 @@ export function showEncounter(enc: Encounter, onChoose: (choice: number) => void
   encShown = true;
   drawSpeciesArt(el.querySelector(".enc-a") as HTMLCanvasElement, enc.aSpecies);
   drawSpeciesArt(el.querySelector(".enc-b") as HTMLCanvasElement, enc.bSpecies);
-  (el.querySelector(".enc-vs") as HTMLElement).textContent = enc.kind === "conflict" ? "✕" : "♥";
+  (el.querySelector(".enc-vs") as HTMLElement).textContent =
+    enc.kind === "conflict" ? "✕" : enc.kind === "deal" ? "🤝" : enc.kind === "complaint" ? "🔧" : "♥";
   const t = encounterText(enc);
   (el.querySelector(".enc-title") as HTMLElement).textContent = t.title;
   (el.querySelector(".enc-body") as HTMLElement).textContent = t.body;

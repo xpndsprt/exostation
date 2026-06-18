@@ -126,6 +126,14 @@ function playTrack(): void {
   });
 }
 
+// Per-play variation so a repeated event never sounds identical: every one-shot
+// gets a small random pitch + loudness wobble (and a hair of timing). One sound,
+// many "takes" — keeps the SFX from feeling like a loop. (rand in [-1,1].)
+const VARY_PITCH = 0.06; // ±6% playback rate ≈ ±1 semitone
+const VARY_VOL = 0.14; // ±14% loudness
+const VARY_DELAY = 0.012; // up to 12 ms of attack jitter
+const wob = () => Math.random() * 2 - 1;
+
 // Play a one-shot. Same-id calls are throttled so rapid events don't machine-gun.
 export function play(id: string, opts: { volume?: number; rate?: number } = {}): void {
   if (!ready || muted || !ctx) return;
@@ -136,11 +144,11 @@ export function play(id: string, opts: { volume?: number; rate?: number } = {}):
   lastAt.set(id, now);
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.playbackRate.value = opts.rate ?? 1;
+  src.playbackRate.value = (opts.rate ?? 1) * (1 + wob() * VARY_PITCH);
   const g = ctx.createGain();
-  g.gain.value = opts.volume ?? 1;
+  g.gain.value = Math.max(0, (opts.volume ?? 1) * (1 + wob() * VARY_VOL));
   src.connect(g).connect(buses[busOf(id)]);
-  src.start();
+  src.start(now + Math.random() * VARY_DELAY);
 }
 
 function loop(id: string): void {
