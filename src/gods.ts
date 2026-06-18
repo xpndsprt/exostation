@@ -1,4 +1,4 @@
-import { God, Species, World } from "./types";
+import { God, Species, WeirdGod, World } from "./types";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 import { storageCaps } from "./storage";
@@ -30,6 +30,40 @@ const BAD = 40; // species avg mood ≤ this → wrathful
 const GIFT_CREDITS = 250;
 const GIFT_MINERALS = 60;
 
+// --- the four weird gods: wild cards, indifferent to mood, that warp the
+// station outright. They roll in on the same cadence as the race-gods. ---
+export const WEIRD_GODS: Record<WeirdGod, string> = {
+  blackout: "The Hollow", // swallows the lights
+  surge: "The Dynamo", // floods the grid with free power
+  famine: "The Maw", // devours the larder
+  feast: "The Glut", // gorges the larder full
+};
+const WEIRD_KEYS: WeirdGod[] = ["blackout", "surge", "famine", "feast"];
+const WEIRD_CHANCE = 0.35; // share of god visits that are a weird god
+const BLACKOUT_S = 25; // s — all power dead
+const SURGE_S = 45; // s — free surplus power
+
+// Apply a weird god's effect the moment it judges. Returns a notify line.
+function applyWeird(w: World, kind: WeirdGod): string {
+  const name = WEIRD_GODS[kind];
+  if (kind === "blackout") {
+    w.blackoutT = Math.max(w.blackoutT, BLACKOUT_S);
+    return `${name} swallows the lights — the grid goes dark for ${BLACKOUT_S}s.`;
+  }
+  if (kind === "surge") {
+    w.surgeT = Math.max(w.surgeT, SURGE_S);
+    return `${name} floods the grid — free power for ${SURGE_S}s, everything runs.`;
+  }
+  if (kind === "famine") {
+    w.stock.meals = { rations: 0, fungal: 0, protein: 0, exotic: 0 };
+    return `${name} devours your larder — every meal is gone.`;
+  }
+  // feast — gorge each meal store to its cap
+  const caps = storageCaps(w);
+  w.stock.meals = { rations: caps.rations, fungal: caps.fungal, protein: caps.protein, exotic: caps.exotic };
+  return `${name} gorges your larder — every meal store is brimming.`;
+}
+
 // Average mood of a species' living members aboard (-1 if none present).
 function speciesMood(w: World, sp: Species): number {
   let sum = 0, n = 0;
@@ -48,6 +82,14 @@ function presentSpecies(w: World): Species[] {
 }
 
 function judge(w: World, g: God): void {
+  // weird gods don't weigh mood — they just warp the station and announce it
+  if (g.weird) {
+    const msg = applyWeird(w, g.weird);
+    g.verdict = g.weird === "blackout" || g.weird === "famine" ? "wrathful" : "pleased";
+    w.godVerdict = { species: g.species, verdict: g.verdict, weird: g.weird };
+    w.notify.push(msg);
+    return;
+  }
   const mood = speciesMood(w, g.species);
   const name = GODS[g.species];
   const label = SPECIES[g.species].label;
@@ -90,6 +132,10 @@ function wrathTarget(w: World): number {
 }
 
 export function godsSystem(w: World, dt: number): void {
+  // weird-god timed effects tick down (power blackout / surge)
+  if (w.blackoutT > 0) w.blackoutT = Math.max(0, w.blackoutT - dt);
+  if (w.surgeT > 0) w.surgeT = Math.max(0, w.surgeT - dt);
+
   // drift + judge + despawn existing gods
   for (let i = w.gods.length - 1; i >= 0; i--) {
     const g = w.gods[i];
@@ -100,24 +146,32 @@ export function godsSystem(w: World, dt: number): void {
     if (g.x < -8 || g.y < -8 || g.x > w.w + 8 || g.y > w.h + 8) w.gods.splice(i, 1);
   }
 
-  // spawn — rare, one at a time, only for a race that's aboard
+  // spawn — rare, one at a time. Race-gods need their species aboard; weird gods
+  // can roll in regardless (a share of every visit, chosen by WEIRD_CHANCE).
   w.godTimer += dt;
   const due = w.godTimer >= (w.tick < FIRST * 10 ? FIRST : INTERVAL);
   if (!due || w.gods.length > 0) return;
   const here = presentSpecies(w);
-  if (here.length === 0) { w.godTimer = 0; return; }
+  const weird = Math.random() < WEIRD_CHANCE;
+  if (!weird && here.length === 0) { w.godTimer = 0; return; }
   w.godTimer = 0;
-  const sp = here[Math.floor((w.tick * 40503) >>> 0) % here.length];
   // enter from the left or right edge, drift horizontally across the station band
   const fromLeft = ((w.tick >>> 3) & 1) === 0;
-  w.gods.push({
-    species: sp,
+  const drift = {
     x: fromLeft ? -4 : w.w + 4,
     y: w.h / 2 + (((w.tick * 13) % 20) - 10),
     vx: fromLeft ? DRIFT : -DRIFT,
     vy: 0,
     t: 0,
     judged: false,
-    verdict: "none",
-  });
+    verdict: "none" as const,
+  };
+  if (weird) {
+    const kind = WEIRD_KEYS[Math.floor(Math.random() * WEIRD_KEYS.length)];
+    const tint: Species = here.length ? here[Math.floor(Math.random() * here.length)] : "human";
+    w.gods.push({ species: tint, weird: kind, ...drift });
+  } else {
+    const sp = here[Math.floor((w.tick * 40503) >>> 0) % here.length];
+    w.gods.push({ species: sp, ...drift });
+  }
 }

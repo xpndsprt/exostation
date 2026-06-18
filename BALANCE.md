@@ -80,6 +80,21 @@ Quality: Basic (×1 cost), Refined (×1.15 cost), Gourmet (×1.4 cost). Quality 
 | Cryo-Gel Feed | 2 Exotic Ice + 1 Ammonia | 3 meals | 18s |
 | Plasma Feed | 1 Refined H₂ + 5 Power | 3 charges | 12s |
 
+## Crew hauling logistics (`agents.ts` / `food.ts` / `mining.ts`)
+The economy is physical: producers buffer output that crew carry to **Storage Floor** (the warehouse = `stock`), and consumers are fed from storage by crew. A **bootstrap trickle** moves output straight to `stock` when there are **no resident crew** (so the opening + headless sims work).
+
+| Constant | Value | Meaning |
+|----------|:-----:|---------|
+| `VAT_OUTCAP` | 9 | output units a Bio Vat buffers before it **stalls** (awaiting haul) |
+| `FEED_CAP` | 4 | feedstock units crew stage at a Synth (storage → Synth `inBuf`) |
+| `TABLE_CAP` | 4 | rations crew stage on a Mess Table |
+| `TRADE_FEED_CAP` | 30 | minerals crew stage at a Trade Hub before topping stops |
+| Storage cap / tile | +3 meals (each line), +6 minerals | each Storage Floor tile raises caps |
+| Storage tile cost | ¢3 | airless; only a Light Fixture may sit on it |
+| Mess Table | ¢50, 3×3 | crew/guests eat at the seat-ring; crew restock from storage |
+
+Drone ore now lands in the **Bay's** buffer; crew haul it to storage. Trades sell **crew-delivered hub minerals first**, then the warehouse. Eating prefers a **stocked table**, else falls back to the Synth (no starvation). Storage decks are **airless**, so hauling onto them needs a charged suit (`VENTURE_SUIT` 80).
+
 ## Mood modifiers
 | Source | Effect |
 |--------|:------:|
@@ -239,6 +254,18 @@ random non-life-support powered module** (life support spared); otherwise nothin
 Verdict shows as a green/red ring; gods are drawn ship-sized with a distinct
 per-race form + aura (renderer `drawGods`). Serializable (`world.gods`,
 `world.godTimer`).
+
+### Weird gods (`WEIRD_GODS`, `gods.ts`)
+On the same cadence, **35 %** of visits roll a **weird god** instead — a wild card
+that ignores mood and may appear with no crew aboard. Drawn as a bright orb (no
+creature sprite). Four kinds, applied at judgment:
+- **The Hollow** (`blackout`) → `world.blackoutT = 25 s`; `powerSystem` forces
+  every structure unpowered, supply/draw 0, brownout on, until it decays.
+- **The Dynamo** (`surge`) → `world.surgeT = 45 s`; `powerSystem` seeds supply with
+  a **+9999** free bonus so all consumers run.
+- **The Maw** (`famine`) → sets all four `stock.meals` diets to 0.
+- **The Glut** (`feast`) → fills all four `stock.meals` diets to their `storageCaps`.
+Timers decay in `godsSystem`; serializable (`world.blackoutT`, `world.surgeT`).
 
 ## Reproduction — clutches, young & spiders (`spawn.ts`)
 A thriving species offers, through a paused dialog, to lay a clutch (`spawnSystem`

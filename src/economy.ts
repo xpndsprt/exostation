@@ -182,12 +182,19 @@ export function economySystem(w: World, dt: number): void {
   w.tradeTimer += dt;
   if (w.tradeTimer >= tradeEvery) {
     w.tradeTimer -= tradeEvery;
-    if ((hasTradeHub || hasCargoEx) && w.stock.minerals > 0) {
+    // minerals crew have physically delivered to a hub sell first; the rest comes
+    // straight from the warehouse so trade still works without haulers.
+    const hubs = Object.values(w.structures).filter((s) => (s.kind === "tradehub" || s.kind === "cargoex") && s.powered);
+    const staged = hubs.reduce((n, h) => n + h.inBuf, 0);
+    const available = w.stock.minerals + staged;
+    if ((hasTradeHub || hasCargoEx) && available > 0) {
       const batch = hasCargoEx ? 60 : TRADE_BATCH;
       const exBonus = hasCargoEx ? 1.5 : 1;
       const nexus = beaconActive(w, "tradenexus") ? 1.5 : 1; // Drenn Trade Nexus
-      const amount = Math.min(w.stock.minerals, batch);
-      w.stock.minerals -= amount;
+      const amount = Math.min(available, batch);
+      let rem = amount;
+      for (const h of hubs) { const take = Math.min(rem, h.inBuf); h.inBuf -= take; rem -= take; if (rem <= 0) break; }
+      if (rem > 0) w.stock.minerals -= rem; // remainder from the warehouse
       w.credits += amount * MINERAL_PRICE * exBonus * nexus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0 && !dockBusy(w, d));
       if (dock) spawnShip(w, dock, { trader: true });

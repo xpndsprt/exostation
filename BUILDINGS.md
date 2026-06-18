@@ -22,6 +22,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Floor | Buildable deck; defines a room's extent. Drag-rectangle fill. | 0 | 1×1 | 2 | built |
 | Wall | Blocks movement & gas; structural hull. Drag-rectangle fill. | 0 | 1×1 | 3 | intact / breached |
 | Door | Walkable passage that **blocks gas** — links wings without mixing their atmospheres; crew cross on suit. Single click. | 0 | 1×1 | 25 | walkable airlock |
+| Storage Floor | Walkable **airless** deck — only a Light Fixture may sit on it. The warehouse crew haul goods to; raises meal & mineral caps. Drag-rectangle fill. | 0 | 1×1 | 3 | built |
 
 ## Modules
 | Module | Kind | Achieves | Power | Footprint | Cost ¢ | Tech gate | States |
@@ -34,8 +35,9 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Ammonia Gen | `nh3gen` | Emits **ammonia (NH₃)** — a sealed wing for the **Naaz**. | 10 | 2×2 | 180 | **Ammonia Life-Support** (¢450) | on / off / unpowered |
 | Hydrogen Gen | `h2gen` | Emits **hydrogen (H₂)** — a sealed wing for the **Voltaar**. | 11 | 2×2 | 190 | **Hydrogen Life-Support** (¢500) | on / off / unpowered |
 | Rations Synth | `synth` | Converts a base → a food line: **Rations** (biomass), **Fungal Mash** (spores), **Live-Protein** (microbes, for Sszra) or **Exo-Culture** (microbes, for the exotic-gas crews). Recipe: 2 base → 4 meals / 10s (`SYNTH`). | 5 | 2×1 | 70 | — (Fungal needs **Fungal Synthesis** ¢300; Protein/Exo need **Exobiology** ¢350) | producing / idle / input-short |
-| Bio Vat | `vat` | Grows a food base from power: **Biomass**, **Spores** or **Microbes** (recipe). +3 / 8s (`VAT`). | 6 | 2×2 | 90 | — (Spores needs **Fungal Synthesis** ¢300; Microbes needs **Exobiology** ¢350) | growing / unpowered |
+| Bio Vat | `vat` | Grows a food base from power: **Biomass**, **Spores** or **Microbes** (recipe). +3 / 8s (`VAT`). **Output buffers on the vat (cap 9) and crew haul it to storage — it stalls if unhauled.** | 6 | 2×2 | 90 | — (Spores needs **Fungal Synthesis** ¢300; Microbes needs **Exobiology** ¢350) | growing / full-stalled / unpowered |
 | Crew Quarters | `pod` | A bunk **prepped for one species** (Select → Reassign species); only that species sleeps there. Human free; other species need their host research. | 1 | 1×1 | 40 | — (Human free; others gated) | prepped sp / in use |
+| Mess Table | `table` | A **3×3** dining table; hungry crew/guests sit at the **seat-ring** and eat. Other crew keep it stocked by carrying meals from storage (falls back to Synth eating if unstocked). | 0 | 3×3 | 50 | — | stocked / empty |
 | Bot Bay | `bay` | **Hull-mounted hangar** (place on a space-facing wall, like a Docking Port; takes **1×2** = wall cell + the floor behind). Houses **one mining drone**. Select it → **🛰 Star Chart** opens an orbital map; dispatch the drone to an asteroid/planet (off-map). It surveys + hauls **minerals** back over a round trip (~25–70s by distance), looping until the body depletes. | 4 | 1×2 (wall) | 120 | **Robotics** (¢150) | drone ready / out mining / returning |
 | Docking Port | `dock` | **Hull airlock placed on a space-facing wall.** Ships park on a 3×3 pad and bring up to 3 guests; ships buy fuel on landing. | 5 | 1×1 (wall) | 150 | — | guests arrive / free |
 | Large Dock | `docklarge` | Bigger berth (5×5 pad): lands a bigger ship — **6 guests** (Drenn/Human/Vry'l mix) + buys **18 fuel**. | 8 | 1×1 (wall) | 400 | **Expanded Docking** (¢350) | guests arrive / free |

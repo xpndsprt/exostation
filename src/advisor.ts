@@ -104,6 +104,16 @@ function stationAdvice(world: World): Advice[] {
   if (has("bay") && !has("tradehub") && world.stock.minerals > 40)
     out.push({ sev: "tip", text: "Build a Trade Hub so traders buy your minerals for credits." });
 
+  // hauling economy: storage + crew keep producers flowing, tables feed the crew
+  const hasStorageFloor = world.cells.some((c) => c.type === "storage");
+  const backedUp = structures.some((s) => (s.kind === "vat" || s.kind === "bay") && s.outBuf >= 8);
+  if ((has("vat") || has("bay")) && !hasStorageFloor)
+    out.push({ sev: "tip", text: "Lay Storage Floor — crew haul vat/drone output there; without it, producers back up and stall." });
+  if (backedUp)
+    out.push({ sev: "warn", text: "Output is piling up unhauled — a producer will stall. Add Storage Floor nearby and keep crew free to haul." });
+  if (residents > 0 && !has("table"))
+    out.push({ sev: "tip", text: "Build a Mess Table so crew gather and eat there (they'll carry meals from storage to it)." });
+
   // recreation infrastructure + rivals sharing a room
   if (!has("rec") && agents.length > 1) out.push({ sev: "tip", text: "Build a Lounge so crew and visitors can relax and socialize." });
   if (Object.values(world.rooms).some((r) => r.harmony < -0.3))

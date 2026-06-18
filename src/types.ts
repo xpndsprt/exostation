@@ -93,9 +93,11 @@ export interface Structure {
   servicedBy: number; // crew currently servicing this; -1 if none
   recipe: string; // synth: food line ("rations"/"fungal"); vat: base ("biomass"/"spores")
   faultT: number; // seconds remaining of a power-surge fault (offline); 0 = fine
+  outBuf: number; // finished output units waiting for crew to haul to storage (producers stall when full)
+  inBuf: number; // input feedstock units crew have delivered, ready to consume (Synth)
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court" | "haul";
 
 // An open hull breach (a vented wall cell) awaiting emergency repair by crew.
 export interface Breach {
@@ -107,7 +109,9 @@ export interface Breach {
 export interface Task {
   type: TaskType;
   target: number; // destination cell index
-  structureId?: number; // claimed structure (e.g. pod)
+  structureId?: number; // claimed structure (e.g. pod), or haul destination structure
+  good?: string; // a haul task: which good is being carried (stock key)
+  deliver?: boolean; // haul: true = deliver to structureId's input buffer; false = drop to storage (→ stock)
 }
 
 export interface Agent {
@@ -221,6 +225,10 @@ export interface Encounter {
 // A race's "god" — a Q-like, ship-sized being that drifts through space and visits
 // once its race is aboard. It judges that species' contentment: pleased → gifts,
 // wrathful → unmakes a module. One per species (see GODS in gods.ts).
+// The four "weird gods" — wild cards that don't judge a species' mood but warp
+// the station outright: cut/boost power, or empty/fill the larder. See gods.ts.
+export type WeirdGod = "blackout" | "surge" | "famine" | "feast";
+
 export interface God {
   species: Species;
   x: number; // cell-space float position (drifts across the map)
@@ -230,6 +238,7 @@ export interface God {
   t: number; // seconds since it appeared
   judged: boolean; // has it delivered its verdict this visit?
   verdict: "none" | "pleased" | "wrathful" | "neutral"; // for the renderer flourish
+  weird?: WeirdGod; // set ⇒ a weird god; `species` is then a cosmetic tint only
 }
 
 // A clutch of eggs a comfortable species lays (with your blessing) in the empty
@@ -327,7 +336,9 @@ export interface World {
   ships: Ship[];
   gods: God[]; // active race-gods drifting past (gods.ts)
   godTimer: number; // accumulator toward the next god visit
-  godVerdict: { species: Species; verdict: "pleased" | "wrathful" | "neutral" } | null; // pending god-dialog popup
+  godVerdict: { species: Species; verdict: "pleased" | "wrathful" | "neutral"; weird?: WeirdGod } | null; // pending god-dialog popup
+  blackoutT: number; // s remaining of a weird-god station blackout (all power dead)
+  surgeT: number; // s remaining of a weird-god power surge (free surplus power)
   rooms: Record<number, RoomInfo>;
   power: PowerState;
   stock: Stock;

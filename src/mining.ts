@@ -132,7 +132,7 @@ export function miningSystem(w: World, dt: number): void {
         d.t += dt / IN_FLY;
         if (d.t >= 1) {
           d.t = 0;
-          w.stock.minerals = Math.min(storageCaps(w).minerals, w.stock.minerals + d.cargo);
+          bay.outBuf += d.cargo; // ore piles on the pad — crew haul it to storage
           d.cargo = 0;
           d.state = "docked";
           if (site && site.richness <= 0) {
@@ -155,6 +155,20 @@ export function miningSystem(w: World, dt: number): void {
         }
         break;
       }
+    }
+  }
+
+  // Bootstrap / headless: with no resident crew to haul, ore on the pads trickles
+  // straight into the warehouse (mirrors the vat trickle in food.ts).
+  let residents = 0;
+  for (const id in w.agents) if (w.agents[id].alive && !w.agents[id].guest) residents++;
+  if (residents === 0) {
+    const cap = storageCaps(w).minerals;
+    for (const id in w.structures) {
+      const s = w.structures[id];
+      if (s.kind !== "bay" || s.outBuf <= 0) continue;
+      const move = Math.min(s.outBuf, cap - w.stock.minerals);
+      if (move > 0) { w.stock.minerals += move; s.outBuf -= move; }
     }
   }
 }

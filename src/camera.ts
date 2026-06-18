@@ -7,7 +7,9 @@ export interface Camera {
 }
 
 export function createCamera(): Camera {
-  return { x: 60, y: 60, scale: 1 };
+  // TILE grew 24→32 (×1.33); start a touch zoomed out so the opening view frames a
+  // similar area as before.
+  return { x: 60, y: 60, scale: 0.75 };
 }
 
 export function screenToTile(

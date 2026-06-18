@@ -6,8 +6,21 @@ const FUSION_FUEL = 0.6; // minerals/s burned by a running Fusion Reactor
 // Station-wide single power network (MVP simplification — no conduit routing).
 // Supply vs draw; battery buffers surplus; brownouts shed consumers by
 // ascending priority so Life Support (high priority) stays on the longest.
+const SURGE_BONUS = 9999; // free supply a weird-god power surge adds to the grid
+
 export function powerSystem(w: World, dt: number): void {
-  let supply = 0;
+  // A weird-god blackout ("The Hollow") kills the whole grid for its duration —
+  // every consumer goes dark and the battery can't coast it. Generators idle.
+  if (w.blackoutT > 0) {
+    for (const id in w.structures) w.structures[id].powered = false; // nothing is powered
+
+    w.power.supply = 0;
+    w.power.draw = 0;
+    w.power.brownout = true;
+    return;
+  }
+
+  let supply = w.surgeT > 0 ? SURGE_BONUS : 0; // a power surge ("The Dynamo") floods the grid
   let batteryMax = 0;
   let draw = 0;
   const consumers: Structure[] = [];

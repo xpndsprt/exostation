@@ -163,6 +163,25 @@
       <span id="outlineOpVal" style="font-size:11px; color:var(--dim)">100%</span>
     </div>
     <div class="hint" style="margin-top:5px">Wraps the art in a 1px black edge (opacity = how dark, since pixels are solid).</div>
+    <h4>Drawing skills</h4>
+    <div class="tones" id="skillBtns">
+      <button id="skRelight" title="Treat brightness as a height map; relight from the angle with a short cast shadow">Relight</button>
+      <button id="skBevel" title="Edge highlight (top-left) + shadow (bottom-right) for volume">Bevel</button>
+      <button id="skHue" title="Shift shadows cooler, highlights warmer">Hue-shift</button>
+      <button id="skDither" title="Bayer-dither the midtones to kill banding">Dither</button>
+      <button id="skClean" title="Remove stray single pixels">Despeckle</button>
+      <button id="skOutline2" title="Silhouette outline in a dark hue-shifted tone (not flat black)">Soft outline</button>
+      <button id="skMirror" title="Mirror the left half onto the right">Mirror X</button>
+    </div>
+    <div class="row" style="margin-top:6px"><label style="font-size:11px; color:var(--dim)">Light angle</label><input type="range" id="skAngle" min="0" max="360" value="225" style="flex:1" /><span id="skAngleVal" style="font-size:11px;color:var(--dim);width:34px;text-align:right">225°</span></div>
+    <div class="hint" style="margin-top:5px">Procedural pixel-art ops — compose them to craft a sprite (no diffusion). Each is undoable.</div>
+    <h4>Art direction</h4>
+    <div class="row"><button id="artdirBtn" style="flex:1">🎬 Ridley × snakepixel</button></div>
+    <div id="artdirOut" class="hint" style="margin-top:6px; max-height:170px; overflow:auto; white-space:pre-wrap; line-height:1.45"></div>
+    <div class="row" style="margin-top:6px"><button id="artdirApply" disabled>Apply their settings + skills</button></div>
+    <div class="row" style="margin-top:6px"><button id="artdirAll" disabled style="flex:1">🎞 Apply to ALL frames</button></div>
+    <div class="row" style="margin-top:6px"><button id="artdirLib" disabled style="flex:1">🗂 Apply to ALL library tiles</button></div>
+    <div class="hint" style="margin-top:5px">Ridley Scott (cinematic mood) and Simon S. Andersen / snakepixel (pixel craft) confer, then set the knobs and run a skill recipe.</div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -536,6 +555,221 @@ function blackOutline(op) {
 }
 $("outlineBtn").onclick = () => blackOutline((+$("outlineOp").value) / 100);
 $("outlineOp").oninput = (e) => { $("outlineOpVal").textContent = e.target.value + "%"; };
+
+// ===== Procedural drawing skills (no diffusion — pure pixel-art craft) =====
+const _lum = (c) => { if (!c) return -1; const [r, g, b] = hexToRgb(c); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+const _cl = (n) => Math.max(0, Math.min(255, Math.round(n)));
+
+// Brightness → height map, then relight from `angleDeg` with a short cast shadow
+// (a taller pixel one step toward the light throws a shadow on this one) plus a
+// slope rim-light. This is "height map → color → short-throw shadow + tone".
+function skillRelight(angleDeg, strength) {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const ht = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) { const L = _lum(p[i]); ht[i] = L < 0 ? 0 : L; }
+  const HT = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? 0 : ht[y * w + x];
+  const a = angleDeg * Math.PI / 180, lx = Math.cos(a), ly = Math.sin(a);
+  const out = p.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, c = p[i]; if (!c) continue;
+    const gx = HT(x + 1, y) - HT(x - 1, y), gy = HT(x, y + 1) - HT(x, y - 1);
+    let s = -(gx * lx + gy * ly); // a slope facing the light brightens
+    const sx = Math.round(x + lx), sy = Math.round(y + ly);
+    if (HT(sx, sy) > ht[i] + 0.05) s -= 0.6; // short-throw cast shadow
+    const f = 1 + s * strength;
+    const [r, g, b] = hexToRgb(c);
+    out[i] = rgbToHex(_cl(r * f), _cl(g * f), _cl(b * f));
+  }
+  for (let i = 0; i < w * h; i++) p[i] = out[i];
+  render();
+}
+function skillBevel() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const fl = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !!p[y * w + x];
+  const out = p.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, c = p[i]; if (!c) continue;
+    const top = !fl(x, y - 1) || !fl(x - 1, y), bot = !fl(x, y + 1) || !fl(x + 1, y);
+    if (top === bot) continue; // interior or both edges — leave it
+    const [r, g, b] = hexToRgb(c), f = top ? 1.28 : 0.7;
+    out[i] = rgbToHex(_cl(r * f), _cl(g * f), _cl(b * f));
+  }
+  for (let i = 0; i < w * h; i++) p[i] = out[i];
+  render();
+}
+function skillHue() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  for (let i = 0; i < w * h; i++) { const c = p[i]; if (!c) continue;
+    const [r, g, b] = hexToRgb(c), L = (0.299 * r + 0.587 * g + 0.114 * b) / 255, k = (L - 0.5) * 2;
+    p[i] = rgbToHex(_cl(r + 18 * k), _cl(g + 6 * k), _cl(b - 18 * k)); // dark→cool, light→warm
+  }
+  render();
+}
+function skillDither() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const bayer = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x, c = p[i]; if (!c) continue;
+    const [r, g, b] = hexToRgb(c), L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    if (L < 0.25 || L > 0.75) continue; // only the midtones (anti-banding)
+    const t = (bayer[y & 3][x & 3] + 0.5) / 16, f = L > t ? 1.12 : 0.9;
+    p[i] = rgbToHex(_cl(r * f), _cl(g * f), _cl(b * f));
+  }
+  render();
+}
+function skillDespeckle() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const fl = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !!p[y * w + x];
+  const out = p.slice();
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (!p[i]) continue;
+    if (!fl(x - 1, y) && !fl(x + 1, y) && !fl(x, y - 1) && !fl(x, y + 1)) out[i] = null; // lone pixel
+  }
+  for (let i = 0; i < w * h; i++) p[i] = out[i];
+  render();
+}
+function skillSoftOutline() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  const fl = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !!p[y * w + x];
+  const add = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * w + x; if (p[i]) continue;
+    let r = 0, g = 0, b = 0, n = 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (fl(x + dx, y + dy)) { const [cr, cg, cb] = hexToRgb(p[(y + dy) * w + (x + dx)]); r += cr; g += cg; b += cb; n++; }
+    if (n) add.push([i, rgbToHex(_cl(r / n * 0.35), _cl(g / n * 0.38), _cl(b / n * 0.5))]); // dark, cool edge
+  }
+  for (const [i, hex] of add) p[i] = hex;
+  render();
+}
+function skillMirrorX() {
+  pushUndo();
+  const p = px(), w = W(), h = H();
+  for (let y = 0; y < h; y++) for (let x = 0; x < Math.floor(w / 2); x++) p[y * w + (w - 1 - x)] = p[y * w + x];
+  render();
+}
+$("skAngle").oninput = (e) => { $("skAngleVal").textContent = e.target.value + "°"; };
+$("skRelight").onclick = () => skillRelight(+$("skAngle").value, 0.6);
+$("skBevel").onclick = skillBevel;
+$("skHue").onclick = skillHue;
+$("skDither").onclick = skillDither;
+$("skClean").onclick = skillDespeckle;
+$("skOutline2").onclick = skillSoftOutline;
+$("skMirror").onclick = skillMirrorX;
+
+// ===== Art director: Ridley Scott × Simon S. Andersen (snakepixel) =====
+// They confer (~20 lines), then dial the knobs + run a skill recipe. Curated
+// dialogue, no model calls — everything stays inside the editor.
+const AD_BRIEFS = [
+  { mood: "Nostromo gloom", tone: { lo: "#070b14", hi: "#6ea8ff" }, strength: 60, outline: 80, depth: 7, angle: 225, skills: ["relight", "softOutline", "hue"] },
+  { mood: "rusted hull", tone: { lo: "#1c0e06", hi: "#e8a05a" }, strength: 55, outline: 70, depth: 8, angle: 210, skills: ["bevel", "relight", "dither"] },
+  { mood: "bio-lab green", tone: { lo: "#0a1a10", hi: "#8fd14f" }, strength: 50, outline: 60, depth: 5, angle: 250, skills: ["relight", "hue", "softOutline"] },
+  { mood: "plasma heat", tone: { lo: "#160a1e", hi: "#d16ad0" }, strength: 65, outline: 85, depth: 6, angle: 200, skills: ["relight", "dither", "softOutline"] },
+  { mood: "cryo blue", tone: { lo: "#0a1622", hi: "#a8e0ff" }, strength: 45, outline: 65, depth: 5, angle: 240, skills: ["bevel", "hue", "softOutline"] },
+];
+const AD_RIDLEY = [
+  "Let the darkness do the work — most of this tile should sit in shadow.",
+  "One hard source, low and raking. Everything else falls off.",
+  "Scale reads through grime — give the metal some wear, some history.",
+  "Negative space is a character; don't fill every pixel.",
+  "I want dread in the silhouette before we ever see a detail.",
+  "A single warm rim against all that cold — that's where the eye lands.",
+  "Atmosphere over clarity. Let it breathe a little haze.",
+  "Backlight the edge so it peels off the background.",
+  "Make it feel lived-in, and slightly broken.",
+  "One light, one mood. Commit to it.",
+];
+const AD_SIMON = [
+  "Readability first — at this size every pixel is a brushstroke.",
+  "Keep the ramp tight: shadow, mid, light, one accent. No mush.",
+  "Hue-shift shadows cooler and highlights warmer — never just darken.",
+  "Break the outline; a flat black box kills the form. Hug the silhouette.",
+  "Cluster pixels into shapes — lone pixels are just noise.",
+  "Dither only the transition, and sparingly, or it buzzes.",
+  "Let the lightest light kiss the darkest dark once, for a focal pop.",
+  "Hand-soften the key curves, not every edge.",
+  "Tell the volume with two-pixel bevels, not gradients.",
+  "Despeckle last — the silhouette has to sing.",
+];
+function adDiscuss() {
+  const brief = AD_BRIEFS[Math.floor(Math.random() * AD_BRIEFS.length)];
+  const R = AD_RIDLEY.slice(), S = AD_SIMON.slice();
+  const pick = (a) => a.splice(Math.floor(Math.random() * a.length), 1)[0] || "…";
+  const lines = [`— Brief: “${brief.mood}” —`];
+  for (let i = 0; i < 9; i++) { lines.push("RIDLEY  " + pick(R)); lines.push("SIMON   " + pick(S)); }
+  lines.push(`→ Settings: tone ${brief.tone.lo}→${brief.tone.hi} · strength ${brief.strength}% · light ${brief.angle}° · outline ${brief.outline}% · depth ${brief.depth}. Recipe: ${brief.skills.join(" → ")}.`);
+  return { brief, text: lines.join("\n") };
+}
+let adRecipe = null;
+$("artdirBtn").onclick = () => { const d = adDiscuss(); adRecipe = d.brief; $("artdirOut").textContent = d.text; $("artdirApply").disabled = false; $("artdirAll").disabled = false; $("artdirLib").disabled = false; };
+// dial the editor's knobs to the brief (shared by both apply buttons)
+function adSetKnobs(b) {
+  $("toneLo").value = b.tone.lo; $("toneHi").value = b.tone.hi;
+  $("toneMix").value = b.strength; $("toneMixVal").textContent = b.strength + "%";
+  $("outlineOp").value = b.outline; $("outlineOpVal").textContent = b.outline + "%";
+  if ($("voxDepth")) $("voxDepth").value = b.depth;
+  $("skAngle").value = b.angle; $("skAngleVal").textContent = b.angle + "°";
+}
+// run the skill recipe on whatever state is current (px() follows `cur`)
+function adRunSkills(b) {
+  for (const s of b.skills) {
+    if (s === "relight") skillRelight(b.angle, b.strength / 100);
+    else if (s === "bevel") skillBevel();
+    else if (s === "hue") skillHue();
+    else if (s === "dither") skillDither();
+    else if (s === "softOutline") skillSoftOutline();
+    else if (s === "mirror") skillMirrorX();
+  }
+}
+$("artdirApply").onclick = () => {
+  if (!adRecipe) return; const b = adRecipe;
+  adSetKnobs(b);
+  applyTone(b.tone.lo, b.tone.hi, $("toneAll").checked);
+  adRunSkills(b);
+};
+// Apply the whole recipe to EVERY frame/state of the CURRENT sprite — walk each
+// state, re-tone it, then run the skill chain on it. (Each state's pixels span
+// all tiles of a multi-tile sprite, so every tile is processed too.)
+function applyRecipeAllStates(b) {
+  const saved = cur;
+  for (let i = 0; i < sprite.states.length; i++) {
+    cur = i;
+    applyTone(b.tone.lo, b.tone.hi, false); // this state only — we visit them all
+    adRunSkills(b);
+  }
+  cur = saved;
+}
+$("artdirAll").onclick = () => {
+  if (!adRecipe) return; const b = adRecipe;
+  adSetKnobs(b);
+  applyRecipeAllStates(b);
+  render();
+};
+// Apply the recipe to EVERY tile in the Library dropdown (built-ins + saved),
+// then write each result back to the saved library. The bundled sprites.js
+// can't be rewritten from the browser, so built-ins are stored as saved copies
+// (same name). The editor's current sprite is restored afterward.
+$("artdirLib").onclick = () => {
+  if (!adRecipe) return; const b = adRecipe;
+  const all = { ...builtinBitmaps(), ...loadLib() }; // saved overrides built on name clash
+  const names = Object.keys(all);
+  if (!names.length) return alert("The library is empty.");
+  if (!confirm(`Apply “${b.mood}” to all ${names.length} library tiles?\nResults are saved to the library (built-ins become saved copies).`)) return;
+  adSetKnobs(b);
+  const backup = bitmap(); // so we can restore what you were editing
+  const store = loadLib();
+  for (const name of names) {
+    loadBitmap(all[name]);
+    applyRecipeAllStates(b);
+    store[sprite.name] = bitmap();
+  }
+  saveLibStore(store);
+  loadBitmap(backup);
+  refreshLibrary();
+  alert(`Applied “${b.mood}” to ${names.length} tiles and saved them to the library.`);
+};
 
 window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing

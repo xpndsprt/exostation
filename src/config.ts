@@ -1,6 +1,6 @@
 // Tuning + visual constants for the scaffold.
 
-export const TILE = 24; // world pixels per cell
+export const TILE = 32; // world pixels per cell (matches the 32px/tile sprite art)
 export const GRID_W = 80;
 export const GRID_H = 60;
 

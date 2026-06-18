@@ -77,7 +77,7 @@ it stays reproducible thereafter.
 
 ## Data model (real shapes — see `src/types.ts`)
 ```ts
-type CellType = "space" | "floor" | "wall" | "door"; // tile-based; "door" walks but blocks gas
+type CellType = "space" | "floor" | "wall" | "door" | "storage"; // "door" walks but blocks gas; "storage" is a walkable airless warehouse deck (lamp-only)
 type GasKind  = "o2" | "ch4" | "cl2" | "nh3" | "h2";
 type RoomGas  = "none" | GasKind | "mixed";           // mixed = lethal to everyone
 type Temp     = "cold" | "temperate" | "hot";         // room climate band (Heater/Cryo)
@@ -272,6 +272,16 @@ biomass, `fungal` from spores). Crew eat the line their species eats. Production
 idles at the storage cap, scaled by room productivity; Vry'l botanists boost
 vats in their room (trait).
 
+**Hauling economy (`agents.ts` haul tasks + `Structure.outBuf`/`inBuf`).** The chain
+is physical: producers buffer output in `outBuf` (a Vat **stalls** at `VAT_OUTCAP`),
+and crew carry it to a **Storage Floor** (`stock` = the warehouse) — or a free room
+cell if none exists. Crew also deliver into consumers' `inBuf`: feedstock → Synth,
+meals → Mess Table (eaten at the seat-ring), minerals → Trade Hub (sold first), and
+drone ore → Bay → storage. A bootstrap trickle drains buffers straight to `stock`
+when there are **no resident haulers** (opening + headless sims). Eating prefers a
+stocked table, else the Synth. Storage decks are airless, so hauling onto them needs
+a charged suit.
+
 ### Fuel & docks (`fuel.ts`, `economy.ts`, `structures.ts`)
 **Fuel Refineries** convert **2 minerals → 3 fuel / 6 s** (`FUELREC`) while powered,
 scaled by room productivity / AI Core / Industrialist; idle out of ore (needs a Bot
@@ -389,6 +399,13 @@ with a timestamp and a one-line summary for the load menu. **`loadWorld` runs a
 (including the legacy single-slot save and the old scalar `meals`/no-`spores`
 stock shape), so old saves keep loading. Keeping `World` strictly
 JSON-serializable (no class instances / functions) is a hard rule.
+
+**Portable saves** ride the same wrapped-payload format: `serializeWorld(w)`
+emits the JSON a slot stores, and `parseSave(text)` parses-and-`sanitize()`s it
+(rejecting non-world JSON). The Saves panel's **Export to file** downloads
+`serializeWorld` as `exostation-*.json`; **Import from file** feeds a read file
+through `parseSave` and replaces the live world. Because saves hold only entity
+data (looked up against current sprites at render time), they survive art changes.
 
 ## Project layout
 ```

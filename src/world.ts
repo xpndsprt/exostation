@@ -23,6 +23,8 @@ export function createWorld(): World {
     gods: [],
     godTimer: 0,
     godVerdict: null,
+    blackoutT: 0,
+    surgeT: 0,
     rooms: {},
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Generous starting biomass so the synth feeds crew for a long while — the
@@ -129,6 +131,8 @@ export function addStructure(w: World, kind: StructureKind, x: number, y: number
     servicedBy: -1,
     recipe: defaultRecipe(kind),
     faultT: 0,
+    outBuf: 0,
+    inBuf: 0,
   };
   w.structures[id] = s;
   c.structureId = id;
@@ -159,6 +163,8 @@ export function addStructureMulti(w: World, kind: StructureKind, cells: number[]
     servicedBy: -1,
     recipe: defaultRecipe(kind),
     faultT: 0,
+    outBuf: 0,
+    inBuf: 0,
   };
   w.structures[id] = s;
   for (const c of cells) w.cells[c].structureId = id;
@@ -252,6 +258,8 @@ export function addDock(w: World, x: number, y: number, kind: StructureKind = "d
     servicedBy: -1,
     recipe: "",
     faultT: 0,
+    outBuf: 0,
+    inBuf: 0,
   };
   w.cells[i].structureId = id;
   return true;
@@ -292,7 +300,7 @@ export function addBay(w: World, x: number, y: number): boolean {
   const id = w.nextId++;
   w.structures[id] = {
     id, kind: "bay", cell: wall, cells: [wall, interior],
-    on: true, powered: false, occupantId: -1, timer: 0, condition: 100, servicedBy: -1, recipe: "", faultT: 0,
+    on: true, powered: false, occupantId: -1, timer: 0, condition: 100, servicedBy: -1, recipe: "", faultT: 0, outBuf: 0, inBuf: 0,
   };
   w.cells[wall].structureId = id;
   w.cells[interior].structureId = id;

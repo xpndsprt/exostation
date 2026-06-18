@@ -201,6 +201,28 @@ The rest of the Depth Epic except replayability (M43):
   at once (capped by free Hotel Rooms). Mining drones get the same treatment on a **1×1
   bay pad** (ease-in lift-off → mine → ease-out landing). Traders reuse the dock pad.
 
+### Recent waves — logistics, sight, expanded space & editor *(shipped ✓)*
+- **Crew hauling economy:** the supply chain is now physical. Bio Vats buffer their
+  output and **crew carry it to a Storage Floor** (or any free room cell until storage
+  exists); a vat **stalls** if its buffer fills. Crew fetch **feedstock from storage to
+  the Synth**, **stage meals on Mess Tables** (crew/guests eat at the seat-ring), drone
+  **ore lands in the Bay** and is hauled to storage, and **crew carry minerals to the
+  Trade Hub** before a sale. A bootstrap trickle keeps the opening (and headless sims)
+  flowing when there are no haulers yet. New build pieces: **Storage Floor** (airless,
+  lamp-only, raises caps) and **Mess Table** (3×3) — neither researched.
+- **Ray-traced vision:** crew sight cones are DDA ray-cast so **walls & modules cast
+  shadows**; they can't spot a fault behind cover (line-of-sight gating).
+- **Expanded star system:** one or two **stars**, orbiting **planets with moons**, an
+  asteroid belt and scattered rocks of varied mineral grade; **drones can be lost** to
+  hazards and the Bay rebuilds one for ¢300. Top-bar **Solar System** button.
+- **Per-species AI advisors:** the advisor splits into a **STATION AI** + one AI per
+  species aboard, each speaking for its own people.
+- **Star-Trek shuttle flight:** ships bank in on an orbital arc, cut engines and coast
+  onto the pad. **Reproduction** (clutches → young + spiders) and **romance/couples**.
+- **Sprite editor:** procedural drawing "skills" (relight/bevel/hue-shift/dither/
+  despeckle/soft-outline/mirror) + a **Ridley Scott × snakepixel art-director** that
+  confers, dials the knobs and can apply a recipe across the whole library.
+
 ---
 
 ## Out of scope / planned (not yet shipped)

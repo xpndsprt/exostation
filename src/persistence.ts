@@ -38,11 +38,32 @@ function summarize(w: World): string {
 
 export function saveWorld(w: World, slot: SlotId = "auto"): boolean {
   try {
-    const payload: SavePayload = { savedAt: Date.now(), summary: summarize(w), world: w };
-    localStorage.setItem(key(slot), JSON.stringify(payload));
+    localStorage.setItem(key(slot), serializeWorld(w));
     return true;
   } catch {
     return false;
+  }
+}
+
+// Serialize the live world to a portable save string (the same wrapped payload a
+// slot save uses) — for exporting a save to a downloadable file.
+export function serializeWorld(w: World): string {
+  const payload: SavePayload = { savedAt: Date.now(), summary: summarize(w), world: w };
+  return JSON.stringify(payload);
+}
+
+// Parse a save string (wrapped payload or a legacy bare world) into a sanitized
+// World, or null if it isn't valid. Used by both slot loads and file imports.
+export function parseSave(text: string): World | null {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    const w = (parsed && typeof parsed === "object" && "world" in (parsed as object)
+      ? (parsed as SavePayload).world
+      : (parsed as World)) as World;
+    if (!w || typeof w !== "object") return null;
+    return sanitize(w);
+  } catch {
+    return null;
   }
 }
 
@@ -92,16 +113,7 @@ export function loadWorld(slot: SlotId = "auto"): World | null {
     return null;
   }
   if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    // new wrapped payload, or a legacy bare world
-    const w = (parsed && typeof parsed === "object" && "world" in (parsed as object)
-      ? (parsed as SavePayload).world
-      : (parsed as World)) as World;
-    return sanitize(w);
-  } catch {
-    return null;
-  }
+  return parseSave(raw);
 }
 
 // Backfill fields missing from older saves so the sim stays valid.
@@ -126,6 +138,8 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.ships)) w.ships = [];
   if (!Array.isArray(w.gods)) w.gods = [];
   if (typeof w.godTimer !== "number") w.godTimer = 0;
+  if (typeof w.blackoutT !== "number") w.blackoutT = 0;
+  if (typeof w.surgeT !== "number") w.surgeT = 0;
   if (w.godVerdict === undefined) w.godVerdict = null;
   if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
   if (typeof w.crewTimer !== "number") w.crewTimer = 0;
@@ -174,6 +188,8 @@ function sanitize(w: World): World {
     // lodging now stores a prepped species in `recipe`; backfill legacy "" bunks
     if ((s.kind === "pod" || s.kind === "hotel") && !(s.recipe in SPECIES)) s.recipe = defaultRecipe(s.kind);
     if (typeof s.faultT !== "number") s.faultT = 0;
+    if (typeof s.outBuf !== "number") s.outBuf = 0;
+    if (typeof s.inBuf !== "number") s.inBuf = 0;
   }
   // Sites became orbital bodies (no grid cell). A legacy save has on-grid sites
   // (a `cell`, no `kind`/`discovered`) — discard those and re-seed a fresh system,

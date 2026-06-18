@@ -1,4 +1,4 @@
-import { Encounter, HoverTarget, OverlayMode, Selection, Site, Speed, Species, Tool, UIState, World } from "./types";
+import { Encounter, HoverTarget, OverlayMode, Selection, Site, Speed, Species, Tool, UIState, WeirdGod, World } from "./types";
 import { transitSeconds, systemDist, REBUILD_COST } from "./mining";
 import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
@@ -17,7 +17,7 @@ import { isMuted, setMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 import { currentYear } from "./story";
-import { GODS } from "./gods";
+import { GODS, WEIRD_GODS } from "./gods";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -123,6 +123,8 @@ export interface UIHandlers {
   onSaveSlot: (slot: SlotId) => void;
   onLoadSlot: (slot: SlotId) => void;
   onDeleteSlot: (slot: SlotId) => void;
+  onExportSave: () => void; // download the live world as a portable .json file
+  onImportSave: (text: string) => void; // load a world from an imported file's text
   onDeconstruct: (id: number) => void;
   onToggle: (id: number) => void;
   onRecipe: (id: number) => void;
@@ -353,6 +355,22 @@ function buildSaveControls(world: World, handlers: UIHandlers): void {
   document.getElementById("saves-new")?.addEventListener("click", () => {
     closeSaves();
     handlers.onNewGame();
+  });
+
+  // portable save: export the live world to a file, or import one from disk
+  document.getElementById("saves-export")?.addEventListener("click", () => handlers.onExportSave());
+  const fileInput = document.getElementById("saves-import-file") as HTMLInputElement | null;
+  document.getElementById("saves-import")?.addEventListener("click", () => fileInput?.click());
+  fileInput?.addEventListener("change", () => {
+    const f = fileInput.files?.[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      handlers.onImportSave(String(r.result));
+      renderSaves(); // imported world becomes the live state; refresh slot summaries
+    };
+    r.readAsText(f);
+    fileInput.value = ""; // let the same file be re-imported later
   });
 }
 
@@ -1117,8 +1135,12 @@ const spriteList = (): SpriteDef[] => (window as unknown as { SPRITES?: SpriteDe
 // Rasterize a species' idle frame onto the given canvas (nearest-neighbour, ~96px).
 function drawSpeciesArt(canvas: HTMLCanvasElement, species: string): void {
   const s = spriteList().find((x) => x.name === species);
-  const tw = (s?.tileW ?? 1) * 16;
-  const th = (s?.tileH ?? 1) * 16;
+  const rows = s ? (s.states.idle ?? s.states.default ?? Object.values(s.states)[0] ?? []) : [];
+  // Native px/tile: explicit res, else derived from the first row's length (like
+  // the renderer/editor) so the portrait fills the canvas at any art resolution.
+  const res = s ? ((s as { res?: number }).res || Math.floor((rows[0]?.length ?? 0) / s.tileW) || 16) : 16;
+  const tw = (s?.tileW ?? 1) * res;
+  const th = (s?.tileH ?? 1) * res;
   const px = Math.max(1, Math.floor(96 / Math.max(tw, th)));
   canvas.width = tw * px;
   canvas.height = th * px;
@@ -1127,7 +1149,6 @@ function drawSpeciesArt(canvas: HTMLCanvasElement, species: string): void {
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (!s) return;
-  const rows = s.states.idle ?? s.states.default ?? Object.values(s.states)[0] ?? [];
   for (let y = 0; y < th; y++) {
     const row = rows[y] || "";
     for (let x = 0; x < tw; x++) {
@@ -1230,23 +1251,53 @@ let godShown = false;
 export function isGodOpen(): boolean {
   return godShown;
 }
-export function showGodDialog(species: Species, verdict: "pleased" | "wrathful" | "neutral", onClose: () => void): void {
+// each weird god: portrait glyph + tint + the line it speaks when it strikes
+const WEIRD_INFO: Record<WeirdGod, { glyph: string; color: string; verdict: string }> = {
+  blackout: { glyph: "🌑", color: "#3a3f4d", verdict: "It swallows the lights. Every system aboard falls dark — and stays dark for a while." },
+  surge: { glyph: "⚡", color: "#ffd84a", verdict: "It floods your grid with borrowed lightning. For a while, everything runs free of charge." },
+  famine: { glyph: "🩸", color: "#e24b4b", verdict: "It opens its maw. Your every meal store is devoured to nothing." },
+  feast: { glyph: "🍖", color: "#49d17a", verdict: "It gorges your larder. Every meal store overflows to the brim." },
+};
+function paintWeirdGod(canvas: HTMLCanvasElement, kind: WeirdGod): void {
+  canvas.width = 96;
+  canvas.height = 96;
+  const o = canvas.getContext("2d");
+  if (!o) return;
+  const info = WEIRD_INFO[kind];
+  const g = o.createRadialGradient(48, 44, 6, 48, 48, 50);
+  g.addColorStop(0, info.color);
+  g.addColorStop(1, "rgba(8,10,16,0)");
+  o.fillStyle = g;
+  o.fillRect(0, 0, 96, 96);
+  o.font = "48px serif";
+  o.textAlign = "center";
+  o.textBaseline = "middle";
+  o.fillText(info.glyph, 48, 50);
+}
+export function showGodDialog(species: Species, verdict: "pleased" | "wrathful" | "neutral", onClose: () => void, weird?: WeirdGod): void {
   const el = document.getElementById("god");
   if (!el) {
     onClose();
     return;
   }
   godShown = true;
-  drawSpeciesArt(el.querySelector(".god-art") as HTMLCanvasElement, "god_" + species);
-  (el.querySelector(".god-name") as HTMLElement).textContent = `${GODS[species]} — god of the ${SPECIES[species].label}`;
   const v = el.querySelector(".god-verdict") as HTMLElement;
-  v.textContent =
-    verdict === "pleased"
-      ? "It is pleased. A gift of credits and minerals descends upon the station."
-      : verdict === "wrathful"
-        ? "It is wrathful. One of your modules is unmade before your eyes."
-        : "It watches in silence, and finds you neither worthy nor wanting.";
-  v.style.color = verdict === "pleased" ? "#49d17a" : verdict === "wrathful" ? "#e24b4b" : "#aab2c4";
+  if (weird) {
+    paintWeirdGod(el.querySelector(".god-art") as HTMLCanvasElement, weird);
+    (el.querySelector(".god-name") as HTMLElement).textContent = `${WEIRD_GODS[weird]} — a weird god`;
+    v.textContent = WEIRD_INFO[weird].verdict;
+    v.style.color = verdict === "pleased" ? "#49d17a" : "#e24b4b";
+  } else {
+    drawSpeciesArt(el.querySelector(".god-art") as HTMLCanvasElement, "god_" + species);
+    (el.querySelector(".god-name") as HTMLElement).textContent = `${GODS[species]} — god of the ${SPECIES[species].label}`;
+    v.textContent =
+      verdict === "pleased"
+        ? "It is pleased. A gift of credits and minerals descends upon the station."
+        : verdict === "wrathful"
+          ? "It is wrathful. One of your modules is unmade before your eyes."
+          : "It watches in silence, and finds you neither worthy nor wanting.";
+    v.style.color = verdict === "pleased" ? "#49d17a" : verdict === "wrathful" ? "#e24b4b" : "#aab2c4";
+  }
   const go = el.querySelector(".god-go") as HTMLButtonElement;
   const done = () => { el.classList.remove("show"); godShown = false; go.removeEventListener("click", done); onClose(); };
   go.addEventListener("click", done);

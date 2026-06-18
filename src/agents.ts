@@ -8,6 +8,7 @@ import { SERVICE_THRESHOLD, REPAIR_RATE } from "./maintenance";
 import { industryBoost, highTierModule } from "./research";
 import { injure } from "./medical";
 import { loveBoost } from "./romance";
+import { storageCaps } from "./storage";
 
 // What gas an agent can breathe: its native gas, plus a partner's gas if they
 // carry cross-gas love-implants.
@@ -24,6 +25,7 @@ const SUIT_DECAY = 14; // suit reserve spent per second off native air (~7s of c
 const SUIT_RECHARGE = 40; // suit refilled per second back in native air (~2.5s)
 const SUIT_PANIC = 30; // head for air once the suit drops below this (still time to exit)
 const VENTURE_SUIT = 80; // only start a task in a hostile room when nearly fully charged
+const FEED_CAP = 4; // feedstock units crew stage at a Synth before they stop topping it up
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
 const FUN_DECAY = 0.4;
@@ -192,7 +194,12 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
     if (a.cell === a.task.target) {
       if (a.task.type === "eat") {
         const line = SPECIES[a.species].diet;
-        if (w.stock.meals[line] > 0) {
+        const tid = a.task.structureId;
+        const table = tid != null ? w.structures[tid] : undefined;
+        if (table && table.kind === "table") {
+          // the meal was removed from the warehouse when crew staged it on the table
+          if (table.inBuf > 0 && table.recipe === line) { table.inBuf -= 1; a.food = 100; }
+        } else if (w.stock.meals[line] > 0) {
           w.stock.meals[line] -= 1;
           a.food = 100;
         }
@@ -243,6 +250,24 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
           return; // keep sealing
         }
         releaseTask(w, a); // breach already gone
+      } else if (a.task.type === "haul") {
+        // arrived at the drop point — put the carried good into the warehouse (or a
+        // consumer's input buffer), then the unit is no longer "in transit".
+        const good = a.task.good;
+        if (good) {
+          if (a.task.deliver && a.task.structureId != null) {
+            const s = w.structures[a.task.structureId];
+            if (s) {
+              s.inBuf += 1;
+              if (s.kind === "table") s.recipe = good; // the line now staged at this table
+            }
+          } else {
+            const cap = (storageCaps(w) as unknown as Record<string, number>)[good] ?? Infinity;
+            const stock = w.stock as unknown as Record<string, number>;
+            stock[good] = Math.min(cap, (stock[good] ?? 0) + 1);
+          }
+        }
+        a.task = null;
       } else {
         a.task = null;
       }
@@ -272,12 +297,23 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       return;
     }
   }
-  if (a.food < FOOD_LOW && w.stock.meals[SPECIES[a.species].diet] > 0) {
-    const synth = nearestReachable(w, a, a.cell, "synth", true); // eating is quick — may venture
-    if (synth) {
-      a.task = { type: "eat", target: synth.cell };
-      a.path = synth.path;
+  if (a.food < FOOD_LOW) {
+    const diet = SPECIES[a.species].diet;
+    // prefer a Mess Table stocked with their line — sit at a seat around it
+    const seat = claimTableSeat(w, a, a.cell, diet);
+    if (seat) {
+      a.task = { type: "eat", target: seat.cell, structureId: seat.id };
+      a.path = seat.path;
       return;
+    }
+    // fallback: eat at a Synth straight from the warehouse (keeps everyone fed)
+    if (w.stock.meals[diet] > 0) {
+      const synth = nearestReachable(w, a, a.cell, "synth", true); // eating is quick — may venture
+      if (synth) {
+        a.task = { type: "eat", target: synth.cell };
+        a.path = synth.path;
+        return;
+      }
     }
   }
   // Both crew and visitors relax at a Lounge when bored (and socialize there).
@@ -296,6 +332,48 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
     if (job) {
       a.task = { type: "service", target: job.cell, structureId: job.id };
       a.path = job.path;
+      return;
+    }
+  }
+
+  // Residents haul a producer's buffered output to storage (a free room cell if no
+  // storage exists yet), so the producer doesn't stall. Visitors never haul.
+  if (!a.guest) {
+    const haul = claimHaul(w, a, a.cell);
+    if (haul) {
+      a.task = { type: "haul", target: haul.target, good: haul.good, deliver: false };
+      a.path = haul.path;
+      return;
+    }
+  }
+
+  // Residents fetch feedstock from storage to a Synth so it can cook meals (the
+  // visible "out of storage to prepare meals"). Only fires when storage exists.
+  if (!a.guest) {
+    const feed = claimFeed(w, a, a.cell);
+    if (feed) {
+      a.task = { type: "haul", target: feed.target, good: feed.good, deliver: true, structureId: feed.synth };
+      a.path = feed.path;
+      return;
+    }
+  }
+
+  // Residents stage meals on Mess Tables so the crew can sit and eat there.
+  if (!a.guest) {
+    const restock = claimRestock(w, a, a.cell);
+    if (restock) {
+      a.task = { type: "haul", target: restock.target, good: restock.good, deliver: true, structureId: restock.table };
+      a.path = restock.path;
+      return;
+    }
+  }
+
+  // Residents carry minerals from storage to a Trade Hub so it has ore to sell.
+  if (!a.guest) {
+    const run = claimMineralRun(w, a, a.cell);
+    if (run) {
+      a.task = { type: "haul", target: run.target, good: "minerals", deliver: true, structureId: run.structure };
+      a.path = run.path;
       return;
     }
   }
@@ -346,6 +424,179 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
   }
 }
 
+// A vat-output haul job: nearest vat with buffered output the agent can reach,
+// routed start → pickup → drop (a Storage tile, else a free cell in the vat's
+// room). Reserves one unit. Returns the route + which good, or null.
+function claimHaul(w: World, a: Agent, start: number): { target: number; path: number[]; good: string } | null {
+  // producers that pile up output crew must clear: Bio Vats (feedstock) + Bot Bays (ore)
+  const prod = Object.values(w.structures).filter((s) => (s.kind === "vat" || s.kind === "bay") && s.outBuf > 0);
+  prod.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const v of prod) {
+    const pick = accessCell(w, v);
+    if (pick < 0) continue;
+    if (!nativeAt(w, a, pick) && a.suit < VENTURE_SUIT) continue;
+    const toPick = findPath(w, start, pick);
+    if (!toPick) continue;
+    const dest = pickHaulDest(w, a, pick, v);
+    if (dest < 0) continue;
+    const toDest = findPath(w, pick, dest);
+    if (!toDest) continue;
+    v.outBuf -= 1; // reserve one unit for this hauler
+    const good = v.kind === "bay" ? "minerals" : v.recipe === "spores" || v.recipe === "microbes" ? v.recipe : "biomass";
+    return { target: dest, path: toPick.concat(toDest), good };
+  }
+  return null;
+}
+
+const TABLE_CAP = 4; // rations a Mess Table stages before crew stop topping it up
+const TRADE_FEED_CAP = 30; // minerals crew stage at a Trade Hub before they stop topping it up
+
+// A mineral-delivery job: carry ore from a Storage tile to a powered Trade Hub so
+// it has stock to sell. Needs storage (the pickup) + a charged suit (airless deck).
+function claimMineralRun(w: World, a: Agent, start: number): { target: number; path: number[]; structure: number } | null {
+  if (a.suit < VENTURE_SUIT) return null;
+  const stock = w.stock as unknown as Record<string, number>;
+  if ((stock.minerals ?? 0) < 1) return null;
+  const hubs = Object.values(w.structures).filter((s) => (s.kind === "tradehub" || s.kind === "cargoex") && s.powered && s.inBuf < TRADE_FEED_CAP);
+  hubs.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const h of hubs) {
+    const drop = accessCell(w, h);
+    if (drop < 0) continue;
+    const store: number[] = [];
+    for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") store.push(i);
+    store.sort((p, q) => manhattan(w, start, p) - manhattan(w, start, q));
+    let src = -1, toSrc: number[] | null = null;
+    for (const c of store) { const p = findPath(w, start, c); if (p) { src = c; toSrc = p; break; } }
+    if (src < 0 || !toSrc) return null; // no storage to draw from — Hub sells from the warehouse
+    const toDrop = findPath(w, src, drop);
+    if (!toDrop) continue;
+    stock.minerals -= 1; // reserve from the warehouse
+    return { target: drop, path: toSrc.concat(toDrop), structure: h.id };
+  }
+  return null;
+}
+
+// The walkable "seat" tiles ringing a table (where diners stand to eat).
+function tableSeats(w: World, t: Structure): number[] {
+  const seats = new Set<number>();
+  for (const c of t.cells) {
+    const x = c % w.w, y = (c / w.w) | 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = x + dx, ny = y + dy;
+      if (!inBounds(w, nx, ny)) continue;
+      const ci = idx(w, nx, ny);
+      const cc = w.cells[ci];
+      if ((cc.type === "floor" || cc.type === "door") && cc.structureId < 0) seats.add(ci);
+    }
+  }
+  return [...seats];
+}
+
+// Find a Mess Table stocked with this diner's food line and a reachable free seat.
+function claimTableSeat(w: World, a: Agent, start: number, diet: string): { id: number; cell: number; path: number[] } | null {
+  const tables = Object.values(w.structures).filter((s) => s.kind === "table" && s.inBuf > 0 && s.recipe === diet);
+  tables.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const t of tables) {
+    const seats = tableSeats(w, t).sort((p, q) => manhattan(w, start, p) - manhattan(w, start, q));
+    for (const seat of seats) {
+      if (!nativeAt(w, a, seat) && a.suit < VENTURE_SUIT) continue;
+      const path = findPath(w, start, seat);
+      if (path) return { id: t.id, cell: seat, path };
+    }
+  }
+  return null;
+}
+
+// A table-restock job: carry a meal from storage (or a Synth) to a Mess Table.
+function claimRestock(w: World, a: Agent, start: number): { target: number; path: number[]; good: string; table: number } | null {
+  const tables = Object.values(w.structures).filter((s) => s.kind === "table");
+  if (!tables.length) return null;
+  const diets = new Set<string>();
+  for (const id in w.agents) { const o = w.agents[id]; if (o.alive) diets.add(SPECIES[o.species].diet); }
+  const meals = w.stock.meals as unknown as Record<string, number>;
+  tables.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const t of tables) {
+    let line = "";
+    if (t.recipe && diets.has(t.recipe) && (meals[t.recipe] ?? 0) > 0 && t.inBuf < TABLE_CAP) line = t.recipe;
+    else if (t.inBuf === 0) { for (const L of diets) if ((meals[L] ?? 0) > 0) { line = L; break; } }
+    if (!line) continue;
+    const drop = accessCell(w, t);
+    if (drop < 0) continue;
+    const src = mealSource(w, a, start);
+    if (src < 0) continue;
+    const toSrc = findPath(w, start, src);
+    const toDrop = findPath(w, src, drop);
+    if (!toSrc || !toDrop) continue;
+    meals[line] -= 1; // reserve from the warehouse
+    return { target: drop, path: toSrc.concat(toDrop), good: line, table: t.id };
+  }
+  return null;
+}
+
+// Where a meal is picked up to stage on a table: nearest Storage tile (needs a
+// suit — airless), else a Synth's access cell (fresh off the cooker).
+function mealSource(w: World, a: Agent, start: number): number {
+  if (a.suit >= VENTURE_SUIT) {
+    const store: number[] = [];
+    for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") store.push(i);
+    store.sort((p, q) => manhattan(w, start, p) - manhattan(w, start, q));
+    for (const c of store) if (findPath(w, start, c)) return c;
+  }
+  const synths = Object.values(w.structures).filter((s) => s.kind === "synth");
+  synths.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const s of synths) { const ac = accessCell(w, s); if (ac >= 0 && findPath(w, start, ac)) return ac; }
+  return -1;
+}
+
+// A feedstock-delivery job: carry a Synth's input from a Storage tile to the Synth
+// so it can cook (the visible "out of storage to prepare meals"). Needs storage to
+// exist + a charged suit (the deck is airless); reserves one unit from the warehouse.
+const SYNTH_FEED: Record<string, string> = { rations: "biomass", fungal: "spores", protein: "microbes", exotic: "microbes" };
+function claimFeed(w: World, a: Agent, start: number): { target: number; path: number[]; good: string; synth: number } | null {
+  if (a.suit < VENTURE_SUIT) return null; // the storage deck is airless
+  const stock = w.stock as unknown as Record<string, number>;
+  const synths = Object.values(w.structures).filter((s) => s.kind === "synth" && s.powered && s.inBuf < FEED_CAP);
+  synths.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const s of synths) {
+    const base = SYNTH_FEED[s.recipe] ?? "biomass";
+    if ((stock[base] ?? 0) < 1) continue;
+    const drop = accessCell(w, s);
+    if (drop < 0) continue;
+    const store: number[] = [];
+    for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") store.push(i);
+    store.sort((p, q) => manhattan(w, start, p) - manhattan(w, start, q));
+    let src = -1, toSrc: number[] | null = null;
+    for (const c of store) { const p = findPath(w, start, c); if (p) { src = c; toSrc = p; break; } }
+    if (src < 0 || !toSrc) return null; // no storage to fetch from — Synth falls back to stock
+    const toDrop = findPath(w, src, drop);
+    if (!toDrop) continue;
+    stock[base] -= 1; // reserve from the warehouse
+    return { target: drop, path: toSrc.concat(toDrop), good: base, synth: s.id };
+  }
+  return null;
+}
+
+// Where to drop a hauled good: the nearest reachable Storage tile (airless — needs
+// a charged suit), else the nearest free floor cell in the producer's own room.
+function pickHaulDest(w: World, a: Agent, from: number, src: Structure): number {
+  if (a.suit >= VENTURE_SUIT) {
+    const store: number[] = [];
+    for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") store.push(i);
+    store.sort((p, q) => manhattan(w, from, p) - manhattan(w, from, q));
+    for (const c of store) if (findPath(w, from, c)) return c;
+  }
+  const ac = accessCell(w, src); // use the walkable side (a Bay's anchor is a wall cell)
+  const room = ac >= 0 ? w.cells[ac].roomId : w.cells[src.cell].roomId;
+  const floor: number[] = [];
+  for (let i = 0; i < w.cells.length; i++) {
+    const c = w.cells[i];
+    if (c.type === "floor" && c.roomId === room && c.structureId < 0) floor.push(i);
+  }
+  floor.sort((p, q) => manhattan(w, from, p) - manhattan(w, from, q));
+  for (const c of floor) if (findPath(w, from, c)) return c;
+  return -1;
+}
+
 // Is there worn machinery this resident can't currently see (so it's worth a
 // patrol to go look for it)? Keeps idle crew still when everything's healthy.
 function hasUnseenWork(w: World, a: Agent): boolean {
@@ -373,6 +624,17 @@ function releaseTask(w: World, a: Agent): void {
   if (a.task && a.task.type === "seal") {
     const b = w.breaches.find((x) => x.sealer === a.id);
     if (b) b.sealer = -1; // unclaim so another crew member can finish it
+  }
+  // a dropped haul shouldn't vanish the unit — bank it back in the warehouse
+  if (a.task && a.task.type === "haul" && a.task.good) {
+    const g = a.task.good;
+    if (g === "rations" || g === "fungal" || g === "protein" || g === "exotic") {
+      const meals = w.stock.meals as unknown as Record<string, number>;
+      meals[g] = (meals[g] ?? 0) + 1;
+    } else {
+      const stock = w.stock as unknown as Record<string, number>;
+      stock[g] = (stock[g] ?? 0) + 1;
+    }
   }
   a.task = null;
   a.path = [];

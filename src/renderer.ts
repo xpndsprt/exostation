@@ -6,7 +6,17 @@ import { exteriorCell, isOpaque } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
 
-const SCALE = TILE / 16; // sprites are authored at 16px/tile
+// Sprite art is authored at a native resolution (px per tile) that can vary per
+// sprite (32px for the current set; older art may be 16). The renderer reads each
+// sprite's native res at build time and scales its texture by TILE/res so it always
+// covers exactly tileW×tileH cells. SCALE is the default for the 32px set.
+const DEFAULT_RES = 32;
+const SCALE = TILE / DEFAULT_RES;
+const TEXRES = new Map<string, number>(); // sprite name -> native px/tile
+// World scale factor for a sprite, from its native authoring resolution.
+function scaleOf(name: string): number {
+  return TILE / (TEXRES.get(name) ?? DEFAULT_RES);
+}
 
 // --- lighting / shadows (2D grid shadowcasting; see LIGHTING_PLAN.md) ---
 // The per-cell light buffer is painted as a SMOOTH (bilinear) multiply lightmap,
@@ -197,6 +207,53 @@ function makeTexture(px: Px, w: number, h: number): Texture {
   (t.source as unknown as { scaleMode: string }).scaleMode = "nearest";
   return t;
 }
+
+// ---- per-sprite heightmaps (for dynamic, across-tile cast shadows) ----
+// Each sprite gets an approximate height field: a base elevation by material
+// category (floor ≈ ground, bulkheads/machines tall, crew short) plus fine relief
+// from the pixel's own luminance (the art shades highlights up / recesses down).
+// Stored as a grayscale texture (height in RGB, coverage in A) so the lighting
+// pass can composite a world height field and march shadows through it.
+const HTEX = new Map<string, Texture>();
+// Tall things that stand on the station floor and should cast across tiles.
+const HEIGHT_TALL = new Set(["fusion", "aicore", "cmdhub", "tradenexus", "autoforge", "orerefinery", "fuelrefinery", "silo", "o2gen", "ch4gen", "cl2gen", "nh3gen", "h2gen", "heater", "cooler", "vat", "bloomgarden", "cargoex", "medbay", "rec", "tradehub", "lab", "synth"]);
+const HEIGHT_MID = new Set(["pod", "hotel", "battery", "lamp", "turret", "dock", "docklarge", "docksuper", "bay"]);
+function baseHeight(name: string): number {
+  if (name === "floor" || name === "space") return 0.02;
+  if (name.startsWith("wall")) return 1.0; // bulkheads — the tallest occluders
+  if (name === "door") return 0.4;
+  if (HEIGHT_TALL.has(name)) return 0.8;
+  if (HEIGHT_MID.has(name)) return 0.5;
+  if (name in SPECIES) return 0.22; // crew — short, soft shadows
+  if (["egg", "spider", "drone", "asteroid"].includes(name)) return 0.12;
+  return 0.6; // sensible default for any other on-floor module
+}
+function makeHeightTexture(px: Px, w: number, h: number, base: number): Texture {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const o = c.getContext("2d") as CanvasRenderingContext2D;
+  const img = o.createImageData(w, h);
+  const d = img.data;
+  for (let i = 0; i < w * h; i++) {
+    const col = px[i];
+    const p = i * 4;
+    if (!col || col[0] !== "#") {
+      d[p + 3] = 0; // transparent → no occluder here (floor shows through)
+      continue;
+    }
+    const [r, g, b] = hx2rgb(col);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const hgt = Math.max(0, Math.min(1, base + 0.25 * lum)); // base + fine relief
+    const v = (hgt * 255) | 0;
+    d[p] = d[p + 1] = d[p + 2] = v;
+    d[p + 3] = 255;
+  }
+  o.putImageData(img, 0, 0);
+  const t = Texture.from(c);
+  (t.source as unknown as { scaleMode: string }).scaleMode = "nearest";
+  return t;
+}
 // ---- cohesive tone-mapping pass (the editor's duotone-blend, applied to every
 // module/ship sprite at build time so the station reads as one designed set).
 // Grouped by feel; species creatures, lamps and the species-tinted bunks are
@@ -241,19 +298,60 @@ function buildTextures(): void {
   if (TEX.size) return;
   const list = (window as unknown as { SPRITES?: any[] }).SPRITES || [];
   for (const s of list) {
-    const w = s.tileW * 16;
-    const h = s.tileH * 16;
+    // Native resolution: explicit `res`, else derived from the first row's length
+    // (chars per row / tiles wide), matching the editor's derivation. Falls back to
+    // the default 32px set.
+    const firstRow = (Object.values(s.states)[0] as string[] | undefined)?.[0] ?? "";
+    // floor (not round) so a stray +1 raggedness in the first row can't bump a
+    // 16px sprite to a phantom "17". Art is validated rectangular by simcheck.
+    const res = s.res || Math.floor(firstRow.length / s.tileW) || DEFAULT_RES;
+    TEXRES.set(s.name, res);
+    const w = s.tileW * res;
+    const h = s.tileH * res;
     const pal = tonePalette(s.name, s.palette);
+    const base = baseHeight(s.name);
     for (const st of Object.keys(s.states)) {
-      TEX.set(`${s.name}:${st}`, makeTexture(asciiPixels(s.states[st], pal, w, h), w, h));
+      const colorPx = asciiPixels(s.states[st], pal, w, h);
+      TEX.set(`${s.name}:${st}`, makeTexture(colorPx, w, h));
+      // height from the ORIGINAL (untoned) palette luminance — shape, not tint
+      HTEX.set(`${s.name}:${st}`, makeHeightTexture(asciiPixels(s.states[st], s.palette, w, h), w, h, base));
     }
   }
+}
+function texH(name: string, state: string): Texture | null {
+  const key = `${name}:${state}`;
+  if (HTEX.has(key)) return HTEX.get(key) as Texture;
+  for (const k of HTEX.keys()) if (k.startsWith(name + ":")) return HTEX.get(k) as Texture; // fallback state
+  return null;
 }
 function tex(name: string, state: string): Texture | null {
   const key = `${name}:${state}`;
   if (TEX.has(key)) return TEX.get(key) as Texture;
   for (const k of TEX.keys()) if (k.startsWith(name + ":")) return TEX.get(k) as Texture; // fallback state
   return null;
+}
+
+// Ray-trace from a world-space point along a unit direction; return the distance
+// to the first opaque cell (wall or module) or `maxD` if nothing blocks. Grid DDA
+// so the hit lands exactly on the cell edge → crisp vision-cone shadows.
+function castRay(world: World, ox: number, oy: number, dx: number, dy: number, maxD: number): number {
+  let mapX = Math.floor(ox / TILE), mapY = Math.floor(oy / TILE);
+  const stepX = dx >= 0 ? 1 : -1, stepY = dy >= 0 ? 1 : -1;
+  const tDeltaX = dx !== 0 ? Math.abs(TILE / dx) : Infinity;
+  const tDeltaY = dy !== 0 ? Math.abs(TILE / dy) : Infinity;
+  const nextX = dx > 0 ? (mapX + 1) * TILE - ox : ox - mapX * TILE;
+  const nextY = dy > 0 ? (mapY + 1) * TILE - oy : oy - mapY * TILE;
+  let tMaxX = dx !== 0 ? Math.abs(nextX / dx) : Infinity;
+  let tMaxY = dy !== 0 ? Math.abs(nextY / dy) : Infinity;
+  for (let guard = 0; guard < 512; guard++) {
+    let t: number;
+    if (tMaxX < tMaxY) { t = tMaxX; mapX += stepX; tMaxX += tDeltaX; }
+    else { t = tMaxY; mapY += stepY; tMaxY += tDeltaY; }
+    if (t >= maxD) return maxD;
+    if (mapX < 0 || mapY < 0 || mapX >= world.w || mapY >= world.h) return t;
+    if (isOpaque(world, mapY * world.w + mapX)) return t; // hit — shadow begins here
+  }
+  return maxD;
 }
 
 export class Renderer {
@@ -275,6 +373,11 @@ export class Renderer {
   private shipsC = new Container();
   private godsFx = new Graphics(); // race-god auras
   private godsC = new Container(); // race-god creature sprites
+  // height field: a parallel scene drawn with each sprite's heightmap (grayscale),
+  // the source for dynamic, across-tile cast shadows. Toggle on to inspect it.
+  private heightC = new Container();
+  private showHeight = false;
+  private heightSig = -1;
   // lightmap: per-cell light buffer blitted to a W×H canvas, then drawn as a
   // bilinear-smoothed multiply sprite over the interior (soft RimWorld-style pools).
   private lightSprite = new Sprite();
@@ -305,9 +408,94 @@ export class Renderer {
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
-      this.lightSprite, this.overlay, this.selection, this.cursor,
+      this.lightSprite, this.heightC, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
+    this.heightC.visible = false;
+  }
+
+  // Toggle the height-field inspector (the grayscale occluder map the shadow pass
+  // marches). Returns the new state so the caller can surface it.
+  toggleHeight(): boolean {
+    this.showHeight = !this.showHeight;
+    this.heightC.visible = this.showHeight;
+    this.heightSig = -1; // force a rebuild on next draw
+    return this.showHeight;
+  }
+
+  // Rebuild the parallel height scene (walls/floor/doors + structure footprints,
+  // each painted with its heightmap texture). Cheap FNV signature so it only
+  // rebuilds when the layout changes. Crew/ships are omitted — they don't cast.
+  private buildHeightField(world: World): void {
+    let sig = 2166136261 >>> 0;
+    for (let i = 0; i < world.cells.length; i++)
+      sig = Math.imul(sig ^ (i * 7 + (world.cells[i].type === "space" ? 0 : world.cells[i].type === "wall" ? 1 : world.cells[i].type === "door" ? 2 : 3)), 16777619) >>> 0;
+    for (const id in world.structures) { const s = world.structures[id]; sig = Math.imul(sig ^ s.cell ^ (s.powered ? 0x8000 : 0), 16777619) >>> 0; }
+    if (sig === this.heightSig) return;
+    this.heightSig = sig;
+    this.heightC.removeChildren();
+
+    const isLink = (x: number, y: number): boolean => {
+      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return false;
+      const t = world.cells[y * world.w + x].type;
+      return t === "wall" || t === "door";
+    };
+    for (let y = 0; y < world.h; y++)
+      for (let x = 0; x < world.w; x++) {
+        const c = world.cells[y * world.w + x];
+        if (c.type === "space") continue;
+        if (c.type === "wall") {
+          const mask = (isLink(x, y - 1) ? 1 : 0) | (isLink(x + 1, y) ? 2 : 0) | (isLink(x, y + 1) ? 4 : 0) | (isLink(x - 1, y) ? 8 : 0);
+          const [name, quarters] = wallTile(mask);
+          const t = texH(name, "default");
+          if (!t) continue;
+          const sp = new Sprite(t);
+          sp.scale.set(scaleOf(name));
+          sp.anchor.set(0.5);
+          sp.x = x * TILE + TILE / 2;
+          sp.y = y * TILE + TILE / 2;
+          sp.rotation = (quarters * Math.PI) / 2;
+          this.heightC.addChild(sp);
+          continue;
+        }
+        const t = c.type === "door" ? texH("door", "closed") : texH("floor", "default");
+        if (!t) continue;
+        const sp = new Sprite(t);
+        sp.scale.set(scaleOf(c.type === "door" ? "door" : "floor"));
+        sp.x = x * TILE;
+        sp.y = y * TILE;
+        this.heightC.addChild(sp);
+      }
+
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      const def = STRUCTURES[s.kind];
+      if (s.kind === "table") continue; // graphics-only, low — skip
+      // footprint bounds (for the rotated solar/bay placements)
+      let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+      for (const cc of s.cells) { const cx = cc % world.w, cy = (cc / world.w) | 0; minx = Math.min(minx, cx); maxx = Math.max(maxx, cx); miny = Math.min(miny, cy); maxy = Math.max(maxy, cy); }
+      if (s.kind === "solar" || s.kind === "bay") {
+        const t = texH(s.kind, s.kind === "bay" ? (s.powered ? "enabled" : "disabled") : "default");
+        if (!t) continue;
+        const sp = new Sprite(t);
+        sp.scale.set(scaleOf(s.kind));
+        sp.anchor.set(0.5);
+        sp.x = ((minx + maxx + 1) / 2) * TILE;
+        sp.y = ((miny + maxy + 1) / 2) * TILE;
+        const d = s.kind === "bay" ? s.cells[0] - s.cells[1] : (s.cells[1] ?? s.cells[0]) - s.cells[0];
+        sp.rotation = d === 1 ? (s.kind === "bay" ? Math.PI / 2 : -Math.PI / 2) : d === -1 ? (s.kind === "bay" ? -Math.PI / 2 : Math.PI / 2) : Math.abs(d) > 1 ? Math.PI : 0;
+        this.heightC.addChild(sp);
+        continue;
+      }
+      const state = def.draw > 0 ? (s.powered ? "enabled" : "disabled") : "default";
+      const t = texH(s.kind, state);
+      if (!t) continue;
+      const sp = new Sprite(t);
+      sp.scale.set(scaleOf(s.kind));
+      sp.x = (s.cell % world.w) * TILE;
+      sp.y = ((s.cell / world.w) | 0) * TILE;
+      this.heightC.addChild(sp);
+    }
   }
 
   drawGrid(w: number, h: number): void {
@@ -352,6 +540,7 @@ export class Renderer {
     this.drawGods(world);
     this.bakeStatic(world); // placed-light shadows — recomputed only on change
     this.updateHeadlights(world); // moving per-character lamps — every frame
+    if (this.showHeight) this.buildHeightField(world); // height-field inspector
     this.drawOverlay(world, overlay);
     this.drawSelection(world, selCell);
   }
@@ -545,7 +734,7 @@ export class Renderer {
           const wt = tex(name, "default");
           if (!wt) continue;
           const sp = new Sprite(wt);
-          sp.scale.set(SCALE);
+          sp.scale.set(scaleOf(name));
           sp.anchor.set(0.5);
           sp.x = x * TILE + TILE / 2;
           sp.y = y * TILE + TILE / 2;
@@ -556,7 +745,7 @@ export class Renderer {
         const t = c.type === "door" ? tex("door", "closed") : tex("floor", "default");
         if (!t) continue;
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(scaleOf(c.type === "door" ? "door" : "floor"));
         sp.x = x * TILE;
         sp.y = y * TILE;
         if (c.type === "storage") sp.tint = 0x5b6675; // airless storage deck — a distinct cool grey
@@ -606,7 +795,7 @@ export class Renderer {
             miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
           }
           const sp = new Sprite(t);
-          sp.scale.set(SCALE);
+          sp.scale.set(scaleOf("solar"));
           sp.anchor.set(0.5);
           sp.x = ((minx + maxx + 1) / 2) * TILE;
           sp.y = ((miny + maxy + 1) / 2) * TILE;
@@ -629,7 +818,7 @@ export class Renderer {
         const t = tex("bay", s.powered ? "enabled" : "disabled");
         if (t) {
           const sp = new Sprite(t);
-          sp.scale.set(SCALE);
+          sp.scale.set(scaleOf("bay"));
           sp.anchor.set(0.5);
           sp.x = ((minx + maxx + 1) / 2) * TILE;
           sp.y = ((miny + maxy + 1) / 2) * TILE;
@@ -663,7 +852,7 @@ export class Renderer {
       const y = ((s.cell / world.w) | 0) * TILE;
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(scaleOf(s.kind));
         sp.x = x;
         sp.y = y;
         if (s.kind === "fusion" && !s.powered) sp.tint = 0x55617a; // out of fuel — dimmed
@@ -714,7 +903,7 @@ export class Renderer {
       const t = tex("egg", "default");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(scaleOf("egg"));
         sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
@@ -727,7 +916,7 @@ export class Renderer {
       const t = tex("spider", "default");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(scaleOf("spider"));
         sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
@@ -758,7 +947,7 @@ export class Renderer {
       const t = tex(a.species, state);
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE);
+        sp.scale.set(scaleOf(a.species));
         sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
@@ -766,24 +955,19 @@ export class Renderer {
       }
       if (!a.alive) continue;
       const r = TILE * 0.32;
-      // personal vision cone — raycast so walls/modules cast shadows (the cone is
-      // clipped at the first opaque cell along each ray).
+      // personal vision cone — full ray-traced shadows: each ray DDA-marches the
+      // grid and stops exactly at the first wall/module, so everything behind an
+      // object is excluded from view (crisp shadow edges).
       if (a.faceX || a.faceY) {
         const ang = Math.atan2(a.faceY, a.faceX);
         const half = 0.6;
         const rad = (a.sight ?? 3) * TILE;
-        const RAYS = 16;
+        const RAYS = 40;
         const pts: number[] = [cx, cy];
         for (let k = 0; k <= RAYS; k++) {
           const a2 = ang - half + (2 * half) * (k / RAYS);
           const dxr = Math.cos(a2), dyr = Math.sin(a2);
-          let dist = rad;
-          for (let step = TILE * 0.5; step <= rad; step += TILE * 0.5) {
-            const gx = Math.floor((cx + dxr * step) / TILE);
-            const gy = Math.floor((cy + dyr * step) / TILE);
-            if (gx < 0 || gy < 0 || gx >= world.w || gy >= world.h) { dist = step; break; }
-            if (isOpaque(world, gy * world.w + gx)) { dist = step; break; }
-          }
+          const dist = castRay(world, cx, cy, dxr, dyr, rad);
           pts.push(cx + dxr * dist, cy + dyr * dist);
         }
         g.poly(pts).fill({ color: 0xfff0c0, alpha: 0.06 });
@@ -791,6 +975,12 @@ export class Renderer {
       if (a.guest) g.circle(cx, cy, r).stroke({ width: 2, color: COLORS.guest, alpha: 0.9 });
       if (suited) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
       if (a.food < 40 || a.rest < 40) g.circle(cx, cy, r + 3).stroke({ width: 2, color: COLORS.needLow });
+      // a hauled crate rides above the carrier (colour by good)
+      if (a.task && a.task.type === "haul") {
+        const good = (a.task as { good?: string }).good;
+        const col = good === "spores" ? 0x9fd14f : good === "microbes" ? 0xd98ad9 : good === "minerals" ? 0x9a8a64 : 0xcaa06a;
+        g.rect(cx - 3.5, cy - r - 12, 7, 7).fill(col).stroke({ width: 1, color: 0x0c0e12, alpha: 0.85 });
+      }
       // mood dot
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;
       g.circle(cx, cy - r - 5, 2.6).fill(moodColor);
@@ -918,7 +1108,7 @@ export class Renderer {
       const t = tex("drone", d.cargo > 0 ? "laden" : "empty");
       if (t) {
         const sp = new Sprite(t);
-        sp.scale.set(SCALE * vis);
+        sp.scale.set(scaleOf("drone") * vis);
         sp.anchor.set(0.5);
         sp.rotation = rot;
         sp.alpha = alpha;
@@ -936,16 +1126,20 @@ export class Renderer {
     g.clear();
     this.godsC.removeChildren();
     const pulse = 0.5 + 0.5 * Math.sin(((world.tick % 30) / 30) * Math.PI * 2);
+    const WEIRD_TINT: Record<string, number> = { blackout: 0x20242e, surge: 0xffd84a, famine: 0xe24b4b, feast: 0x49d17a };
     for (const god of world.gods) {
       const cx = god.x * TILE, cy = god.y * TILE, R = TILE * 3.2;
-      const col = DWELL_TINT[god.species] ?? 0xffffff;
-      g.circle(cx, cy, R).fill({ color: col, alpha: 0.05 + 0.04 * pulse });
-      g.circle(cx, cy, R * 0.7).fill({ color: col, alpha: 0.08 + 0.05 * pulse });
+      const col = god.weird ? (WEIRD_TINT[god.weird] ?? 0xffffff) : (DWELL_TINT[god.species] ?? 0xffffff);
+      // weird gods burn brighter — they have no creature sprite, only a roiling orb
+      const aMul = god.weird ? 2.4 : 1;
+      g.circle(cx, cy, R).fill({ color: col, alpha: (0.05 + 0.04 * pulse) * aMul });
+      g.circle(cx, cy, R * 0.7).fill({ color: col, alpha: (0.08 + 0.05 * pulse) * aMul });
+      if (god.weird) { g.circle(cx, cy, R * 0.4).fill({ color: col, alpha: 0.18 + 0.12 * pulse }); continue; }
       const t = tex("god_" + god.species, "default");
       if (t) {
         const sp = new Sprite(t);
         sp.anchor.set(0.5);
-        sp.scale.set(SCALE * 2.6); // ship-sized (~120px)
+        sp.scale.set(scaleOf("god_" + god.species) * 2.6); // ship-sized (~120px)
         sp.x = cx;
         sp.y = cy;
         this.godsC.addChild(sp);
@@ -1059,7 +1253,7 @@ export class Renderer {
       }
       sprites.push({
         t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
-        x, y, c: true, rot, scale: SCALE * sizeMul,
+        x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul,
       });
     }
 

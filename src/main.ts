@@ -30,9 +30,10 @@ import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch, lodgingUnlocked 
 import { updateSeen } from "./advisor";
 import { resolveEncounter } from "./encounters";
 import * as audio from "./audio";
-import { saveWorld, loadWorld, deleteSave } from "./persistence";
+import { saveWorld, loadWorld, deleteSave, serializeWorld, parseSave } from "./persistence";
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
 import { Renderer } from "./renderer";
+import { Starfield } from "./starfield";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
   setupUI,
@@ -144,6 +145,11 @@ async function boot(): Promise<void> {
   if (!mount) throw new Error("#app mount missing");
   mount.appendChild(app.canvas);
 
+  // Far parallax backdrop — sits behind the world container (screen-space, never
+  // zooms), scrolled by the camera each frame for a sense of deep space.
+  const starfield = new Starfield(window.innerWidth, window.innerHeight);
+  app.stage.addChild(starfield.container);
+
   const worldContainer = new Container();
   app.stage.addChild(worldContainer);
 
@@ -157,6 +163,7 @@ async function boot(): Promise<void> {
   let sel: Selection = null;
   let overlay: OverlayMode = "none";
   let needRedraw = true;
+  let clock = 0; // running seconds, drives starfield drift/twinkle
   const canvas = app.canvas;
   const STRUCTURE_TOOLS = Object.keys(STRUCTURES) as StructureKind[];
   const known = new Map<number, boolean>();
@@ -164,7 +171,10 @@ async function boot(): Promise<void> {
   const applyCam = (): void => {
     worldContainer.position.set(cam.x, cam.y);
     worldContainer.scale.set(cam.scale);
+    starfield.update(cam, clock);
   };
+
+  window.addEventListener("resize", () => starfield.resize(window.innerWidth, window.innerHeight));
 
   const centerOnCell = (cell: number): void => {
     const wx = (cell % world.w) * TILE + TILE / 2;
@@ -269,6 +279,33 @@ async function boot(): Promise<void> {
     onDeleteSlot: (slot) => {
       deleteSave(slot);
       pushAlert(`Deleted ${slot === "auto" ? "autosave" : "Slot " + slot}.`, "info");
+    },
+    onExportSave: () => {
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const blob = new Blob([serializeWorld(world)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `exostation-${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      pushAlert("Save exported to file ✓", "info");
+    },
+    onImportSave: (text) => {
+      const loaded = parseSave(text);
+      if (!loaded) {
+        pushAlert("Not a valid EXOSTATION save file.", "bad");
+        return;
+      }
+      Object.assign(world, loaded);
+      world.dirtyRooms = true;
+      sel = null;
+      overlay = "none";
+      rememberAgents();
+      prevPhase = world.phase;
+      prevObjectiveIx = world.objectiveIx;
+      hideEndBanner();
+      needRedraw = true;
+      pushAlert("Station imported from file.", "info");
     },
     onDeconstruct: (id) => {
       const s = world.structures[id];
@@ -644,6 +681,10 @@ async function boot(): Promise<void> {
       // it still opens the system map for a look)
       const bay = Object.values(world.structures).find((s) => s.kind === "bay");
       handlers.onStarChart(bay ? bay.id : -1);
+    } else if (k === "h" && e.shiftKey) {
+      const on = renderer.toggleHeight();
+      pushAlert(on ? "Height field: ON (occluder map)" : "Height field: OFF", "info");
+      needRedraw = true;
     } else if (TOOL_KEYS[k]) {
       setActiveTool(TOOL_KEYS[k], state);
     }
@@ -753,6 +794,9 @@ async function boot(): Promise<void> {
 
   let acc = 0;
   app.ticker.add((ticker: Ticker) => {
+    clock += ticker.deltaMS / 1000;
+    starfield.update(cam, clock); // parallax + drift/twinkle, every frame
+
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;
       let steps = 0;
@@ -828,7 +872,7 @@ async function boot(): Promise<void> {
         audio.play(gv.verdict === "wrathful" ? "outcome-bad" : "outcome-good");
         showGodDialog(gv.species, gv.verdict, () => {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
-        });
+        }, gv.weird);
       }
       // a contented species asks to lay a clutch → pause for the player's answer
       if (

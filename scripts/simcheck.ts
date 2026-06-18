@@ -30,11 +30,11 @@ import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
 import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule, lodgingUnlocked } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
-import { godsSystem, GODS } from "../src/gods";
+import { godsSystem, GODS, WEIRD_GODS } from "../src/gods";
 import { storySystem, currentYear } from "../src/story";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
-import { saveWorld, loadWorld, deleteSave, listSaves } from "../src/persistence";
+import { saveWorld, loadWorld, deleteSave, listSaves, serializeWorld, parseSave } from "../src/persistence";
 import { World } from "../src/types";
 
 // Deterministic RNG: the sim uses Math.random for variety (drone loss, system
@@ -418,6 +418,26 @@ for (let i = 0; i < 300; i++) {
 check("Vat grows biomass from power", bioGrew);
 check("Synth turns biomass into meals", wf.stock.meals.rations > 0);
 check("No mining means minerals stay 0", wf.stock.minerals === 0);
+
+// --- food hauling (real gate): a resident carries vat output into the warehouse ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "vat", 9, 6);
+  setCell(w, 10, 9, "storage");
+  recomputeRooms(w);
+  addAgent(w, 8, 8, "human");
+  const vat = Object.values(w.structures).find((s) => s.kind === "vat")!;
+  vat.recipe = "biomass";
+  vat.outBuf = 6;
+  w.stock.biomass = 0;
+  for (let i = 0; i < 600; i++) step(w);
+  check("A resident hauls vat output into the warehouse", w.stock.biomass > 0);
+}
 
 // --- Solar panels: wall-mounted, 3 tiles normal to a space-facing wall ---
 const ws = createWorld();
@@ -1200,6 +1220,65 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   deleteSave("1");
   check("Deleting a slot clears it", loadWorld("1") === null);
   check("Deleting one slot leaves others intact", loadWorld("2")!.credits === 222);
+}
+
+// --- Weird gods: the four wild-card gods warp power / food on judgment ---
+{
+  const mkWeird = (kind: "blackout" | "surge" | "famine" | "feast") => {
+    const w = createWorld();
+    w.gods.push({ species: "human", weird: kind, x: w.w / 2, y: w.h / 2, vx: 0, vy: 0, t: 999, judged: false, verdict: "none" });
+    return w;
+  };
+  check("There are four weird gods", Object.keys(WEIRD_GODS).length === 4);
+
+  // Famine — empties every meal store
+  const wf = mkWeird("famine");
+  wf.stock.meals = { rations: 10, fungal: 8, protein: 6, exotic: 4 };
+  godsSystem(wf, 0.1);
+  check("The Maw empties the larder", wf.stock.meals.rations === 0 && wf.stock.meals.exotic === 0);
+  check("A weird god queues its popup", wf.godVerdict?.weird === "famine");
+
+  // Feast — fills every meal store above empty
+  const wg = mkWeird("feast");
+  godsSystem(wg, 0.1);
+  check("The Glut fills the larder", wg.stock.meals.rations > 0 && wg.stock.meals.exotic > 0);
+
+  // Surge — sets a timer and floods the grid with supply
+  const ws = mkWeird("surge");
+  godsSystem(ws, 0.1);
+  check("The Dynamo sets a surge timer", ws.surgeT > 0);
+  powerSystem(ws, 0.1);
+  check("Surge floods the grid with free power", ws.power.supply >= 9000);
+
+  // Blackout — sets a timer; the grid goes fully dark even with a generator + load
+  const wb = mkWeird("blackout");
+  carve(wb, 5, 5, 9, 8);
+  addStructure(wb, "solar", 6, 6); // would supply +10
+  addStructure(wb, "o2gen", 7, 6); // a consumer
+  godsSystem(wb, 0.1);
+  check("The Hollow sets a blackout timer", wb.blackoutT > 0);
+  powerSystem(wb, 0.1);
+  const gen = Object.values(wb.structures).find((s) => s.kind === "o2gen")!;
+  check("Blackout kills all supply and power", wb.power.supply === 0 && gen.powered === false && wb.power.brownout);
+
+  // timers decay over time
+  godsSystem(wb, 5);
+  check("Blackout timer ticks down", wb.blackoutT < 25);
+}
+
+// --- Portable save: serialize → file text → parse round-trips the world ---
+{
+  const w = createWorld();
+  w.credits = 4321;
+  addAgent(w, "human", 6, 6);
+  const text = serializeWorld(w);
+  check("serializeWorld emits a wrapped payload", text.includes('"world"'));
+  const back = parseSave(text);
+  check("parseSave restores a world", !!back);
+  check("Round-trip preserves credits", back!.credits === 4321);
+  check("Round-trip preserves entities", Object.keys(back!.agents).length === Object.keys(w.agents).length);
+  check("parseSave rejects junk", parseSave("not json at all") === null);
+  check("parseSave rejects a non-world object", parseSave('{"hello":1}') === null);
 }
 
 // --- Breach emergency repair: crew reseal a vented wall, for credits ---

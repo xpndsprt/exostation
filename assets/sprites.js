@@ -23,53 +23,64 @@
   const B = (n) => "b".repeat(n);
   const D = (n) => "d".repeat(n);
 
-  // --- wall autotile set: thin directional bulkheads (d = recessed hull,
-  // k edge, m body, h highlight). The renderer picks one by neighbour mask. ---
-  const WROW = D(5) + "khmmmk" + D(5); // vertical strut segment
+  // --- wall autotile set (32px/tile): thin directional bulkheads (d = recessed
+  // hull, k edge, m body, h highlight). The renderer picks one by neighbour mask. ---
+  const WSTRUT = "kh" + "m".repeat(8) + "hk"; // 12-wide vertical strut profile
+  const WROW = D(10) + WSTRUT + D(10); // vertical strut segment (32 wide)
+  // a 12-tall horizontal bulkhead band: top edge, highlight, body, bottom edge.
+  const HBAND = ["k", "h", ...Array(9).fill("m"), "k"]; // one char per row
   const WALL_STRAIGHT = [
-    ...Array(5).fill(D(16)),
-    "k".repeat(16), "h".repeat(16), "m".repeat(16), "m".repeat(16), "m".repeat(16), "k".repeat(16),
-    ...Array(5).fill(D(16)),
+    ...Array(10).fill(D(32)),
+    ...HBAND.map((c) => c.repeat(32)),
+    ...Array(10).fill(D(32)),
   ];
   // Connects N + E as a TRUE quarter-circle arc: an annulus band centred on the
-  // top-right corner (16,0), radii 5..11, so its top/right openings land on
-  // cols/rows 5-10 and meet the straight struts cleanly. (k edges, h highlight, m body.)
+  // top-right corner (32,0), radii 10..22, so its top/right openings land on the
+  // strut columns/rows and meet the straight struts cleanly. (k edges, h highlight.)
   const arcCorner = (cx, cy) => {
     const rows = [];
-    for (let y = 0; y < 16; y++) {
+    for (let y = 0; y < 32; y++) {
       let s = "";
-      for (let x = 0; x < 16; x++) {
+      for (let x = 0; x < 32; x++) {
         const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
         const r = Math.sqrt(dx * dx + dy * dy);
-        s += r < 5 || r > 11 ? "d" : r < 6 ? "k" : r < 7 ? "h" : r < 10 ? "m" : "k";
+        s += r < 10 || r > 22 ? "d" : r < 12 ? "k" : r < 14 ? "h" : r < 20 ? "m" : "k";
       }
       rows.push(s);
     }
     return rows;
   };
-  const WALL_CORNER = arcCorner(16, 0); // base = N + E (renderer rotates for the others)
-  const WALL_T = [ // connects N + E + S
-    WROW, WROW, WROW, WROW, WROW,
-    D(5) + "k".repeat(11), D(5) + "h".repeat(11), D(5) + "m".repeat(11),
-    D(5) + "m".repeat(11), D(5) + "m".repeat(11), D(5) + "k".repeat(11),
-    WROW, WROW, WROW, WROW, WROW,
+  const WALL_CORNER = arcCorner(32, 0); // base = N + E (renderer rotates for the others)
+  const WALL_T = [ // connects N + E + S (vertical strut + east arm)
+    ...Array(10).fill(WROW),
+    ...HBAND.map((c) => D(10) + c.repeat(22)),
+    ...Array(10).fill(WROW),
   ];
   const WALL_CROSS = [
-    WROW, WROW, WROW, WROW, WROW,
-    "k".repeat(16), "h".repeat(16), "m".repeat(16), "m".repeat(16), "m".repeat(16), "k".repeat(16),
-    WROW, WROW, WROW, WROW, WROW,
+    ...Array(10).fill(WROW),
+    ...HBAND.map((c) => c.repeat(32)),
+    ...Array(10).fill(WROW),
   ];
   const WALL_END = [ // a capped stub pointing N
-    WROW, WROW, WROW, WROW, WROW, WROW, WROW, WROW, WROW,
-    D(5) + "khhhhk" + D(5), D(5) + "kkkkkk" + D(5),
-    ...Array(5).fill(D(16)),
+    ...Array(18).fill(WROW),
+    D(10) + "k" + "h".repeat(10) + "k" + D(10),
+    D(10) + "k".repeat(12) + D(10),
+    ...Array(12).fill(D(32)),
   ];
-  const WALL_NODE = [ // isolated post
-    ...Array(5).fill(D(16)),
-    D(5) + "kkkkkk" + D(5), D(5) + "khhhhk" + D(5), D(5) + "khmmhk" + D(5),
-    D(5) + "khmmhk" + D(5), D(5) + "khhhhk" + D(5), D(5) + "kkkkkk" + D(5),
-    ...Array(5).fill(D(16)),
-  ];
+  const WALL_NODE = (function () { // isolated post — a 12×12 beveled box, centred
+    const post = [
+      "k".repeat(12),
+      "k" + "h".repeat(10) + "k",
+      ...Array(8).fill("k" + "h" + "m".repeat(8) + "h" + "k"),
+      "k" + "h".repeat(10) + "k",
+      "k".repeat(12),
+    ];
+    return [
+      ...Array(10).fill(D(32)),
+      ...post.map((r) => D(10) + r + D(10)),
+      ...Array(10).fill(D(32)),
+    ];
+  })();
   const WALL_PAL = { d: "#1b212b", k: "#3a4250", m: "#8a93a6", h: "#b4bcca" };
   const box2 = (rows) => [
     "................................",
@@ -79,18 +90,18 @@
     "................................",
     "................................",
   ];
-  // build the repeating 1x3 solar array (16 wide, 48 tall)
+  // build the repeating 1x3 solar array (32 wide, 96 tall) — a mast head, then
+  // banks of photovoltaic cells (c) gridded by frame struts (k), capped at the base.
   function solarRows() {
+    const pad = (s) => { const t = 32 - s.length, l = t >> 1; return ".".repeat(l) + s + ".".repeat(t - l); };
+    const cell = "f" + "ccccck".repeat(5) + "f"; // a row of 5 cell columns
+    const bar = "f" + "k".repeat(30) + "f";      // a horizontal frame strut
     const r = [
-      "......kkkk......",
-      "......kffk......",
-      "....ffffffff....",
-      "..ffffffffffff..",
+      pad("kkkk"), pad("kffk"), pad("kffk"),
+      pad("f".repeat(16)), pad("f".repeat(24)), pad("f".repeat(28)),
     ];
-    for (let y = 4; y < 47; y++) {
-      r.push((y - 4) % 4 === 3 ? "fkkkkkkkkkkkkkkf" : "fccckccckccckccf");
-    }
-    r.push("ffffffffffffffff");
+    while (r.length < 95) r.push((r.length - 6) % 6 === 5 ? bar : cell);
+    r.push("f".repeat(32));
     return r;
   }
 
@@ -1203,11 +1214,14 @@
   // ---- race-god creature portraits (alien sea-life) — shown in the god dialog
   // and drifting through space. Built procedurally on a 32×32 grid, auto-outlined.
   function god2(draw) {
-    const W = 32, H = 32, g = Array.from({ length: H }, () => Array(W).fill("."));
-    const px = (x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < W && y < H) g[y][x] = ch; };
-    const disc = (cx, cy, r, ch) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) px(cx + x, cy + y, ch); };
-    const ell = (cx, cy, rx, ry, ch) => { for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) px(cx + x, cy + y, ch); };
-    const line = (x0, y0, x1, y1, ch) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) px(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, ch); };
+    // S=2 scales the 32-unit design space onto a 64×64 grid (2 tiles × 32px), so
+    // each god's draw() coords stay as authored while the art renders at full res.
+    const S = 2, W = 32 * S, H = 32 * S, g = Array.from({ length: H }, () => Array(W).fill("."));
+    const set = (x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < W && y < H) g[y][x] = ch; };
+    const px = (x, y, ch) => { for (let dy = 0; dy < S; dy++) for (let dx = 0; dx < S; dx++) set(x * S + dx, y * S + dy, ch); };
+    const disc = (cx, cy, r, ch) => { cx *= S; cy *= S; r *= S; for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) set(cx + x, cy + y, ch); };
+    const ell = (cx, cy, rx, ry, ch) => { cx *= S; cy *= S; rx *= S; ry *= S; for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) set(cx + x, cy + y, ch); };
+    const line = (x0, y0, x1, y1, ch) => { x0 *= S; y0 *= S; x1 *= S; y1 *= S; const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) set(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, ch); };
     draw({ px, disc, ell, line });
     const isB = (x, y) => x >= 0 && y >= 0 && x < W && y < H && g[y][x] !== "." && g[y][x] !== "k";
     const out = g.map((r) => r.slice());

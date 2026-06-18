@@ -48,25 +48,31 @@ export function foodSystem(w: World, dt: number): void {
     if (s.kind === "vat") {
       // recipe → which base resource this vat grows
       const grows = VAT_BASE[s.recipe] ?? "biomass";
-      if (w.stock[grows] >= caps[grows]) {
-        s.timer = 0; // idle at cap — no infinite stockpiles
+      // Output buffers ON the vat; crew haul it to storage (the warehouse = stock).
+      // The vat STALLS when its buffer is full, so sustained growth needs crew +
+      // storage. (A bootstrap trickle below moves it when there are no haulers.)
+      if (s.outBuf >= VAT_OUTCAP || w.stock[grows] >= caps[grows]) {
+        s.timer = 0;
         continue;
       }
       s.timer += dtp;
       if (s.timer >= VAT.time) {
         s.timer -= VAT.time;
         const boost = botanistIn(w, w.cells[s.cell].roomId) ? TRAITS.vrylVat : 1;
-        const yield_ = Math.round(VAT.amount * boost);
-        w.stock[grows] = Math.min(caps[grows], w.stock[grows] + yield_);
+        s.outBuf += Math.round(VAT.amount * boost);
       }
     } else if (s.kind === "synth") {
       // recipe → produced food line + the base resource it consumes
       const { line, base } = SYNTH_RECIPE[s.recipe] ?? SYNTH_RECIPE.rations;
-      if (w.stock[base] >= SYNTH.input && w.stock.meals[line] < caps[line]) {
+      // Cook from crew-delivered feedstock (s.inBuf) when it's there; otherwise pull
+      // straight from the warehouse so the loop never deadlocks (and headless sims work).
+      const hasFeed = s.inBuf >= SYNTH.input || w.stock[base] >= SYNTH.input;
+      if (hasFeed && w.stock.meals[line] < caps[line]) {
         s.timer += dtp;
         if (s.timer >= SYNTH.time) {
           s.timer -= SYNTH.time;
-          w.stock[base] -= SYNTH.input;
+          if (s.inBuf >= SYNTH.input) s.inBuf -= SYNTH.input;
+          else w.stock[base] -= SYNTH.input;
           w.stock.meals[line] = Math.min(caps[line], w.stock.meals[line] + SYNTH.meals);
         }
       } else {
@@ -74,4 +80,21 @@ export function foodSystem(w: World, dt: number): void {
       }
     }
   }
+
+  // Bootstrap trickle: with no resident crew to haul (the opening, or a headless
+  // sim), vat output flows straight into the warehouse so the station can start.
+  // Once residents are aboard, they must physically haul it (see agents.ts).
+  let residents = 0;
+  for (const id in w.agents) if (w.agents[id].alive && !w.agents[id].guest) residents++;
+  if (residents === 0) {
+    for (const id in w.structures) {
+      const s = w.structures[id];
+      if (s.kind !== "vat" || s.outBuf <= 0) continue;
+      const grows = VAT_BASE[s.recipe] ?? "biomass";
+      const move = Math.min(s.outBuf, caps[grows] - w.stock[grows]);
+      if (move > 0) { w.stock[grows] += move; s.outBuf -= move; }
+    }
+  }
 }
+
+export const VAT_OUTCAP = 9; // vat output units that pile up before it stalls (awaiting haul)

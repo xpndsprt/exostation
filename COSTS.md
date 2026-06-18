@@ -10,6 +10,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Floor | 2 |
 | Wall | 3 |
 | Door (airlock) | 25 |
+| Storage Floor (airless; lamp-only; raises caps) | 3 |
 
 ## Modules
 | Module | Cost ¢ | Footprint | Notes |
@@ -39,6 +40,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
 | Turret | 200 | 1×1 | Shoots down raiders. Unlock: Station Security |
 | Light Fixture | 30 | 1×1 | Emits a light pool (visual lighting/shadows); cheap ambiance |
+| Mess Table | 50 | 3×3 | A spot for crew to gather and eat (no research) |
 | Fusion Reactor | 2000 | 2×2 | +150 PU — but **burns minerals as fuel** (needs a Bot Bay mining). Unlock: Fusion Power |
 | Cargo Exchange | 1500 | 2×2 | Bigger/faster/better mineral trade + raises mineral cap. Unlock: Bulk Trade |
 | AI Core | 2500 | 2×2 | +25% to all production, repair & mining. Unlock: Cybernetics |
