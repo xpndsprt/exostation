@@ -96,12 +96,19 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
   if (w.credits < costOf(tool)) return false; // can't afford it
   if (tool === "solar") return solarFootprint(w, x, y) !== null;
   if (tool === "bay") return canBay(w, x, y); // hull-mounted, like a dock
+  // a Light Fixture is the ONLY thing allowed on an airless storage tile (also fine on floor)
+  if (tool === "lamp") {
+    const lc = w.cells[idx(w, x, y)];
+    return (lc.type === "floor" || lc.type === "storage") && lc.structureId < 0;
+  }
   if (tool in STRUCTURES && isDock(tool as StructureKind)) return canDock(w, x, y);
   if (tool in STRUCTURES) return footprintCells(w, tool as StructureKind, x, y) !== null;
   const c = w.cells[idx(w, x, y)];
   switch (tool) {
     case "floor":
       return c.type !== "floor";
+    case "storage":
+      return c.type !== "storage" && c.structureId < 0; // a storage tile holds no module
     case "wall":
       return c.type !== "wall";
     case "door":
@@ -116,7 +123,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
 
 // Tools that paint over an area via click-drag (rectangle fill).
 export function isAreaTool(tool: Tool): boolean {
-  return tool === "floor" || tool === "wall" || tool === "erase";
+  return tool === "floor" || tool === "storage" || tool === "wall" || tool === "erase";
 }
 
 // Inclusive rectangle of cell indices between two corners.

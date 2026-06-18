@@ -2,7 +2,7 @@ import { CanvasSource, Container, Graphics, Sprite, Texture, Renderer as PixiRen
 import { World, Structure, StructureKind, Species, Ship } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
-import { exteriorCell } from "./world";
+import { exteriorCell, isOpaque } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
 
@@ -523,7 +523,7 @@ export class Renderer {
     let h = 2166136261;
     for (let i = 0; i < world.cells.length; i++) {
       const c = world.cells[i];
-      const code = c.type === "space" ? 0 : c.type === "floor" ? (c.enclosed ? 2 : 1) : c.type === "wall" ? 3 : 4;
+      const code = c.type === "space" ? 0 : c.type === "floor" ? (c.enclosed ? 2 : 1) : c.type === "wall" ? 3 : c.type === "storage" ? 5 : 4;
       h = Math.imul(h ^ (i * 5 + code), 16777619);
     }
     if (h === this.lastTileSig) return;
@@ -553,13 +553,14 @@ export class Renderer {
           this.cellsC.addChild(sp);
           continue;
         }
-        const t = c.type === "floor" ? tex("floor", "default") : tex("door", "closed");
+        const t = c.type === "door" ? tex("door", "closed") : tex("floor", "default");
         if (!t) continue;
         const sp = new Sprite(t);
         sp.scale.set(SCALE);
         sp.x = x * TILE;
         sp.y = y * TILE;
-        if (c.type === "floor" && !c.enclosed) sp.tint = 0xff9a9a; // open-to-space cue
+        if (c.type === "storage") sp.tint = 0x5b6675; // airless storage deck — a distinct cool grey
+        else if (c.type === "floor" && !c.enclosed) sp.tint = 0xff9a9a; // open-to-space cue
         this.cellsC.addChild(sp);
       }
   }
@@ -638,6 +639,21 @@ export class Renderer {
         }
         if (s.condition > 0 && s.condition < SERVICE_THRESHOLD)
           this.structFx.rect(minx * TILE + 3, (maxy + 1) * TILE - 5, ((maxx - minx + 1) * TILE - 6) * (s.condition / 100), 3).fill(0xe8a33d);
+        continue;
+      }
+
+      // Mess Table: a 3×3 wooden block (crew eat from the surrounding seat-ring).
+      if (s.kind === "table") {
+        let minx = 1e9, miny = 1e9, maxx = -1, maxy = -1;
+        for (const cc of s.cells) {
+          const cx = cc % world.w, cy = (cc / world.w) | 0;
+          minx = Math.min(minx, cx); maxx = Math.max(maxx, cx);
+          miny = Math.min(miny, cy); maxy = Math.max(maxy, cy);
+        }
+        const px = minx * TILE, py = miny * TILE;
+        const wpx = (maxx - minx + 1) * TILE, hpx = (maxy - miny + 1) * TILE;
+        this.structFx.rect(px + 3, py + 3, wpx - 6, hpx - 6).fill({ color: 0x6a4f34 }).stroke({ width: 1.5, color: 0x3a2c1c });
+        this.structFx.rect(px + TILE * 0.6, py + TILE * 0.6, wpx - TILE * 1.2, hpx - TILE * 1.2).fill({ color: 0x8a6a48 });
         continue;
       }
 
@@ -750,15 +766,27 @@ export class Renderer {
       }
       if (!a.alive) continue;
       const r = TILE * 0.32;
-      // personal vision cone — how far/where they spot faulty modules
+      // personal vision cone — raycast so walls/modules cast shadows (the cone is
+      // clipped at the first opaque cell along each ray).
       if (a.faceX || a.faceY) {
         const ang = Math.atan2(a.faceY, a.faceX);
         const half = 0.6;
         const rad = (a.sight ?? 3) * TILE;
-        g.moveTo(cx, cy);
-        g.arc(cx, cy, rad, ang - half, ang + half);
-        g.lineTo(cx, cy);
-        g.fill({ color: 0xfff0c0, alpha: 0.055 });
+        const RAYS = 16;
+        const pts: number[] = [cx, cy];
+        for (let k = 0; k <= RAYS; k++) {
+          const a2 = ang - half + (2 * half) * (k / RAYS);
+          const dxr = Math.cos(a2), dyr = Math.sin(a2);
+          let dist = rad;
+          for (let step = TILE * 0.5; step <= rad; step += TILE * 0.5) {
+            const gx = Math.floor((cx + dxr * step) / TILE);
+            const gy = Math.floor((cy + dyr * step) / TILE);
+            if (gx < 0 || gy < 0 || gx >= world.w || gy >= world.h) { dist = step; break; }
+            if (isOpaque(world, gy * world.w + gx)) { dist = step; break; }
+          }
+          pts.push(cx + dxr * dist, cy + dyr * dist);
+        }
+        g.poly(pts).fill({ color: 0xfff0c0, alpha: 0.06 });
       }
       if (a.guest) g.circle(cx, cy, r).stroke({ width: 2, color: COLORS.guest, alpha: 0.9 });
       if (suited) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });

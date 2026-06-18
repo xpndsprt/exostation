@@ -20,6 +20,9 @@
     }
     #topbar .brand { font-weight: 700; letter-spacing: .08em; color: #6ea8ff; }
     #topbar .hint { color: #6b7488; margin-left: auto; }
+    #starbtn { margin-left: 12px; background: #16243a; color: #9fd0ff; border: 1px solid #2f4a6e;
+      border-radius: 8px; padding: 5px 11px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    #starbtn:hover { background: #1d3354; color: #cfe6ff; }
     /* objective indicator */
     #objective { display: inline-flex; align-items: center; gap: 7px; color: #c3cbdc;
       background: rgba(28,34,48,.7); border: 1px solid #2c3445; border-radius: 7px; padding: 3px 9px; }
@@ -429,6 +432,7 @@
     <span id="status">grid ready</span>
     <span id="objective"></span>
     <span class="hint">left-drag: build · right-drag: pan · wheel: zoom</span>
+    <button id="starbtn" type="button" title="Solar System (K)">🛰 Solar System</button>
   </div>
   <div id="leftpanel">
     <div class="lp-tabs">

@@ -385,6 +385,12 @@ async function boot(): Promise<void> {
   const cycleIx: Record<string, number> = {};
 
   setupUI(state, world, handlers);
+  // top-right Solar System button — opens the Star Chart (uses the first Bot Bay
+  // for dispatch, or just shows the system map + discovered properties if none).
+  document.getElementById("starbtn")?.addEventListener("click", () => {
+    const bay = Object.values(world.structures).find((s) => s.kind === "bay");
+    handlers.onStarChart(bay ? bay.id : -1);
+  });
   applyCam();
   launchIntro(); // show the briefing on every fresh game start
 
@@ -426,6 +432,17 @@ async function boot(): Promise<void> {
         setCell(world, tx, ty, "door");
         ok = true;
       }
+    } else if (tool === "storage") {
+      const c = world.cells[idx(world, tx, ty)];
+      if (c.type !== "storage" && c.structureId < 0) {
+        setCell(world, tx, ty, "storage");
+        ok = true;
+      }
+    } else if (tool === "lamp") {
+      // the one module allowed on an airless storage tile (also placeable on floor)
+      const c = world.cells[idx(world, tx, ty)];
+      if ((c.type === "floor" || c.type === "storage") && c.structureId < 0)
+        ok = addStructureMulti(world, "lamp", [idx(world, tx, ty)]);
     } else if (tool === "solar") {
       const fp = solarFootprint(world, tx, ty);
       if (fp) ok = addStructureMulti(world, "solar", fp);

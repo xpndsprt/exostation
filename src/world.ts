@@ -75,6 +75,29 @@ export const defaultRecipe = (kind: StructureKind): string =>
 export const inBounds = (w: World, x: number, y: number): boolean =>
   x >= 0 && y >= 0 && x < w.w && y < w.h;
 
+// A cell that blocks line of sight: a wall, or any cell with a module on it.
+// (Floors, storage decks, doorways and open space are see-through.)
+export const isOpaque = (w: World, i: number): boolean =>
+  w.cells[i] !== undefined && (w.cells[i].type === "wall" || w.cells[i].structureId >= 0);
+
+// Clear line of sight between two cells? Walks the grid line (Bresenham) and
+// fails on the first opaque cell strictly between them — the target itself (e.g.
+// the module being looked at) and the viewer's own cell are never the blocker.
+export function hasLineOfSight(w: World, from: number, to: number): boolean {
+  let x = from % w.w, y = (from / w.w) | 0;
+  const x1 = to % w.w, y1 = (to / w.w) | 0;
+  const dx = Math.abs(x1 - x), dy = Math.abs(y1 - y);
+  const sx = x < x1 ? 1 : -1, sy = y < y1 ? 1 : -1;
+  let err = dx - dy;
+  for (;;) {
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x += sx; }
+    if (e2 < dx) { err += dx; y += sy; }
+    if (x === x1 && y === y1) return true; // reached the target with nothing in the way
+    if (isOpaque(w, y * w.w + x)) return false; // an obstacle blocks the view
+  }
+}
+
 export function setCell(w: World, x: number, y: number, type: CellType): void {
   if (!inBounds(w, x, y)) return;
   const i = idx(w, x, y);
@@ -158,7 +181,7 @@ const ADJ = [
   [0, -1],
 ];
 const isWalkable = (w: World, i: number): boolean =>
-  w.cells[i].type === "floor" || w.cells[i].type === "door";
+  w.cells[i].type === "floor" || w.cells[i].type === "door" || w.cells[i].type === "storage";
 
 // A reachable (walkable) cell for a structure: the cell itself if walkable
 // (floor machinery), else an adjacent walkable cell (wall-mounted docks). -1 if none.

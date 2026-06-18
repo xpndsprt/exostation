@@ -42,6 +42,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   silo: { label: "Storage Silo", color: 0x7c8596, gen: 0, draw: 0, battery: 0, priority: 0, w: 1, h: 1, cost: 70 },
   turret: { label: "Turret", color: 0xd0564a, gen: 0, draw: 4, battery: 0, priority: 1, w: 1, h: 1, cost: 200 },
   lamp: { label: "Light Fixture", color: 0xffe9a8, gen: 0, draw: 1, battery: 0, priority: 2, w: 1, h: 1, cost: 30 },
+  table: { label: "Mess Table", color: 0x8a6a48, gen: 0, draw: 0, battery: 0, priority: 0, w: 3, h: 3, cost: 50 },
   fusion: { label: "Fusion Reactor", color: 0x7fe9ff, gen: 150, draw: 0, battery: 0, priority: 0, w: 2, h: 2, cost: 2000 },
   cargoex: { label: "Cargo Exchange", color: 0x6fcf97, gen: 0, draw: 6, battery: 0, priority: 1, w: 2, h: 2, cost: 1500 },
   aicore: { label: "AI Core", color: 0x8a6cf0, gen: 0, draw: 10, battery: 0, priority: 3, w: 2, h: 2, cost: 2500 },
@@ -63,7 +64,7 @@ export function aiBoost(w: { structures: Record<number, { kind: StructureKind; p
 }
 
 // Build cost of the basic structural tiles (credits).
-export const TILE_COST: Record<string, number> = { floor: 2, wall: 3, door: 25 };
+export const TILE_COST: Record<string, number> = { floor: 2, wall: 3, door: 25, storage: 3 };
 
 // Build cost for any tool that places something; 0 for tools/cursors.
 export function costOf(tool: string): number {

@@ -8,8 +8,9 @@ const DIRS = [
 ];
 
 // Doors are walkable (they open for traffic) even though they block gas.
+// Storage tiles are walkable too (crew haul across them) but airless.
 const walkable = (w: World, i: number): boolean =>
-  w.cells[i].type === "floor" || w.cells[i].type === "door";
+  w.cells[i].type === "floor" || w.cells[i].type === "door" || w.cells[i].type === "storage";
 
 export function manhattan(w: World, a: number, b: number): number {
   const ax = a % w.w;

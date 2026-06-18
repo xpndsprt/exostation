@@ -1,6 +1,6 @@
 import { Agent, Structure, World } from "./types";
 import { findPath, manhattan, nearestBreathable } from "./pathfind";
-import { accessCell, idx, inBounds, setCell } from "./world";
+import { accessCell, idx, inBounds, setCell, hasLineOfSight } from "./world";
 import { SPECIES, TRAITS } from "./species";
 import { STRUCTURES, aiBoost } from "./structures";
 import { productivity } from "./harmony";
@@ -112,6 +112,8 @@ function canSee(w: World, a: Agent, cell: number): boolean {
   const d = manhattan(w, a.cell, cell);
   if (d > a.sight) return false;
   if (d <= 1) return true; // right on top of it
+  // walls and modules block the view — no seeing a fault through a bulkhead
+  if (!hasLineOfSight(w, a.cell, cell)) return false;
   if (a.faceX === 0 && a.faceY === 0) return true; // idle: looking all around
   const vx = (cell % w.w) - (a.cell % w.w);
   const vy = ((cell / w.w) | 0) - ((a.cell / w.w) | 0);

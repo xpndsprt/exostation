@@ -35,7 +35,8 @@ export type StructureKind =
   | "tradenexus"
   | "autoforge"
   | "bloomgarden"
-  | "orerefinery";
+  | "orerefinery"
+  | "table";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn" | "chlorithe" | "naaz" | "voltaar" | "sszra";
 
@@ -51,7 +52,7 @@ export type Temp = "cold" | "temperate" | "hot";
 // lethal mix of incompatible gases.
 export type RoomGas = "none" | GasKind | "mixed";
 
-export type Tool = "floor" | "wall" | "door" | "erase" | "pan" | "select" | StructureKind;
+export type Tool = "floor" | "wall" | "door" | "storage" | "erase" | "pan" | "select" | StructureKind;
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
@@ -63,7 +64,10 @@ export type HoverTarget =
   | null;
 
 // "door" is walkable (pathfinding) but blocks gas (atmosphere) — an airlock.
-export type CellType = "space" | "floor" | "wall" | "door";
+// "storage" is a walkable floor variant that is AIRLESS (never joins a breathable
+// room) and storage-only (only a Light Fixture may be built on it). Crew haul
+// produced goods onto it; it raises stockpile caps.
+export type CellType = "space" | "floor" | "wall" | "door" | "storage";
 
 export type Speed = 0 | 1 | 2 | 3;
 

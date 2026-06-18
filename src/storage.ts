@@ -20,6 +20,10 @@ export interface Caps {
 }
 
 export const CARGOEX_MINERAL_BONUS = 500; // a Cargo Exchange holds far more ore
+// Airless Storage tiles are the warehouse: each tile raises the haulable-goods
+// caps (meals + minerals), so laying more storage floor lets you stockpile more.
+export const STORE_MEAL_PER_CELL = 3;
+export const STORE_MINERAL_PER_CELL = 6;
 
 export function storageCaps(w: World): Caps {
   let silos = 0;
@@ -29,16 +33,19 @@ export function storageCaps(w: World): Caps {
     if (k === "silo") silos++;
     else if (k === "cargoex") cargoex++;
   }
+  let storeCells = 0;
+  for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") storeCells++;
   const add = silos * SILO_BONUS;
+  const mealAdd = add + storeCells * STORE_MEAL_PER_CELL;
   return {
     biomass: BASE_CAPS.biomass + add,
     spores: BASE_CAPS.spores + add,
     microbes: BASE_CAPS.microbes + add,
-    rations: BASE_CAPS.rations + add,
-    fungal: BASE_CAPS.fungal + add,
-    protein: BASE_CAPS.protein + add,
-    exotic: BASE_CAPS.exotic + add,
-    minerals: BASE_CAPS.minerals + add + cargoex * CARGOEX_MINERAL_BONUS,
+    rations: BASE_CAPS.rations + mealAdd,
+    fungal: BASE_CAPS.fungal + mealAdd,
+    protein: BASE_CAPS.protein + mealAdd,
+    exotic: BASE_CAPS.exotic + mealAdd,
+    minerals: BASE_CAPS.minerals + add + cargoex * CARGOEX_MINERAL_BONUS + storeCells * STORE_MINERAL_PER_CELL,
     fuel: BASE_CAPS.fuel + add,
   };
 }
