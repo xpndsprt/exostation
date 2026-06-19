@@ -319,10 +319,11 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
   // Both crew and visitors relax at a Lounge when bored (and socialize there).
   // You won't lounge somewhere you can't breathe, so this stays native-only.
   if (a.fun < FUN_LOW) {
-    const rec = nearestReachable(w, a, a.cell, "rec", false);
-    if (rec) {
-      a.task = { type: "relax", target: rec.cell };
-      a.path = rec.path;
+    // unwind at a Lounge or a Bar (both are social venues)
+    const spot = nearestReachable(w, a, a.cell, "rec", false) ?? nearestReachable(w, a, a.cell, "bar", false);
+    if (spot) {
+      a.task = { type: "relax", target: spot.cell };
+      a.path = spot.path;
       return;
     }
   }

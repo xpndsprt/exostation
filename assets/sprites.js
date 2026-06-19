@@ -1306,4 +1306,36 @@
       ".k...k....k...k.",".....k....k.....","................","................",
     ] },
   });
+
+  // ---- normalize the whole set to 32px per tile ----------------------------
+  // The art above is authored at 16px/tile; the editor and renderer now work at
+  // 32px/tile. Nearest-neighbour-upscale any sprite still at a coarser res so
+  // every tile is exactly 32×32 (a multi-tile sprite expands to 32·tileW ×
+  // 32·tileH). This is a lossless foundation — the look is unchanged until you
+  // refine detail per sprite in the editor.
+  const upscaleRows = (rows, factor) => {
+    const out = [];
+    for (const row of rows) {
+      let wide = "";
+      for (const ch of row) wide += ch.repeat(factor);
+      for (let k = 0; k < factor; k++) out.push(wide);
+    }
+    return out;
+  };
+  for (const s of window.SPRITES) {
+    const states = Object.keys(s.states);
+    const first = (s.states[states[0]] || [])[0] || "";
+    // base res matches the renderer's derivation (floor), so a stray ±1 ragged
+    // column doesn't skew it; we then square every state to exactly baseW×baseH.
+    const res = s.res || Math.floor(first.length / s.tileW) || 16;
+    const baseW = s.tileW * res, baseH = s.tileH * res;
+    const factor = res >= 32 ? 1 : Math.round(32 / res);
+    for (const st of states) {
+      let rows = s.states[st].slice(0, baseH);
+      while (rows.length < baseH) rows.push("");
+      rows = rows.map((r) => (r.length >= baseW ? r.slice(0, baseW) : r + ".".repeat(baseW - r.length)));
+      s.states[st] = factor === 1 ? rows : upscaleRows(rows, factor);
+    }
+    s.res = res >= 32 ? res : 32;
+  }
 })();

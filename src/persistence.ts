@@ -164,6 +164,7 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.pests)) w.pests = [];
   if (w.breedOffer === undefined) w.breedOffer = null;
   if (typeof w.breedTimer !== "number") w.breedTimer = 0;
+  if (typeof w.barTimer !== "number") w.barTimer = 0;
   if (!Array.isArray(w.couples)) w.couples = [];
   if (!w.relThaw || typeof w.relThaw !== "object") w.relThaw = {};
   if (w.romance === undefined) w.romance = null;

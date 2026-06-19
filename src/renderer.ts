@@ -1,4 +1,4 @@
-import { CanvasSource, Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
+import { Container, Graphics, Sprite, Texture, Renderer as PixiRenderer } from "pixi.js";
 import { World, Structure, StructureKind, Species, Ship } from "./types";
 import { TILE, COLORS } from "./config";
 import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
@@ -23,7 +23,7 @@ function scaleOf(name: string): number {
 // so pools and shadow edges feather like RimWorld rather than reading as squares.
 // Interior baseline brightness when unlit (a multiply tint); space stays white.
 // Tuned dark + cool (our station's blue cast) so warm light pools really pop.
-const AMBIENT_RGB: [number, number, number] = [0.3, 0.33, 0.42];
+const AMBIENT_RGB: [number, number, number] = [0.5, 0.52, 0.58];
 // Each room's unlit ambient is multiplied by its gas's tint, so a wing's whole
 // interior reads in that gas's mood (subtle — warm light pools still cut through):
 // O₂ a bit blue, CH₄ reddish, Cl₂ green, NH₃ indigo, H₂ magenta, mixed danger-red.
@@ -395,13 +395,11 @@ export class Renderer {
   private heightC = new Container();
   private showHeight = false;
   private heightSig = -1;
-  // lightmap: per-cell light buffer blitted to a W×H canvas, then drawn as a
-  // bilinear-smoothed multiply sprite over the interior (soft RimWorld-style pools).
-  private lightSprite = new Sprite();
-  private lightCanvas: HTMLCanvasElement | null = null;
-  private lightCtx: CanvasRenderingContext2D | null = null;
-  private lightImg: ImageData | null = null;
-  private lightSource: CanvasSource | null = null;
+  private lightFailed = false; // set once if the lighting pass throws (then it's skipped)
+  // lightmap: per-cell light buffer painted as multiply-blended Graphics rects over
+  // the interior. (We deliberately do NOT use a re-uploaded CanvasSource texture —
+  // that's the documented "one frame, then black" failure on some GPU backends.)
+  private lightG = new Graphics();
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
@@ -421,11 +419,11 @@ export class Renderer {
 
   constructor(world: Container, _pixi: PixiRenderer) {
     buildTextures();
-    this.lightSprite.blendMode = "multiply";
+    this.lightG.blendMode = "multiply";
     for (const layer of [
       this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
-      this.lightSprite, this.heightC, this.overlay, this.selection, this.cursor,
+      this.lightG, this.heightC, this.overlay, this.selection, this.cursor,
     ])
       world.addChild(layer);
     this.heightC.visible = false;
@@ -566,8 +564,18 @@ export class Renderer {
     this.drawDrones(world);
     this.drawShips(world);
     this.drawGods(world);
-    this.bakeStatic(world); // placed-light shadows — recomputed only on change
-    this.updateHeadlights(world); // moving per-character lamps — every frame
+    // Lighting is fail-safe: a failure here must never black out the whole scene,
+    // so it's wrapped and the multiply layer is cleared (→ full-bright) on error.
+    if (!this.lightFailed) {
+      try {
+        this.bakeStatic(world); // placed-light shadows — recomputed only on change
+        this.updateHeadlights(world); // moving per-character lamps — every frame
+      } catch (e) {
+        console.error("Lighting pass failed — disabling lightmap:", e);
+        this.lightFailed = true;
+        this.lightG.clear(); // no overlay → scene renders at full brightness
+      }
+    }
     if (this.showHeight) this.buildHeightField(world); // height-field inspector
     this.drawOverlay(world, overlay);
     this.drawSelection(world, selCell);
@@ -576,24 +584,10 @@ export class Renderer {
   // (Re)allocate the per-cell light buffers for this grid size.
   private ensureLightTargets(world: World): void {
     const n = world.w * world.h * 3;
-    if (this.staticBuf.length === n && this.lightCanvas) return;
+    if (this.staticBuf.length === n) return;
     this.staticBuf = new Float32Array(n);
     this.workBuf = new Float32Array(n);
     this.bakeSig = ""; // force a rebake
-    // one canvas pixel per cell; the sprite scales it up ×TILE with bilinear
-    // filtering, so the lightmap feathers into soft pools instead of hard squares.
-    const cv = document.createElement("canvas");
-    cv.width = world.w;
-    cv.height = world.h;
-    const ctx = cv.getContext("2d")!;
-    this.lightCanvas = cv;
-    this.lightCtx = ctx;
-    this.lightImg = ctx.createImageData(world.w, world.h);
-    const src = new CanvasSource({ resource: cv, scaleMode: "linear" });
-    this.lightSource = src;
-    this.lightSprite.texture = new Texture({ source: src });
-    this.lightSprite.scale.set(TILE);
-    this.lightSprite.position.set(0, 0);
   }
 
   // The integer origin cell of a structure's footprint (nearest cell to centroid).
@@ -700,23 +694,21 @@ export class Renderer {
       const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
       this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque, softFalloff);
     }
-    // Blit the light buffer into the W×H canvas (one texel per cell). Space stays
-    // white (multiply by 1 = full-bright vacuum); interior carries the dimming.
-    const img = this.lightImg!;
-    const data = img.data; // Uint8ClampedArray — float assigns auto-clamp+round
+    // Paint the light buffer as multiply-blended rects (reliable on every backend,
+    // unlike a re-uploaded canvas texture). Open space is left unpainted = full
+    // bright (multiply by nothing); interior cells carry their dimming/shadows.
+    const g = this.lightG;
+    g.clear();
+    const clamp1 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
     for (let i = 0; i < world.cells.length; i++) {
-      const p = i * 4, o = i * 3;
-      data[p + 3] = 255;
-      if (world.cells[i].type === "space") {
-        data[p] = data[p + 1] = data[p + 2] = 255;
-      } else {
-        data[p] = buf[o] * 255;
-        data[p + 1] = buf[o + 1] * 255;
-        data[p + 2] = buf[o + 2] * 255;
-      }
+      if (world.cells[i].type === "space") continue;
+      const o = i * 3;
+      const col =
+        (Math.round(clamp1(buf[o]) * 255) << 16) |
+        (Math.round(clamp1(buf[o + 1]) * 255) << 8) |
+        Math.round(clamp1(buf[o + 2]) * 255);
+      g.rect((i % world.w) * TILE, ((i / world.w) | 0) * TILE, TILE, TILE).fill({ color: col });
     }
-    this.lightCtx!.putImageData(img, 0, 0);
-    this.lightSource!.update();
   }
 
   // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.

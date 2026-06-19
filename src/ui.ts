@@ -3,7 +3,7 @@ import { transitSeconds, systemDist, REBUILD_COST } from "./mining";
 import { COLORS } from "./config";
 import { STRUCTURES, costOf } from "./structures";
 import { SPECIES } from "./species";
-import { RELATIONS } from "./relations";
+import { RELATIONS, effRelation } from "./relations";
 import { adviseByAI, AIAdvisor } from "./advisor";
 import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
@@ -18,6 +18,7 @@ import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 import { currentYear } from "./story";
 import { GODS, WEIRD_GODS } from "./gods";
+import { chronicleSaga } from "./archive";
 
 const SP_COLOR: Record<Species, string> = {
   human: "#6ea8ff",
@@ -76,7 +77,9 @@ const PALETTE: PaletteEntry[] = [
   { t: "pod", label: "Crew Quarters", key: "7" },
   { t: "hotel", label: "Hotel Room", key: "8" },
   { t: "rec", label: "Lounge", key: "9" },
+  { t: "bar", label: "Bar", key: "" },
   { t: "table", label: "Mess Table", key: "" },
+  { t: "library", label: "Grand Library", key: "" },
   { t: "bay", label: "Bot Bay", key: "0" },
   { t: "dock", label: "Docking Port", key: "-" },
   { t: "docklarge", label: "Large Dock", key: "" },
@@ -129,6 +132,7 @@ export interface UIHandlers {
   onToggle: (id: number) => void;
   onRecipe: (id: number) => void;
   onStarChart: (bayId: number) => void; // open the orbital chart for a Bot Bay
+  onArchive: (id: number) => void; // consult the Grand Library's archivist AI
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
   onBuyUnlock: (id: string) => void;
@@ -899,7 +903,7 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
   const moodOf = (s: Species): number => (present[s] ? Math.round(moodSum[s] / present[s] / 10) * 10 : 0);
   const sig = world.seen
     .map((s) => `${s}:${present[s] || 0}:${moodOf(s)}:${Math.round(getRep(world, s))}`)
-    .join("|");
+    .join("|") + `|c${world.couples?.length ?? 0}`; // couples thaw relations → refresh the matrix
   if (el.dataset.sig === sig) return; // nothing meaningful changed
   el.dataset.sig = sig;
   // Preserve scroll position across the (now-rare) rebuilds so a scrolled-down
@@ -937,7 +941,23 @@ export function renderAlienpedia(world: World, onLocate?: (s: Species) => void):
       );
     })
     .join("");
-  el.innerHTML = `<h3>📖 ALIENPEDIA</h3><div class="ped-list">${entries}</div>`;
+  // relations matrix — how each row species feels about each column species
+  const sp = world.seen;
+  const cellSym = (r: Species, c: Species): { ch: string; col: string } => {
+    if (r === c) return { ch: "·", col: "#6b7488" };
+    const v = effRelation(world, r, c);
+    if (v <= -8) return { ch: "−", col: "#e24b4b" };
+    if (v >= 8) return { ch: "+", col: "#49d17a" };
+    return { ch: "∗", col: "#8b93a6" };
+  };
+  const dot = (s: Species) => `<span class="rm-c"><span class="d" style="background:${SP_COLOR[s]}" title="${SPECIES[s].label}"></span></span>`;
+  let matrix = `<div class="relmx"><div class="rm-row"><span class="rm-c"></span>${sp.map(dot).join("")}</div>`;
+  for (const r of sp) {
+    matrix += `<div class="rm-row">${dot(r)}${sp.map((c) => { const x = cellSym(r, c); return `<span class="rm-c" style="color:${x.col}">${x.ch}</span>`; }).join("")}</div>`;
+  }
+  matrix += `<div class="rm-key">row→col: <b style="color:#e24b4b">−</b> hate · <b style="color:#8b93a6">∗</b> ok · <b style="color:#49d17a">+</b> love</div></div>`;
+
+  el.innerHTML = `<h3>📖 ALIENPEDIA</h3>${matrix}<div class="ped-list">${entries}</div>`;
   const newList = el.querySelector(".ped-list") as HTMLElement | null;
   if (newList) newList.scrollTop = prevScroll;
 }
@@ -1009,6 +1029,7 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
         case "toggle": infoHandlers.onToggle(infoStructId); break;
         case "recipe": infoHandlers.onRecipe(infoStructId); break;
         case "starchart": infoHandlers.onStarChart(infoStructId); break;
+        case "archive": infoHandlers.onArchive(infoStructId); break;
       }
     });
   }
@@ -1106,10 +1127,12 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
           ? `<button data-act="recipe">Reassign species</button>`
           : "";
     const starBtn = s.kind === "bay" ? `<button data-act="starchart">🛰 Star Chart</button>` : "";
+    const archiveBtn = s.kind === "library" ? `<button data-act="archive">📜 Consult the Archivist</button>` : "";
     actions =
       `<div class="actions">` +
       recipeBtn +
       starBtn +
+      archiveBtn +
       (def.draw > 0 ? `<button data-act="toggle">${toggleLabel}</button>` : "") +
       `<button class="danger" data-act="remove">Deconstruct</button></div>`;
   } else {
@@ -1372,6 +1395,25 @@ export function showBreedOffer(
   const noH = pick(false);
   yes.addEventListener("click", yesH);
   no.addEventListener("click", noH);
+  el.classList.add("show");
+}
+
+// ---- Grand Library: the mad archivist AI recites 2,000 years on demand ----
+let archiveShown = false;
+export function isArchiveOpen(): boolean {
+  return archiveShown;
+}
+export function showArchive(world: World): void {
+  const el = document.getElementById("archive");
+  if (!el) return;
+  archiveShown = true;
+  (el.querySelector(".arc-body") as HTMLElement).textContent = chronicleSaga(world);
+  const close = () => { el.classList.remove("show"); archiveShown = false; };
+  if (!(el as HTMLElement & { _wired?: boolean })._wired) {
+    (el as HTMLElement & { _wired?: boolean })._wired = true;
+    el.querySelector(".arc-close")?.addEventListener("click", close);
+    el.addEventListener("click", (e) => { if (e.target === el) close(); });
+  }
   el.classList.add("show");
 }
 

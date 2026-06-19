@@ -58,6 +58,7 @@ export function createWorld(): World {
     pests: [],
     breedOffer: null,
     breedTimer: 0,
+    barTimer: 0,
     couples: [],
     relThaw: {},
     romance: null,

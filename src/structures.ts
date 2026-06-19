@@ -43,6 +43,8 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   turret: { label: "Turret", color: 0xd0564a, gen: 0, draw: 4, battery: 0, priority: 1, w: 1, h: 1, cost: 200 },
   lamp: { label: "Light Fixture", color: 0xffe9a8, gen: 0, draw: 1, battery: 0, priority: 2, w: 1, h: 1, cost: 30 },
   table: { label: "Mess Table", color: 0x8a6a48, gen: 0, draw: 0, battery: 0, priority: 0, w: 3, h: 3, cost: 50 },
+  library: { label: "Grand Library", color: 0x9a7bd5, gen: 0, draw: 4, battery: 0, priority: 3, w: 2, h: 2, cost: 180 },
+  bar: { label: "Bar", color: 0xd98a5a, gen: 0, draw: 3, battery: 0, priority: 2, w: 2, h: 2, cost: 110 },
   fusion: { label: "Fusion Reactor", color: 0x7fe9ff, gen: 150, draw: 0, battery: 0, priority: 0, w: 2, h: 2, cost: 2000 },
   cargoex: { label: "Cargo Exchange", color: 0x6fcf97, gen: 0, draw: 6, battery: 0, priority: 1, w: 2, h: 2, cost: 1500 },
   aicore: { label: "AI Core", color: 0x8a6cf0, gen: 0, draw: 10, battery: 0, priority: 3, w: 2, h: 2, cost: 2500 },

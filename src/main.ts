@@ -19,6 +19,7 @@ import { combatSystem } from "./combat";
 import { medicalSystem } from "./medical";
 import { encountersSystem } from "./encounters";
 import { spawnSystem, resolveBreed } from "./spawn";
+import { barSystem } from "./bar";
 import { romanceSystem } from "./romance";
 import { defeatReasons, emperorLetter } from "./defeat";
 import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
@@ -61,6 +62,7 @@ import {
   showEncounter,
   isEncounterOpen,
   showStarChart,
+  showArchive,
   isStarChartOpen,
   refreshStarChart,
   showIntro,
@@ -121,6 +123,7 @@ function simStep(world: World, dt: number): void {
   storySystem(world, dt);
   requestsSystem(world, dt);
   encountersSystem(world, dt);
+  barSystem(world, dt);
   romanceSystem(world, dt);
   beaconSystem(world, dt);
   objectivesSystem(world, dt);
@@ -431,6 +434,7 @@ async function boot(): Promise<void> {
         needRedraw = true;
       });
     },
+    onArchive: () => showArchive(world), // the Grand Library's mad archivist recites the saga
   };
   const cycleIx: Record<string, number> = {};
 

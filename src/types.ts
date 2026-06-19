@@ -36,7 +36,9 @@ export type StructureKind =
   | "autoforge"
   | "bloomgarden"
   | "orerefinery"
-  | "table";
+  | "table"
+  | "library"
+  | "bar";
 
 export type Species = "human" | "drenn" | "thol" | "vryl" | "korro" | "vorn" | "chlorithe" | "naaz" | "voltaar" | "sszra";
 
@@ -375,6 +377,7 @@ export interface World {
   pests: Pest[]; // spiders hatched from bad eggs, hunted by the crew
   breedOffer: BreedOffer | null; // a pending "may we lay a clutch?" dialog
   breedTimer: number; // accumulator toward the next reproduction offer
+  barTimer: number; // accumulator toward the next Bar social event (bar.ts)
   couples: Couple[]; // active love-couples (romance.ts)
   relThaw: Partial<Record<Species, Partial<Record<Species, number>>>>; // per-world relation lift from couples
   romance: RomancePopup | null; // a pending romance dialog (fell in love / turbulence / …)

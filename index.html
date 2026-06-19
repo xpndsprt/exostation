@@ -279,6 +279,12 @@
     #alienpedia .rep { height: 4px; border-radius: 2px; background: #131a26; overflow: hidden; margin: 3px 0 2px; }
     #alienpedia .rep > i { display: block; height: 100%; background: var(--cyan); box-shadow: var(--glow-cyan); }
     #alienpedia .ped-list { overflow-y: visible; }
+    /* species relations matrix */
+    #alienpedia .relmx { margin: 2px 0 10px; font-variant-numeric: tabular-nums; }
+    #alienpedia .rm-row { display: flex; }
+    #alienpedia .rm-c { width: 17px; height: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    #alienpedia .rm-c .d { width: 9px; height: 9px; border-radius: 50%; }
+    #alienpedia .rm-key { font-size: 10px; color: var(--ink2); margin-top: 5px; letter-spacing: .02em; }
     #alienpedia h3 { margin: 0 0 7px; font-size: 11.5px; color: var(--cyan);
       letter-spacing: .14em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; text-shadow: var(--glow-cyan); }
     #alienpedia .ent { border-top: 1px solid var(--edge); padding: 7px 0; }
@@ -351,11 +357,21 @@
     #tutorial .tut-foot button:hover { background: #171d2a; border-color: var(--cyan-dim); }
 
     /* ---- modal shared shell ---- */
-    #saves, #firstcontact, #encounter, #starchart, #god, #breed, #romance, #defeat, #intro {
+    #saves, #firstcontact, #encounter, #starchart, #god, #breed, #romance, #defeat, #intro, #archive {
       position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
       background: rgba(3,5,10,.78); backdrop-filter: blur(4px); }
     #saves.show, #firstcontact.show, #encounter.show, #starchart.show, #god.show,
-    #breed.show, #romance.show, #defeat.show, #intro.show { display: flex; }
+    #breed.show, #romance.show, #defeat.show, #intro.show, #archive.show { display: flex; }
+    /* Grand Library archivist */
+    #archive { z-index: 66; }
+    #archive .arc-card { background: var(--panel-solid); border: 1px solid var(--edge2); border-radius: 14px;
+      width: 600px; max-width: 92vw; max-height: 84vh; display: flex; flex-direction: column; padding: 18px 20px;
+      box-shadow: 0 0 0 1px rgba(154,123,213,.12), 0 22px 70px rgba(0,0,0,.75); }
+    #archive .arc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    #archive .arc-tag { color: #b39cff; font-size: 11px; letter-spacing: .26em; font-weight: 700; }
+    #archive .arc-close { background: #11151f; color: var(--ink2); border: 1px solid var(--edge2); border-radius: 7px; width: 28px; height: 28px; cursor: pointer; }
+    #archive .arc-close:hover { background: rgba(255,67,87,.14); border-color: var(--red); color: #ffc4cb; }
+    #archive .arc-body { overflow-y: auto; white-space: pre-wrap; line-height: 1.6; font-size: 13.5px; color: #cdd4e0; padding-right: 6px; }
 
     /* saves modal */
     #saves { z-index: 50; }
@@ -686,6 +702,10 @@
     <h3 class="god-name"></h3>
     <p class="god-verdict"></p>
     <button class="god-go" type="button">Continue</button>
+  </div></div>
+  <div id="archive"><div class="arc-card">
+    <div class="arc-head"><div class="arc-tag">📜 THE GRAND LIBRARY — ARCHIVIST</div><button class="arc-close" type="button" title="Close">✕</button></div>
+    <div class="arc-body"></div>
   </div></div>
   <div id="breed"><div class="breed-card">
     <canvas class="breed-art"></canvas>
