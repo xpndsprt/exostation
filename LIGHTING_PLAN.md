@@ -1,11 +1,16 @@
 # EXOSTATION — Dynamic Lighting & Shadows Plan
 
-> **Status: ⚙️ SHIPPED (core).** The grid-shadowcast system below is implemented in
-> `src/renderer.ts`: **baked** shadows for player-placed lights (Light Fixtures +
-> glowing modules) and a **dynamic per-character lamp** (~3 cells) that **casts a
-> moving shadow** as the agent traverses. Phases 1–4 landed together; Phase 5 (sharp
-> polygon shadows / normal-mapped relighting) remains 🔭 optional. Implementation
-> notes are folded in below where they differ from the original plan.
+> **Status: ⚙️ SHIPPED (core + height shadows).** Implemented in `src/renderer.ts`:
+> **baked** shadows for player-placed lights (Light Fixtures + glowing modules) and a
+> **dynamic per-character lamp** that **casts a moving shadow** as the agent traverses.
+> **Update:** the binary grid-shadowcast has been replaced by a **per-cell height-field
+> march** (`buildOccluders` fills `heightField` from `baseHeight` per kind, walls
+> tallest; `accumulateH` walks the sight line to each light and shadows a cell when a
+> taller cell blocks the ray rising from the floor to the light's mount height). So
+> **taller modules throw longer shadows** and **shadow length/direction follow each
+> light** — the per-sprite height maps (`makeHeightTexture`, visible via the editor's
+> height-map panel and the in-game **Shift+H** inspector) now actually drive lighting.
+> Phase 5 (true per-texel relighting / sharp polygon shadows) remains 🔭 optional.
 
 ---
 

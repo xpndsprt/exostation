@@ -63,10 +63,14 @@
   #vox #voxClose { background: #1c2230; color: var(--ink); border: 1px solid var(--edge2); border-radius: 7px; width: 28px; height: 28px; cursor: pointer; }
   #vox canvas { width: 480px; height: 480px; max-width: 78vw; max-height: 68vh; border-radius: 10px; border: 1px solid var(--edge); background: #05070d; cursor: grab; display: block; }
   #vox .hint { margin-top: 6px; }
-  #stage { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 18px;
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; overflow: auto; padding: 18px;
     background: radial-gradient(720px 520px at 50% 42%, rgba(47,214,195,.05), transparent 70%); }
+  .cvwrap { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .cvlabel { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--teal-dim); }
   canvas#cv { image-rendering: pixelated; background: #04060b; cursor: crosshair;
     box-shadow: 0 0 0 1px var(--edge2), 0 0 44px rgba(0,0,0,.6), 0 0 64px rgba(47,214,195,.07); }
+  canvas#hcv { image-rendering: pixelated; background: #04060b;
+    box-shadow: 0 0 0 1px var(--edge2), 0 0 44px rgba(0,0,0,.6); }
   .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
   .hint { font-size: 11px; color: var(--dim); line-height: 1.55; }
   #curcolor { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--edge2); box-shadow: 0 0 8px rgba(0,0,0,.5); }
@@ -75,6 +79,7 @@
   #preview { margin-top: 6px; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
   #preview canvas { image-rendering: pixelated; background: #04060b; border: 1px solid var(--edge2); }
   #preview .cap { font-size: 10px; color: var(--dim); text-align: center; }
+  #preview .pvpair { display: flex; gap: 3px; }
 </style>
 </head>
 <body>
@@ -195,7 +200,10 @@
       Left-drag paints, right-drag erases. JSON saves every state; PNG saves the
       current state; PNG sheet saves all states in a row.</div>
   </div>
-  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="stage">
+    <div class="cvwrap"><div class="cvlabel">Sprite</div><canvas id="cv"></canvas></div>
+    <div class="cvwrap"><div class="cvlabel">Height map · for shadow casting</div><canvas id="hcv"></canvas></div>
+  </div>
 </main>
 
 <div id="vox"><div class="vox-card">
@@ -219,6 +227,8 @@ let cur = 0; // current state index
 
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
+const hcv = document.getElementById("hcv");
+const hctx = hcv.getContext("2d");
 const $ = (id) => document.getElementById(id);
 const W = () => sprite.tileW * sprite.res, H = () => sprite.tileH * sprite.res;
 const px = () => sprite.states[cur].pixels;
@@ -269,9 +279,31 @@ function render() {
     ctx.strokeStyle = "#6ea8ff"; ctx.lineWidth = 2;
     ctx.strokeRect(ox * ps + 1, oy * ps + 1, rows[0].length * ps - 2, rows.length * ps - 2);
   }
-  renderStates(); renderPreview();
+  renderStates(); renderPreview(); renderHeight();
 }
 function line(a,b,c,d){ ctx.beginPath(); ctx.moveTo(a,b); ctx.lineTo(c,d); ctx.stroke(); }
+function hline(a,b,c,d){ hctx.beginPath(); hctx.moveTo(a,b); hctx.lineTo(c,d); hctx.stroke(); }
+
+// Height map: brightness → height (the same luminance the game uses to build its
+// per-sprite height texture for lighting/shadows). White = tall, black = floor,
+// transparent = void. Rendered pixel-for-pixel beside the sprite at native res.
+function renderHeight() {
+  const w = W(), h = H(), p = px();
+  hcv.width = w * ps; hcv.height = h * ps;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const c = p[y*w+x];
+    if (!c) { hctx.fillStyle = "#04060b"; hctx.fillRect(x*ps, y*ps, ps, ps); continue; }
+    const [r, g, b] = hexToRgb(c);
+    const L = Math.round(0.299*r + 0.587*g + 0.114*b); // 0..255 height
+    hctx.fillStyle = "rgb(" + L + "," + L + "," + L + ")";
+    hctx.fillRect(x*ps, y*ps, ps, ps);
+  }
+  if (showTiles) {
+    hctx.strokeStyle = "rgba(47,214,195,.4)"; hctx.lineWidth = 2;
+    for (let x = 0; x <= w; x += sprite.res) hline(x*ps,0,x*ps,h*ps);
+    for (let y = 0; y <= h; y += sprite.res) hline(0,y*ps,w*ps,y*ps);
+  }
+}
 
 function renderStates() {
   const box = $("states"); box.innerHTML = "";
@@ -286,11 +318,20 @@ function renderPreview() {
   const scale = Math.max(1, Math.floor(48 / Math.max(w, h)));
   sprite.states.forEach((s) => {
     const wrap = document.createElement("div");
+    const pair = document.createElement("div"); pair.className = "pvpair";
     const c = document.createElement("canvas"); c.width = w * scale; c.height = h * scale;
     const o = c.getContext("2d");
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const col = s.pixels[y*w+x]; if (col) { o.fillStyle = col; o.fillRect(x*scale,y*scale,scale,scale); } }
+    const hc = document.createElement("canvas"); hc.width = w * scale; hc.height = h * scale;
+    const ho = hc.getContext("2d"); ho.fillStyle = "#04060b"; ho.fillRect(0, 0, hc.width, hc.height);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const col = s.pixels[y*w+x]; if (!col) continue;
+      o.fillStyle = col; o.fillRect(x*scale,y*scale,scale,scale);
+      const [r, g, b] = hexToRgb(col); const L = Math.round(0.299*r + 0.587*g + 0.114*b);
+      ho.fillStyle = "rgb(" + L + "," + L + "," + L + ")"; ho.fillRect(x*scale,y*scale,scale,scale);
+    }
+    pair.appendChild(c); pair.appendChild(hc);
     const cap = document.createElement("div"); cap.className = "cap"; cap.textContent = s.name;
-    wrap.appendChild(c); wrap.appendChild(cap); box.appendChild(wrap);
+    wrap.appendChild(pair); wrap.appendChild(cap); box.appendChild(wrap);
   });
 }
 

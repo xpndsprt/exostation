@@ -42,6 +42,11 @@ const GAS_CODE: Record<string, number> = { none: 0, o2: 1, ch4: 2, cl2: 3, nh3: 
 const LAMP_RADIUS = 5.5; // cells — a touch wider so the pool fades over more cells
 const LAMP_COLOR: [number, number, number] = [1.0, 0.9, 0.7];
 const LAMP_INTENSITY = 0.95;
+// Light mount heights for the height-field shadow march (cells of elevation).
+// A taller occluder between a cell and the light shadows that cell; the higher
+// the light sits, the shorter the shadows it throws.
+const LIGHT_MOUNT = 1.4; // module/lamp fixtures ride high on the bulkheads
+const LAMP_MOUNT = 1.05; // a handheld crew lamp is lower → longer ground shadows
 // modules that emit light while powered: [radius in CELLS, color, intensity]
 const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
@@ -91,55 +96,6 @@ function softFalloff(d: number, r: number): number {
   const t = 1 - d / r;
   if (t <= 0) return 0;
   return t * t * (3 - 2 * t); // smoothstep: flat at centre, flat (→0) at the edge
-}
-
-// Symmetric recursive shadowcasting (the roguelike FOV algorithm): visit() fires
-// for every cell the light reaches; an opaque cell is itself lit but blocks light
-// beyond it — so walls/modules throw real wedge shadows. O(cells in radius).
-const OCT = [
-  [1, 0, 0, 1], [0, 1, 1, 0], [0, -1, 1, 0], [-1, 0, 0, 1],
-  [-1, 0, 0, -1], [0, -1, -1, 0], [0, 1, -1, 0], [1, 0, 0, -1],
-];
-type Opaque = (x: number, y: number) => boolean;
-type Visit = (x: number, y: number, d: number) => void;
-function shadowcast(cx: number, cy: number, radius: number, opaque: Opaque, visit: Visit): void {
-  visit(cx, cy, 0);
-  for (const m of OCT) castOctant(cx, cy, 1, 1, 0, radius, m[0], m[1], m[2], m[3], opaque, visit);
-}
-function castOctant(cx: number, cy: number, row: number, start: number, end: number, radius: number, xx: number, xy: number, yx: number, yy: number, opaque: Opaque, visit: Visit): void {
-  if (start < end) return;
-  const r2 = radius * radius;
-  let newStart = 0;
-  for (let i = row; i <= radius; i++) {
-    let dx = -i - 1;
-    const dy = -i;
-    let blocked = false;
-    while (dx <= 0) {
-      dx++;
-      const X = cx + dx * xx + dy * xy;
-      const Y = cy + dx * yx + dy * yy;
-      const lSlope = (dx - 0.5) / (dy + 0.5);
-      const rSlope = (dx + 0.5) / (dy - 0.5);
-      if (start < rSlope) continue;
-      if (end > lSlope) break;
-      const d2 = dx * dx + dy * dy;
-      if (d2 <= r2) visit(X, Y, Math.sqrt(d2));
-      const opq = opaque(X, Y);
-      if (blocked) {
-        if (opq) {
-          newStart = rSlope;
-          continue;
-        }
-        blocked = false;
-        start = newStart;
-      } else if (opq && i < radius) {
-        blocked = true;
-        castOctant(cx, cy, i + 1, start, lSlope, radius, xx, xy, yx, yy, opaque, visit);
-        newStart = rSlope;
-      }
-    }
-    if (blocked) break;
-  }
 }
 
 // Wall autotile: map a 4-bit neighbour mask (N=1,E=2,S=4,W=8) to a sprite name
@@ -410,6 +366,7 @@ export class Renderer {
   private staticBuf = new Float32Array(0); // baked: ambient + placed-light shadows
   private workBuf = new Float32Array(0); // per-frame: static + character lamps
   private occ = new Uint8Array(0); // 1 = blocks light (walls + solid modules)
+  private heightField = new Float32Array(0); // per-cell elevation for shadow marching
   private bakeSig = "";
 
   // Briefly ring all members of a species (Alienpedia "locate").
@@ -611,12 +568,24 @@ export class Renderer {
   // walls + solid modules block light; doors pass it (lit doorways). Rebuilt with
   // the static bake (geometry changes are rare).
   private buildOccluders(world: World): void {
-    if (this.occ.length !== world.cells.length) this.occ = new Uint8Array(world.cells.length);
+    const n = world.cells.length;
+    if (this.occ.length !== n) this.occ = new Uint8Array(n);
+    if (this.heightField.length !== n) this.heightField = new Float32Array(n);
     this.occ.fill(0);
-    for (let i = 0; i < world.cells.length; i++) if (world.cells[i].type === "wall") this.occ[i] = 1;
+    this.heightField.fill(0);
+    for (let i = 0; i < n; i++) {
+      const t = world.cells[i].type;
+      if (t === "wall") { this.occ[i] = 1; this.heightField[i] = 2.0; } // bulkheads: tallest, always block
+      else if (t === "door") this.heightField[i] = 0.05; // doorways stay lit
+      else if (t !== "space") this.heightField[i] = 0.02; // floor
+    }
     for (const id in world.structures) {
       const s = world.structures[id];
-      if (blocksLight(s.kind)) for (const c of s.cells) this.occ[c] = 1;
+      const hgt = baseHeight(s.kind); // reuse the per-kind heights the sprite height-maps use
+      for (const c of s.cells) {
+        if (this.heightField[c] < hgt) this.heightField[c] = hgt;
+        if (blocksLight(s.kind)) this.occ[c] = 1;
+      }
     }
   }
 
@@ -666,14 +635,9 @@ export class Renderer {
       const ox = o % world.w, oy = (o / world.w) | 0;
       const radius = Math.max(1, Math.round(g[0]));
       const [lr, lg, lb] = rgbf(g[1]);
-      const intensity = g[2];
-      const ignore = new Set(s.cells);
-      const opaque: Opaque = (x, y) => {
-        if (x < 0 || y < 0 || x >= world.w || y >= world.h) return true;
-        const i = y * world.w + x;
-        return this.occ[i] === 1 && !ignore.has(i);
-      };
-      this.accumulate(world, buf, ox, oy, radius, lr, lg, lb, intensity, opaque);
+      // march the height field toward the light; the emitter's own footprint is
+      // ignored so it never shadows itself.
+      this.accumulateH(world, buf, ox, oy, radius, lr, lg, lb, g[2], LIGHT_MOUNT, new Set(s.cells), falloff);
     }
   }
 
@@ -684,15 +648,13 @@ export class Renderer {
   private updateHeadlights(world: World): void {
     this.workBuf.set(this.staticBuf);
     const buf = this.workBuf;
-    const opaque: Opaque = (x, y) => {
-      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return true;
-      return this.occ[y * world.w + x] === 1;
-    };
     for (const id in world.agents) {
       const a = world.agents[id];
       if (!a.alive) continue;
       const ox = a.cell % world.w, oy = (a.cell / world.w) | 0;
-      this.accumulate(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, opaque, softFalloff);
+      // the lamp rides low, so nearby modules throw long shadows that sweep as the
+      // crew walk (the height field is shared with the baked static lights).
+      this.accumulateH(world, buf, ox, oy, LAMP_RADIUS, LAMP_COLOR[0], LAMP_COLOR[1], LAMP_COLOR[2], LAMP_INTENSITY, LAMP_MOUNT, null, softFalloff);
     }
     // Paint the light buffer as multiply-blended rects (reliable on every backend,
     // unlike a re-uploaded canvas texture). Open space is left unpainted = full
@@ -711,19 +673,46 @@ export class Renderer {
     }
   }
 
-  // shadowcast a light into `buf`, adding colour×intensity×falloff to lit cells.
-  private accumulate(world: World, buf: Float32Array, ox: number, oy: number, radius: number, lr: number, lg: number, lb: number, intensity: number, opaque: Opaque, fall: (d: number, r: number) => number = falloff): void {
-    shadowcast(ox, oy, radius, opaque, (x, y, dist) => {
-      if (x < 0 || y < 0 || x >= world.w || y >= world.h) return;
-      const i = y * world.w + x;
-      if (world.cells[i].type === "space") return; // don't light open vacuum
-      const f = fall(dist, radius) * intensity;
-      if (f <= 0) return;
-      const o = i * 3;
-      buf[o] += lr * f;
-      buf[o + 1] += lg * f;
-      buf[o + 2] += lb * f;
-    });
+  // Height-aware light accumulation. Like accumulate(), but instead of a binary
+  // wall mask it marches the per-cell HEIGHT FIELD along the sight line to the
+  // light: a cell is shadowed when a taller cell sits between it and the light,
+  // below the line that rises from the floor to the light's mount height. So tall
+  // modules cast longer shadows than short ones, and the shadow swings with the
+  // light's position. `ignore` skips the light's own footprint (no self-shadow).
+  private accumulateH(world: World, buf: Float32Array, ox: number, oy: number, radius: number, lr: number, lg: number, lb: number, intensity: number, lightH: number, ignore: Set<number> | null, fall: (d: number, r: number) => number): void {
+    const w = world.w, h = world.h, hf = this.heightField;
+    const R = Math.ceil(radius);
+    const x0 = Math.max(0, ox - R), x1 = Math.min(w - 1, ox + R);
+    const y0 = Math.max(0, oy - R), y1 = Math.min(h - 1, oy + R);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const ci = y * w + x;
+        if (world.cells[ci].type === "space") continue; // don't light open vacuum
+        const dx = ox - x, dy = oy - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > radius) continue;
+        const f = fall(dist, radius) * intensity;
+        if (f <= 0) continue;
+        // step the sight line cell-by-cell toward the light; the ray's elevation
+        // climbs linearly from the floor (at this cell) to lightH (at the light).
+        const steps = Math.max(Math.abs(dx), Math.abs(dy));
+        let lit = true;
+        if (steps > 1) {
+          const sx = dx / steps, sy = dy / steps;
+          for (let k = 1; k < steps; k++) {
+            const ix = Math.round(x + sx * k), iy = Math.round(y + sy * k);
+            const ii = iy * w + ix;
+            if (ignore && ignore.has(ii)) continue;
+            if (hf[ii] > lightH * (k / steps) + 0.03) { lit = false; break; } // a taller cell blocks
+          }
+        }
+        if (!lit) continue;
+        const o = ci * 3;
+        buf[o] += lr * f;
+        buf[o + 1] += lg * f;
+        buf[o + 2] += lb * f;
+      }
+    }
   }
 
   // Tiles are drawn as sprites, rebuilt only when the grid actually changes

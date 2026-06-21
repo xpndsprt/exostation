@@ -6,7 +6,7 @@
 type Bus = "ui" | "world" | "music";
 const BUS_VOL: Record<Bus, number> = { ui: 0.6, world: 0.9, music: 0.45 };
 const MASTER_VOL = 0.8;
-const MUSIC_VOL = 0.27; // soundtrack at ~30% of the SFX (world-bus) level
+const MUSIC_VOL = 0.135; // soundtrack at 15% of the SFX (world-bus 0.9) level
 const MUTE_KEY = "exo.muted";
 
 let ctx: AudioContext | null = null;

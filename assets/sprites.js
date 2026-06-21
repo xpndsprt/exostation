@@ -88,21 +88,33 @@
 
   // Biomechanical floor plate (32×32): a panel with a beveled inset, a dashed
   // vertebral cross-seam and corner rivets — Moebius-clean, Giger-boned by the tone.
+  // Nostromo deck plate (32×32). Authored for HEIGHT: a recessed border seam (low),
+  // a raked top-left bevel (high), a cross groove splitting four sunken panels, and
+  // four raised bolts each with a lit shoulder + shadow underside. Palette luminance
+  // is ordered v<d<m<p<h<b so the renderer's height map casts believable relief.
   function floorTile() {
     const R = 32, out = [];
     for (let y = 0; y < R; y++) {
       let s = "";
       for (let x = 0; x < R; x++) {
-        let ch = "m";
-        if (x === 0 || y === 0) ch = "d"; // top/left inset shadow
-        else if (x === R - 1 || y === R - 1) ch = "r"; // bottom/right lit edge
-        else if ((x === 4 || x === 27) && (y === 4 || y === 27)) ch = "r"; // rivets
-        else if (y === 15 || y === 16) ch = x % 4 < 2 ? "d" : "m"; // dashed rib seam (E-W)
-        else if (x === 15 || x === 16) ch = y % 4 < 2 ? "d" : "m"; // dashed rib seam (N-S)
+        let ch;
+        if (x === 0 || y === 0) ch = "v";                       // top/left seam (lowest)
+        else if (x === R - 1 || y === R - 1) ch = "d";          // bottom/right shadow
+        else if (x === 1 || y === 1) ch = "h";                  // raised top-left bevel (lit)
+        else if (x === R - 2 || y === R - 2) ch = "d";          // inner falloff
+        else if (x === 15 || x === 16 || y === 15 || y === 16) ch = "d"; // cross groove
+        else ch = "p";                                          // sunken panel face
         s += ch;
       }
       out.push(s);
     }
+    const set = (x, y, c) => { out[y] = out[y].slice(0, x) + c + out[y].slice(x + 1); };
+    // bolts at each quadrant centre — lit shoulder (top-left) + shadow (bottom-right)
+    for (const [cx, cy] of [[8, 8], [23, 8], [8, 23], [23, 23]]) {
+      set(cx, cy, "b"); set(cx - 1, cy - 1, "h"); set(cx - 1, cy, "h"); set(cx + 1, cy + 1, "d"); set(cx, cy + 1, "d");
+    }
+    // worn rust grime flecked across the deck (Ridley wear)
+    for (const [x, y] of [[12, 21], [21, 12], [20, 22], [6, 18], [26, 14], [14, 6]]) set(x, y, "r");
     return out;
   }
 
@@ -743,7 +755,7 @@
     /* ---------- structural tiles (1x1) ---------- */
     {
       name: "floor", tileW: 1, tileH: 1,
-      palette: { d: "#1a2029", m: "#2b3038", r: "#444b54" },
+      palette: { v: "#0a0d12", d: "#161b22", m: "#222b34", p: "#2a343f", h: "#46586b", b: "#6a7d8d", r: "#5b3a29" },
       states: { default: floorTile() },
     },
     {
