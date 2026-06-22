@@ -157,6 +157,9 @@
     <div class="hint" style="margin-top:5px">Bakes every tile (built-ins + your edits) into the library so the game picks them all up. Reload the game after.</div>
     <div class="row" style="margin-top:8px"><button id="undoBtn">↶ Undo</button></div>
     <div id="styleOut" class="hint" style="margin-top:6px"></div>
+    <h4>Aliens — body shapes</h4>
+    <div class="row"><select id="alienSel" style="flex:1"><option value="">— redraw species shapes —</option></select></div>
+    <div class="hint" style="margin-top:5px">Redraws every creature: <b>humans stay human</b>; other species get a distinct body plan (octopus, pentagonal, crab, serpent, jelly, …). Pick a seed — saved to the library so the game uses them. Apply a Style afterwards to colour them.</div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -767,6 +770,110 @@ $("saveAllBtn").onclick = () => {
   if ($("styleOut")) $("styleOut").textContent = `Saved ALL ${n} sprites to the library — reload the game to use them.`;
   alert(`Saved ALL ${n} sprites to the library. Reload the game to use them.`);
 };
+
+// ===== Procedural alien redraw =======================================
+// Humans stay humanoid; every other species gets a distinct body plan
+// (octopus, 5-fold radial, crab, serpent, blob, insectoid, arachnid, jelly,
+// avian) chosen deterministically from a seed. Each creature keeps its own
+// palette (k outline · s head · c body · b limbs · e eyes) so suits + identity
+// survive, and we emit idle/walk/dead + suited frames. Saved to the library so
+// the GAME (which reads the library) uses them.
+const CR = 32; // creatures are drawn at 32x32
+const SUIT_FABRIC = { U: "#b8c2cc", V: "#7c8894", p: "#eaf2fb" };
+const ALIEN_SEEDS = ["xeno-prime", "deep-ones", "menagerie", "carnival", "abyssal", "hivemind", "verdant"];
+function crGrid() { return new Array(CR * CR).fill("."); }
+function crSet(g, x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < CR && y < CR) g[y * CR + x] = c; }
+function crGet(g, x, y) { return (x >= 0 && y >= 0 && x < CR && y < CR) ? g[y * CR + x] : "."; }
+function crDisc(g, cx, cy, r, c) { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) crSet(g, cx + x, cy + y, c); }
+function crEll(g, cx, cy, rx, ry, c) { for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) if ((x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1) crSet(g, cx + x, cy + y, c); }
+function crLine(g, x0, y0, x1, y1, c, th) { th = th || 1; x0 |= 0; y0 |= 0; x1 |= 0; y1 |= 0; const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let err = dx - dy, x = x0, y = y0; for (let guard = 0; guard < 256; guard++) { if (th > 1) crDisc(g, x, y, th - 1, c); else crSet(g, x, y, c); if (x === x1 && y === y1) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x += sx; } if (e2 < dx) { err += dx; y += sy; } } }
+function crOutline(g) { const add = []; for (let y = 0; y < CR; y++) for (let x = 0; x < CR; x++) { if (g[y * CR + x] !== ".") continue; let near = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const v = crGet(g, x + dx, y + dy); if (v !== "." && v !== "k") { near = true; break; } } if (near) add.push(y * CR + x); } for (const i of add) g[i] = "k"; }
+function crRows(g) { const out = []; for (let y = 0; y < CR; y++) { let r = ""; for (let x = 0; x < CR; x++) r += g[y * CR + x]; out.push(r); } return out; }
+
+// ---- body plans (g, walk) — humans humanoid, the rest alien ----
+function planHumanoid(g, walk) {
+  const cx = 16;
+  crDisc(g, cx, 8, 4, "s"); crSet(g, cx - 2, 8, "e"); crSet(g, cx + 2, 8, "e");
+  crEll(g, cx, 17, 5, 6, "c");
+  crLine(g, cx - 4, 13, cx - 7, walk ? 22 : 20, "c", 2);
+  crLine(g, cx + 4, 13, cx + 7, walk ? 20 : 22, "c", 2);
+  crLine(g, cx - 2, 22, walk ? cx - 5 : cx - 2, 30, "b", 2);
+  crLine(g, cx + 2, 22, walk ? cx + 1 : cx + 2, 30, "b", 2);
+}
+function planOctopus(g, walk) {
+  const cx = 16;
+  crEll(g, cx, 12, 7, 8, "c");
+  crEll(g, cx, 9, 6, 4, "s");
+  crSet(g, cx - 3, 10, "e"); crSet(g, cx + 3, 10, "e"); crSet(g, cx - 3, 11, "e"); crSet(g, cx + 3, 11, "e");
+  for (let i = 0; i < 6; i++) { const curl = walk ? (i % 2 ? 4 : -3) : (i % 2 ? 2 : -2); crLine(g, cx - 6 + i * 2, 18, cx - 8 + i * 3 + curl, 29 - (i % 2), "b", 2); }
+}
+function planRadial(g, walk) {
+  const cx = 16, cy = 16; crDisc(g, cx, cy, 6, "c"); crDisc(g, cx, cy, 2, "e");
+  const off = walk ? 12 : -6;
+  for (let k = 0; k < 5; k++) { const a = (-90 + k * 72 + off) * Math.PI / 180; const ex = cx + Math.cos(a) * 11, ey = cy + Math.sin(a) * 11; crLine(g, cx + Math.cos(a) * 4, cy + Math.sin(a) * 4, ex, ey, "s", 2); crDisc(g, ex, ey, 2, "b"); }
+}
+function planCrab(g, walk) {
+  const cx = 16; crEll(g, cx, 18, 9, 4, "c");
+  crLine(g, cx - 3, 15, cx - 4, 10, "s"); crLine(g, cx + 3, 15, cx + 4, 10, "s"); crSet(g, cx - 4, 9, "e"); crSet(g, cx + 4, 9, "e");
+  crDisc(g, cx - 10, 16, 2, "s"); crLine(g, cx - 9, 17, cx - 6, 18, "s"); crDisc(g, cx + 10, 16, 2, "s"); crLine(g, cx + 9, 17, cx + 6, 18, "s");
+  for (let i = 0; i < 3; i++) { const yy = 18 + i * 2, w = walk ? (i % 2 ? 2 : -2) : 0; crLine(g, cx - 7, yy, cx - 12 + w, yy + 4, "b"); crLine(g, cx + 7, yy, cx + 12 - w, yy + 4, "b"); }
+}
+function planSerpent(g, walk) {
+  const cx = 16, ph = walk ? 1.4 : 0; let hx = cx;
+  for (let y = 29; y >= 8; y--) { const x = cx + Math.round(4 * Math.sin(y / 4 + ph)); crDisc(g, x, y, 2, y >= 27 ? "b" : "c"); hx = x; }
+  crDisc(g, hx, 7, 3, "s"); crSet(g, hx - 1, 7, "e"); crSet(g, hx + 1, 7, "e");
+}
+function planBlob(g, walk) {
+  const cx = 16; crDisc(g, cx, 18, 8, "c"); crDisc(g, cx - 5, 14, 4, "c"); crDisc(g, cx + 6, 16, 3, "c"); crDisc(g, cx + 3, 24, 3, "c");
+  crDisc(g, cx, 17, 3, "s"); crSet(g, cx - 1, 16, "e"); crSet(g, cx + 1, 17, "e");
+  const w = walk ? 2 : 0; crSet(g, cx - 6 + w, 26, "b"); crSet(g, cx + 5 - w, 26, "b"); crSet(g, cx, 27, "b");
+}
+function planInsectoid(g, walk) {
+  const cx = 16; crEll(g, cx, 20, 4, 5, "c"); crEll(g, cx, 13, 4, 4, "c"); crDisc(g, cx, 7, 3, "s");
+  crSet(g, cx - 2, 7, "e"); crSet(g, cx + 2, 7, "e"); crLine(g, cx - 1, 5, cx - 3, 1, "s"); crLine(g, cx + 1, 5, cx + 3, 1, "s");
+  for (let i = 0; i < 3; i++) { const yy = 11 + i * 3, w = walk ? (i % 2 ? 2 : -2) : 0; crLine(g, cx - 3, yy, cx - 9 + w, yy + 3, "b"); crLine(g, cx + 3, yy, cx + 9 - w, yy + 3, "b"); }
+}
+function planArachnid(g, walk) {
+  const cx = 16; crDisc(g, cx, 19, 6, "c"); crDisc(g, cx, 12, 4, "s");
+  crSet(g, cx - 1, 11, "e"); crSet(g, cx + 1, 11, "e"); crSet(g, cx - 1, 12, "e"); crSet(g, cx + 1, 12, "e");
+  for (let i = 0; i < 4; i++) { const yy = 9 + i * 2, w = walk ? (i % 2 ? 2 : -2) : 0; crLine(g, cx - 3, yy, cx - 11 + w, yy + (i < 2 ? -1 : 5), "b"); crLine(g, cx + 3, yy, cx + 11 - w, yy + (i < 2 ? -1 : 5), "b"); }
+}
+function planJelly(g, walk) {
+  const cx = 16; crEll(g, cx, 11, 8, 5, "s"); crEll(g, cx, 13, 8, 2, "c"); crSet(g, cx - 3, 11, "e"); crSet(g, cx + 3, 11, "e");
+  for (let i = 0; i < 7; i++) { const x = cx - 7 + i * 2, sway = walk ? (i % 2 ? 2 : -2) : Math.round(Math.sin(i)); crLine(g, x, 15, x + sway, 28 - (i % 3), "b"); }
+}
+function planAvian(g, walk) {
+  const cx = 16; crEll(g, cx, 17, 4, 6, "c"); crDisc(g, cx, 8, 3, "s"); crSet(g, cx + 2, 8, "e"); crLine(g, cx + 3, 8, cx + 6, 9, "s");
+  crLine(g, cx - 4, 14, cx - 7, 18, "c", 2); crLine(g, cx + 4, 14, cx + 7, 18, "c", 2);
+  crLine(g, cx - 1, 22, walk ? cx - 3 : cx - 1, 30, "b"); crLine(g, cx + 1, 22, cx + 1, 30, "b");
+}
+function planDead(g) { crEll(g, 16, 26, 9, 2, "c"); crDisc(g, 11, 25, 2, "s"); for (let x = 8; x < 24; x += 3) crSet(g, x, 27, "b"); crSet(g, 11, 25, "e"); }
+const ALIEN_PLANS = [planOctopus, planRadial, planCrab, planSerpent, planBlob, planInsectoid, planArachnid, planJelly, planAvian];
+
+// Redraw every creature from `seedStr` and save to the library.
+function regenerateAliens(seedStr) {
+  const creatures = (window.SPRITES || []).filter((s) => s.states && s.states.idle && s.states.walk);
+  if (!creatures.length) return alert("No creatures found in window.SPRITES.");
+  const suit = (rows) => rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
+  const store = loadLib();
+  for (const s of creatures) {
+    const rng = mulberry32(strSeed(seedStr + ":" + s.name));
+    const plan = s.name === "human" ? planHumanoid : ALIEN_PLANS[Math.floor(rng() * ALIEN_PLANS.length)];
+    const gi = crGrid(); plan(gi, false); crOutline(gi);
+    const gw = crGrid(); plan(gw, true); crOutline(gw);
+    const gd = crGrid(); planDead(gd); crOutline(gd);
+    const states = { idle: crRows(gi), walk: crRows(gw), dead: crRows(gd) };
+    states.suitidle = suit(states.idle); states.suitwalk = suit(states.walk);
+    const pal = Object.assign({ e: "#0c0f14" }, s.palette, SUIT_FABRIC, { G: (s.palette && s.palette.s) || "#7fa8e0" });
+    store[s.name] = asciiToBitmap({ name: s.name, tileW: 1, tileH: 1, palette: pal, states });
+  }
+  saveLibStore(store);
+  refreshLibrary();
+  if ($("styleOut")) $("styleOut").textContent = `Redrew ${creatures.length} species (seed: ${seedStr}) → saved to library. Reload the game to see them.`;
+  alert(`Redrew ${creatures.length} species from seed “${seedStr}”. Reload the game to see them.`);
+}
+(function () { const sel = $("alienSel"); if (!sel) return; ALIEN_SEEDS.forEach((sd) => { const o = document.createElement("option"); o.value = sd; o.textContent = "seed: " + sd; sel.appendChild(o); }); })();
+$("alienSel").onchange = (e) => { const v = e.target.value; if (!v) return; regenerateAliens(v); e.target.value = ""; };
 
 window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
