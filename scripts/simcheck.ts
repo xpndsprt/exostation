@@ -1,5 +1,5 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
-import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addBody, seedSolarSystem, addAgent, eraseAt, idx } from "../src/world";
+import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addBody, seedSolarSystem, addAgent, eraseAt, idx, addConduit } from "../src/world";
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
 import { costOf, DOCK_TIER, STRUCTURES } from "../src/structures";
 import { SPECIES } from "../src/species";
@@ -280,6 +280,8 @@ addStructure(w7, "ch4gen", 12, 6); // Room B: methane
 addAgent(w7, 13, 6, "thol"); // breathes CH4 -> ok
 addStructure(w7, "o2gen", 18, 6); // Room C: O2 + CH4 = mixed
 addStructure(w7, "ch4gen", 19, 6);
+addConduit(w7, 12, 7); // power conduits relay the grid out to far Room C…
+addConduit(w7, 18, 7); // …so its distant generators come online
 addAgent(w7, 20, 6, "human"); // mixed gas -> dies
 
 const gasOf = (cx: number, cy: number) => {
@@ -2437,6 +2439,23 @@ function forceCouple(w: World, a: number, b: number) {
   check("Defeat names the empty larder", reasons.some((r) => /larder|eat/i.test(r)));
   const letter = emperorLetter(w);
   check("Emperor's letter is addressed and signed", /Commander/.test(letter) && /Emperor/.test(letter));
+}
+
+// --- Power conduits: far modules need cabling; a broken run cuts power ---
+{
+  const wc = createWorld();
+  for (let y = 4; y <= 9; y++) for (let x = 4; x <= 26; x++) setCell(wc, x, y, x === 4 || x === 26 || y === 4 || y === 9 ? "wall" : "floor");
+  addStructure(wc, "solar", 6, 6);
+  addStructure(wc, "o2gen", 22, 6); // ~16 tiles from the solar — out of reach
+  for (let i = 0; i < 3; i++) step(wc);
+  const far = Object.values(wc.structures).find((s) => s.kind === "o2gen")!;
+  check("Conduit: a far module is dark without cabling", far.powered === false);
+  for (const x of [11, 13, 15, 17, 19]) addConduit(wc, x, 6); // relay chain solar → outpost
+  for (let i = 0; i < 3; i++) step(wc);
+  check("Conduit: cabling powers the far module", far.powered === true);
+  for (const c of wc.conduits) c.hp = 0; // the run breaks
+  for (let i = 0; i < 3; i++) step(wc);
+  check("Conduit: a broken run cuts the far module", far.powered === false);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);

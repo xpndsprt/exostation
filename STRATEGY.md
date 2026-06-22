@@ -77,9 +77,10 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 ## 3 · Power (M2) — nothing runs without it
 - **Solar Panel** generates **+10 PU** (power units). It mounts on the **outside of a space-facing wall** and extends **3 tiles out into space** (normal to the wall) — so build your hull first, then line panels along its exterior. The ghost shows the 3-tile footprint and turns red if there's no wall to anchor to or no room to extend. **Battery Bank** stores **50 PU** of surplus for later.
 - Consumers draw power: **O₂ Generator −6**, **Methane Gen −9**, **Bio Vat −6**, **Rations Synth −5**, **Docking Port −5**, **Trade Hub −5**, **Bot Bay −4**, **Lounge −4**, **Hotel Room −2**, **Crew Quarters −1**.
-- The network is **station-wide**: `net = supply − draw`. Surplus charges the battery; deficit drains it.
+- The network's **energy budget** is station-wide: `net = supply − draw`. Surplus charges the battery; deficit drains it.
 - When the battery is empty and draw still exceeds supply → **BROWNOUT** (red banner). Modules are **shed by priority, life support last**: pods/docks/bays go dark before generators.
-- **Takeaway:** always keep solar above your total draw, and add batteries so a momentary spike (or the dark side of an orbit, later) doesn't kill life support. Use the **Power overlay** to spot anything unpowered.
+- **Power has reach (M-conduit).** Generators & batteries energize the grid **6 tiles** around them; a module the grid can't reach stays **dark even with spare supply**. **Power Conduit** (Build menu, key **U**, **¢1/tile**, drag to lay) is cabling on the deck that **relays the grid another 6 tiles** per run — wire it out to far-flung modules & batteries. Conduits **wear and break** (hp 0 = a red sparking gap that stops conducting); **crew repair** broken runs automatically, so very long networks add upkeep/repair load. Compact stations rarely need cabling; sprawling ones do.
+- **Takeaway:** keep solar above your total draw, add batteries for spikes, and **run conduit** to anything beyond a generator's reach. Use the **Power overlay** to spot anything unpowered.
 
 ---
 

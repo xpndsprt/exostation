@@ -397,6 +397,7 @@ export class Renderer {
   // the interior. (We deliberately do NOT use a re-uploaded CanvasSource texture —
   // that's the documented "one frame, then black" failure on some GPU backends.)
   private lightG = new Graphics();
+  private conduitG = new Graphics(); // power cabling laid on the deck
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
@@ -420,7 +421,7 @@ export class Renderer {
     buildTextures();
     this.lightG.blendMode = "multiply";
     for (const layer of [
-      this.cellsC, this.atmo, this.grid, this.sitesC, this.shadowsC, this.structsC, this.structFx,
+      this.cellsC, this.atmo, this.grid, this.conduitG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
       this.lightG, this.heightC, this.overlay, this.selection, this.cursor,
     ])
@@ -556,6 +557,7 @@ export class Renderer {
   draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none"): void {
     this.drawTiles(world);
     this.drawAtmosphere(world);
+    this.drawConduits(world);
     // Asteroids/planets live off-map in the Star Chart now — nothing on the grid.
     this.drawStructures(world);
     this.drawCritters(world);
@@ -844,6 +846,28 @@ export class Renderer {
         else if (c.type === "floor" && !c.enclosed) sp.tint = 0xff9a9a; // open-to-space cue
         this.cellsC.addChild(sp);
       }
+  }
+
+  private drawConduits(world: World): void {
+    const g = this.conduitG;
+    g.clear();
+    if (!world.conduits.length) return;
+    const has = new Set(world.conduits.map((c) => c.cell));
+    const blink = 0.45 + 0.55 * Math.abs(Math.sin(((world.tick % 10) / 10) * Math.PI * 2));
+    for (const c of world.conduits) {
+      const x = (c.cell % world.w) * TILE + TILE / 2;
+      const y = ((c.cell / world.w) | 0) * TILE + TILE / 2;
+      const broken = c.hp <= 0;
+      const col = broken ? 0xff4d4d : c.hp < 40 ? 0xe8a33d : 0x2fd0e6; // red broken · amber worn · cyan ok
+      const a = broken ? 0.5 + 0.5 * blink : 0.7;
+      // links to orthogonal neighbour conduits → the run reads as cabling
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        const n = c.cell + dx + dy * world.w;
+        if (has.has(n)) g.moveTo(x, y).lineTo(x + dx * TILE, y + dy * TILE).stroke({ width: 2, color: col, alpha: a });
+      }
+      g.circle(x, y, 2.6).fill({ color: col, alpha: broken ? 0.8 : 0.9 });
+      if (broken) g.circle(x, y, 5 + 3 * blink).stroke({ width: 1.5, color: 0xff4d4d, alpha: 0.5 * blink }); // spark ring
+    }
   }
 
   private drawAtmosphere(world: World): void {

@@ -65,6 +65,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "wall", label: "Wall", key: "W" },
   { t: "door", label: "Door", key: "D" },
   { t: "storage", label: "Storage Floor", key: "" },
+  { t: "conduit", label: "Power Conduit", key: "U" },
   { t: "erase", label: "Erase", key: "E" },
   { t: "solar", label: "Solar Panel", key: "1", group: "Modules" },
   { t: "battery", label: "Battery", key: "2" },

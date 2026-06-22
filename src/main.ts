@@ -1,6 +1,6 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
-import { createWorld, setCell, addStructureMulti, addDock, addBay, seedSolarSystem, eraseAt, inBounds, idx } from "./world";
+import { createWorld, setCell, addStructureMulti, addDock, addBay, seedSolarSystem, eraseAt, inBounds, idx, addConduit } from "./world";
 import { simStep, refresh } from "./sim";
 import { resolveBreed } from "./spawn";
 import { defeatReasons, emperorLetter } from "./defeat";
@@ -463,6 +463,8 @@ async function boot(): Promise<void> {
         setCell(world, tx, ty, "storage");
         ok = true;
       }
+    } else if (tool === "conduit") {
+      ok = addConduit(world, tx, ty); // power cabling on a deck cell
     } else if (tool === "lamp") {
       // the one module allowed on an airless storage tile (also placeable on floor)
       const c = world.cells[idx(world, tx, ty)];

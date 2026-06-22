@@ -235,6 +235,14 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
           return; // keep working until fully serviced
         }
         releaseTask(w, a);
+      } else if (a.task.type === "fixconduit") {
+        const c = w.conduits.find((x) => x.cell === a.task!.target && x.repairBy === a.id);
+        if (c) {
+          c.hp = Math.min(100, c.hp + REPAIR_RATE * dt);
+          if (c.hp >= 100) { c.repairBy = -1; releaseTask(w, a); }
+          return; // keep repairing until restored
+        }
+        releaseTask(w, a); // conduit gone / taken
       } else if (a.task.type === "seal") {
         const b = w.breaches.find((x) => x.sealer === a.id);
         if (b && w.cells[b.cell].type === "space") {
@@ -333,6 +341,16 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
     if (job) {
       a.task = { type: "service", target: job.cell, structureId: job.id };
       a.path = job.path;
+      return;
+    }
+  }
+
+  // Residents repair broken power conduits (dark grid until fixed).
+  if (!a.guest) {
+    const fix = claimConduitRepair(w, a, a.cell);
+    if (fix) {
+      a.task = { type: "fixconduit", target: fix.cell };
+      a.path = fix.path;
       return;
     }
   }
@@ -626,6 +644,10 @@ function releaseTask(w: World, a: Agent): void {
     const b = w.breaches.find((x) => x.sealer === a.id);
     if (b) b.sealer = -1; // unclaim so another crew member can finish it
   }
+  if (a.task && a.task.type === "fixconduit") {
+    const c = w.conduits.find((x) => x.cell === a.task!.target && x.repairBy === a.id);
+    if (c) c.repairBy = -1; // unclaim so another crew member can finish it
+  }
   // a dropped haul shouldn't vanish the unit — bank it back in the warehouse
   if (a.task && a.task.type === "haul" && a.task.good) {
     const g = a.task.good;
@@ -725,6 +747,24 @@ function nearestDockAccess(w: World, start: number): Found | null {
 }
 
 // Claim the nearest worn, unclaimed machine that needs servicing.
+// Claim the nearest broken (hp<=0) conduit a crew member can reach + see, and
+// walk onto it to repair. The conduit sits on a walkable deck cell.
+function claimConduitRepair(w: World, a: Agent, start: number): { cell: number; path: number[] } | null {
+  const broken = w.conduits.filter(
+    (c) => c.hp <= 0 && ((c.repairBy ?? -1) < 0 || c.repairBy === a.id) && canSee(w, a, c.cell),
+  );
+  broken.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const c of broken) {
+    if (!nativeAt(w, a, c.cell) && a.suit < VENTURE_SUIT) continue; // need air or a charged suit
+    const path = findPath(w, start, c.cell);
+    if (path) {
+      c.repairBy = a.id;
+      return { cell: c.cell, path };
+    }
+  }
+  return null;
+}
+
 function claimService(w: World, a: Agent, start: number): Found | null {
   const jobs = Object.values(w.structures).filter(
     (s) =>

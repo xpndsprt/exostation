@@ -11,6 +11,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Wall | 3 |
 | Door (airlock) | 25 |
 | Storage Floor (airless; lamp-only; raises caps) | 3 |
+| Power Conduit (relays the power grid; wears + breaks) | 1 |
 
 ## Modules
 | Module | Cost ¢ | Footprint | Notes |

@@ -113,8 +113,10 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
       return c.type !== "wall";
     case "door":
       return c.type !== "door";
+    case "conduit":
+      return (c.type === "floor" || c.type === "storage") && !w.conduits.some((k) => k.cell === idx(w, x, y));
     case "erase":
-      return c.structureId >= 0 || c.type !== "space";
+      return c.structureId >= 0 || c.type !== "space" || w.conduits.some((k) => k.cell === idx(w, x, y));
     default:
       if (STRUCTURE_KINDS.has(tool)) return c.type === "floor" && c.structureId < 0;
       return false; // pan / select have no placement
@@ -123,7 +125,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
 
 // Tools that paint over an area via click-drag (rectangle fill).
 export function isAreaTool(tool: Tool): boolean {
-  return tool === "floor" || tool === "storage" || tool === "wall" || tool === "erase";
+  return tool === "floor" || tool === "storage" || tool === "wall" || tool === "conduit" || tool === "erase";
 }
 
 // Inclusive rectangle of cell indices between two corners.

@@ -54,7 +54,16 @@ export type Temp = "cold" | "temperate" | "hot";
 // lethal mix of incompatible gases.
 export type RoomGas = "none" | GasKind | "mixed";
 
-export type Tool = "floor" | "wall" | "door" | "storage" | "erase" | "pan" | "select" | StructureKind;
+export type Tool = "floor" | "wall" | "door" | "storage" | "conduit" | "erase" | "pan" | "select" | StructureKind;
+
+// A power conduit laid on a floor/storage cell. Relays the power grid's reach
+// across the station; wears down and, at hp 0, breaks (stops conducting) until a
+// crew member repairs it.
+export interface Conduit {
+  cell: number;
+  hp: number; // 0..100; <=0 = broken (does not conduct)
+  repairBy?: number; // agent id currently repairing it (-1/undefined = none)
+}
 
 export type Selection = { kind: "agent" | "structure" | "site"; id: number } | null;
 
@@ -99,7 +108,7 @@ export interface Structure {
   inBuf: number; // input feedstock units crew have delivered, ready to consume (Synth)
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court" | "haul";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court" | "haul" | "fixconduit";
 
 // An open hull breach (a vented wall cell) awaiting emergency repair by crew.
 export interface Breach {
@@ -367,6 +376,7 @@ export interface World {
   stars: Star[]; // the system's star(s) — one central, or a binary pair
   comets: Comet[]; // decorative comets criss-crossing the Star Chart
   ships: Ship[];
+  conduits: Conduit[]; // power cabling: relays grid reach across the station, decays + breaks
   gods: God[]; // active race-gods drifting past (gods.ts)
   godTimer: number; // accumulator toward the next god visit
   godVerdict: { species: Species; verdict: "pleased" | "wrathful" | "neutral"; weird?: WeirdGod } | null; // pending god-dialog popup

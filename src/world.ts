@@ -21,6 +21,7 @@ export function createWorld(): World {
     stars: [],
     comets: [],
     ships: [],
+    conduits: [],
     gods: [],
     godTimer: 0,
     godVerdict: null,
@@ -455,16 +456,32 @@ export function addBody(
   return id;
 }
 
-// Erase: remove a structure if present, else clear the floor to space.
+// Erase: remove a conduit if present, else a structure, else clear floor to space.
 export function eraseAt(w: World, x: number, y: number): void {
   if (!inBounds(w, x, y)) return;
   const i = idx(w, x, y);
+  const ci = w.conduits.findIndex((c) => c.cell === i);
+  if (ci >= 0) {
+    w.conduits.splice(ci, 1);
+    return;
+  }
   const c = w.cells[i];
   if (c.structureId >= 0) {
     removeStructure(w, c.structureId);
     return;
   }
   setCell(w, x, y, "space");
+}
+
+// Lay a conduit on a floor/storage cell (one per cell). Returns true if added.
+export function addConduit(w: World, x: number, y: number): boolean {
+  if (!inBounds(w, x, y)) return false;
+  const i = idx(w, x, y);
+  const t = w.cells[i].type;
+  if (t !== "floor" && t !== "storage") return false; // only on deck
+  if (w.conduits.some((c) => c.cell === i)) return false; // already wired
+  w.conduits.push({ cell: i, hp: 100, repairBy: -1 });
+  return true;
 }
 
 export function addAgent(

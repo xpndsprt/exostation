@@ -66,7 +66,7 @@ export function aiBoost(w: { structures: Record<number, { kind: StructureKind; p
 }
 
 // Build cost of the basic structural tiles (credits).
-export const TILE_COST: Record<string, number> = { floor: 2, wall: 3, door: 25, storage: 3 };
+export const TILE_COST: Record<string, number> = { floor: 2, wall: 3, door: 25, storage: 3, conduit: 1 };
 
 // Build cost for any tool that places something; 0 for tools/cursors.
 export function costOf(tool: string): number {

@@ -3,10 +3,56 @@ import { STRUCTURES } from "./structures";
 
 const FUSION_FUEL = 0.6; // minerals/s burned by a running Fusion Reactor
 
-// Station-wide single power network (MVP simplification — no conduit routing).
-// Supply vs draw; battery buffers surplus; brownouts shed consumers by
-// ascending priority so Life Support (high priority) stays on the longest.
+// Power network with conduit routing. Supply vs draw with a battery buffer and
+// priority brownout, PLUS spatial reach: power radiates a few tiles from every
+// generator/battery, and a non-broken conduit relays it onward (refreshing the
+// reach), so distant modules need cabling. A consumer the grid can't reach is dark.
 const SURGE_BONUS = 9999; // free supply a weird-god power surge adds to the grid
+const SOURCE_REACH = 6; // tiles a generator/battery radiates power (Chebyshev)
+const CONDUIT_REACH = 6; // tiles a conduit relays onward (resets the budget)
+
+// Returns a per-cell flag: is this cell within the energized power grid? Power
+// spreads from source cells (generators/batteries) up to SOURCE_REACH through any
+// cell; stepping onto a non-broken conduit resets the budget to CONDUIT_REACH, so
+// chains of conduit carry power across the whole station.
+function gridReach(w: World): Int8Array {
+  const N = w.w * w.h;
+  const best = new Int8Array(N).fill(-1); // best remaining budget reaching each cell
+  const conduit = new Uint8Array(N); // non-broken conduit cells
+  for (const c of w.conduits) if (c.hp > 0) conduit[c.cell] = 1;
+  const q: number[] = [];
+  for (const id in w.structures) {
+    const s = w.structures[id];
+    const def = STRUCTURES[s.kind];
+    if (def.gen <= 0 && def.battery <= 0) continue; // only generators/batteries anchor the grid
+    for (const cell of s.cells ?? [s.cell]) {
+      if (best[cell] < SOURCE_REACH) { best[cell] = SOURCE_REACH; q.push(cell); }
+    }
+  }
+  let head = 0;
+  while (head < q.length) {
+    const c = q[head++];
+    const b = best[c];
+    if (b <= 0) continue; // reached but out of budget — can't radiate further
+    const cx = c % w.w, cy = (c / w.w) | 0;
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue;
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || ny < 0 || nx >= w.w || ny >= w.h) continue;
+        const n = ny * w.w + nx;
+        const nb = conduit[n] ? CONDUIT_REACH : b - 1; // conduits relay (refresh reach)
+        if (nb > best[n]) { best[n] = nb; q.push(n); }
+      }
+  }
+  return best;
+}
+
+// Is any footprint cell of a structure within the energized grid?
+function onGrid(reach: Int8Array, s: Structure): boolean {
+  for (const cell of s.cells ?? [s.cell]) if (reach[cell] >= 0) return true;
+  return false;
+}
 
 export function powerSystem(w: World, dt: number): void {
   // A weird-god blackout ("The Hollow") kills the whole grid for its duration —
@@ -24,12 +70,24 @@ export function powerSystem(w: World, dt: number): void {
   let batteryMax = 0;
   let draw = 0;
   const consumers: Structure[] = [];
+  const reach = gridReach(w); // which cells the cabling/generators energize
+  // Only gate on grid-reach when a generator/battery actually exists. With none at
+  // all it's a total blackout — let the normal supply/brownout path handle that, so
+  // an off-grid module reads as "unwired", not the whole station as a brownout.
+  let hasSource = false;
+  for (const id in w.structures) { const d = STRUCTURES[w.structures[id].kind]; if (d.gen > 0 || d.battery > 0) { hasSource = true; break; } }
 
   for (const id in w.structures) {
     const s = w.structures[id];
     const def = STRUCTURES[s.kind];
     // broken machinery (worn to 0) is dead: no draw, no function
     if (def.draw > 0 && s.condition <= 0) {
+      s.powered = false;
+      continue;
+    }
+    // a consumer the power grid can't reach (no nearby generator/battery and no
+    // conduit run to it) stays dark — wire it up to bring it online
+    if (hasSource && def.draw > 0 && def.gen <= 0 && def.battery <= 0 && !onGrid(reach, s)) {
       s.powered = false;
       continue;
     }

@@ -144,6 +144,8 @@ function sanitize(w: World): World {
   if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
   if (typeof w.crewTimer !== "number") w.crewTimer = 0;
   if (typeof w.shipCooldown !== "number") w.shipCooldown = 0;
+  if (!Array.isArray(w.conduits)) w.conduits = [];
+  for (const c of w.conduits) { if (typeof c.hp !== "number") c.hp = 100; c.repairBy = -1; } // drop stale claims
   if (typeof w.creditRate !== "number") w.creditRate = 0;
   if (typeof w.prevCredits !== "number") w.prevCredits = w.credits;
   if (w.phase !== "won" && w.phase !== "lost") w.phase = "playing";
