@@ -162,6 +162,7 @@ function sanitize(w: World): World {
   if (typeof w.reqTimer !== "number") w.reqTimer = 0;
   if (!Array.isArray(w.eggs)) w.eggs = [];
   if (!Array.isArray(w.pests)) w.pests = [];
+  if (!Array.isArray(w.boarders)) w.boarders = [];
   if (w.breedOffer === undefined) w.breedOffer = null;
   if (typeof w.breedTimer !== "number") w.breedTimer = 0;
   if (typeof w.barTimer !== "number") w.barTimer = 0;

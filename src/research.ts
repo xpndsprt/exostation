@@ -57,13 +57,12 @@ export function isUnlocked(w: World, id: string): boolean {
   return !!w.unlocked[id];
 }
 
-// Lodging (Crew Quarters / Hotel Rooms) is prepped per-species. Human & Drenn are
-// free; every other species' lodging is gated by the research that lets you host
-// them anyway, so you can only prep a room for a species you've unlocked.
+// Lodging (Crew Quarters / Hotel Rooms) is prepped per-species. The first four
+// races (Human, Drenn, Thol, Vry'l) are free to house from the start; every
+// later species' lodging is gated by the research that lets you host them anyway,
+// so you can only prep a room for a species you've unlocked.
 const LODGING_GATE: Partial<Record<Species, string>> = {
   korro: "robotics",
-  vryl: "fungal",
-  thol: "methane",
   vorn: "methane",
   chlorithe: "chlorine",
   naaz: "ammonia",

@@ -9,7 +9,8 @@ import { getRep, requestText } from "./requests";
 import { moodBreakdown } from "./mood";
 import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
-import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch } from "./research";
+import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch, lodgingUnlocked } from "./research";
+import { RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { BEACON_SPECIES, moduleActive } from "./beacon";
 import { encounterText, encounterChoices } from "./encounters";
 import { coupleOf } from "./romance";
@@ -142,6 +143,9 @@ export interface UIHandlers {
 }
 
 const toolButtons = new Map<Tool, HTMLButtonElement>();
+// Lodging is broken out per species (Crew Quarters + Hotel Room, one button each
+// per race). Keyed `${tool}:${species}`; locked individually by lodgingUnlocked.
+const lodgingButtons = new Map<string, HTMLButtonElement>();
 let speedButtons: HTMLButtonElement[] = [];
 let overlayButtons = new Map<OverlayMode, HTMLButtonElement>();
 let saveBtn: HTMLButtonElement | null = null;
@@ -213,6 +217,34 @@ function buildPalette(state: UIState, handlers: UIHandlers): void {
       grid.className = "pal-grid";
       bar.appendChild(grid);
     }
+    // Lodging is split into one button per species (prepped for that race).
+    if (entry.t === "pod" || entry.t === "hotel") {
+      const base = entry.t === "pod" ? "Quarters" : "Hotel";
+      const cost = costOf(entry.t);
+      // Crew Quarters only for resident species; Hotel Rooms only for visitors
+      // (Drenn & Vorn never reside — they only ever come as guests).
+      const species = entry.t === "pod" ? RESIDENT_SPECIES : HOTEL_SPECIES;
+      for (const sp of species) {
+        const b = document.createElement("button");
+        const label = `${base}: ${SPECIES[sp].label}`;
+        b.dataset.label = label;
+        b.dataset.tool = entry.t;
+        b.dataset.species = sp;
+        b.style.borderLeft = `3px solid ${SP_COLOR[sp]}`;
+        b.innerHTML = `<span class="nm">${label}</span><span class="hk">¢${cost}</span>`;
+        b.title = label; // full name on hover (truncates in the grid)
+        b.onclick = () => {
+          if (b.classList.contains("locked")) return; // species not researched yet
+          state.lodgingSpecies = sp;
+          setActiveTool(entry.t, state);
+          b.classList.add("active");
+        };
+        b.ondblclick = () => handlers.onCycle(entry.t);
+        lodgingButtons.set(`${entry.t}:${sp}`, b);
+        (grid ?? bar).appendChild(b);
+      }
+      continue;
+    }
     const b = document.createElement("button");
     const cost = costOf(entry.t);
     const costStr = cost > 0 ? `¢${cost}` : "";
@@ -222,7 +254,8 @@ function buildPalette(state: UIState, handlers: UIHandlers): void {
     b.onclick = () => setActiveTool(entry.t, state);
     // double-click a build tool to pan-cycle through its placed instances
     if (entry.t in STRUCTURES) b.ondblclick = () => handlers.onCycle(entry.t);
-    b.title = entry.t in STRUCTURES ? "Double-click to find placed ones" : "";
+    // hover shows the full name (the label truncates in the 3-col grid)
+    b.title = entry.label + (entry.t in STRUCTURES ? " · double-click to find placed ones" : "");
     toolButtons.set(entry.t, b);
     (grid ?? bar).appendChild(b);
   }
@@ -244,6 +277,7 @@ export function setActiveTool(tool: Tool, state: UIState): void {
   if (lockedTools.has(tool)) return; // can't select tech that isn't researched yet
   state.tool = tool;
   for (const [, b] of toolButtons) b.classList.remove("active");
+  for (const [, b] of lodgingButtons) b.classList.remove("active");
   toolButtons.get(tool)?.classList.add("active");
   showTab("palette"); // picking a tool (incl. via hotkey) reveals the Build tab
 }
@@ -264,12 +298,21 @@ export function refreshPalette(world: World): void {
     } else {
       btn.classList.remove("locked");
       if (nm) nm.textContent = btn.dataset.label || "";
-      btn.title = tool in STRUCTURES ? "Double-click to find placed ones" : "";
+      btn.title = (btn.dataset.label || "") + (tool in STRUCTURES ? " · double-click to find placed ones" : "");
       if (prevLocked.has(tool)) {
         btn.classList.add("revealed"); // just researched — light it up
         setTimeout(() => btn.classList.remove("revealed"), 1100);
       }
     }
+  }
+  // per-species lodging: lock the races you can't host yet (first 4 are free)
+  for (const [key, btn] of lodgingButtons) {
+    const sp = key.split(":")[1] as Species;
+    const locked = !lodgingUnlocked(world, sp);
+    btn.classList.toggle("locked", locked);
+    const nm = btn.querySelector(".nm") as HTMLElement | null;
+    if (nm) nm.textContent = locked ? "🔒 " + (btn.dataset.label || "") : (btn.dataset.label || "");
+    btn.title = locked ? `${btn.dataset.label} — locked: research to host the ${SPECIES[sp].label}` : (btn.dataset.label || "");
   }
 }
 
@@ -1247,10 +1290,13 @@ export function showEncounter(enc: Encounter, onChoose: (choice: number) => void
     return;
   }
   encShown = true;
+  // A complaint is ONE crew member griping about a module — show the crew + the
+  // module, not two identical crew portraits (aId === bId for a complaint).
+  const isComplaint = enc.kind === "complaint";
   drawSpeciesArt(el.querySelector(".enc-a") as HTMLCanvasElement, enc.aSpecies);
-  drawSpeciesArt(el.querySelector(".enc-b") as HTMLCanvasElement, enc.bSpecies);
+  drawSpeciesArt(el.querySelector(".enc-b") as HTMLCanvasElement, isComplaint && enc.subjectKind ? enc.subjectKind : enc.bSpecies);
   (el.querySelector(".enc-vs") as HTMLElement).textContent =
-    enc.kind === "conflict" ? "✕" : enc.kind === "deal" ? "🤝" : enc.kind === "complaint" ? "🔧" : "♥";
+    enc.kind === "conflict" ? "✕" : enc.kind === "deal" ? "🤝" : isComplaint ? "🔧" : "♥";
   const t = encounterText(enc);
   (el.querySelector(".enc-title") as HTMLElement).textContent = t.title;
   (el.querySelector(".enc-body") as HTMLElement).textContent = t.body;

@@ -1,32 +1,10 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
 import { createWorld, setCell, addStructureMulti, addDock, addBay, seedSolarSystem, eraseAt, inBounds, idx } from "./world";
-import { recomputeRooms } from "./rooms";
-import { powerSystem } from "./power";
-import { maintenanceSystem } from "./maintenance";
-import { miningSystem } from "./mining";
-import { foodSystem } from "./food";
-import { fuelSystem } from "./fuel";
-import { overflowSystem } from "./overflow";
-import { atmosphereSystem } from "./atmosphere";
-import { hazardSystem } from "./hazards";
-import { godsSystem } from "./gods";
-import { storySystem } from "./story";
-import { harmonySystem } from "./harmony";
-import { agentSystem } from "./agents";
-import { moodSystem } from "./mood";
-import { combatSystem } from "./combat";
-import { medicalSystem } from "./medical";
-import { encountersSystem } from "./encounters";
-import { spawnSystem, resolveBreed } from "./spawn";
-import { barSystem } from "./bar";
-import { romanceSystem } from "./romance";
+import { simStep, refresh } from "./sim";
+import { resolveBreed } from "./spawn";
 import { defeatReasons, emperorLetter } from "./defeat";
-import { economySystem, RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
-import { eventsSystem } from "./events";
-import { requestsSystem } from "./requests";
-import { beaconSystem } from "./beacon";
-import { objectivesSystem } from "./objectives";
+import { RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { buyUnlock, toolLock, isUnlocked, UNLOCKS, canResearch, lodgingUnlocked } from "./research";
 import { updateSeen } from "./advisor";
 import { resolveEncounter } from "./encounters";
@@ -80,7 +58,7 @@ import {
 import { TILE, COLORS, SIM_HZ } from "./config";
 import { STRUCTURES, costOf, isDock } from "./structures";
 import { SPECIES } from "./species";
-import { HoverTarget, OverlayMode, Phase, Selection, Species, Speed, StructureKind, UIState, World } from "./types";
+import { HoverTarget, OverlayMode, Phase, Selection, Species, Speed, StructureKind, UIState } from "./types";
 
 const STEP = 1 / SIM_HZ;
 
@@ -99,41 +77,6 @@ const NOTIFY_SFX: [RegExp, string][] = [
 function sfxForNotify(msg: string): string {
   for (const [re, id] of NOTIFY_SFX) if (re.test(msg)) return id;
   return "";
-}
-
-function simStep(world: World, dt: number): void {
-  if (world.dirtyRooms) recomputeRooms(world);
-  powerSystem(world, dt);
-  maintenanceSystem(world, dt);
-  miningSystem(world, dt);
-  foodSystem(world, dt);
-  fuelSystem(world, dt);
-  overflowSystem(world, dt);
-  atmosphereSystem(world);
-  hazardSystem(world, dt);
-  harmonySystem(world);
-  agentSystem(world, dt);
-  moodSystem(world, dt);
-  combatSystem(world, dt);
-  medicalSystem(world, dt);
-  spawnSystem(world, dt);
-  economySystem(world, dt);
-  eventsSystem(world, dt);
-  godsSystem(world, dt);
-  storySystem(world, dt);
-  requestsSystem(world, dt);
-  encountersSystem(world, dt);
-  barSystem(world, dt);
-  romanceSystem(world, dt);
-  beaconSystem(world, dt);
-  objectivesSystem(world, dt);
-  world.tick++;
-}
-
-function refresh(world: World): void {
-  if (world.dirtyRooms) recomputeRooms(world);
-  powerSystem(world, 0);
-  atmosphereSystem(world);
 }
 
 async function boot(): Promise<void> {
@@ -425,11 +368,25 @@ async function boot(): Promise<void> {
     onStarChart: (bayId) => {
       // Open the orbital chart for this bay; clicking a body dispatches its drone.
       showStarChart(world, bayId, (siteId) => {
-        for (const id in world.drones) {
-          const d = world.drones[id];
-          if (d.bayId !== bayId) continue;
-          d.siteId = siteId; // applies now if docked; otherwise on its next return
-          break;
+        let assigned = false;
+        if (bayId >= 0) {
+          for (const id in world.drones) {
+            const d = world.drones[id];
+            if (d.bayId !== bayId) continue;
+            d.siteId = siteId; // applies now if docked; otherwise on its next return
+            assigned = true;
+            break;
+          }
+        }
+        if (!assigned) {
+          // negative confirmation: nothing to send out
+          pushAlert(
+            bayId < 0
+              ? "No drone available — build a Bot Bay (it comes with a mining drone)."
+              : "No drone available — it was lost; the bay is rebuilding one.",
+            "warn",
+          );
+          return;
         }
         needRedraw = true;
       });
@@ -504,6 +461,18 @@ async function boot(): Promise<void> {
       ok = addBay(world, tx, ty); // hull-mounted, like a dock
     } else if (isDock(tool as StructureKind)) {
       ok = addDock(world, tx, ty, tool as StructureKind);
+    } else if (tool === "pod" || tool === "hotel") {
+      // lodging is prepped per species; block races you can't host yet
+      const sp = state.lodgingSpecies;
+      if (sp && !lodgingUnlocked(world, sp)) { audio.play("build-invalid"); return; }
+      const fp = footprintCells(world, tool as StructureKind, tx, ty);
+      if (fp) {
+        ok = addStructureMulti(world, tool as StructureKind, fp);
+        if (ok && sp) {
+          const sid = world.cells[fp[0]].structureId;
+          if (sid >= 0 && world.structures[sid]) world.structures[sid].recipe = sp;
+        }
+      }
     } else if ((STRUCTURE_TOOLS as string[]).includes(tool)) {
       const fp = footprintCells(world, tool as StructureKind, tx, ty);
       if (fp) ok = addStructureMulti(world, tool as StructureKind, fp);

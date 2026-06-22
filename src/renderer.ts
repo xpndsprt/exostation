@@ -45,8 +45,8 @@ const LAMP_INTENSITY = 0.95;
 // Light mount heights for the height-field shadow march (cells of elevation).
 // A taller occluder between a cell and the light shadows that cell; the higher
 // the light sits, the shorter the shadows it throws.
-const LIGHT_MOUNT = 1.4; // module/lamp fixtures ride high on the bulkheads
-const LAMP_MOUNT = 1.05; // a handheld crew lamp is lower → longer ground shadows
+const LIGHT_MOUNT = 0.95; // module fixtures — low enough that module heights throw real shadows
+const LAMP_MOUNT = 0.55; // a handheld crew lamp rides low → long, sweeping ground shadows
 // modules that emit light while powered: [radius in CELLS, color, intensity]
 const GLOW: Partial<Record<StructureKind, [number, number, number]>> = {
   lamp: [4.2, 0xfff0cf, 1.0],
@@ -937,6 +937,17 @@ export class Renderer {
         g.rect(cx - r, cy - r - 6, r * 2, 2).fill(0x11151c);
         g.rect(cx - r, cy - r - 6, r * 2 * (p.health / 40), 2).fill(0xe24b4b);
       }
+    }
+    // Boarding raiders: hostile red figures storming the station (no sprite — a
+    // crude humanoid drawn with graphics, with a health bar as the crew fight them).
+    for (const b of world.boarders ?? []) {
+      const [cx, cy] = center(b.cell);
+      g.circle(cx, cy, TILE * 0.44).fill({ color: 0xff2a2a, alpha: 0.12 + 0.1 * pulse });
+      g.circle(cx, cy - TILE * 0.14, TILE * 0.13).fill({ color: 0x2a0808 }); // head
+      g.roundRect(cx - TILE * 0.16, cy - TILE * 0.02, TILE * 0.32, TILE * 0.34, 2).fill({ color: 0xb4202a }); // body
+      const r = TILE * 0.34;
+      g.rect(cx - r, cy - r - 6, r * 2, 2).fill(0x11151c);
+      g.rect(cx - r, cy - r - 6, r * 2 * Math.max(0, b.health / 70), 2).fill(0xff4357);
     }
   }
 

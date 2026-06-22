@@ -266,6 +266,16 @@ export interface Pest {
   moveAcc: number; // 0..1 movement accumulator
 }
 
+// A boarding raider: a hostile humanoid that storms in from a raided dock, smashes
+// modules and attacks crew until the crew/turrets put it down or it withdraws.
+export interface Boarder {
+  id: number;
+  cell: number;
+  health: number; // 0..100
+  moveAcc: number; // 0..1 movement accumulator
+  t: number; // seconds before it withdraws to its ship
+}
+
 // A pending reproduction offer: a contented species asks to lay a clutch and
 // offers credits for your blessing. Paused dialog; one at a time (serializable).
 export interface BreedOffer {
@@ -375,6 +385,7 @@ export interface World {
   storyTimer: number; // accumulator toward the next chronicle entry
   eggs: Egg[]; // incubating clutches laid by contented species (spawn.ts)
   pests: Pest[]; // spiders hatched from bad eggs, hunted by the crew
+  boarders: Boarder[]; // raiders that stormed the station from a raided dock (boarding.ts)
   breedOffer: BreedOffer | null; // a pending "may we lay a clutch?" dialog
   breedTimer: number; // accumulator toward the next reproduction offer
   barTimer: number; // accumulator toward the next Bar social event (bar.ts)
@@ -389,4 +400,5 @@ export interface World {
 
 export interface UIState {
   tool: Tool;
+  lodgingSpecies?: Species; // which species the next Crew Quarters / Hotel Room is prepped for
 }

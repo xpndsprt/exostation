@@ -7,6 +7,7 @@ type Bus = "ui" | "world" | "music";
 const BUS_VOL: Record<Bus, number> = { ui: 0.6, world: 0.9, music: 0.45 };
 const MASTER_VOL = 0.8;
 const MUSIC_VOL = 0.135; // soundtrack at 15% of the SFX (world-bus 0.9) level
+const TAPE = true; // run the soundtrack through an "old Aiwa tape deck" coloring
 const MUTE_KEY = "exo.muted";
 
 let ctx: AudioContext | null = null;
@@ -98,6 +99,39 @@ function reshuffle(): void {
   } while (order.length > 1 && order[0] === last); // don't repeat across the seam
   musicPos = 0;
 }
+// Soft-clip curve for tape saturation (gentle tanh — warm, slightly compressed).
+function tapeSaturationCurve(amount = 1.7) {
+  const n = 1024, c = new Float32Array(new ArrayBuffer(n * 4));
+  for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = Math.tanh(x * amount); }
+  return c;
+}
+
+// Color the music path like a worn cassette deck: band-limit (dull highs, thin
+// lows) + a mid "boxy" bump, soft-saturate, then warble the pitch with a delay
+// modulated by a slow WOW and a faster FLUTTER LFO, and lay a faint hiss bed
+// underneath (routed to master so Mute kills it too). src → … → out.
+function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode, master: AudioNode): void {
+  const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 70;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 8500;
+  const mid = c.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1600; mid.Q.value = 0.8; mid.gain.value = 3;
+  const shaper = c.createWaveShaper(); shaper.curve = tapeSaturationCurve(1.7); shaper.oversample = "2x";
+  const delay = c.createDelay(0.1); delay.delayTime.value = 0.02; // base; the LFOs wobble it
+  const wow = c.createOscillator(); wow.frequency.value = 0.6;
+  const wowAmt = c.createGain(); wowAmt.gain.value = 0.0035; wow.connect(wowAmt).connect(delay.delayTime);
+  const flutter = c.createOscillator(); flutter.frequency.value = 7.5;
+  const flutAmt = c.createGain(); flutAmt.gain.value = 0.0009; flutter.connect(flutAmt).connect(delay.delayTime);
+  wow.start(); flutter.start();
+  src.connect(hp); hp.connect(lp); lp.connect(mid); mid.connect(shaper); shaper.connect(delay); delay.connect(out);
+  // hiss: filtered white noise, faint and constant (the deck running)
+  const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+  const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const noise = c.createBufferSource(); noise.buffer = buf; noise.loop = true;
+  const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 5500; bp.Q.value = 0.6;
+  const hissGain = c.createGain(); hissGain.gain.value = 0.009;
+  noise.connect(bp).connect(hissGain).connect(master);
+  noise.start();
+}
+
 function startMusic(): void {
   if (!ctx || !master) return;
   const mods = import.meta.glob("../assets/music/*.mp3", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
@@ -108,7 +142,9 @@ function startMusic(): void {
   gain.connect(master);
   musicEl = new Audio();
   musicEl.preload = "auto";
-  ctx.createMediaElementSource(musicEl).connect(gain); // route through the mixer
+  const src = ctx.createMediaElementSource(musicEl); // route through the mixer
+  if (TAPE) tapeChain(ctx, src, gain, master);
+  else src.connect(gain);
   musicEl.addEventListener("ended", () => {
     musicPos++;
     if (musicPos >= order.length) reshuffle();

@@ -1,7 +1,7 @@
 // Headless sanity check for the M2/M3 systems. Run: npx tsx scripts/simcheck.ts
 import { createWorld, setCell, addStructure, addStructureMulti, addDock, canDock, addBody, seedSolarSystem, addAgent, eraseAt, idx } from "../src/world";
 import { solarFootprint, footprintCells, canPlace, rectCells, dragCells } from "../src/placement";
-import { costOf, DOCK_TIER } from "../src/structures";
+import { costOf, DOCK_TIER, STRUCTURES } from "../src/structures";
 import { SPECIES } from "../src/species";
 import { RELATIONS } from "../src/relations";
 import { recomputeRooms } from "../src/rooms";
@@ -30,6 +30,7 @@ import { beaconSystem, beaconActive, beaconCharged } from "../src/beacon";
 import { objectivesSystem, currentObjective } from "../src/objectives";
 import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlocked, UNLOCKS, highTierModule, lodgingUnlocked } from "../src/research";
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
+import { boardingSystem, spawnBoardingParty } from "../src/boarding";
 import { godsSystem, GODS, WEIRD_GODS } from "../src/gods";
 import { storySystem, currentYear } from "../src/story";
 import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
@@ -1206,6 +1207,47 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   eventsSystem(w, 0.1);
   check("A powered Turret destroys the raider", !w.ships.some((s) => s.hostile));
 }
+{
+  // boarding raiders: a party storms in, smashes modules, is cut down / withdraws
+  const sumCond = (ww: World): number => Object.values(ww.structures).filter((s) => STRUCTURES[s.kind].draw > 0).reduce((a, s) => a + s.condition, 0);
+
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 6, 8);
+  addStructure(w, "solar", 6, 7); // plenty of power so the dock stays powered
+  addStructure(w, "o2gen", 7, 6);
+  addStructure(w, "vat", 9, 6);
+  addDock(w, 12, 7);
+  powerSystem(w, 0.1);
+  check("A raid spawns a boarding party", forceEvent(w, "raid") && w.boarders.length > 0);
+  const before = sumCond(w);
+  for (let i = 0; i < 90; i++) boardingSystem(w, 0.1);
+  check("Boarders wreck modules from inside", sumCond(w) < before);
+
+  // a powered Turret's covering fire wipes the party
+  const wt = createWorld();
+  carve(wt, 5, 5, 10, 9);
+  recomputeRooms(wt);
+  addStructure(wt, "solar", 6, 6);
+  addStructure(wt, "solar", 6, 8); // power for the turret
+  addStructure(wt, "turret", 7, 6);
+  addDock(wt, 10, 7);
+  powerSystem(wt, 0.1);
+  spawnBoardingParty(wt, 3, 18);
+  let steps = 0; while (wt.boarders.length > 0 && steps < 100) { boardingSystem(wt, 0.1); steps++; }
+  check("A powered Turret wipes the boarding party", wt.boarders.length === 0);
+
+  // boarders withdraw once their lifetime runs out
+  const ww = createWorld();
+  carve(ww, 5, 5, 9, 8);
+  recomputeRooms(ww);
+  addDock(ww, 9, 6);
+  spawnBoardingParty(ww, 2, 1); // 1s aboard
+  for (let i = 0; i < 20; i++) boardingSystem(ww, 0.1); // 2s
+  check("Boarders withdraw after their lifetime", ww.boarders.length === 0);
+}
 
 // --- M34: independent named save slots ---
 {
@@ -2089,12 +2131,12 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("A Korro uses a Korro-prepped bunk", slept);
 }
 {
-  // lodging gating: Human & Drenn are free; others need their host research
+  // lodging gating: the first four races are free; later ones need host research
   const w = createWorld();
-  check("Human & Drenn lodging is free", lodgingUnlocked(w, "human") && lodgingUnlocked(w, "drenn"));
-  check("Thol lodging is gated until researched", !lodgingUnlocked(w, "thol"));
-  w.unlocked.methane = true;
-  check("Methane Life-Support unlocks Thol lodging", lodgingUnlocked(w, "thol"));
+  check("First four races' lodging is free", lodgingUnlocked(w, "human") && lodgingUnlocked(w, "drenn") && lodgingUnlocked(w, "thol") && lodgingUnlocked(w, "vryl"));
+  check("Later races' lodging is gated until researched", !lodgingUnlocked(w, "korro") && !lodgingUnlocked(w, "voltaar"));
+  w.unlocked.robotics = true;
+  check("Robotics unlocks Korro lodging", lodgingUnlocked(w, "korro"));
 }
 
 // --- Race-gods: visit + judge a species' contentment ---
