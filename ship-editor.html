@@ -81,7 +81,7 @@
   <div class="col">
     <div class="stage">
       <div>
-        <div class="cvlabel">SHIP — nose points up · bottom lands on the pad</div>
+        <div class="cvlabel">SHIP — TOP-DOWN (overhead, as seen in game) · nose points up</div>
         <canvas id="cv"></canvas>
       </div>
       <div>
@@ -151,32 +151,42 @@ let sprite = getShip(curId);
 // opts: { markers:bool, legExt:0..1, vapor:0..1, blink:0..1, scale, ox, oy }
 function drawShip(ctx, sp, scale, ox, oy, opts = {}) {
   const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(ox + x * scale, oy + y * scale, w * scale, h * scale); };
-  // landing legs (under the hull) first so the hull sits on top
+  const t = opts.t || 0;
+  const C = RES / 2; // ship centre (top-down)
+  // landing legs (UNDER the hull) — top-down they splay OUTWARD from the hull to a
+  // foot pad on the deck.
   const legExt = opts.legExt ?? 0;
   if (legExt > 0) {
-    ctx.strokeStyle = "#9aa6b2"; ctx.lineWidth = Math.max(1.5, scale * 0.6); ctx.lineCap = "round";
+    ctx.strokeStyle = "#9aa6b2"; ctx.lineWidth = Math.max(1.5, scale * 0.5); ctx.lineCap = "round";
     for (const m of sp.legs) {
       const bx = ox + (m.x + 0.5) * scale, by = oy + (m.y + 0.5) * scale;
-      const len = scale * 7 * legExt, sx = (m.x < RES / 2 ? -1 : 1);
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + sx * scale * 3 * legExt, by + len); ctx.stroke();
-      ctx.fillStyle = "#c6d0db"; ctx.beginPath(); ctx.arc(bx + sx * scale * 3 * legExt, by + len, scale * 0.9, 0, 7); ctx.fill(); // foot pad
+      let dx = (m.x + 0.5) - C, dy = (m.y + 0.5) - C; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+      const len = scale * 5 * legExt, fx = bx + dx * len, fy = by + dy * len;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(fx, fy); ctx.stroke();
+      ctx.fillStyle = "#c6d0db"; ctx.beginPath(); ctx.arc(fx, fy, scale * 0.85, 0, 7); ctx.fill(); // foot pad
     }
   }
-  // hull pixels
-  for (let y = 0; y < RES; y++) for (let x = 0; x < RES; x++) { const c = sp.pixels[y * RES + x]; if (c) px(x, y, 1, 1, c); }
-  // thruster vapor (downward plume from each thruster)
+  // thruster vapor (UNDER the hull) — top-down, billows OUTWARD across the deck from
+  // each thruster (away from the ship centre), expanding + fading.
   const vapor = opts.vapor ?? 0;
   if (vapor > 0) {
     for (const m of sp.thrusters) {
-      const tx = ox + (m.x + 0.5) * scale, ty = oy + (m.y + 1) * scale;
+      let dx = (m.x + 0.5) - C, dy = (m.y + 0.5) - C; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+      const px0 = m.x + 0.5, py0 = m.y + 0.5;
       for (let k = 0; k < 6; k++) {
-        const f = k / 6;
-        const r = scale * (0.8 + f * 2.4) * vapor;
-        ctx.fillStyle = `rgba(${230 - f * 60},${238 - f * 40},255,${(1 - f) * 0.5 * vapor})`;
-        ctx.beginPath(); ctx.arc(tx + (Math.sin(k * 1.7 + (opts.t || 0) * 6) * scale * f), ty + f * scale * 6 * vapor, r, 0, 7); ctx.fill();
+        const phase = ((t * 0.8 + k / 6) % 1);
+        const dist = phase * scale * (2 + 5 * vapor);
+        const wob = Math.sin(k * 2.1 + t * 3) * scale * 0.7;
+        const cxp = ox + px0 * scale + dx * dist - dy * wob;
+        const cyp = oy + py0 * scale + dy * dist + dx * wob;
+        const r = scale * (0.6 + phase * 2.2) * (0.5 + vapor);
+        ctx.fillStyle = `rgba(232,240,255,${(1 - phase) * 0.4 * vapor})`;
+        ctx.beginPath(); ctx.arc(cxp, cyp, r, 0, 7); ctx.fill();
       }
     }
   }
+  // hull pixels (drawn over legs + vapor — we look down on the ship)
+  for (let y = 0; y < RES; y++) for (let x = 0; x < RES; x++) { const c = sp.pixels[y * RES + x]; if (c) px(x, y, 1, 1, c); }
   // nav lights (blink)
   const blink = opts.blink ?? 1;
   for (const m of sp.lights) {
@@ -247,30 +257,43 @@ $("import").onclick = () => $("file").click();
 $("file").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { ships = JSON.parse(r.result); sprite = getShip(curId); render(); status("Imported."); } catch { alert("Bad JSON"); } }; r.readAsText(f); };
 function status(msg) { $("status").textContent = msg || `Editing the ${(SPECIES.find((s) => s.id === curId) || {}).label} ship · ${sprite.lights.length} lights · ${sprite.thrusters.length} thrusters · ${sprite.legs.length} legs`; }
 
-// ---------- landing preview (rAF) ----------
+// ---------- landing preview (rAF) — TOP-DOWN, like the game ----------
+// We look straight down on the pad. "Descending" reads as the ship growing toward
+// the camera (with a tightening drop-shadow); on touchdown the legs splay out and
+// vapor billows across the deck; then it idles with blinking lights. Loops.
 const pv = $("prev"), pc = pv.getContext("2d");
 let t0 = null;
+const smooth = (k) => k * k * (3 - 2 * k);
 function preview(ts) {
   if (t0 === null) t0 = ts;
   const t = (ts - t0) / 1000;
-  const cycle = 5.5; // seconds per landing loop
-  const u = (t % cycle) / cycle; // 0..1
+  const cycle = 6; const u = (t % cycle) / cycle; // 0..1
   pc.clearRect(0, 0, pv.width, pv.height);
-  // ground
-  const groundY = pv.height - 40;
   pc.fillStyle = "#0a0e16"; pc.fillRect(0, 0, pv.width, pv.height);
-  pc.strokeStyle = "#22303f"; pc.lineWidth = 2; pc.beginPath(); pc.moveTo(0, groundY); pc.lineTo(pv.width, groundY); pc.stroke();
-  for (let i = 0; i < 5; i++) { pc.fillStyle = (i % 2 ? "#7fffa0" : "#244a2e"); pc.beginPath(); pc.arc(pv.width / 2 - 60 + i * 30, groundY - 4, 2.5, 0, 7); pc.fill(); } // pad lights
-  // flight: descend (0..0.55), settle (0.55..1)
-  const scale = 4.4;
-  const shipH = RES * scale;
-  const topY = -shipH * 0.4, restY = groundY - shipH + scale * 8;
-  let y, vapor, legExt;
-  if (u < 0.55) { const k = u / 0.55; y = topY + (restY - topY) * (k * k * (3 - 2 * k)); vapor = 0.2 + k * 0.9; legExt = Math.max(0, (k - 0.6) / 0.4); }
-  else { y = restY; vapor = Math.max(0, 0.6 - (u - 0.55) / 0.2) ; legExt = 1; }
-  const ox = (pv.width - RES * scale) / 2;
+  const cx = pv.width / 2, cy = pv.height / 2;
+  // top-down landing pad: a square with a chasing ring of corner/edge guide lights
+  const padR = 120;
+  pc.strokeStyle = "#22303f"; pc.lineWidth = 2; pc.strokeRect(cx - padR, cy - padR, padR * 2, padR * 2);
+  pc.strokeStyle = "#1a2533"; pc.strokeRect(cx - padR * 0.6, cy - padR * 0.6, padR * 1.2, padR * 1.2);
   const blink = Math.abs(Math.sin(t * 4));
-  drawShip(pc, sprite, scale, ox, y, { legExt, vapor, blink, t });
+  for (let i = 0; i < 4; i++) {
+    const gx = cx + (i & 1 ? padR - 8 : -(padR - 8)), gy = cy + (i & 2 ? padR - 8 : -(padR - 8));
+    const on = (i % 2 === 0) === (blink > 0.5);
+    pc.fillStyle = on ? "#7fffa0" : "#244a2e"; pc.beginPath(); pc.arc(gx, gy, 3, 0, 7); pc.fill();
+  }
+  // phases: approach (grow) → touchdown (vapor burst + legs splay) → idle
+  const baseScale = 4.6;
+  let s, vapor, legExt;
+  if (u < 0.45) { const k = smooth(u / 0.45); s = 0.5 + 0.5 * k; vapor = k * 0.5; legExt = Math.max(0, (k - 0.75) / 0.25); }
+  else if (u < 0.62) { const k = (u - 0.45) / 0.17; s = 1; vapor = 1 - 0.4 * k; legExt = 1; } // touchdown billow
+  else { s = 1; vapor = Math.max(0, 0.35 - (u - 0.62) * 0.6); legExt = 1; } // settled, idle
+  const scale = baseScale * s;
+  const ox = cx - (RES * scale) / 2, oy = cy - (RES * scale) / 2;
+  // drop shadow under the ship — large/soft when high (small ship), tight when landed
+  const high = 1 - (s - 0.5) / 0.5; // 1 high → 0 landed
+  pc.fillStyle = `rgba(0,0,0,${0.16 + 0.18 * (1 - high)})`;
+  pc.beginPath(); pc.ellipse(cx, cy, RES * scale * (0.34 + 0.12 * high), RES * scale * (0.34 + 0.12 * high), 0, 0, 7); pc.fill();
+  drawShip(pc, sprite, scale, ox, oy, { legExt, vapor, blink, t });
   requestAnimationFrame(preview);
 }
 
