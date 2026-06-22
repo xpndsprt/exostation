@@ -1435,10 +1435,12 @@ export class Renderer {
       cur += dA * 0.18;
       ship.rotV = cur;
       const rot = cur;
-      const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
+      // Dock tier → ship size: a Super berth lands a notably grand ship that fills
+      // its 7×7 pad; a Large berth a clearly bigger one; standard the base size.
+      const sizeMul = ship.size === 3 ? 2.6 : ship.size === 2 ? 1.7 : 1;
       // arrival ring around a parked shuttle
       if (ship.phase === "wait" || ship.phase === undefined) {
-        const r = TILE * (0.55 + 0.22 * Math.sin(phase * Math.PI * 2));
+        const r = TILE * (0.9 + 0.2 * Math.sin(phase * Math.PI * 2)) * sizeMul; // scale with the ship
         const col = ship.hostile ? 0xff4040 : ship.trader ? 0x6fcf97 : 0x9fd8ff;
         g.circle(x, y, r).stroke({ width: ship.hostile ? 2.5 : 2, color: col, alpha: ship.hostile ? 0.8 : 0.55 });
       }
@@ -1463,7 +1465,7 @@ export class Renderer {
       // its own nav lights, landing vapor and legs that splay on touchdown.
       const design = !ship.hostile && ship.race ? RACE_SHIPS.get(ship.race) : undefined;
       if (design) {
-        const sc = (TILE * 2.0 / design.res) * sizeMul * here.scale;
+        const sc = (TILE * 2.2 / design.res) * sizeMul * here.scale;
         const cosr = Math.cos(rot), sinr = Math.sin(rot);
         const toWorld = (lx: number, ly: number): [number, number] => {
           const ddx = (lx - design.res / 2) * sc, ddy = (ly - design.res / 2) * sc;
