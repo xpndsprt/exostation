@@ -85,7 +85,7 @@ export class Wormhole {
 
   // cx,cy in WORLD pixels; baseR sets the full-bloom radius; intensity 0..1.
   update(dt: number, intensity: number, cx: number, cy: number, baseR: number): void {
-    this.t += dt;
+    this.t += dt * 0.5; // 2x slower overall (drives every rotation + pulse below)
     const ramp = Math.min(1, Math.max(0, intensity));
     const grow = 1 / 3 + ramp * (2 / 3); // ~1/3 size at the start → full at 5/5
     this.container.position.set(cx, cy);
@@ -99,12 +99,12 @@ export class Wormhole {
     this.glow.scale.set(1 + Math.sin(this.t * 0.5) * 0.04);
 
     // particles streaming out of the core, spiralling as they go (more when bright)
-    this.spawnAcc += (4 + ramp * 30) * dt;
-    while (this.spawnAcc >= 1 && this.parts.length < 70) {
+    this.spawnAcc += (2 + ramp * 15) * dt; // half the spawn rate (motion is 2x slower)
+    while (this.spawnAcc >= 1 && this.parts.length < 80) {
       this.spawnAcc -= 1;
       const a = Math.random() * Math.PI * 2;
-      const sp = U * (0.25 + Math.random() * 0.55);
-      this.parts.push({ x: 0, y: 0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, age: 0, life: 1.8 + Math.random() * 2.2 });
+      const sp = U * (0.125 + Math.random() * 0.275); // half speed
+      this.parts.push({ x: 0, y: 0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, age: 0, life: 3.6 + Math.random() * 4.4 });
     }
     this.particleG.clear();
     for (let i = this.parts.length - 1; i >= 0; i--) {
@@ -114,14 +114,14 @@ export class Wormhole {
         this.parts.splice(i, 1);
         continue;
       }
-      const ang = Math.atan2(p.vy, p.vx) + dt * 0.9; // swirl the drift
+      const ang = Math.atan2(p.vy, p.vx) + dt * 0.45; // swirl the drift (2x slower)
       const spd = Math.hypot(p.vx, p.vy);
       p.vx = Math.cos(ang) * spd;
       p.vy = Math.sin(ang) * spd;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       const k = 1 - p.age / p.life;
-      this.particleG.circle(p.x, p.y, U * 0.018 + U * 0.022 * k).fill({ color: 0xddf4ff, alpha: 0.5 * k * (0.25 + ramp) });
+      this.particleG.circle(p.x, p.y, U * 0.022 + U * 0.026 * k).fill({ color: 0xeafbff, alpha: Math.min(1, 1.0 * k * (0.5 + ramp)) });
     }
   }
 }

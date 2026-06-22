@@ -1647,7 +1647,7 @@ function drawTexturedBody(ctx: CanvasRenderingContext2D, x: number, y: number, r
 function drawSCWormhole(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, intensity: number, tick: number): void {
   const ramp = Math.min(1, Math.max(0, intensity));
   const rad = R * 0.85 * (1 / 3 + ramp * (2 / 3)); // ~1/3 size early → full at 5/5
-  const t = tick * 0.03;
+  const t = tick * 0.015;
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   // nebulous glow
@@ -1753,11 +1753,11 @@ export function refreshStarChart(world: World): void {
   ctx.beginPath();
   ctx.arc(cx, cy, r0, 0, Math.PI * 2);
   ctx.stroke();
-  const stAngle = -Math.PI / 2 + world.tick * 0.0012; // slow orbit (starts near the top)
+  const stAngle = -Math.PI / 2 + world.tick * 0.0006; // slow orbit (starts near the top)
   const stx = cx + Math.cos(stAngle) * r0;
   const sty = cy + Math.sin(stAngle) * r0;
   // the Beacon wormhole orbits the station like a moon
-  const moonA = world.tick * 0.004;
+  const moonA = world.tick * 0.002;
   drawSCWormhole(ctx, stx + Math.cos(moonA) * 48, sty + Math.sin(moonA) * 48, SC_SIZE * 0.085, beaconIntensity(world), world.tick);
   ctx.fillStyle = "#49d17a";
   ctx.fillRect(stx - 4, sty - 4, 8, 8);
