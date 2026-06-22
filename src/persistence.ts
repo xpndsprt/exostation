@@ -143,6 +143,7 @@ function sanitize(w: World): World {
   if (w.godVerdict === undefined) w.godVerdict = null;
   if (typeof w.tradeTimer !== "number") w.tradeTimer = 0;
   if (typeof w.crewTimer !== "number") w.crewTimer = 0;
+  if (typeof w.shipCooldown !== "number") w.shipCooldown = 0;
   if (typeof w.creditRate !== "number") w.creditRate = 0;
   if (typeof w.prevCredits !== "number") w.prevCredits = w.credits;
   if (w.phase !== "won" && w.phase !== "lost") w.phase = "playing";

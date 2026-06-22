@@ -14,6 +14,7 @@ const LODGING_RATE = 1.5; // credits per second per living guest
 const SHIP_TIME = 14; // seconds a trader/crew shuttle stays parked
 const IN_TIME = 4.5; // seconds for the cinematic approach
 const OUT_TIME = 3; // seconds for the cinematic departure
+const SHIP_GAP = 1; // quiet seconds between ship arrivals (cooldown on the wormhole)
 const TRADE_INTERVAL = 30; // seconds between trader visits
 const TRADE_BATCH = 25; // max minerals sold per trade
 const MINERAL_PRICE = 3; // credits per mineral
@@ -136,6 +137,8 @@ export function economySystem(w: World, dt: number): void {
   // dock). Each breathing gas draws its own visitor class: O₂ → Drenn (et al),
   // CH₄ → Vorn — so a methane wing earns lodging too. Free capacity discounts
   // guests already inbound. Drenn reputation shortens the interval.
+  // wormhole cooldown: only one arrival can begin per SHIP_GAP window
+  w.shipCooldown = Math.max(0, (w.shipCooldown ?? 0) - dt);
   const GASES: GasKind[] = ["o2", "ch4"];
   const inboundByGas: Record<string, number> = {};
   for (const sh of w.ships) {
@@ -155,6 +158,7 @@ export function economySystem(w: World, dt: number): void {
     dock.timer += dt;
     if (dock.timer < interval) continue;
     if (dockBusy(w, dock)) continue; // pad still occupied — hold ready, don't reset
+    if ((w.shipCooldown ?? 0) > 0) continue; // wormhole cooling down — retry next tick
     const g = GASES.find((x) => freeByGas[x] >= 1); // a gas we can house guests for
     if (!g || exteriorCell(w, dock) < 0) {
       dock.timer = interval; // hold ready until a room frees / a dock faces space
@@ -171,7 +175,7 @@ export function economySystem(w: World, dt: number): void {
   // air, and food they can eat already stocked. One arrival per interval; if a
   // slot opens later the shuttle comes as soon as the next interval ticks.
   w.crewTimer += dt;
-  if (w.crewTimer >= CREW_INTERVAL) {
+  if (w.crewTimer >= CREW_INTERVAL && (w.shipCooldown ?? 0) <= 0) {
     const arrived = tryCrewArrival(w, docks, podCap, resCount);
     w.crewTimer = arrived ? 0 : CREW_INTERVAL; // hold ready until a slot frees
   }
@@ -180,7 +184,7 @@ export function economySystem(w: World, dt: number): void {
   // trades bigger batches, more often, at a better price. A ship parks at a dock.
   const tradeEvery = hasCargoEx ? 20 : TRADE_INTERVAL;
   w.tradeTimer += dt;
-  if (w.tradeTimer >= tradeEvery) {
+  if (w.tradeTimer >= tradeEvery && (w.shipCooldown ?? 0) <= 0) {
     w.tradeTimer -= tradeEvery;
     // minerals crew have physically delivered to a hub sell first; the rest comes
     // straight from the warehouse so trade still works without haulers.
@@ -258,6 +262,7 @@ function spawnShip(w: World, dock: Structure, opts: Partial<Ship>): void {
   const dy = d === w.w ? 1 : d === -w.w ? -1 : 0;
   const tier = DOCK_TIER[dock.kind as DockKind] ?? DOCK_TIER.dock;
   w.ships.push({ cell: ex, t: 0, dx, dy, prog: 0, phase: "in", size: tier.size, fuelNeed: tier.fuelNeed, ...opts });
+  w.shipCooldown = SHIP_GAP; // hold the wormhole quiet for a beat before the next arrival
 }
 
 // A landed passenger shuttle disgorges its guests at the dock's interior access

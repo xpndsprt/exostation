@@ -388,6 +388,7 @@ that species' gas. Capacity is therefore **per species**, not a global pool.
 Residents are **not hand-placed** — they arrive by shuttle through a Docking Port.
 - **Gates (all required):** a powered Docking Port · a **free Crew Quarters prepped for that species** (capacity counted per species) · the bunk in a room of the species' gas · `stock.meals[diet] > 0`.
 - **Cadence:** one arrival per **12 s** while a slot is open; if no slot/eligible species, the timer holds at the threshold so a new resident appears within a tick of conditions becoming true.
+- **Wormhole cooldown:** all ship arrivals (crew, traders, guests) share a **1 s** quiet gap — only one ship may begin its arrival per second, so they emerge from the Beacon wormhole staggered rather than all at once.
 - **Species choice:** among eligible species (gas + food satisfied), the one with the **fewest currently aboard** is brought, nudging toward a diverse crew.
 - **Resident species:** Humans, Thol, Vry'l. **Drenn are visitors only** (hotel guests), never residents.
 - No credit cost — crew are workforce, not a purchase. Capacity growth is paid for indirectly via Crew Quarters (¢40 each).

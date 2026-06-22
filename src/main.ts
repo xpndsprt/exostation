@@ -798,9 +798,17 @@ async function boot(): Promise<void> {
     clock += ticker.deltaMS / 1000;
     starfield.update(cam, clock); // parallax + drift/twinkle, every frame
     // Anchored to a FIXED point behind the station (see beaconAnchor) so it never
-    // drifts as you build; faint & ~1/3 size early, blooms to full.
+    // drifts as you build; faint & ~1/3 size early, blooms to full. `mouth` spikes
+    // while a ship is emerging (in, low prog) or vanishing (out, high prog) → blast.
     const wa = beaconAnchor(world);
-    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), wa.x, wa.y, wormholeR);
+    let mouth = 0;
+    for (const id in world.ships) {
+      const sh = world.ships[id];
+      const p = sh.prog ?? 0;
+      if (sh.phase === "in" && p < 0.25) mouth += 1 - p / 0.25;
+      else if (sh.phase === "out" && p > 0.75) mouth += (p - 0.75) / 0.25;
+    }
+    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), wa.x, wa.y, wormholeR, mouth);
 
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;

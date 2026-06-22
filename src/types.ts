@@ -377,6 +377,7 @@ export interface World {
   credits: number;
   tradeTimer: number; // accumulator for periodic mineral trades
   crewTimer: number; // accumulator for resident-crew shuttle arrivals
+  shipCooldown?: number; // quiet gap (s) between ship arrivals through the wormhole
   creditRate: number; // smoothed net ¢/s (income − upkeep) shown on the HUD
   prevCredits: number; // last tick's credits, for the rate calc
   phase: Phase; // playing / won / lost

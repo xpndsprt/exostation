@@ -92,7 +92,9 @@ export class Wormhole {
   }
 
   // cx,cy in WORLD pixels; baseR sets the full-bloom radius; intensity 0..1.
-  update(dt: number, intensity: number, cx: number, cy: number, baseR: number): void {
+  // mouth (0..~2) spikes while a ship is entering/exiting → an extra blast of
+  // additive particles + rays at the centre.
+  update(dt: number, intensity: number, cx: number, cy: number, baseR: number, mouth = 0): void {
     this.t += dt * 0.5; // 2x slower overall (drives every rotation + pulse below)
     const ramp = Math.min(1, Math.max(0, intensity));
     const grow = 1 / 3 + ramp * (2 / 3); // ~1/3 size at the start → full at 5/5
@@ -107,8 +109,8 @@ export class Wormhole {
     this.glow.scale.set(1 + Math.sin(this.t * 0.5) * 0.04);
 
     // particles streaming out of the core, spiralling as they go (more when bright)
-    this.spawnAcc += (2 + ramp * 15) * dt; // half the spawn rate (motion is 2x slower)
-    while (this.spawnAcc >= 1 && this.parts.length < 80) {
+    this.spawnAcc += (2 + ramp * 15 + mouth * 80) * dt; // a ship at the mouth blasts extra particles
+    while (this.spawnAcc >= 1 && this.parts.length < 140) {
       this.spawnAcc -= 1;
       const a = Math.random() * Math.PI * 2;
       const sp = U * (0.125 + Math.random() * 0.275); // half speed
@@ -130,6 +132,17 @@ export class Wormhole {
       p.y += p.vy * dt;
       const k = 1 - p.age / p.life;
       this.particleG.circle(p.x, p.y, U * 0.022 + U * 0.026 * k).fill({ color: 0xeafbff, alpha: Math.min(1, 1.0 * k * (0.5 + ramp)) });
+    }
+
+    // entry/exit blast — a bright additive flash + a burst of rays at the mouth
+    if (mouth > 0.01) {
+      const m = Math.min(1.6, mouth);
+      this.particleG.circle(0, 0, U * 0.55 * (0.6 + m)).fill({ color: 0xeafbff, alpha: 0.12 * m });
+      for (let i = 0; i < 14; i++) {
+        const a = this.t * 0.6 + (i / 14) * Math.PI * 2;
+        const len = U * (1.2 + m * 1.4);
+        this.particleG.moveTo(0, 0).lineTo(Math.cos(a) * len, Math.sin(a) * len).stroke({ width: U * 0.02, color: 0xbfe6ff, alpha: 0.22 * m });
+      }
     }
   }
 }
