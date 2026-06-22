@@ -120,6 +120,10 @@ export class Starfield {
   private layers: Layer[] = [];
 
   constructor(w: number, h: number) {
+    this.build(w, h);
+  }
+
+  private build(w: number, h: number): void {
     // far → near. Smaller factor = more distant (scrolls slower).
     const defs: Array<{ tex: Texture; factor: number; drift: number; twinkle: number; alpha: number }> = [
       { tex: nebulaTexture(1024, 1337), factor: 0.04, drift: 0.8, twinkle: 0.0, alpha: 0.9 },
@@ -133,6 +137,15 @@ export class Starfield {
       this.container.addChild(sprite);
       this.layers.push({ sprite, factor: d.factor, drift: d.drift, twinkle: d.twinkle, base: d.alpha });
     }
+  }
+
+  // Regenerate the layers + their textures (call after a WebGL context loss, when
+  // the old GPU textures are gone — otherwise the background goes blank).
+  rebuild(w: number, h: number): void {
+    for (const l of this.layers) l.sprite.destroy({ children: true, texture: true, textureSource: true });
+    this.container.removeChildren();
+    this.layers = [];
+    this.build(w, h);
   }
 
   resize(w: number, h: number): void {

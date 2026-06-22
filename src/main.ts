@@ -115,6 +115,7 @@ async function boot(): Promise<void> {
   app.canvas.addEventListener("webglcontextrestored", () => {
     console.warn("WebGL context restored — rebuilding scene");
     try { renderer.restoreContext(); } catch (err) { console.error(err); }
+    try { starfield.rebuild(window.innerWidth, window.innerHeight); } catch (err) { console.error(err); }
     needRedraw = true;
   }, false);
 

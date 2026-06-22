@@ -56,6 +56,7 @@ export function initAudio(): void {
 async function boot(): Promise<void> {
   try {
     ctx = new AudioContext();
+    void ctx.resume(); // some browsers create it suspended even inside a gesture
     master = ctx.createGain();
     master.gain.value = muted ? 0 : MASTER_VOL;
     master.connect(ctx.destination);
