@@ -4,6 +4,14 @@
 // a bright, cloudy blue flower of light with particles streaming from the core.
 // Purely cosmetic; driven by beaconIntensity() (0..1).
 import { Container, Graphics } from "pixi.js";
+import { TILE } from "./config";
+import type { World } from "./types";
+
+// Fixed world-space anchor of the Beacon wormhole (map centre, nudged 15 cells up).
+// Shared by the renderer (ships fly through it) and main (the visual).
+export function beaconAnchor(w: World): { x: number; y: number } {
+  return { x: (w.w * TILE) / 2, y: (w.h * TILE) / 2 - 15 * TILE };
+}
 
 const U = 100; // author radius in local space; the container is scaled in update()
 const FULL = 0.35; // full-bloom radius as a fraction of baseR (the size at 5/5)

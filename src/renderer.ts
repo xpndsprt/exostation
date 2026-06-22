@@ -5,6 +5,7 @@ import { STRUCTURES, isDock, DOCK_TIER, DockKind } from "./structures";
 import { exteriorCell, isOpaque } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
+import { beaconAnchor } from "./wormhole";
 
 // Sprite art is authored at a native resolution (px per tile) that can vary per
 // sprite (32px for the current set; older art may be 16). The renderer reads each
@@ -1287,37 +1288,41 @@ export class Renderer {
       }
     }
 
-    // Star-Trek-style flight: a shuttle banks in along a wide orbital ARC around
-    // the station (engines lit), lines up on the dock's outward axis, then CUTS
-    // thrust and coasts — drifting slowly straight onto the pad. Departure mirrors
-    // it: drift off the pad, ignite, then bank away into the arc. Raiders/legacy
-    // ships just sit on the pad.
+    // Wormhole flight: a ship emerges SMALL from the Beacon wormhole, grows as it
+    // banks clear of the station, then CUTS thrust and coasts straight onto the pad.
+    // Departure mirrors it: lift off the pad, clear the hull, then curve back to the
+    // wormhole and ZOOM IN, shrinking away. Raiders/legacy ships just sit on the pad;
+    // mineral drones are a separate system and never use this.
     const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
     const smooth = (t: number) => { const c = clamp01(t); return c * c * (3 - 2 * c); };
     const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
-    const FAR = TILE * 18; // arc entry radius (off-screen)
-    const STANDOFF = TILE * 9; // where the arc ends and the engine-off coast begins
-    const ORBIT = TILE * 5; // arc-centre offset inside the hull (pad radius)
-    const ARC = 2.4; // radians swept while circling the station
-    // Position (and thrust 0..1) of a ship at flight progress `prog`.
-    const flightPos = (ship: Ship, prog: number): { x: number; y: number; thrust: number } => {
-      const padX = (ship.cell % world.w) * TILE + TILE / 2 + (ship.dx ?? 0) * TILE;
-      const padY = ((ship.cell / world.w) | 0) * TILE + TILE / 2 + (ship.dy ?? 0) * TILE;
-      if (ship.phase !== "in" && ship.phase !== "out") return { x: padX, y: padY, thrust: 0 };
-      const axis = Math.atan2(ship.dy ?? 0, ship.dx ?? 0); // outward (away from hull)
-      const ox = padX - (ship.dx ?? 0) * ORBIT, oy = padY - (ship.dy ?? 0) * ORBIT; // arc centre
-      const dir = ship.cell % 2 === 0 ? 1 : -1; // bank left or right, stable per pad
-      let ang = axis, rad = ORBIT, thrust = 0;
+    const easeIn = (t: number) => { const c = clamp01(t); return c * c; };
+    const STANDOFF = TILE * 6; // the engine-off coast point off the pad (clears the hull)
+    const SMALL = 0.1; // scale at the wormhole mouth
+    const bez = (a: { x: number; y: number }, c: { x: number; y: number }, b: { x: number; y: number }, u: number) => ({
+      x: (1 - u) * (1 - u) * a.x + 2 * (1 - u) * u * c.x + u * u * b.x,
+      y: (1 - u) * (1 - u) * a.y + 2 * (1 - u) * u * c.y + u * u * b.y,
+    });
+    const W = beaconAnchor(world); // the wormhole mouth
+    // Position + thrust(0..1) + scale(0..1) of a ship at flight progress `prog`.
+    const flightPos = (ship: Ship, prog: number): { x: number; y: number; thrust: number; scale: number } => {
+      const dx = ship.dx ?? 0, dy = ship.dy ?? 0;
+      const padX = (ship.cell % world.w) * TILE + TILE / 2 + dx * TILE;
+      const padY = ((ship.cell / world.w) | 0) * TILE + TILE / 2 + dy * TILE;
+      if (ship.phase !== "in" && ship.phase !== "out") return { x: padX, y: padY, thrust: 0, scale: 1 };
+      const S = { x: padX + dx * STANDOFF, y: padY + dy * STANDOFF }; // coast point off the pad
+      // curved "clearing" path between the standoff and the wormhole (perp control point)
+      const dpx = W.x - S.x, dpy = W.y - S.y, dl = Math.hypot(dpx, dpy) || 1;
+      const dir = ship.cell % 2 === 0 ? 1 : -1;
+      const C = { x: (S.x + W.x) / 2 + (-dpy / dl) * TILE * 8 * dir, y: (S.y + W.y) / 2 + (dpx / dl) * TILE * 8 * dir };
       const p = clamp01(prog);
       if (ship.phase === "in") {
-        if (p < 0.6) { const u = easeOut(p / 0.6); ang = axis + dir * ARC * (1 - u); rad = lerp(FAR, STANDOFF, u); thrust = 1; }
-        else { const v = smooth((p - 0.6) / 0.4); ang = axis; rad = lerp(STANDOFF, ORBIT, v); thrust = 0; } // engines off — drift in
-      } else {
-        if (p < 0.35) { const v = smooth(p / 0.35); ang = axis; rad = lerp(ORBIT, STANDOFF, v); thrust = p / 0.35; } // ignite, lift off
-        else { const u = (p - 0.35) / 0.65; ang = axis + dir * ARC * u; rad = lerp(STANDOFF, FAR, easeOut(u)); thrust = 1; } // bank away
+        if (p < 0.55) { const u = easeOut(p / 0.55); const q = bez(W, C, S, u); return { x: q.x, y: q.y, thrust: 1, scale: lerp(SMALL, 1, u) }; } // emerge + grow + clear
+        const v = smooth((p - 0.55) / 0.45); return { x: lerp(S.x, padX, v), y: lerp(S.y, padY, v), thrust: 0, scale: 1 }; // engines off, drift onto pad
       }
-      return { x: ox + Math.cos(ang) * rad, y: oy + Math.sin(ang) * rad, thrust };
+      if (p < 0.35) { const v = smooth(p / 0.35); return { x: lerp(padX, S.x, v), y: lerp(padY, S.y, v), thrust: p / 0.35, scale: 1 }; } // lift off, clear hull
+      const u = easeIn((p - 0.35) / 0.65); const q = bez(S, C, W, u); return { x: q.x, y: q.y, thrust: 1, scale: lerp(1, SMALL, u) }; // curve back + zoom into the wormhole, shrinking
     };
     const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number; scale?: number }[] = [];
     for (const ship of world.ships) {
@@ -1355,7 +1360,7 @@ export class Renderer {
       }
       sprites.push({
         t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
-        x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul,
+        x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul * here.scale,
       });
     }
 

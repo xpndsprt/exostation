@@ -13,7 +13,7 @@ import { saveWorld, loadWorld, deleteSave, serializeWorld, parseSave } from "./p
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
 import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
-import { Wormhole } from "./wormhole";
+import { Wormhole, beaconAnchor } from "./wormhole";
 import { beaconIntensity } from "./beacon";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -797,9 +797,10 @@ async function boot(): Promise<void> {
   app.ticker.add((ticker: Ticker) => {
     clock += ticker.deltaMS / 1000;
     starfield.update(cam, clock); // parallax + drift/twinkle, every frame
-    // Anchored to a FIXED point behind the station (map centre, nudged 15 cells up)
-    // so it never drifts as you build; faint & ~1/3 size early, blooms to full.
-    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), (world.w * TILE) / 2, (world.h * TILE) / 2 - 15 * TILE, wormholeR);
+    // Anchored to a FIXED point behind the station (see beaconAnchor) so it never
+    // drifts as you build; faint & ~1/3 size early, blooms to full.
+    const wa = beaconAnchor(world);
+    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), wa.x, wa.y, wormholeR);
 
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;
