@@ -114,7 +114,7 @@ export function canPlace(w: World, tool: Tool, x: number, y: number): boolean {
     case "door":
       return c.type !== "door";
     case "conduit":
-      return (c.type === "floor" || c.type === "storage") && !w.conduits.some((k) => k.cell === idx(w, x, y));
+      return (c.type === "floor" || c.type === "storage" || c.type === "door") && !w.conduits.some((k) => k.cell === idx(w, x, y));
     case "erase":
       return c.structureId >= 0 || c.type !== "space" || w.conduits.some((k) => k.cell === idx(w, x, y));
     default:

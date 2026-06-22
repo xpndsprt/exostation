@@ -6,7 +6,7 @@ import { SPECIES } from "../src/species";
 import { RELATIONS } from "../src/relations";
 import { recomputeRooms } from "../src/rooms";
 import { findPath } from "../src/pathfind";
-import { powerSystem } from "../src/power";
+import { powerSystem as rawPowerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
 import { miningSystem, transitSeconds, systemDist, REBUILD_COST, REBUILD_TIME } from "../src/mining";
 import { foodSystem } from "../src/food";
@@ -60,6 +60,23 @@ Math.random = () => { _seed = (_seed * 1664525 + 1013904223) >>> 0; return _seed
 })();
 
 const DT = 0.1;
+// Strict power needs every module cabled. Tests build compact stations and don't
+// hand-lay conduit, so on a world's first step we blanket-wire its deck (floor /
+// storage / doorways) — equivalent to the player running cabling everywhere. A
+// test can opt out with (w as any).__noauto = true to exercise wiring directly.
+const _wired = new Set<World>();
+function wireAll(w: World) {
+  for (let i = 0; i < w.cells.length; i++) {
+    const t = w.cells[i].type;
+    if ((t === "floor" || t === "storage" || t === "door") && !w.conduits.some((c) => c.cell === i)) w.conduits.push({ cell: i, hp: 100, repairBy: -1 });
+  }
+}
+// Strict power needs cabling. Wrap powerSystem so EVERY call (direct or via step)
+// blanket-wires the world's deck on first touch — unless it opts out (__noauto).
+function powerSystem(w: World, dt: number) {
+  if (!(w as unknown as { __noauto?: boolean }).__noauto && !_wired.has(w)) { _wired.add(w); wireAll(w); }
+  rawPowerSystem(w, dt);
+}
 function step(w: World) {
   if (w.dirtyRooms) recomputeRooms(w);
   powerSystem(w, DT);
@@ -280,8 +297,8 @@ addStructure(w7, "ch4gen", 12, 6); // Room B: methane
 addAgent(w7, 13, 6, "thol"); // breathes CH4 -> ok
 addStructure(w7, "o2gen", 18, 6); // Room C: O2 + CH4 = mixed
 addStructure(w7, "ch4gen", 19, 6);
-addConduit(w7, 12, 7); // power conduits relay the grid out to far Room C…
-addConduit(w7, 18, 7); // …so its distant generators come online
+addStructure(w7, "solar", 14, 7); // Room B is its own island → its own power source
+addStructure(w7, "solar", 18, 7); // Room C likewise (strict power: each sealed room needs a source + cabling)
 addAgent(w7, 20, 6, "human"); // mixed gas -> dies
 
 const gasOf = (cx: number, cy: number) => {
@@ -2444,13 +2461,14 @@ function forceCouple(w: World, a: number, b: number) {
 // --- Power conduits: far modules need cabling; a broken run cuts power ---
 {
   const wc = createWorld();
+  (wc as unknown as { __noauto?: boolean }).__noauto = true; // we lay the cabling ourselves
   for (let y = 4; y <= 9; y++) for (let x = 4; x <= 26; x++) setCell(wc, x, y, x === 4 || x === 26 || y === 4 || y === 9 ? "wall" : "floor");
   addStructure(wc, "solar", 6, 6);
-  addStructure(wc, "o2gen", 22, 6); // ~16 tiles from the solar — out of reach
+  addStructure(wc, "o2gen", 22, 6); // far from the solar — needs a cable run
   for (let i = 0; i < 3; i++) step(wc);
   const far = Object.values(wc.structures).find((s) => s.kind === "o2gen")!;
   check("Conduit: a far module is dark without cabling", far.powered === false);
-  for (const x of [11, 13, 15, 17, 19]) addConduit(wc, x, 6); // relay chain solar → outpost
+  for (let x = 7; x <= 21; x++) addConduit(wc, x, 6); // a continuous line solar → outpost
   for (let i = 0; i < 3; i++) step(wc);
   check("Conduit: cabling powers the far module", far.powered === true);
   for (const c of wc.conduits) c.hp = 0; // the run breaks

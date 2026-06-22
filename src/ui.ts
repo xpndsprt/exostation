@@ -294,7 +294,7 @@ export function refreshPalette(world: World): void {
     if (lock) {
       lockedTools.add(tool);
       btn.classList.add("locked");
-      if (nm) nm.textContent = "???";
+      if (nm) nm.textContent = "🔒 " + (btn.dataset.label || ""); // lock icon like Quarters (shows what it is)
       btn.title = `Locked — research “${lock.label}” at a Research Lab`;
     } else {
       btn.classList.remove("locked");

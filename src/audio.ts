@@ -180,7 +180,7 @@ function startTapeHead(): void {
     if (Math.random() < 0.12) {
       // a quick dropout, then it recovers — like the head losing the tape for a beat
       musicGain.gain.cancelScheduledValues(t);
-      musicGain.gain.setTargetAtTime(MUSIC_VOL * (0.2 + Math.random() * 0.2), t, 0.04);
+      musicGain.gain.setTargetAtTime(MUSIC_VOL * (0.6 + Math.random() * 0.2), t, 0.04); // shallower dropout (≈½ the previous duck depth)
       musicGain.gain.setTargetAtTime(MUSIC_VOL, t + 0.1 + Math.random() * 0.18, 0.08);
     } else {
       musicGain.gain.setTargetAtTime(MUSIC_VOL, t, 0.3);

@@ -868,6 +868,31 @@ export class Renderer {
       g.circle(x, y, 2.6).fill({ color: col, alpha: broken ? 0.8 : 0.9 });
       if (broken) g.circle(x, y, 5 + 3 * blink).stroke({ width: 1.5, color: 0xff4d4d, alpha: 0.5 * blink }); // spark ring
     }
+    this.drawSockets(world, g, blink);
+  }
+
+  // Power sockets: a Solar mounts on a wall and feeds the deck cell just inside it.
+  // Mark that socket so the player knows where to start a conduit run from.
+  private drawSockets(world: World, g: Graphics, blink: number): void {
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      if (s.kind !== "solar") continue;
+      for (const c of s.cells ?? [s.cell]) {
+        const cx = c % world.w, cy = (c / world.w) | 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const wx = cx + dx, wy = cy + dy;
+          if (wx < 0 || wy < 0 || wx >= world.w || wy >= world.h) continue;
+          if (world.cells[wy * world.w + wx].type !== "wall") continue;
+          const ix = wx + dx, iy = wy + dy; // deck cell inside the wall
+          if (ix < 0 || iy < 0 || ix >= world.w || iy >= world.h) continue;
+          const t = world.cells[iy * world.w + ix].type;
+          if (t !== "floor" && t !== "storage") continue;
+          const px = ix * TILE + TILE / 2, py = iy * TILE + TILE / 2;
+          g.rect(px - 5, py - 5, 10, 10).fill({ color: 0x1a2230, alpha: 0.9 }).stroke({ width: 1.5, color: 0xffd86a, alpha: 0.95 });
+          g.circle(px, py, 2.4).fill({ color: 0xffe9a0, alpha: 0.7 + 0.3 * blink }); // power tap (wire from here)
+        }
+      }
+    }
   }
 
   private drawAtmosphere(world: World): void {

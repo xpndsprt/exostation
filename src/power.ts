@@ -8,13 +8,37 @@ const FUSION_FUEL = 0.6; // minerals/s burned by a running Fusion Reactor
 // generator/battery, and a non-broken conduit relays it onward (refreshing the
 // reach), so distant modules need cabling. A consumer the grid can't reach is dark.
 const SURGE_BONUS = 9999; // free supply a weird-god power surge adds to the grid
-const SOURCE_REACH = 6; // tiles a generator/battery radiates power (Chebyshev)
-const CONDUIT_REACH = 6; // tiles a conduit relays onward (resets the budget)
+const SOURCE_REACH = 1; // tiles a source's socket reaches on its own (just touching)
+const CONDUIT_REACH = 1; // a conduit reaches its neighbours; chains carry power onward
 
-// Returns a per-cell flag: is this cell within the energized power grid? Power
-// spreads from source cells (generators/batteries) up to SOURCE_REACH through any
-// cell; stepping onto a non-broken conduit resets the budget to CONDUIT_REACH, so
-// chains of conduit carry power across the whole station.
+// The cells a source feeds power into. A Solar mounts in space on a wall, so it
+// energizes the INTERIOR cell across the wall it's attached to — its "socket". A
+// Battery/Reactor (and a test-placed floor Solar) sit on the deck, so they feed
+// their own footprint cells. From a socket you must run conduit to each module.
+function sourceSockets(w: World, s: Structure): number[] {
+  const cells = s.cells ?? [s.cell];
+  if (s.kind === "solar") {
+    const out: number[] = [];
+    for (const c of cells) {
+      const cx = c % w.w, cy = (c / w.w) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const wx = cx + dx, wy = cy + dy; // a wall the panel is bolted to
+        if (wx < 0 || wy < 0 || wx >= w.w || wy >= w.h) continue;
+        if (w.cells[wy * w.w + wx].type !== "wall") continue;
+        const ix = wx + dx, iy = wy + dy; // the deck cell just inside that wall
+        if (ix < 0 || iy < 0 || ix >= w.w || iy >= w.h) continue;
+        const t = w.cells[iy * w.w + ix].type;
+        if (t === "floor" || t === "storage") out.push(iy * w.w + ix);
+      }
+    }
+    if (out.length) return out; // real hull-mounted panel → its wall socket(s)
+  }
+  return cells; // battery/reactor (or a floor-placed solar) feed their own cells
+}
+
+// Returns a per-cell budget: which cells the energized grid reaches. Power spreads
+// SOURCE_REACH from each source socket; stepping onto a non-broken conduit refreshes
+// the budget to CONDUIT_REACH, so a chain of conduit carries power onward.
 function gridReach(w: World): Int8Array {
   const N = w.w * w.h;
   const best = new Int8Array(N).fill(-1); // best remaining budget reaching each cell
@@ -25,7 +49,7 @@ function gridReach(w: World): Int8Array {
     const s = w.structures[id];
     const def = STRUCTURES[s.kind];
     if (def.gen <= 0 && def.battery <= 0) continue; // only generators/batteries anchor the grid
-    for (const cell of s.cells ?? [s.cell]) {
+    for (const cell of sourceSockets(w, s)) {
       if (best[cell] < SOURCE_REACH) { best[cell] = SOURCE_REACH; q.push(cell); }
     }
   }
