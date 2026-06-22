@@ -22,10 +22,6 @@ let ready = false;
 let musicEl: HTMLAudioElement | null = null;
 let tracks: string[] = [];
 let order: number[] = [];
-// tape-head playback character (no added noise): a treble cutoff that drifts like
-// head azimuth, plus occasional brief level dropouts (oxide/contact loss).
-let musicGain: GainNode | null = null;
-let radioFilter: BiquadFilterNode | null = null;
 let musicPos = 0;
 let muted = (() => {
   try {
@@ -138,15 +134,12 @@ function startMusic(): void {
   tracks = Object.values(mods);
   if (tracks.length === 0) return;
   const gain = ctx.createGain();
-  gain.gain.value = MUSIC_VOL;
-  // tape-head stage: music → a treble lowpass (drifts like head azimuth) → master.
+  gain.gain.value = MUSIC_VOL; // constant — no volume modulation on music
+  // a gentle static treble lowpass for tape warmth (no drift, no dropouts).
   const radioLP = ctx.createBiquadFilter();
   radioLP.type = "lowpass";
-  radioLP.frequency.value = 14000;
+  radioLP.frequency.value = 15000;
   gain.connect(radioLP).connect(master);
-  musicGain = gain;
-  radioFilter = radioLP;
-  startTapeHead();
   musicEl = new Audio();
   musicEl.preload = "auto";
   const src = ctx.createMediaElementSource(musicEl); // route through the mixer
@@ -168,25 +161,8 @@ function playTrack(): void {
     /* autoplay/availability — ignore */
   });
 }
-// Tape-head reading character — NO added noise, just mechanical artifacts:
-//  · treble cutoff drifts (head azimuth wander) — stays mostly bright so it never
-//    sounds "broken", just analog;
-//  · occasional brief level dropouts (oxide shedding / momentary contact loss).
-function startTapeHead(): void {
-  setInterval(() => {
-    if (!ctx || !musicGain || !radioFilter) return;
-    const t = ctx.currentTime;
-    radioFilter.frequency.setTargetAtTime(7000 + Math.random() * 9000, t, 0.6); // azimuth drift
-    if (Math.random() < 0.12) {
-      // a quick dropout, then it recovers — like the head losing the tape for a beat
-      musicGain.gain.cancelScheduledValues(t);
-      musicGain.gain.setTargetAtTime(MUSIC_VOL * (0.6 + Math.random() * 0.2), t, 0.04); // shallower dropout (≈½ the previous duck depth)
-      musicGain.gain.setTargetAtTime(MUSIC_VOL, t + 0.1 + Math.random() * 0.18, 0.08);
-    } else {
-      musicGain.gain.setTargetAtTime(MUSIC_VOL, t, 0.3);
-    }
-  }, 500);
-}
+// (Volume ducking / azimuth-drift removed — music plays at a steady level. The
+// only "walkman" character left is the wow/flutter pitch wobble in tapeChain.)
 
 // Per-play variation so a repeated event never sounds identical: every one-shot
 // gets a small random pitch + loudness wobble (and a hair of timing). One sound,
