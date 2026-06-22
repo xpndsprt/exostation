@@ -220,6 +220,7 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.stars)) w.stars = [];
   if (w.stars.length === 0 && Object.keys(w.sites).length > 0)
     w.stars.push({ angle: 0, dist: 0, orbSpeed: 0, color: "#ffe9a8", r: 7 });
+  if (!Array.isArray(w.comets)) w.comets = [];
   for (const id in w.drones) {
     const d = w.drones[id];
     if (!["docked", "outbound", "transit", "inbound", "lost"].includes(d.state)) {

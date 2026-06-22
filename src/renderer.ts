@@ -290,6 +290,35 @@ function buildTextures(): void {
       HTEX.set(`${s.name}:${st}`, makeHeightTexture(asciiPixels(s.states[st], s.palette, w, h), w, h, base));
     }
   }
+  applyEditorLibrary();
+}
+
+// Use sprites the standalone editor saved to localStorage ("exo.sprites") IN THE
+// GAME too — so edited / seed-generated art actually ships. Saved sprites are flat
+// pixel arrays (already styled), so they're used as-is (no tone pass) and override
+// the built-ins by name. Same-origin, so the editor and game share this store.
+function applyEditorLibrary(): void {
+  let lib: Record<string, { tileW: number; tileH: number; res?: number; w?: number; states: { name: string; pixels: (string | null)[] }[] }>;
+  try {
+    const raw = localStorage.getItem("exo.sprites");
+    if (!raw) return;
+    lib = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  for (const name in lib) {
+    const b = lib[name];
+    if (!b || !Array.isArray(b.states)) continue;
+    const res = b.res || (b.w && b.tileW ? Math.round(b.w / b.tileW) : DEFAULT_RES);
+    const w = b.tileW * res, h = b.tileH * res;
+    TEXRES.set(name, res);
+    const base = baseHeight(name);
+    for (const st of b.states) {
+      if (!st || !Array.isArray(st.pixels)) continue;
+      TEX.set(`${name}:${st.name}`, makeTexture(st.pixels, w, h));
+      HTEX.set(`${name}:${st.name}`, makeHeightTexture(st.pixels, w, h, base));
+    }
+  }
 }
 function texH(name: string, state: string): Texture | null {
   const key = `${name}:${state}`;
@@ -325,6 +354,15 @@ function castRay(world: World, ox: number, oy: number, dx: number, dy: number, m
     if (isOpaque(world, mapY * world.w + mapX)) return t; // hit — shadow begins here
   }
   return maxD;
+}
+
+// Deterministic per-cell pick: ~1/17 enclosed deck cells get a glazed window port
+// looking down into space (the station is weightless). Pure function of (x,y) so it
+// never flickers between redraws.
+function floorIsWindow(x: number, y: number): boolean {
+  let h = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663)) >>> 0;
+  h = (h ^ (h >>> 13)) >>> 0;
+  return h % 17 === 0;
 }
 
 export class Renderer {
@@ -367,6 +405,7 @@ export class Renderer {
   private workBuf = new Float32Array(0); // per-frame: static + character lamps
   private occ = new Uint8Array(0); // 1 = blocks light (walls + solid modules)
   private heightField = new Float32Array(0); // per-cell elevation for shadow marching
+  private shadowBuf = new Float32Array(0); // per-cell directional long-shadow strength
   private bakeSig = "";
 
   // Briefly ring all members of a species (Alienpedia "locate").
@@ -639,6 +678,46 @@ export class Renderer {
       // ignored so it never shadows itself.
       this.accumulateH(world, buf, ox, oy, radius, lr, lg, lb, g[2], LIGHT_MOUNT, new Set(s.cells), falloff);
     }
+    // long directional shadows: a low "sun" — walls & modules throw shadows across
+    // the floor, fading out, stopping at the first wall / taller module.
+    this.castLongShadows(world, buf);
+  }
+
+  // A global directional shadow pass (a fixed low sun from the upper-left). Every
+  // wall/module casts a shadow opposite the sun, its LENGTH scaled by height; the
+  // ray darkens floor cells (fading toward the tip) and stops dead at the first
+  // wall or taller-or-equal module — so shadows run long until something blocks them.
+  private castLongShadows(world: World, buf: Float32Array): void {
+    const w = world.w, h = world.h, hf = this.heightField, n = world.cells.length;
+    if (this.shadowBuf.length !== n) this.shadowBuf = new Float32Array(n);
+    const shad = this.shadowBuf;
+    shad.fill(0);
+    const ux = 0.5, uy = 0.87; // shadows fall down-and-right (sun upper-left)
+    const PER_H = 4.5; // cells of shadow per unit of height
+    const MAX = 9; // longest a shadow can run
+    const DARK = 0.55; // how much a fully-shadowed cell is dimmed
+    for (let i = 0; i < n; i++) {
+      const H = hf[i];
+      if (H < 0.3) continue; // only walls + real modules cast (not floor/door/crew)
+      const len = Math.min(MAX, H * PER_H);
+      const sx = (i % w) + 0.5, sy = ((i / w) | 0) + 0.5;
+      for (let d = 0.7; d <= len; d += 0.5) {
+        const cx = Math.floor(sx + ux * d), cy = Math.floor(sy + uy * d);
+        if (cx < 0 || cy < 0 || cx >= w || cy >= h) break;
+        const ci = cy * w + cx;
+        if (ci === i) continue;
+        if (world.cells[ci].type === "space") break; // shadows don't fall into vacuum
+        if (hf[ci] >= H - 0.05) break; // blocked by a wall / taller-or-equal module
+        const s = 1 - d / len; // fade toward the shadow tip
+        if (s > shad[ci]) shad[ci] = s;
+      }
+    }
+    for (let i = 0; i < n; i++) {
+      const s = shad[i];
+      if (s <= 0) continue;
+      const o = i * 3, f = 1 - DARK * s;
+      buf[o] *= f; buf[o + 1] *= f; buf[o + 2] *= f;
+    }
   }
 
   // Per-frame: static light + a small moving lamp around every character (the lamp
@@ -751,7 +830,8 @@ export class Renderer {
           this.cellsC.addChild(sp);
           continue;
         }
-        const t = c.type === "door" ? tex("door", "closed") : tex("floor", "default");
+        const floorState = c.type === "floor" && c.enclosed && floorIsWindow(x, y) ? "window" : "default";
+        const t = c.type === "door" ? tex("door", "closed") : tex("floor", floorState);
         if (!t) continue;
         const sp = new Sprite(t);
         sp.scale.set(scaleOf(c.type === "door" ? "door" : "floor"));

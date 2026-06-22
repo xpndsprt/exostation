@@ -22,6 +22,10 @@ let ready = false;
 let musicEl: HTMLAudioElement | null = null;
 let tracks: string[] = [];
 let order: number[] = [];
+// tape-head playback character (no added noise): a treble cutoff that drifts like
+// head azimuth, plus occasional brief level dropouts (oxide/contact loss).
+let musicGain: GainNode | null = null;
+let radioFilter: BiquadFilterNode | null = null;
 let musicPos = 0;
 let muted = (() => {
   try {
@@ -111,7 +115,7 @@ function tapeSaturationCurve(amount = 1.7) {
 // lows) + a mid "boxy" bump, soft-saturate, then warble the pitch with a delay
 // modulated by a slow WOW and a faster FLUTTER LFO, and lay a faint hiss bed
 // underneath (routed to master so Mute kills it too). src → … → out.
-function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode, master: AudioNode): void {
+function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode): void {
   const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 70;
   const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 8500;
   const mid = c.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1600; mid.Q.value = 0.8; mid.gain.value = 3;
@@ -123,14 +127,9 @@ function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode, master: Audi
   const flutAmt = c.createGain(); flutAmt.gain.value = 0.0009; flutter.connect(flutAmt).connect(delay.delayTime);
   wow.start(); flutter.start();
   src.connect(hp); hp.connect(lp); lp.connect(mid); mid.connect(shaper); shaper.connect(delay); delay.connect(out);
-  // hiss: filtered white noise, faint and constant (the deck running)
-  const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
-  const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  const noise = c.createBufferSource(); noise.buffer = buf; noise.loop = true;
-  const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 5500; bp.Q.value = 0.6;
-  const hissGain = c.createGain(); hissGain.gain.value = 0.009;
-  noise.connect(bp).connect(hissGain).connect(master);
-  noise.start();
+  // (no hiss bed — white noise read as "broken"; the tape feel comes from the
+  // wow/flutter warble, saturation, band-limiting, head-bump + the tape-head
+  // dropouts/azimuth drift in startTapeHead().)
 }
 
 function startMusic(): void {
@@ -140,11 +139,18 @@ function startMusic(): void {
   if (tracks.length === 0) return;
   const gain = ctx.createGain();
   gain.gain.value = MUSIC_VOL;
-  gain.connect(master);
+  // tape-head stage: music → a treble lowpass (drifts like head azimuth) → master.
+  const radioLP = ctx.createBiquadFilter();
+  radioLP.type = "lowpass";
+  radioLP.frequency.value = 14000;
+  gain.connect(radioLP).connect(master);
+  musicGain = gain;
+  radioFilter = radioLP;
+  startTapeHead();
   musicEl = new Audio();
   musicEl.preload = "auto";
   const src = ctx.createMediaElementSource(musicEl); // route through the mixer
-  if (TAPE) tapeChain(ctx, src, gain, master);
+  if (TAPE) tapeChain(ctx, src, gain);
   else src.connect(gain);
   musicEl.addEventListener("ended", () => {
     musicPos++;
@@ -161,6 +167,25 @@ function playTrack(): void {
   musicEl.play().catch(() => {
     /* autoplay/availability — ignore */
   });
+}
+// Tape-head reading character — NO added noise, just mechanical artifacts:
+//  · treble cutoff drifts (head azimuth wander) — stays mostly bright so it never
+//    sounds "broken", just analog;
+//  · occasional brief level dropouts (oxide shedding / momentary contact loss).
+function startTapeHead(): void {
+  setInterval(() => {
+    if (!ctx || !musicGain || !radioFilter) return;
+    const t = ctx.currentTime;
+    radioFilter.frequency.setTargetAtTime(7000 + Math.random() * 9000, t, 0.6); // azimuth drift
+    if (Math.random() < 0.12) {
+      // a quick dropout, then it recovers — like the head losing the tape for a beat
+      musicGain.gain.cancelScheduledValues(t);
+      musicGain.gain.setTargetAtTime(MUSIC_VOL * (0.2 + Math.random() * 0.2), t, 0.04);
+      musicGain.gain.setTargetAtTime(MUSIC_VOL, t + 0.1 + Math.random() * 0.18, 0.08);
+    } else {
+      musicGain.gain.setTargetAtTime(MUSIC_VOL, t, 0.3);
+    }
+  }, 500);
 }
 
 // Per-play variation so a repeated event never sounds identical: every one-shot

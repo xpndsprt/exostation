@@ -93,28 +93,58 @@
   // four raised bolts each with a lit shoulder + shadow underside. Palette luminance
   // is ordered v<d<m<p<h<b so the renderer's height map casts believable relief.
   function floorTile() {
+    // A clean, elegant deck panel — no cross groove / quad bolts. Just a smooth
+    // face with a soft top-left bevel, a gentle bottom-right shadow, and a few
+    // very subtle surface details so a field of tiles reads as a real surface
+    // without looking busy or quadded.
     const R = 32, out = [];
     for (let y = 0; y < R; y++) {
       let s = "";
       for (let x = 0; x < R; x++) {
-        let ch;
-        if (x === 0 || y === 0) ch = "v";                       // top/left seam (lowest)
-        else if (x === R - 1 || y === R - 1) ch = "d";          // bottom/right shadow
-        else if (x === 1 || y === 1) ch = "h";                  // raised top-left bevel (lit)
-        else if (x === R - 2 || y === R - 2) ch = "d";          // inner falloff
-        else if (x === 15 || x === 16 || y === 15 || y === 16) ch = "d"; // cross groove
-        else ch = "p";                                          // sunken panel face
+        let ch = "p";                                  // smooth panel face
+        if (x === 0 || y === 0) ch = "m";              // faint top/left seam (soft)
+        else if (x === 1 || y === 1) ch = "h";         // a thin lit bevel just inside
+        else if (x === R - 1 || y === R - 1) ch = "d"; // soft bottom/right shadow
         s += ch;
       }
       out.push(s);
     }
     const set = (x, y, c) => { out[y] = out[y].slice(0, x) + c + out[y].slice(x + 1); };
-    // bolts at each quadrant centre — lit shoulder (top-left) + shadow (bottom-right)
-    for (const [cx, cy] of [[8, 8], [23, 8], [8, 23], [23, 23]]) {
-      set(cx, cy, "b"); set(cx - 1, cy - 1, "h"); set(cx - 1, cy, "h"); set(cx + 1, cy + 1, "d"); set(cx, cy + 1, "d");
+    // sparse, asymmetric specks — a touch of grain, never a grid
+    for (const [x, y] of [[8, 11], [21, 7], [13, 23], [25, 18], [6, 17], [18, 14]]) set(x, y, "m");
+    for (const [x, y] of [[10, 9], [22, 21], [15, 6]]) set(x, y, "h");
+    // two flush rivets in opposite corners only (not the old 4-quad pattern)
+    set(5, 5, "b"); set(4, 4, "h");
+    set(26, 26, "b"); set(27, 27, "d");
+    return out;
+  }
+
+  function floorWindow() {
+    // A glazed viewport set into the deck — the station is weightless, so a port
+    // underfoot looks down into open space. Deck frame around a recessed dark void
+    // with a scatter of stars and a faint planet limb.
+    const R = 32, out = [], inset = 5;
+    for (let y = 0; y < R; y++) {
+      let s = "";
+      for (let x = 0; x < R; x++) {
+        let ch = "p";
+        if (x === 0 || y === 0) ch = "m";
+        else if (x === 1 || y === 1) ch = "h";
+        else if (x === R - 1 || y === R - 1) ch = "d";
+        if (x >= inset && x < R - inset && y >= inset && y < R - inset) {
+          const bx = x === inset || x === R - inset - 1;
+          const by = y === inset || y === R - inset - 1;
+          if (bx || by) ch = "b";                              // glazing bezel (lit rim)
+          else if (x === inset + 1 || y === inset + 1) ch = "h"; // inner bevel highlight
+          else ch = "v";                                       // the void
+        }
+        s += ch;
+      }
+      out.push(s);
     }
-    // worn rust grime flecked across the deck (Ridley wear)
-    for (const [x, y] of [[12, 21], [21, 12], [20, 22], [6, 18], [26, 14], [14, 6]]) set(x, y, "r");
+    const set = (x, y, c) => { out[y] = out[y].slice(0, x) + c + out[y].slice(x + 1); };
+    for (const [x, y] of [[12, 11], [19, 9], [22, 16], [14, 19], [10, 22], [24, 21], [17, 13], [13, 15]]) set(x, y, "w"); // stars
+    for (const [x, y] of [[20, 22], [21, 22], [22, 21], [21, 23], [22, 23], [23, 22]]) set(x, y, "r"); // a planet limb
     return out;
   }
 
@@ -755,8 +785,8 @@
     /* ---------- structural tiles (1x1) ---------- */
     {
       name: "floor", tileW: 1, tileH: 1,
-      palette: { v: "#0a0d12", d: "#161b22", m: "#222b34", p: "#2a343f", h: "#46586b", b: "#6a7d8d", r: "#5b3a29" },
-      states: { default: floorTile() },
+      palette: { v: "#070a0f", d: "#161b22", m: "#222b34", p: "#2a343f", h: "#46586b", b: "#6a7d8d", r: "#5b3a29", w: "#dfe8f2" },
+      states: { default: floorTile(), window: floorWindow() },
     },
     {
       name: "wall", tileW: 1, tileH: 1, palette: WALL_PAL, states: { default: WALL_STRAIGHT },

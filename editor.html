@@ -150,43 +150,13 @@
     </div>
     <div id="compGrid" class="compgrid"></div>
     <div class="hint" style="margin-top:5px">Pick a part, choose the <b>Stamp</b> tool, click to place. ⟳ rotates the selection.</div>
-    <h4>Tone mapping</h4>
-    <div id="tonePresets" class="tones"></div>
-    <div class="row" style="margin-top:6px"><label style="font-size:11px; color:var(--dim)">Strength</label><input type="range" id="toneMix" min="0" max="100" value="50" style="flex:1" /><span id="toneMixVal" style="font-size:11px; color:var(--dim); width:30px; text-align:right">50%</span></div>
-    <div class="row" style="margin-top:6px">
-      <input type="color" id="toneLo" value="#0a0e16" title="shadow colour" />
-      <input type="color" id="toneHi" value="#6ea8ff" title="highlight colour" />
-      <button id="toneApply">Apply</button>
-      <label style="font-size:11px; color:var(--dim)"><input type="checkbox" id="toneAll" /> all states</label>
-    </div>
-    <div class="row"><button id="undoBtn">↶ Undo</button></div>
-    <div class="hint" style="margin-top:5px">Re-tones the art's shadows→highlights into two colours for a cohesive mood. Undo reverts the last stamp / tone / stroke.</div>
-    <h4>Outline</h4>
-    <div class="row">
-      <button id="outlineBtn">Black outline</button>
-      <label style="font-size:11px; color:var(--dim)">opacity <input type="range" id="outlineOp" min="10" max="100" value="100" style="width:64px" /></label>
-      <span id="outlineOpVal" style="font-size:11px; color:var(--dim)">100%</span>
-    </div>
-    <div class="hint" style="margin-top:5px">Wraps the art in a 1px black edge (opacity = how dark, since pixels are solid).</div>
-    <h4>Drawing skills</h4>
-    <div class="tones" id="skillBtns">
-      <button id="skRelight" title="Treat brightness as a height map; relight from the angle with a short cast shadow">Relight</button>
-      <button id="skBevel" title="Edge highlight (top-left) + shadow (bottom-right) for volume">Bevel</button>
-      <button id="skHue" title="Shift shadows cooler, highlights warmer">Hue-shift</button>
-      <button id="skDither" title="Bayer-dither the midtones to kill banding">Dither</button>
-      <button id="skClean" title="Remove stray single pixels">Despeckle</button>
-      <button id="skOutline2" title="Silhouette outline in a dark hue-shifted tone (not flat black)">Soft outline</button>
-      <button id="skMirror" title="Mirror the left half onto the right">Mirror X</button>
-    </div>
-    <div class="row" style="margin-top:6px"><label style="font-size:11px; color:var(--dim)">Light angle</label><input type="range" id="skAngle" min="0" max="360" value="225" style="flex:1" /><span id="skAngleVal" style="font-size:11px;color:var(--dim);width:34px;text-align:right">225°</span></div>
-    <div class="hint" style="margin-top:5px">Procedural pixel-art ops — compose them to craft a sprite (no diffusion). Each is undoable.</div>
-    <h4>Art direction</h4>
-    <div class="row"><button id="artdirBtn" style="flex:1">🎬 Ridley × snakepixel</button></div>
-    <div id="artdirOut" class="hint" style="margin-top:6px; max-height:170px; overflow:auto; white-space:pre-wrap; line-height:1.45"></div>
-    <div class="row" style="margin-top:6px"><button id="artdirApply" disabled>Apply their settings + skills</button></div>
-    <div class="row" style="margin-top:6px"><button id="artdirAll" disabled style="flex:1">🎞 Apply to ALL frames</button></div>
-    <div class="row" style="margin-top:6px"><button id="artdirLib" disabled style="flex:1">🗂 Apply to ALL library tiles</button></div>
-    <div class="hint" style="margin-top:5px">Ridley Scott (cinematic mood) and Simon S. Andersen / snakepixel (pixel craft) confer, then set the knobs and run a skill recipe.</div>
+    <h4>Style</h4>
+    <div class="row"><select id="styleSel" style="flex:1"><option value="">— pick a visual style —</option></select></div>
+    <div class="hint" style="margin-top:5px">Pick a stored style — it restyles <b>every</b> sprite (built-ins + saved) and saves them to the library, so the game uses them. Add more in the <code>STYLES</code> list.</div>
+    <div class="row" style="margin-top:8px"><button id="saveAllBtn" style="flex:1">💾 Save ALL to library (use in game)</button></div>
+    <div class="hint" style="margin-top:5px">Bakes every tile (built-ins + your edits) into the library so the game picks them all up. Reload the game after.</div>
+    <div class="row" style="margin-top:8px"><button id="undoBtn">↶ Undo</button></div>
+    <div id="styleOut" class="hint" style="margin-top:6px"></div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -221,6 +191,7 @@
 const RES = 32; // new sprites are 32×32 per tile; loaded sprites keep their native res
 let ps = 14, tool = "paint", color = "#2fd6c3", showGrid = true, showTiles = true;
 let hover = null; // {x,y} cell under the cursor, for the stamp preview
+let rectStart = null, rectErase = false; // Shift-drag filled-rectangle anchor
 // current sprite
 let sprite = newSprite("untitled", 1, 1);
 let cur = 0; // current state index
@@ -278,6 +249,17 @@ function render() {
     ctx.globalAlpha = 1;
     ctx.strokeStyle = "#6ea8ff"; ctx.lineWidth = 2;
     ctx.strokeRect(ox * ps + 1, oy * ps + 1, rows[0].length * ps - 2, rows.length * ps - 2);
+  }
+  // filled-rectangle preview (Shift-drag)
+  if (rectStart && hover) {
+    const x0 = Math.min(rectStart.x, hover.x), x1 = Math.max(rectStart.x, hover.x);
+    const y0 = Math.min(rectStart.y, hover.y), y1 = Math.max(rectStart.y, hover.y);
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = rectErase ? "#08121a" : color;
+    ctx.fillRect(x0 * ps, y0 * ps, (x1 - x0 + 1) * ps, (y1 - y0 + 1) * ps);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#6ea8ff"; ctx.lineWidth = 2;
+    ctx.strokeRect(x0 * ps + 1, y0 * ps + 1, (x1 - x0 + 1) * ps - 2, (y1 - y0 + 1) * ps - 2);
   }
   renderStates(); renderPreview(); renderHeight();
 }
@@ -356,14 +338,32 @@ function flood(x, y, to) {
   while (st.length) { const [cx, cy] = st.pop(); if (cx<0||cy<0||cx>=w||cy>=h) continue; if (p[cy*w+cx] !== from) continue; p[cy*w+cx] = to; st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); }
 }
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
+function fillRect(a, b, val) {
+  const w = W(), p = px();
+  const x0 = Math.max(0, Math.min(a.x, b.x)), x1 = Math.min(W() - 1, Math.max(a.x, b.x));
+  const y0 = Math.max(0, Math.min(a.y, b.y)), y1 = Math.min(H() - 1, Math.max(a.y, b.y));
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) p[y * w + x] = val;
+}
 cv.addEventListener("pointerdown", (e) => {
   if (tool === "stamp") { apply(e, false); return; } // single placement, no drag
+  // Shift-drag = filled rectangle (paint or erase)
+  if (e.shiftKey && tool !== "pick" && tool !== "fill") {
+    const c = cellAt(e); if (!c) return;
+    pushUndo();
+    rectErase = tool === "erase" || e.button === 2;
+    rectStart = c; hover = { x: c.x, y: c.y };
+    render();
+    return;
+  }
   pushUndo(); // one snapshot per stroke
   painting = true; eraseDrag = e.button === 2; apply(e, eraseDrag);
 });
-window.addEventListener("pointerup", () => painting = false);
+window.addEventListener("pointerup", () => {
+  if (rectStart && hover) { fillRect(rectStart, hover, rectErase ? null : color); render(); }
+  rectStart = null; painting = false;
+});
 window.addEventListener("pointermove", (e) => { if (painting) apply(e, eraseDrag); });
-cv.addEventListener("pointermove", (e) => { const c = cellAt(e); hover = c ? { x: c.x, y: c.y } : null; if (tool === "stamp") render(); });
+cv.addEventListener("pointermove", (e) => { const c = cellAt(e); hover = c ? { x: c.x, y: c.y } : null; if (tool === "stamp" || rectStart) render(); });
 cv.addEventListener("pointerleave", () => { if (hover) { hover = null; if (tool === "stamp") render(); } });
 
 // --- states UI ---
@@ -435,12 +435,14 @@ function asciiToBitmap(s) {
 }
 function builtinBitmaps() { const out = {}; (window.SPRITES || []).forEach((s) => out[s.name] = asciiToBitmap(s)); return out; }
 function refreshLibrary() {
+  // Show ONLY the Saved library (built-ins still exist as generation source, but
+  // aren't listed). Empty until you Save a tile or run the seeded generator.
   const sel = $("library"); sel.innerHTML = '<option value="">— pick —</option>';
-  const built = builtinBitmaps();
-  const g1 = document.createElement("optgroup"); g1.label = "Built-in (first pass)"; sel.appendChild(g1);
-  Object.keys(built).forEach((k) => { const o = document.createElement("option"); o.value = "built:" + k; o.textContent = k; g1.appendChild(o); });
   const saved = loadLib(), keys = Object.keys(saved);
-  if (keys.length) { const g2 = document.createElement("optgroup"); g2.label = "Saved"; sel.appendChild(g2); keys.forEach((k) => { const o = document.createElement("option"); o.value = "saved:" + k; o.textContent = k; g2.appendChild(o); }); }
+  if (keys.length) {
+    const g2 = document.createElement("optgroup"); g2.label = "Saved"; sel.appendChild(g2);
+    keys.forEach((k) => { const o = document.createElement("option"); o.value = "saved:" + k; o.textContent = k; g2.appendChild(o); });
+  }
 }
 function loadBitmap(bm) {
   // tolerate single-state {pixels} JSON
@@ -543,12 +545,19 @@ const TONES = [
   // optimistic / chill sci-fi moods — bright, warm and reassuring
   { n: "Sunrise", lo: "#2a1530", hi: "#ffd27a" }, { n: "Aqua", lo: "#072028", hi: "#86f0d8" },
   { n: "Bloom", lo: "#22101c", hi: "#ffb6d2" },
+  // Westwood 2026 — Dune II / Command & Conquer desert-military palette
+  { n: "Sand", lo: "#241a0e", hi: "#e8cf9a" }, { n: "Gunmetal", lo: "#12151a", hi: "#9aa6b0" },
+  { n: "Spice", lo: "#2a1404", hi: "#ff9a3a" }, { n: "GDI Gold", lo: "#241c08", hi: "#ffcf4a" },
+  { n: "Nod Red", lo: "#220707", hi: "#e23a2a" }, { n: "Olive", lo: "#161a0c", hi: "#9aae54" },
+  // Giger × NASA — biomech bone-on-charcoal + sleek clean-room alloy/biolum
+  { n: "Bone", lo: "#0a0a0c", hi: "#d8cfb6" }, { n: "Clean-room", lo: "#0c141f", hi: "#eaf2fb" },
+  { n: "Obsidian", lo: "#06080a", hi: "#8fa6b8" }, { n: "Sinew", lo: "#0a0e10", hi: "#6fe0c0" },
 ];
 function hexToRgb(h) { h = h.replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
 function rgbToHex(r, g, b) { const f = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0"); return "#" + f(r) + f(g) + f(b); }
-function applyTone(lo, hi, all) {
+function applyTone(lo, hi, mix, all) {
   pushUndo();
-  const m = (parseInt($("toneMix").value, 10) || 0) / 100; // blend toward the toned colour
+  const m = mix; // blend toward the toned colour (0..1)
   const [lr, lg, lb] = hexToRgb(lo), [hr, hg, hb] = hexToRgb(hi);
   const states = all ? sprite.states : [sprite.states[cur]];
   states.forEach((st) => {
@@ -561,17 +570,6 @@ function applyTone(lo, hi, all) {
   });
   render();
 }
-function renderTones() {
-  const box = $("tonePresets"); box.innerHTML = "";
-  TONES.forEach((t) => {
-    const b = document.createElement("button");
-    b.textContent = t.n; b.style.background = "linear-gradient(180deg," + t.lo + "," + t.hi + ")"; b.style.color = "#fff"; b.style.borderColor = t.hi;
-    b.onclick = () => { $("toneLo").value = t.lo; $("toneHi").value = t.hi; applyTone(t.lo, t.hi, $("toneAll").checked); };
-    box.appendChild(b);
-  });
-}
-$("toneApply").onclick = () => applyTone($("toneLo").value, $("toneHi").value, $("toneAll").checked);
-$("toneMix").oninput = (e) => { $("toneMixVal").textContent = e.target.value + "%"; };
 
 // ===== Undo (snapshot before destructive ops) =====
 const undoStack = [];
@@ -594,8 +592,6 @@ function blackOutline(op) {
   for (const i of add) p[i] = hex;
   render();
 }
-$("outlineBtn").onclick = () => blackOutline((+$("outlineOp").value) / 100);
-$("outlineOp").oninput = (e) => { $("outlineOpVal").textContent = e.target.value + "%"; };
 
 // ===== Procedural drawing skills (no diffusion — pure pixel-art craft) =====
 const _lum = (c) => { if (!c) return -1; const [r, g, b] = hexToRgb(c); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
@@ -691,68 +687,7 @@ function skillMirrorX() {
   for (let y = 0; y < h; y++) for (let x = 0; x < Math.floor(w / 2); x++) p[y * w + (w - 1 - x)] = p[y * w + x];
   render();
 }
-$("skAngle").oninput = (e) => { $("skAngleVal").textContent = e.target.value + "°"; };
-$("skRelight").onclick = () => skillRelight(+$("skAngle").value, 0.6);
-$("skBevel").onclick = skillBevel;
-$("skHue").onclick = skillHue;
-$("skDither").onclick = skillDither;
-$("skClean").onclick = skillDespeckle;
-$("skOutline2").onclick = skillSoftOutline;
-$("skMirror").onclick = skillMirrorX;
 
-// ===== Art director: Ridley Scott × Simon S. Andersen (snakepixel) =====
-// They confer (~20 lines), then dial the knobs + run a skill recipe. Curated
-// dialogue, no model calls — everything stays inside the editor.
-const AD_BRIEFS = [
-  { mood: "Nostromo gloom", tone: { lo: "#070b14", hi: "#6ea8ff" }, strength: 60, outline: 80, depth: 7, angle: 225, skills: ["relight", "softOutline", "hue"] },
-  { mood: "rusted hull", tone: { lo: "#1c0e06", hi: "#e8a05a" }, strength: 55, outline: 70, depth: 8, angle: 210, skills: ["bevel", "relight", "dither"] },
-  { mood: "bio-lab green", tone: { lo: "#0a1a10", hi: "#8fd14f" }, strength: 50, outline: 60, depth: 5, angle: 250, skills: ["relight", "hue", "softOutline"] },
-  { mood: "plasma heat", tone: { lo: "#160a1e", hi: "#d16ad0" }, strength: 65, outline: 85, depth: 6, angle: 200, skills: ["relight", "dither", "softOutline"] },
-  { mood: "cryo blue", tone: { lo: "#0a1622", hi: "#a8e0ff" }, strength: 45, outline: 65, depth: 5, angle: 240, skills: ["bevel", "hue", "softOutline"] },
-];
-const AD_RIDLEY = [
-  "Let the darkness do the work — most of this tile should sit in shadow.",
-  "One hard source, low and raking. Everything else falls off.",
-  "Scale reads through grime — give the metal some wear, some history.",
-  "Negative space is a character; don't fill every pixel.",
-  "I want dread in the silhouette before we ever see a detail.",
-  "A single warm rim against all that cold — that's where the eye lands.",
-  "Atmosphere over clarity. Let it breathe a little haze.",
-  "Backlight the edge so it peels off the background.",
-  "Make it feel lived-in, and slightly broken.",
-  "One light, one mood. Commit to it.",
-];
-const AD_SIMON = [
-  "Readability first — at this size every pixel is a brushstroke.",
-  "Keep the ramp tight: shadow, mid, light, one accent. No mush.",
-  "Hue-shift shadows cooler and highlights warmer — never just darken.",
-  "Break the outline; a flat black box kills the form. Hug the silhouette.",
-  "Cluster pixels into shapes — lone pixels are just noise.",
-  "Dither only the transition, and sparingly, or it buzzes.",
-  "Let the lightest light kiss the darkest dark once, for a focal pop.",
-  "Hand-soften the key curves, not every edge.",
-  "Tell the volume with two-pixel bevels, not gradients.",
-  "Despeckle last — the silhouette has to sing.",
-];
-function adDiscuss() {
-  const brief = AD_BRIEFS[Math.floor(Math.random() * AD_BRIEFS.length)];
-  const R = AD_RIDLEY.slice(), S = AD_SIMON.slice();
-  const pick = (a) => a.splice(Math.floor(Math.random() * a.length), 1)[0] || "…";
-  const lines = [`— Brief: “${brief.mood}” —`];
-  for (let i = 0; i < 9; i++) { lines.push("RIDLEY  " + pick(R)); lines.push("SIMON   " + pick(S)); }
-  lines.push(`→ Settings: tone ${brief.tone.lo}→${brief.tone.hi} · strength ${brief.strength}% · light ${brief.angle}° · outline ${brief.outline}% · depth ${brief.depth}. Recipe: ${brief.skills.join(" → ")}.`);
-  return { brief, text: lines.join("\n") };
-}
-let adRecipe = null;
-$("artdirBtn").onclick = () => { const d = adDiscuss(); adRecipe = d.brief; $("artdirOut").textContent = d.text; $("artdirApply").disabled = false; $("artdirAll").disabled = false; $("artdirLib").disabled = false; };
-// dial the editor's knobs to the brief (shared by both apply buttons)
-function adSetKnobs(b) {
-  $("toneLo").value = b.tone.lo; $("toneHi").value = b.tone.hi;
-  $("toneMix").value = b.strength; $("toneMixVal").textContent = b.strength + "%";
-  $("outlineOp").value = b.outline; $("outlineOpVal").textContent = b.outline + "%";
-  if ($("voxDepth")) $("voxDepth").value = b.depth;
-  $("skAngle").value = b.angle; $("skAngleVal").textContent = b.angle + "°";
-}
 // run the skill recipe on whatever state is current (px() follows `cur`)
 function adRunSkills(b) {
   for (const s of b.skills) {
@@ -764,12 +699,6 @@ function adRunSkills(b) {
     else if (s === "mirror") skillMirrorX();
   }
 }
-$("artdirApply").onclick = () => {
-  if (!adRecipe) return; const b = adRecipe;
-  adSetKnobs(b);
-  applyTone(b.tone.lo, b.tone.hi, $("toneAll").checked);
-  adRunSkills(b);
-};
 // Apply the whole recipe to EVERY frame/state of the CURRENT sprite — walk each
 // state, re-tone it, then run the skill chain on it. (Each state's pixels span
 // all tiles of a multi-tile sprite, so every tile is processed too.)
@@ -777,39 +706,66 @@ function applyRecipeAllStates(b) {
   const saved = cur;
   for (let i = 0; i < sprite.states.length; i++) {
     cur = i;
-    applyTone(b.tone.lo, b.tone.hi, false); // this state only — we visit them all
+    applyTone(b.tone.lo, b.tone.hi, b.strength / 100, false); // this state only — we visit them all
     adRunSkills(b);
   }
   cur = saved;
 }
-$("artdirAll").onclick = () => {
-  if (!adRecipe) return; const b = adRecipe;
-  adSetKnobs(b);
-  applyRecipeAllStates(b);
-  render();
-};
-// Apply the recipe to EVERY tile in the Library dropdown (built-ins + saved),
-// then write each result back to the saved library. The bundled sprites.js
-// can't be rewritten from the browser, so built-ins are stored as saved copies
-// (same name). The editor's current sprite is restored afterward.
-$("artdirLib").onclick = () => {
-  if (!adRecipe) return; const b = adRecipe;
-  const all = { ...builtinBitmaps(), ...loadLib() }; // saved overrides built on name clash
+// ===== Style catalog — the visual styles we develop together. Each entry has a
+// SEED (string) that drives the deterministic passes, plus a duotone + skill
+// recipe. Add entries here to grow the dropdown. Selecting one restyles EVERY
+// sprite (built-ins + saved) and saves them to the library, so the GAME uses them
+// (the game reads the saved library at boot). =====
+const STYLES = [
+  // Giger × NASA — biomech bone-on-charcoal married to a sleek clean-room finish.
+  { mood: "Biomech bone (Giger × NASA)", seed: "giger-nasa", tone: { lo: "#0a0a0c", hi: "#d8cfb6" }, strength: 62, outline: 82, depth: 8, angle: 215, skills: ["relight", "bevel", "softOutline"] },
+  { mood: "Clean-room (NASA)", seed: "cleanroom", tone: { lo: "#0c141f", hi: "#eaf2fb" }, strength: 50, outline: 62, depth: 6, angle: 230, skills: ["bevel", "relight", "softOutline"] },
+  { mood: "Wet obsidian", seed: "obsidian", tone: { lo: "#06080a", hi: "#8fa6b8" }, strength: 66, outline: 86, depth: 8, angle: 205, skills: ["relight", "dither", "softOutline"] },
+  { mood: "Biolum sinew", seed: "sinew", tone: { lo: "#0a0e10", hi: "#6fe0c0" }, strength: 58, outline: 76, depth: 7, angle: 220, skills: ["relight", "hue", "softOutline"] },
+  { mood: "Ribbed alloy", seed: "alloy", tone: { lo: "#10121a", hi: "#c8d2dc" }, strength: 55, outline: 80, depth: 7, angle: 225, skills: ["bevel", "relight", "dither"] },
+  { mood: "Nostromo gloom", seed: "nostromo", tone: { lo: "#070b14", hi: "#6ea8ff" }, strength: 60, outline: 80, depth: 7, angle: 225, skills: ["relight", "softOutline", "hue"] },
+  { mood: "Rusted hull", seed: "rust", tone: { lo: "#1c0e06", hi: "#e8a05a" }, strength: 55, outline: 70, depth: 8, angle: 210, skills: ["bevel", "relight", "dither"] },
+  { mood: "Bio-lab green", seed: "biolab", tone: { lo: "#0a1a10", hi: "#8fd14f" }, strength: 50, outline: 60, depth: 5, angle: 250, skills: ["relight", "hue", "softOutline"] },
+  { mood: "Plasma heat", seed: "plasma", tone: { lo: "#160a1e", hi: "#d16ad0" }, strength: 65, outline: 85, depth: 6, angle: 200, skills: ["relight", "dither", "softOutline"] },
+  { mood: "Cryo blue", seed: "cryo", tone: { lo: "#0a1622", hi: "#a8e0ff" }, strength: 45, outline: 65, depth: 5, angle: 240, skills: ["bevel", "hue", "softOutline"] },
+];
+function strSeed(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0; return h >>> 0; }
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// Fill the dropdown from the catalog (label shows the style + its seed).
+(function () { const sel = $("styleSel"); if (!sel) return; STYLES.forEach((s, i) => { const o = document.createElement("option"); o.value = String(i); o.textContent = `${s.mood}  ·  seed: ${s.seed}`; sel.appendChild(o); }); })();
+// Restyle EVERY tile (built-ins + saved) into the chosen style, deterministically
+// from its seed, and save them all to the library so the game uses them.
+function applyStyleAll(style) {
+  const all = { ...builtinBitmaps(), ...loadLib() }; // saved overrides built-in on name clash
   const names = Object.keys(all);
-  if (!names.length) return alert("The library is empty.");
-  if (!confirm(`Apply “${b.mood}” to all ${names.length} library tiles?\nResults are saved to the library (built-ins become saved copies).`)) return;
-  adSetKnobs(b);
-  const backup = bitmap(); // so we can restore what you were editing
-  const store = loadLib();
-  for (const name of names) {
-    loadBitmap(all[name]);
-    applyRecipeAllStates(b);
-    store[sprite.name] = bitmap();
+  if (!names.length) return alert("There are no sprites to style.");
+  const realRandom = Math.random;
+  Math.random = mulberry32(strSeed(style.seed || style.mood)); // deterministic from the style's seed
+  try {
+    const backup = bitmap(); // restore what you were editing
+    const store = loadLib();
+    for (const name of names) { loadBitmap(all[name]); applyRecipeAllStates(style); store[sprite.name] = bitmap(); }
+    saveLibStore(store);
+    loadBitmap(backup);
+    refreshLibrary();
+    if ($("styleOut")) $("styleOut").textContent = `Styled ${names.length} sprites as “${style.mood}” (seed: ${style.seed}) → saved to library. Reload the game to see them.`;
+  } finally {
+    Math.random = realRandom;
   }
+}
+$("styleSel").onchange = (e) => { const v = e.target.value; if (v === "") return; applyStyleAll(STYLES[+v]); e.target.value = ""; };
+// Save ALL sprites (built-ins + the tile you're editing + saved) into the library
+// so every one is available to the game, no restyle required.
+$("saveAllBtn").onclick = () => {
+  const all = { ...builtinBitmaps(), ...loadLib() };
+  const store = loadLib();
+  for (const name in all) store[name] = all[name];
+  const curBm = bitmap(); store[curBm.name] = curBm; // include the current tile's edits
   saveLibStore(store);
-  loadBitmap(backup);
   refreshLibrary();
-  alert(`Applied “${b.mood}” to ${names.length} tiles and saved them to the library.`);
+  const n = Object.keys(store).length;
+  if ($("styleOut")) $("styleOut").textContent = `Saved ALL ${n} sprites to the library — reload the game to use them.`;
+  alert(`Saved ALL ${n} sprites to the library. Reload the game to use them.`);
 };
 
 window.addEventListener("keydown", (e) => {
@@ -886,7 +842,7 @@ $("voxDepth").oninput = (e) => { voxD = +e.target.value; renderVox(); };
   });
 })();
 
-renderCompCat(); renderCompGrid(); renderTones();
+renderCompCat(); renderCompGrid();
 updateColor(); renderSwatches(); refreshLibrary(); render();
 </script>
 </body>

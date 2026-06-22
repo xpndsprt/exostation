@@ -184,6 +184,8 @@ export interface Site {
   yield: number; // units delivered per trip (hidden until discovered)
   orbSpeed: number; // radians/sec it travels around its primary (signed)
   parent: number; // site id it orbits as a moon, or -1 if it orbits the star/barycentre
+  tint?: string; // visual colour on the chart (planet/asteroid type), or undefined
+  ring?: boolean; // a gas giant with a visible ring
 }
 
 // A star at the system centre — one (central) or two (a binary pair orbiting the
@@ -194,6 +196,19 @@ export interface Star {
   orbSpeed: number; // radians/sec around the barycentre
   color: string; // draw colour
   r: number; // draw radius (chart units)
+  kind?: string; // star class label (e.g. "red dwarf", "blue giant")
+}
+
+// A comet on a long eccentric path, criss-crossing the system (chart flair only).
+export interface Comet {
+  cx: number; // ellipse centre offset from the system centre (chart fraction)
+  cy: number;
+  a: number; // semi-major / semi-minor axes (chart fraction)
+  b: number;
+  rot: number; // ellipse rotation (radians)
+  phase: number; // current angle along the ellipse
+  speed: number; // radians/sec
+  color: string;
 }
 
 export interface Ship {
@@ -349,6 +364,7 @@ export interface World {
   drones: Record<number, Drone>;
   sites: Record<number, Site>;
   stars: Star[]; // the system's star(s) — one central, or a binary pair
+  comets: Comet[]; // decorative comets criss-crossing the Star Chart
   ships: Ship[];
   gods: God[]; // active race-gods drifting past (gods.ts)
   godTimer: number; // accumulator toward the next god visit

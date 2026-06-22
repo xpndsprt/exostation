@@ -55,6 +55,7 @@ function advanceOrbits(w: World, dt: number): void {
     const s = w.sites[id];
     s.angle = wrap(s.angle + (s.orbSpeed ?? 0) * dt);
   }
+  for (const c of w.comets ?? []) c.phase = wrap(c.phase + c.speed * dt);
 }
 
 // Drone dispatch loop: docked → outbound → transit (off-map) → inbound → unload.

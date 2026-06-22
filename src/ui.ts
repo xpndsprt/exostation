@@ -1215,8 +1215,49 @@ export function updateInfo(world: World, sel: Selection, handlers: UIHandlers): 
 type SpriteDef = { name: string; tileW: number; tileH: number; palette: Record<string, string>; states: Record<string, string[]> };
 const spriteList = (): SpriteDef[] => (window as unknown as { SPRITES?: SpriteDef[] }).SPRITES ?? [];
 
+// Editor library (localStorage "exo.sprites"): flat-pixel sprites the editor saved.
+// UI portraits prefer these so they match the in-game (renderer) art exactly.
+type LibState = { name: string; pixels: (string | null)[] };
+type LibSprite = { tileW: number; tileH: number; res?: number; w?: number; states: LibState[] };
+function editorLibrary(): Record<string, LibSprite> | null {
+  try {
+    const raw = localStorage.getItem("exo.sprites");
+    return raw ? (JSON.parse(raw) as Record<string, LibSprite>) : null;
+  } catch {
+    return null;
+  }
+}
+// Draw an editor-library sprite's idle frame onto the canvas; returns false if the
+// species isn't in the library (so the caller falls back to window.SPRITES).
+function drawLibArt(canvas: HTMLCanvasElement, species: string): boolean {
+  const lib = editorLibrary();
+  const b = lib?.[species];
+  if (!b || !Array.isArray(b.states) || !b.states.length) return false;
+  const st = b.states.find((s) => s.name === "idle") ?? b.states.find((s) => s.name === "default") ?? b.states[0];
+  if (!st || !Array.isArray(st.pixels)) return false;
+  const res = b.res || (b.w && b.tileW ? Math.round(b.w / b.tileW) : 32);
+  const tw = b.tileW * res, th = b.tileH * res;
+  const px = Math.max(1, Math.floor(96 / Math.max(tw, th)));
+  canvas.width = tw * px;
+  canvas.height = th * px;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return false;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let y = 0; y < th; y++)
+    for (let x = 0; x < tw; x++) {
+      const col = st.pixels[y * tw + x];
+      if (col && col[0] === "#") {
+        ctx.fillStyle = col;
+        ctx.fillRect(x * px, y * px, px, px);
+      }
+    }
+  return true;
+}
+
 // Rasterize a species' idle frame onto the given canvas (nearest-neighbour, ~96px).
 function drawSpeciesArt(canvas: HTMLCanvasElement, species: string): void {
+  if (drawLibArt(canvas, species)) return; // editor art wins, matching the game
   const s = spriteList().find((x) => x.name === species);
   const rows = s ? (s.states.idle ?? s.states.default ?? Object.values(s.states)[0] ?? []) : [];
   // Native px/tile: explicit res, else derived from the first row's length (like
@@ -1560,6 +1601,44 @@ function gradeColor(y: number): string {
 function gradeLabel(y: number): string {
   return y >= 50 ? "Mineral-rich" : y >= 30 ? "Ore-rich" : y >= 16 ? "Moderate" : "Lean";
 }
+// Deterministic 0..1 generator seeded per body — unique-but-stable textures.
+function bodyRng(seed: number): () => number {
+  let a = (seed * 2654435761) >>> 0;
+  return () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function shadeHex(hex: string, amt: number): string {
+  const s = hex.replace("#", "");
+  if (s.length < 6) return hex;
+  const f = (h: string) => Math.max(0, Math.min(255, Math.round(parseInt(h, 16) + amt * 255))).toString(16).padStart(2, "0");
+  return "#" + f(s.slice(0, 2)) + f(s.slice(2, 4)) + f(s.slice(4, 6));
+}
+// Procedurally texture a body, clipped to its disc and lit from the upper-left:
+// gas-giant bands or rocky continents for planets, craters for moons, mottling for
+// rocks — seeded by id so each looks distinct.
+function drawTexturedBody(ctx: CanvasRenderingContext2D, x: number, y: number, rad: number, s: Site): void {
+  const base = s.tint ?? "#9a8a72";
+  const rng = bodyRng(s.id);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = base; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  if (s.kind === "planet") {
+    if (rng() < 0.5) {
+      for (let by = -rad; by < rad; by += 1.5) { ctx.fillStyle = shadeHex(base, (rng() - 0.5) * 0.35); ctx.fillRect(x - rad, y + by, rad * 2, 1.5); }
+    } else {
+      for (let k = 0; k < 14; k++) { ctx.fillStyle = shadeHex(base, (rng() - 0.5) * 0.5); ctx.beginPath(); ctx.arc(x + (rng() - 0.5) * rad * 1.7, y + (rng() - 0.5) * rad * 1.7, rng() * rad * 0.55, 0, Math.PI * 2); ctx.fill(); }
+    }
+  } else if (s.kind === "moon") {
+    for (let k = 0; k < 7; k++) { ctx.fillStyle = shadeHex(base, -0.22 - rng() * 0.15); ctx.beginPath(); ctx.arc(x + (rng() - 0.5) * rad * 1.4, y + (rng() - 0.5) * rad * 1.4, rng() * rad * 0.38 + 0.5, 0, Math.PI * 2); ctx.fill(); }
+  } else {
+    for (let k = 0; k < 5; k++) { ctx.fillStyle = shadeHex(base, (rng() - 0.5) * 0.45); ctx.beginPath(); ctx.arc(x + (rng() - 0.5) * rad, y + (rng() - 0.5) * rad, rng() * rad * 0.6, 0, Math.PI * 2); ctx.fill(); }
+  }
+  const g = ctx.createRadialGradient(x - rad * 0.4, y - rad * 0.4, rad * 0.15, x, y, rad * 1.25);
+  g.addColorStop(0, "rgba(255,255,255,0.22)");
+  g.addColorStop(0.5, "rgba(0,0,0,0)");
+  g.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = g; ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  ctx.restore();
+}
 
 export function refreshStarChart(world: World): void {
   if (!scOpen) return;
@@ -1592,18 +1671,26 @@ export function refreshStarChart(world: World): void {
   const starPos = (st: { angle: number; dist: number }): [number, number] =>
     st.dist <= 0 ? [cx, cy] : [cx + Math.cos(st.angle) * st.dist * r0 * 1.4, cy + Math.sin(st.angle) * st.dist * r0 * 1.4];
   const stars = world.stars ?? [];
+  const hex6 = (c: string) => (/^#[0-9a-fA-F]{6}$/.test(c) ? c : "#ffd27a"); // guard hex8 concat
   for (const st of stars) {
     const [sx, sy] = starPos(st);
-    const gl = ctx.createRadialGradient(sx, sy, 0, sx, sy, st.r * 4.2);
-    gl.addColorStop(0, st.color);
-    gl.addColorStop(1, "rgba(255,210,122,0)");
+    const c = hex6(st.color);
+    const R = st.r * 5.5;
+    const gl = ctx.createRadialGradient(sx, sy, 0, sx, sy, R);
+    gl.addColorStop(0, c);
+    gl.addColorStop(0.35, c + "99");
+    gl.addColorStop(1, c + "00");
     ctx.fillStyle = gl;
     ctx.beginPath();
-    ctx.arc(sx, sy, st.r * 4.2, 0, Math.PI * 2);
+    ctx.arc(sx, sy, R, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = st.color;
+    ctx.fillStyle = c; // disc
     ctx.beginPath();
     ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)"; // hot core
+    ctx.beginPath();
+    ctx.arc(sx, sy, st.r * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
   if (stars.length === 0) {
@@ -1670,11 +1757,7 @@ export function refreshStarChart(world: World): void {
       ? "#3a4150"
       : !known
         ? SC_UNKNOWN
-        : s.kind === "planet"
-          ? SC_PLANET
-          : s.kind === "moon"
-            ? SC_MOON
-            : gradeColor(s.yield);
+        : s.tint ?? (s.kind === "planet" ? SC_PLANET : s.kind === "moon" ? SC_MOON : gradeColor(s.yield));
     const rad = s.kind === "planet" ? 8 : s.kind === "moon" ? 4 : 5;
     if (s.id === scSelected) {
       ctx.strokeStyle = "#6ea8ff";
@@ -1683,15 +1766,55 @@ export function refreshStarChart(world: World): void {
       ctx.arc(x, y, rad + 5, 0, Math.PI * 2);
       ctx.stroke();
     }
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(x, y, rad, 0, Math.PI * 2);
-    ctx.fill();
+    // a gas-giant's ring (behind the disc)
+    if (s.kind === "planet" && s.ring && known) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.5);
+      ctx.strokeStyle = "rgba(220,224,238,0.45)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rad + 6, (rad + 6) * 0.34, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (known && !depleted) {
+      drawTexturedBody(ctx, x, y, rad, s); // unique procedural texture, lit upper-left
+    } else {
+      ctx.fillStyle = col; // undiscovered "?" / depleted — flat dot
+      ctx.beginPath();
+      ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.fillStyle = known ? "#c3cbdc" : "#6b7488";
     ctx.font = "10px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(known ? s.name : "?", x, y + rad + 11);
     scHits.push({ id: s.id, x, y, r: rad });
+  }
+
+  // comets: bright head + a gradient tail streaming away from the system centre
+  for (const c of world.comets ?? []) {
+    const ex = Math.cos(c.phase) * c.a, ey = Math.sin(c.phase) * c.b;
+    const rx = ex * Math.cos(c.rot) - ey * Math.sin(c.rot) + c.cx;
+    const ry = ex * Math.sin(c.rot) + ey * Math.cos(c.rot) + c.cy;
+    const hx = cx + rx * rMax, hy = cy + ry * rMax;
+    const dx = hx - cx, dy = hy - cy, len = Math.hypot(dx, dy) || 1;
+    const tlen = 30 + 30 * (1 - Math.min(1, len / rMax)); // longer tail near the sun
+    const tx = hx + (dx / len) * tlen, ty = hy + (dy / len) * tlen;
+    const grad = ctx.createLinearGradient(hx, hy, tx, ty);
+    grad.addColorStop(0, c.color);
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(hx, hy, 1.8, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // the bay's drone, drawn en route along its target line (out then back)
