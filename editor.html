@@ -419,7 +419,9 @@ $("saveJson").onclick = () => { const blob = new Blob([JSON.stringify(bitmap())]
 // --- library ---
 const LS_KEY = "exo.sprites";
 const loadLib = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
-const saveLibStore = (o) => localStorage.setItem(LS_KEY, JSON.stringify(o));
+// Saving deliberately opts the game in to using the editor library (the game
+// ignores it otherwise, so a stale library never overrides the built-in art).
+const saveLibStore = (o) => { localStorage.setItem(LS_KEY, JSON.stringify(o)); localStorage.setItem("exo.sprites.enabled", "1"); };
 
 function asciiToBitmap(s) {
   // built-ins author at 16px/tile — derive the native res from the row length

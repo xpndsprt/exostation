@@ -1221,6 +1221,7 @@ type LibState = { name: string; pixels: (string | null)[] };
 type LibSprite = { tileW: number; tileH: number; res?: number; w?: number; states: LibState[] };
 function editorLibrary(): Record<string, LibSprite> | null {
   try {
+    if (localStorage.getItem("exo.sprites.enabled") !== "1") return null; // opt-in (see renderer)
     const raw = localStorage.getItem("exo.sprites");
     return raw ? (JSON.parse(raw) as Record<string, LibSprite>) : null;
   } catch {
