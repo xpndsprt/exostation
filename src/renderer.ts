@@ -135,6 +135,17 @@ function hslToHex(h: number, s: number, l: number): number {
 // ---- sprite textures (built once from window.SPRITES) ----
 type Px = (string | null)[];
 const TEX = new Map<string, Texture>();
+// Per-race ships designed in the Ship Editor (localStorage "exo.ships"). Each holds
+// a hull texture plus the nav lights / thrusters / landing-leg anchors so the game
+// can light them, vapor on landing and splay legs on touchdown (top-down).
+type RaceShip = {
+  tex: Texture;
+  res: number;
+  lights: { x: number; y: number; c: string }[];
+  thrusters: { x: number; y: number }[];
+  legs: { x: number; y: number }[];
+};
+const RACE_SHIPS = new Map<string, RaceShip>();
 
 function asciiPixels(rows: string[], palette: Record<string, string>, w: number, h: number): Px {
   const p: Px = new Array(w * h).fill(null);
@@ -258,8 +269,10 @@ function tonePalette(name: string, palette: Record<string, string>): Record<stri
 export function resetTextures(): void {
   for (const t of TEX.values()) { try { t.destroy(true); } catch { /* ignore */ } }
   for (const t of HTEX.values()) { try { t.destroy(true); } catch { /* ignore */ } }
+  for (const r of RACE_SHIPS.values()) { try { r.tex.destroy(true); } catch { /* ignore */ } }
   TEX.clear();
   HTEX.clear();
+  RACE_SHIPS.clear();
 }
 // Clear + immediately rebuild — used on WebGL context restore.
 function rebuildTextures(): void {
@@ -291,6 +304,7 @@ function buildTextures(): void {
     }
   }
   applyEditorLibrary();
+  loadRaceShips();
 }
 
 // Use sprites the standalone editor saved to localStorage ("exo.sprites") IN THE
@@ -321,6 +335,35 @@ function applyEditorLibrary(): void {
       TEX.set(`${name}:${st.name}`, makeTexture(st.pixels, w, h));
       HTEX.set(`${name}:${st.name}`, makeHeightTexture(st.pixels, w, h, base));
     }
+  }
+}
+
+// Load the per-race ships designed in the Ship Editor (same-origin localStorage,
+// opt-in via "exo.ships.enabled"). Builds a hull texture per race + keeps the
+// light/thruster/leg markers for the landing effects.
+function loadRaceShips(): void {
+  RACE_SHIPS.clear();
+  let lib: Record<string, { res?: number; pixels?: (string | null)[]; lights?: { x: number; y: number; c: string }[]; thrusters?: { x: number; y: number }[]; legs?: { x: number; y: number }[] }>;
+  try {
+    if (localStorage.getItem("exo.ships.enabled") !== "1") return;
+    const raw = localStorage.getItem("exo.ships");
+    if (!raw) return;
+    lib = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  for (const race in lib) {
+    const s = lib[race];
+    if (!s || !Array.isArray(s.pixels)) continue;
+    const res = s.res || Math.round(Math.sqrt(s.pixels.length)) || 48;
+    if (res * res !== s.pixels.length) continue; // must be square
+    RACE_SHIPS.set(race, {
+      tex: makeTexture(s.pixels, res, res),
+      res,
+      lights: Array.isArray(s.lights) ? s.lights : [],
+      thrusters: Array.isArray(s.thrusters) ? s.thrusters : [],
+      legs: Array.isArray(s.legs) ? s.legs : [],
+    });
   }
 }
 function texH(name: string, state: string): Texture | null {
@@ -1416,10 +1459,61 @@ export class Renderer {
         g.moveTo(x, y).lineTo(tx, ty).stroke({ width: 2.5, color: 0xff5a3a, alpha: 0.5 + 0.4 * Math.abs(Math.sin(phase * Math.PI * 2)) });
         g.circle(tx, ty, TILE * (0.3 + 0.12 * Math.sin(phase * Math.PI * 2))).stroke({ width: 2, color: 0xff3b2a, alpha: 0.85 });
       }
-      sprites.push({
-        t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
-        x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul * here.scale,
-      });
+      // A per-race ship designed in the Ship Editor (top-down): textured hull plus
+      // its own nav lights, landing vapor and legs that splay on touchdown.
+      const design = !ship.hostile && ship.race ? RACE_SHIPS.get(ship.race) : undefined;
+      if (design) {
+        const sc = (TILE * 2.0 / design.res) * sizeMul * here.scale;
+        const cosr = Math.cos(rot), sinr = Math.sin(rot);
+        const toWorld = (lx: number, ly: number): [number, number] => {
+          const ddx = (lx - design.res / 2) * sc, ddy = (ly - design.res / 2) * sc;
+          return [x + ddx * cosr - ddy * sinr, y + ddx * sinr + ddy * cosr];
+        };
+        // landing factors: legs splay + vapor billows as it settles on the pad
+        const p = ship.prog ?? 0;
+        let legExt = 0, vapor = 0;
+        if (ship.phase === "wait" || ship.phase === undefined) { legExt = 1; vapor = 0.22; }
+        else if (ship.phase === "in") { legExt = clamp01((p - 0.8) / 0.2); vapor = clamp01((p - 0.6) / 0.4) * 0.9; }
+        else if (ship.phase === "out") { legExt = clamp01((0.15 - p) / 0.15); vapor = Math.max(0, (0.22 - p) / 0.22) * 0.9; }
+        // vapor (under hull) — billows outward across the deck from each thruster
+        if (vapor > 0.02) {
+          for (const m of design.thrusters) {
+            const [wx, wy] = toWorld(m.x, m.y);
+            let ddx = wx - x, ddy = wy - y; const dl = Math.hypot(ddx, ddy) || 1; ddx /= dl; ddy /= dl;
+            for (let k = 0; k < 5; k++) {
+              const ph = (phase + k / 5) % 1;
+              const dist = ph * TILE * (0.8 + 1.8 * vapor);
+              const wob = Math.sin(k * 2.1 + world.tick * 0.3) * TILE * 0.18;
+              const cxp = wx + ddx * dist - ddy * wob, cyp = wy + ddy * dist + ddx * wob;
+              g.circle(cxp, cyp, (0.3 + ph * 1.0) * TILE * (0.4 + vapor)).fill({ color: 0xe8f0ff, alpha: (1 - ph) * 0.32 * vapor });
+            }
+          }
+        }
+        // landing legs (under hull) — splay outward to a foot pad
+        if (legExt > 0.02) {
+          for (const m of design.legs) {
+            const [bx, by] = toWorld(m.x, m.y);
+            let ddx = bx - x, ddy = by - y; const dl = Math.hypot(ddx, ddy) || 1; ddx /= dl; ddy /= dl;
+            const len = sc * 5 * legExt, fx = bx + ddx * len, fy = by + ddy * len;
+            g.moveTo(bx, by).lineTo(fx, fy).stroke({ width: Math.max(1.5, sc * 0.5), color: 0x9aa6b2, alpha: 0.95 });
+            g.circle(fx, fy, sc * 0.9).fill({ color: 0xc6d0db, alpha: 0.95 });
+          }
+        }
+        sprites.push({ t: design.tex, x, y, c: true, rot, scale: sc });
+        // nav lights (glow halos read around the hull edges), blinking
+        for (const m of design.lights) {
+          const [lx, ly] = toWorld(m.x, m.y);
+          const col = parseInt((m.c || "#ffffff").replace("#", ""), 16) || 0xffffff;
+          const a = 0.4 + 0.6 * Math.abs(Math.sin(phase * Math.PI * 2 + (m.x + m.y)));
+          g.circle(lx, ly, sc * 2.6).fill({ color: col, alpha: a * 0.35 });
+          g.circle(lx, ly, sc * 0.9).fill({ color: 0xffffff, alpha: a });
+        }
+      } else {
+        sprites.push({
+          t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
+          x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul * here.scale,
+        });
+      }
     }
 
     // hull breaches — a blinking red marker so the emergency is easy to spot

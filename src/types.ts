@@ -234,6 +234,7 @@ export interface Ship {
   fuelNeed?: number; // fuel units the ship buys on landing (income)
   gas?: GasKind; // breathing gas of the guests aboard (which hotels they can use)
   rotV?: number; // smoothed visual heading (radians) — eased so turns are graceful
+  race?: Species; // which race's ship design to render (Ship Editor), if any
 }
 
 // A pending social encounter between two co-located agents, awaiting the player's

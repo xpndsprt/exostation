@@ -166,7 +166,7 @@ export function economySystem(w: World, dt: number): void {
     }
     dock.timer -= interval;
     const k = Math.min(DOCK_TIER[dock.kind as DockKind].guests, freeByGas[g]);
-    spawnShip(w, dock, { guests: k, gas: g });
+    spawnShip(w, dock, { guests: k, gas: g, race: g === "ch4" ? "vorn" : "drenn" }); // guest shuttle = the gas's visitor class
     freeByGas[g] -= k;
   }
 
@@ -201,7 +201,7 @@ export function economySystem(w: World, dt: number): void {
       if (rem > 0) w.stock.minerals -= rem; // remainder from the warehouse
       w.credits += amount * MINERAL_PRICE * exBonus * nexus * w.priceMult * (hasDrenn ? TRAITS.drennTrade : 1);
       const dock = docks.find((d) => d.powered && exteriorCell(w, d) >= 0 && !dockBusy(w, d));
-      if (dock) spawnShip(w, dock, { trader: true });
+      if (dock) spawnShip(w, dock, { trader: true, race: "drenn" }); // the Drenn merchant class
     }
   }
 }
@@ -230,7 +230,7 @@ function tryCrewArrival(
   const sp = eligible[0];
 
   if (!addAgent(w, access % w.w, (access / w.w) | 0, sp, false)) return false;
-  if (exteriorCell(w, dock) >= 0) spawnShip(w, dock, {});
+  if (exteriorCell(w, dock) >= 0) spawnShip(w, dock, { race: sp }); // crew shuttle = the arriving race
   return true;
 }
 

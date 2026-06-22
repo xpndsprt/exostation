@@ -71,6 +71,9 @@
       <button id="clear">✖ Clear</button>
     </div>
     <div class="row">
+      <button id="saveall" style="flex:1">🚀 Save ALL races to game</button>
+    </div>
+    <div class="row">
       <button id="export">⭳ Export JSON</button>
       <button id="import">⭱ Import</button>
       <input type="file" id="file" accept="application/json" style="display:none" />
@@ -332,6 +335,7 @@ for (const [t, id] of Object.entries(toolBtns)) $(id).onclick = () => { tool = t
 
 $("zoom").oninput = (e) => { zoom = +e.target.value; resizeCanvas(); };
 $("save").onclick = () => { ships[curId] = sprite; save(ships); status("Saved " + curId + " ship — the game will use it (reload the game)."); };
+$("saveall").onclick = () => { ships[curId] = sprite; for (const s of SPECIES) if (!ships[s.id]) ships[s.id] = getShip(s.id); save(ships); status("Saved ALL " + SPECIES.length + " race ships to the game — reload the game to see them arrive."); alert("Saved all " + SPECIES.length + " race ships. Reload the game — each race now arrives in its own ship."); };
 $("clear").onclick = () => { if (confirm("Clear this race's ship?")) { sprite = blank(); render(); } };
 $("export").onclick = () => { ships[curId] = sprite; const blob = new Blob([JSON.stringify(ships, null, 1)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "exo-ships.json"; a.click(); };
 $("import").onclick = () => $("file").click();
