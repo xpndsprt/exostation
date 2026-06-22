@@ -23,22 +23,29 @@
   const B = (n) => "b".repeat(n);
   const D = (n) => "d".repeat(n);
 
-  // --- wall autotile set (32px, BIOMECHANICAL): a ribbed bone spine over a dark
-  // recess — Giger vertebrae read through Moebius-clean panel lines. Renderer picks
-  // one by neighbour mask. d = recess hull, k = groove/edge, m = body, h = bone. ---
-  const VBODY = "khmmmkkmmmhk"; // 12-wide vertical strut: bone flanks, dark spine groove
-  const VRIB = "khhhmkkmhhhk"; // a vertebra — brighter bone bulge across the strut
-  // a column of strut segments with vertebrae every 5 rows (pairs read as ribs).
-  const strutRows = (n) => Array.from({ length: n }, (_, i) => D(10) + ((i % 5 === 2 || i % 5 === 3) ? VRIB : VBODY) + D(10));
-  // horizontal bulkhead beam (12 rows × 32): bone ridges top/bottom, a central
-  // spine groove, and vertical rib ticks crossing the body.
-  const RIBBED = "mmmk".repeat(8); // body row with periodic rib ticks
+  // --- wall autotile set (32px, NASAPUNK): clean alloy bulkheads — a soft bevel,
+  // flush rivet courses and a lit display strip down the middle; corners bend on a
+  // true quarter-circle arc. Renderer picks one by neighbour mask & rotates.
+  // d = recess · k = edge groove · m = alloy panel · h = lit bevel · b = display. ---
+  const STRUT = "khmmmkkmmmhk"; // clean 12-wide strut cross-section (edges, bevel, panel)
+  // a column of clean strut segments: flush rivets every 5 rows, a dashed centre light.
+  const strutRows = (n) => Array.from({ length: n }, (_, i) => {
+    let core = STRUT;
+    if (i % 5 === 2) core = "khmhmkkmhmhk";      // flush rivet heads on the flanks
+    else if (i % 3 === 0) core = "khmmmbbmmmhk"; // a dash of the central display strip
+    return D(10) + core + D(10);
+  });
+  // horizontal bulkhead beam (12 rows × 32): clean panel, edge grooves, a top/bottom
+  // bevel, two rivet courses and a lit display strip running down the middle.
+  const rivetRow = "mmmhmm".repeat(5) + "mm";    // raised rivet heads every 6px
+  const dispRow = (function () { let s = ""; for (let x = 0; x < 32; x++) s += (x >= 2 && x < 30 && x % 3 !== 0) ? "b" : "k"; return s; })();
   const HBEAM = [
-    "k".repeat(32), "h".repeat(32), "m".repeat(32), RIBBED, "m".repeat(32),
-    "k".repeat(32), "k".repeat(32),
-    "m".repeat(32), RIBBED, "m".repeat(32), "h".repeat(32), "k".repeat(32),
+    "k".repeat(32), "h".repeat(32), "m".repeat(32), rivetRow, "m".repeat(32),
+    "k".repeat(32), dispRow, "k".repeat(32),
+    "m".repeat(32), rivetRow, "h".repeat(32), "k".repeat(32),
   ];
-  // Connects N + E as a TRUE quarter-circle arc — a curved rib bridging the struts.
+  // Connects N + E as a TRUE quarter-circle arc — the bulkhead bends round the
+  // corner with the same cross-section, the display strip following the bend.
   const arcCorner = (cx, cy) => {
     const rows = [];
     for (let y = 0; y < 32; y++) {
@@ -46,34 +53,34 @@
       for (let x = 0; x < 32; x++) {
         const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
         const r = Math.sqrt(dx * dx + dy * dy);
-        // inner/outer recess, k edges, h bone ridge, k spine groove down the middle, m body
-        s += r < 10 || r > 22 ? "d" : r < 11.5 ? "k" : r < 13 ? "h" : r < 15.5 || r > 20.5 ? "k" : r < 17 || r > 19 ? "m" : "k";
+        // d recess · k edge · h bevel · m panel · b display centre · m · h · k
+        s += r < 10 || r > 22 ? "d" : r < 11 ? "k" : r < 12.5 ? "h" : r < 15.5 ? "m" : r < 16.5 ? "b" : r < 20 ? "m" : r < 21.5 ? "h" : "k";
       }
       rows.push(s);
     }
     return rows;
   };
   const WALL_CORNER = arcCorner(32, 0); // base = N + E (renderer rotates for the others)
-  const WALL_T = [ // connects N + E + S (vertical spine + east beam)
+  const WALL_T = [ // connects N + E + S (vertical strut + east beam)
     ...strutRows(10),
     ...HBEAM.map((r) => D(10) + r.slice(10)),
     ...strutRows(10),
   ];
   const WALL_STRAIGHT = [ ...Array(10).fill(D(32)), ...HBEAM, ...Array(10).fill(D(32)) ];
   const WALL_CROSS = [ ...strutRows(10), ...HBEAM, ...strutRows(10) ];
-  const WALL_END = [ // a capped stub pointing N — a vertebra tipped with a bone cap
+  const WALL_END = [ // a capped stub pointing N — a rounded alloy cap
     ...strutRows(18),
     D(10) + "k" + "h".repeat(10) + "k" + D(10),
     D(10) + "k".repeat(12) + D(10),
     ...Array(12).fill(D(32)),
   ];
-  const WALL_NODE = (function () { // isolated post — a single bone vertebra
+  const WALL_NODE = (function () { // isolated post — a clean riveted plug
     const post = [
       "k".repeat(12),
       "k" + "h".repeat(10) + "k",
-      "k" + "h" + "mmmkk".repeat(1) + "mmm" + "h" + "k",
+      "k" + "h" + "mmmbbmmm" + "h" + "k",
       ...Array(6).fill("k" + "h" + "mmmkkmmm" + "h" + "k"),
-      "k" + "h" + "mmmkk".repeat(1) + "mmm" + "h" + "k",
+      "k" + "h" + "mmmbbmmm" + "h" + "k",
       "k" + "h".repeat(10) + "k",
       "k".repeat(12),
     ];
@@ -83,8 +90,8 @@
       ...Array(10).fill(D(32)),
     ];
   })();
-  // bone-on-charcoal ramp (the duotone steel pass reinforces it across the station)
-  const WALL_PAL = { d: "#171c26", k: "#0b0e14", m: "#7f7468", h: "#cfc6b6" };
+  // clean cool-alloy ramp + a cyan display glow (the Nasapunk style reinforces it)
+  const WALL_PAL = { d: "#10151c", k: "#0a0d12", m: "#5c6775", h: "#c6d0db", b: "#46c7d6" };
 
   // Biomechanical floor plate (32×32): a panel with a beveled inset, a dashed
   // vertebral cross-seam and corner rivets — Moebius-clean, Giger-boned by the tone.

@@ -152,14 +152,11 @@
     <div class="hint" style="margin-top:5px">Pick a part, choose the <b>Stamp</b> tool, click to place. ⟳ rotates the selection.</div>
     <h4>Style</h4>
     <div class="row"><select id="styleSel" style="flex:1"><option value="">— pick a visual style —</option></select></div>
-    <div class="hint" style="margin-top:5px">Pick a stored style — it restyles <b>every</b> sprite (built-ins + saved) and saves them to the library, so the game uses them. Add more in the <code>STYLES</code> list.</div>
+    <div class="hint" style="margin-top:5px">Picking a style does the whole station: <b>redraws the aliens</b> (humans stay human; others get distinct body plans) <b>and</b> colours/relights every sprite, all saved to the library so the game uses them.</div>
     <div class="row" style="margin-top:8px"><button id="saveAllBtn" style="flex:1">💾 Save ALL to library (use in game)</button></div>
     <div class="hint" style="margin-top:5px">Bakes every tile (built-ins + your edits) into the library so the game picks them all up. Reload the game after.</div>
     <div class="row" style="margin-top:8px"><button id="undoBtn">↶ Undo</button></div>
     <div id="styleOut" class="hint" style="margin-top:6px"></div>
-    <h4>Aliens — body shapes</h4>
-    <div class="row"><select id="alienSel" style="flex:1"><option value="">— redraw species shapes —</option></select></div>
-    <div class="hint" style="margin-top:5px">Redraws every creature: <b>humans stay human</b>; other species get a distinct body plan (octopus, pentagonal, crab, serpent, jelly, …). Pick a seed — saved to the library so the game uses them. Apply a Style afterwards to colour them.</div>
     <h4>Zoom</h4>
     <div class="row"><input type="range" id="zoom" min="6" max="40" value="14" /></div>
     <div class="row"><label><input type="checkbox" id="showGrid" checked /> grid</label>
@@ -720,17 +717,10 @@ function applyRecipeAllStates(b) {
 // sprite (built-ins + saved) and saves them to the library, so the GAME uses them
 // (the game reads the saved library at boot). =====
 const STYLES = [
-  // Giger × NASA — biomech bone-on-charcoal married to a sleek clean-room finish.
-  { mood: "Biomech bone (Giger × NASA)", seed: "giger-nasa", tone: { lo: "#0a0a0c", hi: "#d8cfb6" }, strength: 62, outline: 82, depth: 8, angle: 215, skills: ["relight", "bevel", "softOutline"] },
-  { mood: "Clean-room (NASA)", seed: "cleanroom", tone: { lo: "#0c141f", hi: "#eaf2fb" }, strength: 50, outline: 62, depth: 6, angle: 230, skills: ["bevel", "relight", "softOutline"] },
-  { mood: "Wet obsidian", seed: "obsidian", tone: { lo: "#06080a", hi: "#8fa6b8" }, strength: 66, outline: 86, depth: 8, angle: 205, skills: ["relight", "dither", "softOutline"] },
-  { mood: "Biolum sinew", seed: "sinew", tone: { lo: "#0a0e10", hi: "#6fe0c0" }, strength: 58, outline: 76, depth: 7, angle: 220, skills: ["relight", "hue", "softOutline"] },
-  { mood: "Ribbed alloy", seed: "alloy", tone: { lo: "#10121a", hi: "#c8d2dc" }, strength: 55, outline: 80, depth: 7, angle: 225, skills: ["bevel", "relight", "dither"] },
-  { mood: "Nostromo gloom", seed: "nostromo", tone: { lo: "#070b14", hi: "#6ea8ff" }, strength: 60, outline: 80, depth: 7, angle: 225, skills: ["relight", "softOutline", "hue"] },
-  { mood: "Rusted hull", seed: "rust", tone: { lo: "#1c0e06", hi: "#e8a05a" }, strength: 55, outline: 70, depth: 8, angle: 210, skills: ["bevel", "relight", "dither"] },
-  { mood: "Bio-lab green", seed: "biolab", tone: { lo: "#0a1a10", hi: "#8fd14f" }, strength: 50, outline: 60, depth: 5, angle: 250, skills: ["relight", "hue", "softOutline"] },
-  { mood: "Plasma heat", seed: "plasma", tone: { lo: "#160a1e", hi: "#d16ad0" }, strength: 65, outline: 85, depth: 6, angle: 200, skills: ["relight", "dither", "softOutline"] },
-  { mood: "Cryo blue", seed: "cryo", tone: { lo: "#0a1622", hi: "#a8e0ff" }, strength: 45, outline: 65, depth: 5, angle: 240, skills: ["bevel", "hue", "softOutline"] },
+  // Nasapunk — the one house style. Clean cool-alloy + white, a soft bevel and a
+  // gentle relight (no grime/dither). `creatureSeed` also redraws the aliens so
+  // picking the style does the whole station in one go.
+  { mood: "Nasapunk", seed: "nasapunk", creatureSeed: "nasapunk", tone: { lo: "#0e151d", hi: "#eef4fb" }, strength: 46, outline: 64, depth: 6, angle: 230, skills: ["bevel", "relight", "softOutline"] },
 ];
 function strSeed(s) { let h = 2166136261 >>> 0; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0; return h >>> 0; }
 function mulberry32(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -756,7 +746,15 @@ function applyStyleAll(style) {
     Math.random = realRandom;
   }
 }
-$("styleSel").onchange = (e) => { const v = e.target.value; if (v === "") return; applyStyleAll(STYLES[+v]); e.target.value = ""; };
+// Picking the style does everything: redraw the aliens (shapes) from the style's
+// creatureSeed, then tone/relight every sprite — all saved to the library.
+$("styleSel").onchange = (e) => {
+  const v = e.target.value; if (v === "") return;
+  const style = STYLES[+v];
+  if (style.creatureSeed) regenerateAliens(style.creatureSeed, true); // shapes first (silent)
+  applyStyleAll(style);                                               // then colour/relight all
+  e.target.value = "";
+};
 // Save ALL sprites (built-ins + the tile you're editing + saved) into the library
 // so every one is available to the game, no restyle required.
 $("saveAllBtn").onclick = () => {
@@ -780,7 +778,6 @@ $("saveAllBtn").onclick = () => {
 // the GAME (which reads the library) uses them.
 const CR = 32; // creatures are drawn at 32x32
 const SUIT_FABRIC = { U: "#b8c2cc", V: "#7c8894", p: "#eaf2fb" };
-const ALIEN_SEEDS = ["xeno-prime", "deep-ones", "menagerie", "carnival", "abyssal", "hivemind", "verdant"];
 function crGrid() { return new Array(CR * CR).fill("."); }
 function crSet(g, x, y, c) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < CR && y < CR) g[y * CR + x] = c; }
 function crGet(g, x, y) { return (x >= 0 && y >= 0 && x < CR && y < CR) ? g[y * CR + x] : "."; }
@@ -850,8 +847,9 @@ function planAvian(g, walk) {
 function planDead(g) { crEll(g, 16, 26, 9, 2, "c"); crDisc(g, 11, 25, 2, "s"); for (let x = 8; x < 24; x += 3) crSet(g, x, 27, "b"); crSet(g, 11, 25, "e"); }
 const ALIEN_PLANS = [planOctopus, planRadial, planCrab, planSerpent, planBlob, planInsectoid, planArachnid, planJelly, planAvian];
 
-// Redraw every creature from `seedStr` and save to the library.
-function regenerateAliens(seedStr) {
+// Redraw every creature from `seedStr` and save to the library. When `silent`
+// (called as part of applying a style) it skips the alert/own status line.
+function regenerateAliens(seedStr, silent) {
   const creatures = (window.SPRITES || []).filter((s) => s.states && s.states.idle && s.states.walk);
   if (!creatures.length) return alert("No creatures found in window.SPRITES.");
   const suit = (rows) => rows.map((r) => r.replace(/s/g, "G").replace(/e/g, "p").replace(/c/g, "U").replace(/b/g, "V"));
@@ -869,11 +867,11 @@ function regenerateAliens(seedStr) {
   }
   saveLibStore(store);
   refreshLibrary();
-  if ($("styleOut")) $("styleOut").textContent = `Redrew ${creatures.length} species (seed: ${seedStr}) → saved to library. Reload the game to see them.`;
-  alert(`Redrew ${creatures.length} species from seed “${seedStr}”. Reload the game to see them.`);
+  if (!silent) {
+    if ($("styleOut")) $("styleOut").textContent = `Redrew ${creatures.length} species (seed: ${seedStr}) → saved to library. Reload the game to see them.`;
+    alert(`Redrew ${creatures.length} species from seed “${seedStr}”. Reload the game to see them.`);
+  }
 }
-(function () { const sel = $("alienSel"); if (!sel) return; ALIEN_SEEDS.forEach((sd) => { const o = document.createElement("option"); o.value = sd; o.textContent = "seed: " + sd; sel.appendChild(o); }); })();
-$("alienSel").onchange = (e) => { const v = e.target.value; if (!v) return; regenerateAliens(v); e.target.value = ""; };
 
 window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return; // don't hijack typing
