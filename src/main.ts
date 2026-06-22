@@ -86,7 +86,12 @@ async function boot(): Promise<void> {
   // backend, which left the multiply-lightmap blank → a black screen. WebGL is
   // plenty for 2D. (The benign "Failed to create WebGPU Context Provider" probe
   // log is cosmetic — see notes; do NOT hide navigator.gpu, it can break init.)
-  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true });
+  // Cap the framebuffer: pixel art is drawn nearest-neighbour, so antialiasing
+  // buys nothing but multisample memory, and full device-pixel-ratio on a big/4K
+  // display makes a huge framebuffer that GPUs under pressure drop — which shows
+  // up as a webglcontextlost→restore loop ending in a blank field. resolution 1 +
+  // no AA keeps it light and stable across machines.
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, resolution: 1, autoDensity: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");

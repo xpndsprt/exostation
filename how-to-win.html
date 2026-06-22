@@ -28,6 +28,15 @@
   .dot{width:10px;height:10px;border-radius:50%;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+  .spgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px;}
+  @media(max-width:760px){.spgrid{grid-template-columns:1fr;}}
+  .spcard{background:#0c1220;border:1px solid var(--edge);border-left-width:4px;border-radius:10px;padding:9px 12px;}
+  .spcard h3{margin:0 0 2px;font-size:14px;letter-spacing:.03em;display:flex;align-items:center;gap:7px;}
+  .spcard .role{font-size:11px;color:var(--dim);}
+  .spcard .bk{margin-top:6px;font-size:12.5px;line-height:1.45;}
+  .spcard .bk b{color:var(--amber);}
+  .spcard .none{margin-top:6px;font-size:12px;color:var(--dim);line-height:1.45;}
+  .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:10.5px;border:1px solid currentColor;}
 </style>
 </head>
 <body>
@@ -76,6 +85,71 @@
     <line x1="720" y1="68" x2="798" y2="68" stroke="#6ea8ff" stroke-width="2" marker-end="url(#ar)"/>
   </svg>
   <div class="cap">To win you must keep <b>every</b> beacon species happy &amp; housed at once — so the whole game is really "host all five, all comfortable, all powered."</div>
+</section>
+
+<!-- ============ SPECIES & THEIR BEACONS ============ -->
+<section>
+  <h2>The cast — species &amp; their beacon devices</h2>
+  <div class="cap" style="margin-top:0">Ten species pass through your station. <b>Five are "beacon" species</b> — each unlocks one signature module (2×2, ¢800) that charges the Sector Beacon while that species lives, <b>powered</b> and in its <b>own room</b>. The other five are guests &amp; specialist crew with no beacon — host them for income, peace, or muscle.</div>
+
+  <div class="cap" style="color:var(--amber);margin-top:12px;margin-bottom:0">★ The 5 beacon species (your win condition)</div>
+  <div class="spgrid">
+    <div class="spcard" style="border-left-color:#7fa8e0">
+      <h3>Human <span class="pill" style="color:#6ea8ff">O₂</span></h3>
+      <div class="role">Resident crew · adaptable generalist</div>
+      <div class="bk">🛰 <b>Command Hub</b> — lifts the whole crew's morale while it runs.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#e8c349">
+      <h3>Drenn <span class="pill" style="color:#6ea8ff">O₂</span></h3>
+      <div class="role">Visiting trader · merchant</div>
+      <div class="bk">🪙 <b>Trade Nexus</b> — +50% income from selling minerals.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#d98a3a">
+      <h3>Thol <span class="pill" style="color:#e8995a">CH₄</span></h3>
+      <div class="role">Resident crew · engineer (sealed methane wing)</div>
+      <div class="bk">⚒ <b>Auto-Forge</b> — auto-repairs every machine on the station.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#8fd14f">
+      <h3>Vry'l <span class="pill" style="color:#6ea8ff">O₂</span></h3>
+      <div class="role">Resident crew · botanist (eats fungal mash)</div>
+      <div class="bk">🌱 <b>Bloom Garden</b> — +50% food growth from Bio Vats.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#c0453a">
+      <h3>Korro <span class="pill" style="color:#6ea8ff">O₂</span></h3>
+      <div class="role">Resident crew · hauler (give them their own O₂ wing)</div>
+      <div class="bk">⛏ <b>Ore Refinery</b> — +50% mining yield.</div>
+    </div>
+  </div>
+
+  <div class="cap" style="margin-top:14px;margin-bottom:0">Guests &amp; specialist crew (no beacon device)</div>
+  <div class="spgrid">
+    <div class="spcard" style="border-left-color:#9bd14a">
+      <h3>Chlorithe <span class="pill" style="color:#9bd14a">Cl₂</span></h3>
+      <div class="role">Resident (Tier-3) · crystalline</div>
+      <div class="none">Chlorine air is lethal to all others <b>and corrodes nearby modules</b> — a sealed, high-upkeep wing. Eats Exo-Culture.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#6a8fd1">
+      <h3>Naaz <span class="pill" style="color:#9ab6e8">NH₃</span></h3>
+      <div class="role">Resident (Tier-3) · peacemaker</div>
+      <div class="none">Befriends everyone and softens feuds. Needs a sealed ammonia wing kept <b>cold</b> (Cryo Unit). Eats Exo-Culture.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#d16a9b">
+      <h3>Voltaar <span class="pill" style="color:#e89ac4">H₂</span></h3>
+      <div class="role">Resident (Tier-3) · energy-being</div>
+      <div class="none">Hydrogen air <b>detonates near O₂</b> — keep its wing far away. Runs <b>hot</b> (Heater). Eats Exo-Culture.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#b256c9">
+      <h3>Vorn <span class="pill" style="color:#e8995a">CH₄</span></h3>
+      <div class="role">Visiting trader · fuel baron</div>
+      <div class="none">+50% fuel price from docking ships while aboard. Only visits — needs a sealed CH₄ wing + a methane Hotel Room.</div>
+    </div>
+    <div class="spcard" style="border-left-color:#57c2a8">
+      <h3>Sszra <span class="pill" style="color:#6ea8ff">O₂</span></h3>
+      <div class="role">Resident crew · sentinel</div>
+      <div class="none">Shares human air but is a pure carnivore — eats only <b>Live-Protein</b> (Vat→Microbes, Synth→Live-Protein), never rations.</div>
+    </div>
+  </div>
+  <div class="cap">Each beacon module only charges while <b>powered</b> and its <b>species is standing in its room</b>. Light all five to 100% at the same time to win.</div>
 </section>
 
 <!-- ============ SURVIVAL CHAIN ============ -->
