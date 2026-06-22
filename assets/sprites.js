@@ -682,6 +682,46 @@
     B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
   ]);
 
+  // Bar (2x2): a back shelf of bottles, an amber counter and a row of stools.
+  const BAR = box2([
+    B(25) + "L",
+    B(26),
+    B(26),
+    B(2) + "h".repeat(22) + B(2),
+    B(2) + "h" + "wcwcwcwcwcwcwcwcwcwc" + "h" + B(2),
+    B(2) + "h" + "cwcwcwcwcwcwcwcwcwcw" + "h" + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    B(26),
+    B(26),
+    B(2) + "c".repeat(22) + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    B(26),
+    B(2) + "hh" + B(3) + "hh" + B(3) + "hh" + B(3) + "hh" + B(3) + "hh" + B(2),
+    B(2) + "oo" + B(3) + "oo" + B(3) + "oo" + B(3) + "oo" + B(3) + "oo" + B(2),
+    B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
+  ]);
+  // Grand Library (2x2): data shelves around a glowing central AI screen / eye.
+  const LIBRARY = box2([
+    B(25) + "L",
+    B(26),
+    B(2) + "h".repeat(22) + B(2),
+    B(2) + "h" + "wcwcwcwcwcwcwcwcwcwc" + "h" + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    B(26),
+    B(6) + "h".repeat(14) + B(6),
+    B(6) + "h" + "c".repeat(12) + "h" + B(6),
+    B(6) + "h" + "c" + "w".repeat(10) + "c" + "h" + B(6),
+    B(6) + "h" + "c" + "w".repeat(4) + "cc" + "w".repeat(4) + "c" + "h" + B(6),
+    B(6) + "h" + "c" + "w".repeat(10) + "c" + "h" + B(6),
+    B(6) + "h" + "c".repeat(12) + "h" + B(6),
+    B(6) + "h".repeat(14) + B(6),
+    B(26),
+    B(2) + "h".repeat(22) + B(2),
+    B(2) + "h" + "cwcwcwcwcwcwcwcwcwcw" + "h" + B(2),
+    B(2) + "h".repeat(22) + B(2),
+    B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26), B(26),
+  ]);
   // --- Sector Beacon: one signature module per species (2x2) ---
   // Human — Command Hub: a wide console screen with a data graph
   const CMDHUB = box2([
@@ -970,6 +1010,16 @@
       name: "orerefinery", tileW: 2, tileH: 2,
       palette: { k: "#11151c", b: "#3a1d1a", h: "#7a3328", c: "#e8a55a", L: "#49d17a", o: "#3a4350" },
       states: { enabled: OREREFINERY, disabled: off(OREREFINERY) },
+    },
+    {
+      name: "bar", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#2a1d16", h: "#8a6a48", c: "#e8a05a", w: "#ffe0a0", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: BAR, disabled: off(BAR) },
+    },
+    {
+      name: "library", tileW: 2, tileH: 2,
+      palette: { k: "#11151c", b: "#1d1a3a", h: "#4a3f7a", c: "#9a7bd5", w: "#dfe8ff", L: "#49d17a", o: "#3a4350" },
+      states: { enabled: LIBRARY, disabled: off(LIBRARY) },
     },
 
     /* ---------- habitation (1x1) ---------- */

@@ -230,9 +230,9 @@ function toneCatOf(name: string): keyof typeof TONE_DUO | null {
   // untoned: creatures, lamps, species-tinted bunks, the clean Med Bay, and the
   // hero ships (their authored palettes carry intentional engine glow / colour).
   if (name in SPECIES || name.startsWith("god_") || ["pod", "hotel", "lamp", "asteroid", "medbay", "shuttle", "trader", "raider"].includes(name)) return null;
-  if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "heater"].includes(name)) return "rust";
+  if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "heater", "bar"].includes(name)) return "rust";
   if (["vat", "synth", "bloomgarden", "tradehub", "cargoex"].includes(name)) return "bio";
-  if (["turret", "lab", "aicore", "fusion", "cmdhub", "tradenexus"].includes(name)) return "plasma";
+  if (["turret", "lab", "aicore", "fusion", "cmdhub", "tradenexus", "library"].includes(name)) return "plasma";
   return "steel";
 }
 function hx2rgb(h: string): [number, number, number] { const s = h.replace("#", ""); return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)]; }
