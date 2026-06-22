@@ -648,9 +648,23 @@ export function showIntro(onClose: () => void): void {
   el.classList.add("show");
 }
 
+let tutSig = ""; // last-rendered checklist signature — avoids rebuilding every frame
+let tutWired = false; // the Skip handler is delegated to the stable container, once
 export function renderTutorial(world: World): void {
   const el = document.getElementById("tutorial");
   if (!el) return;
+  // Delegate Skip to the container (which never gets replaced) so a tap survives
+  // any innerHTML rebuild — fixes the button being unresponsive on touch devices.
+  if (!tutWired) {
+    tutWired = true;
+    el.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement | null)?.id === "tut-skip") {
+        setTutorialSeen();
+        el.classList.remove("show");
+        tutSig = "";
+      }
+    });
+  }
   let residents = 0;
   for (const id in world.agents) if (world.agents[id].alive && !world.agents[id].guest) residents++;
   if (tutorialSeen() || residents > 0) {
@@ -670,17 +684,16 @@ export function renderTutorial(world: World): void {
     ["Add Crew Quarters", has("pod")],
     ["Build a Docking Port", has("dock")],
   ];
+  // only rebuild the markup when a step's state actually changes (not every frame)
+  const sig = steps.map(([, done]) => (done ? "1" : "0")).join("");
+  if (el.classList.contains("show") && sig === tutSig) return;
+  tutSig = sig;
   const rows = steps.map(([t, done]) => `<li class="${done ? "done" : ""}">${done ? "✓" : "○"} ${t}</li>`).join("");
   el.innerHTML =
     `<h3>▶ GETTING STARTED</h3><ol>${rows}</ol>` +
     `<div class="tut-foot"><span>A shuttle brings your first crew once these are done.</span>` +
     `<button id="tut-skip">Skip</button></div>`;
   el.classList.add("show");
-  const skip = document.getElementById("tut-skip");
-  if (skip) skip.onclick = () => {
-    setTutorialSeen();
-    el.classList.remove("show");
-  };
 }
 
 // Topbar scenario-objective indicator with a progress bar.
