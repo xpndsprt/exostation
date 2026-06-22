@@ -1645,9 +1645,8 @@ function drawTexturedBody(ctx: CanvasRenderingContext2D, x: number, y: number, r
 // blooms into a bright blue flower of light as the five nodes charge (intensity
 // 0..1). Drawn additively behind the bodies; rotation driven by the sim tick.
 function drawSCWormhole(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, intensity: number, tick: number): void {
-  if (intensity <= 0.001) return;
   const ramp = Math.min(1, Math.max(0, intensity));
-  const rad = R * (0.25 + ramp * 0.85);
+  const rad = R * 0.85 * (1 / 3 + ramp * (2 / 3)); // ~1/3 size early → full at 5/5
   const t = tick * 0.03;
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
@@ -1716,7 +1715,7 @@ export function refreshStarChart(world: World): void {
   ctx.globalAlpha = 1;
 
   // --- the Beacon wormhole, behind the bodies, blooming with charge progress ---
-  drawSCWormhole(ctx, cx, cy, SC_SIZE * 0.42, Math.max(0.07, beaconIntensity(world)), world.tick);
+  drawSCWormhole(ctx, cx, cy, SC_SIZE * 0.42, beaconIntensity(world), world.tick);
 
   // --- the system's star(s): one central sun, or a binary pair ---
   const starPos = (st: { angle: number; dist: number }): [number, number] =>
