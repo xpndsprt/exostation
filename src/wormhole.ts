@@ -55,8 +55,8 @@ export class Wormhole {
         cont.addChild(g);
       }
     };
-    petalRing(this.petals, 12, U * 1.7, U * 0.06, 0x9fd8ff, 0.45);
-    petalRing(this.petals2, 8, U * 2.3, U * 0.04, 0xb39cff, 0.3);
+    petalRing(this.petals, 12, U * 1.7, U * 0.018, 0x9fd8ff, 0.5);
+    petalRing(this.petals2, 8, U * 2.3, U * 0.013, 0xb39cff, 0.34);
 
     // swirling spiral arms
     for (let i = 0; i < 4; i++) {

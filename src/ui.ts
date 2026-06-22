@@ -1672,7 +1672,7 @@ function drawSCWormhole(ctx: CanvasRenderingContext2D, cx: number, cy: number, R
     pg.addColorStop(1, "rgba(120,160,255,0)");
     ctx.fillStyle = pg;
     ctx.beginPath();
-    ctx.ellipse(0, -rad * 0.65, Math.max(1, rad * 0.05), rad * 0.65, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -rad * 0.65, Math.max(0.6, rad * 0.018), rad * 0.65, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -1714,9 +1714,6 @@ export function refreshStarChart(world: World): void {
   }
   ctx.globalAlpha = 1;
 
-  // --- the Beacon wormhole, behind the bodies, blooming with charge progress ---
-  drawSCWormhole(ctx, cx, cy, SC_SIZE * 0.42, beaconIntensity(world), world.tick);
-
   // --- the system's star(s): one central sun, or a binary pair ---
   const starPos = (st: { angle: number; dist: number }): [number, number] =>
     st.dist <= 0 ? [cx, cy] : [cx + Math.cos(st.angle) * st.dist * r0 * 1.4, cy + Math.sin(st.angle) * st.dist * r0 * 1.4];
@@ -1750,14 +1747,18 @@ export function refreshStarChart(world: World): void {
     ctx.fill();
   }
 
-  // the station's orbit ring + station marker (top of its orbit)
+  // the station orbits the sun slowly; the Beacon wormhole rides around it like a moon
   ctx.strokeStyle = "rgba(110,168,255,0.35)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(cx, cy, r0, 0, Math.PI * 2);
   ctx.stroke();
-  const stx = cx;
-  const sty = cy - r0;
+  const stAngle = -Math.PI / 2 + world.tick * 0.0012; // slow orbit (starts near the top)
+  const stx = cx + Math.cos(stAngle) * r0;
+  const sty = cy + Math.sin(stAngle) * r0;
+  // the Beacon wormhole orbits the station like a moon
+  const moonA = world.tick * 0.004;
+  drawSCWormhole(ctx, stx + Math.cos(moonA) * 48, sty + Math.sin(moonA) * 48, SC_SIZE * 0.085, beaconIntensity(world), world.tick);
   ctx.fillStyle = "#49d17a";
   ctx.fillRect(stx - 4, sty - 4, 8, 8);
 

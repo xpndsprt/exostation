@@ -797,13 +797,9 @@ async function boot(): Promise<void> {
   app.ticker.add((ticker: Ticker) => {
     clock += ticker.deltaMS / 1000;
     starfield.update(cam, clock); // parallax + drift/twinkle, every frame
-    // centre the Beacon on the station (centroid of built modules), not the map
-    // middle, so it sits behind the colony; faint & ~1/3 size early, blooms to full.
-    let wsx = 0, wsy = 0, wn = 0;
-    for (const id in world.structures) { const c = world.structures[id].cell; wsx += c % world.w; wsy += (c / world.w) | 0; wn++; }
-    const wcx = wn ? (wsx / wn + 0.5) * TILE : (world.w * TILE) / 2;
-    const wcy = (wn ? (wsy / wn + 0.5) * TILE : (world.h * TILE) / 2) - 15 * TILE; // nudged 15 cells up
-    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), wcx, wcy, wormholeR);
+    // Anchored to a FIXED point behind the station (map centre, nudged 15 cells up)
+    // so it never drifts as you build; faint & ~1/3 size early, blooms to full.
+    wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), (world.w * TILE) / 2, (world.h * TILE) / 2 - 15 * TILE, wormholeR);
 
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;
