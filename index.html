@@ -744,6 +744,28 @@
     <div id="requests" class="panel"></div>
   </div>
   <div id="crt"></div>
+  <script>
+    // Responsive UI: scale every DOM panel to the viewport so the whole interface
+    // (and its text) stays usable from 1280×800 up to 4000×2000. We zoom the UI
+    // overlays only — never the game canvas (#app) or the CRT layer (#crt), which
+    // must stay full-screen. window.UI_SCALE lets mouse-positioned bits (tooltip,
+    // drag label) compensate so they still land under the cursor.
+    (function () {
+      function scaleUI() {
+        var s = Math.max(0.8, Math.min(2.6, Math.min(window.innerWidth / 1440, window.innerHeight / 900)));
+        window.UI_SCALE = s;
+        var kids = document.body.children;
+        for (var i = 0; i < kids.length; i++) {
+          var el = kids[i];
+          if (el.id === "app" || el.id === "crt") continue;
+          el.style.zoom = s;
+        }
+      }
+      window.addEventListener("resize", scaleUI);
+      window.addEventListener("DOMContentLoaded", scaleUI);
+      scaleUI();
+    })();
+  </script>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

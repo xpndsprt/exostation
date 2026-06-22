@@ -834,8 +834,11 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
     }
   }
   tip.innerHTML = html;
-  tip.style.left = `${x + 14}px`;
-  tip.style.top = `${y + 14}px`;
+  // the tooltip is zoomed with the rest of the UI — divide cursor coords by the
+  // UI scale so it still lands under the pointer.
+  const z = (window as unknown as { UI_SCALE?: number }).UI_SCALE || 1;
+  tip.style.left = `${(x + 14) / z}px`;
+  tip.style.top = `${(y + 14) / z}px`;
   tip.classList.add("show");
 }
 
@@ -1052,8 +1055,9 @@ export function showDragLabel(text: string, x: number, y: number, bad = false): 
   if (!el) return;
   el.textContent = text;
   el.style.color = bad ? "#ff6a6a" : "#d7dbe2";
-  el.style.left = `${x + 14}px`;
-  el.style.top = `${y - 22}px`;
+  const z = (window as unknown as { UI_SCALE?: number }).UI_SCALE || 1;
+  el.style.left = `${(x + 14) / z}px`;
+  el.style.top = `${(y - 22) / z}px`;
   el.classList.add("show");
 }
 
