@@ -56,6 +56,22 @@ export function beaconCharged(w: World): number {
   return n;
 }
 
+// Smooth 0..1 progress for the visual Beacon (the Bajoran-style wormhole): the
+// average charge across the 5 beacon kinds (a missing/unbuilt kind counts as 0,
+// each built kind by its best module's timer). 0 = nothing, 1 = all five at 100%.
+export function beaconIntensity(w: World): number {
+  let sum = 0;
+  for (const kind of BEACON_KINDS) {
+    let best = 0;
+    for (const id in w.structures) {
+      const s = w.structures[id];
+      if (s.kind === kind) best = Math.max(best, s.timer || 0);
+    }
+    sum += Math.min(100, best) / 100;
+  }
+  return sum / BEACON_KINDS.length;
+}
+
 // Charge operating modules; the Thol Auto-Forge also repairs the station.
 export function beaconSystem(w: World, dt: number): void {
   let forge = false;

@@ -13,6 +13,8 @@ import { saveWorld, loadWorld, deleteSave, serializeWorld, parseSave } from "./p
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
 import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
+import { Wormhole } from "./wormhole";
+import { beaconIntensity } from "./beacon";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
   setupUI,
@@ -110,6 +112,12 @@ async function boot(): Promise<void> {
   const cam = createCamera();
   const renderer = new Renderer(worldContainer, app.renderer);
   renderer.drawGrid(world.w, world.h);
+
+  // The Beacon, visualized: a Bajoran-wormhole vortex at the very BACK of the world
+  // (behind the station), blooming as the five beacon nodes charge. Centred on the map.
+  const wormhole = new Wormhole();
+  worldContainer.addChildAt(wormhole.container, 0);
+  const wormholeR = Math.max(world.w, world.h) * TILE * 0.5;
 
   // WebGL context-loss recovery. The browser only restores a lost context if we
   // preventDefault the loss; on restore we rebuild textures + force every cached
@@ -789,6 +797,8 @@ async function boot(): Promise<void> {
   app.ticker.add((ticker: Ticker) => {
     clock += ticker.deltaMS / 1000;
     starfield.update(cam, clock); // parallax + drift/twinkle, every frame
+    // floor so the Beacon is always a faint swirl ("weak at first"), then blooms
+    wormhole.update(ticker.deltaMS / 1000, Math.max(0.07, beaconIntensity(world)), (world.w * TILE) / 2, (world.h * TILE) / 2, wormholeR);
 
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;

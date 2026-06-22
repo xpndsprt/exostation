@@ -11,7 +11,7 @@ import { productivity } from "./harmony";
 import { OBJECTIVES, currentObjective } from "./objectives";
 import { UNLOCKS, isUnlocked, toolLock, poweredLabCount, canResearch, lodgingUnlocked } from "./research";
 import { RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
-import { BEACON_SPECIES, moduleActive } from "./beacon";
+import { BEACON_SPECIES, moduleActive, beaconIntensity } from "./beacon";
 import { encounterText, encounterChoices } from "./encounters";
 import { coupleOf } from "./romance";
 import { isMuted, setMuted } from "./audio";
@@ -1641,6 +1641,53 @@ function drawTexturedBody(ctx: CanvasRenderingContext2D, x: number, y: number, r
   ctx.restore();
 }
 
+// The Beacon as a Bajoran-style wormhole on the star chart: a faint swirl that
+// blooms into a bright blue flower of light as the five nodes charge (intensity
+// 0..1). Drawn additively behind the bodies; rotation driven by the sim tick.
+function drawSCWormhole(ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, intensity: number, tick: number): void {
+  if (intensity <= 0.001) return;
+  const ramp = Math.min(1, Math.max(0, intensity));
+  const rad = R * (0.25 + ramp * 0.85);
+  const t = tick * 0.03;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  // nebulous glow
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+  g.addColorStop(0, `rgba(190,225,255,${0.45 * ramp + 0.1})`);
+  g.addColorStop(0.4, `rgba(90,140,230,${0.26 * ramp})`);
+  g.addColorStop(0.75, `rgba(120,90,220,${0.15 * ramp})`);
+  g.addColorStop(1, "rgba(40,30,90,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+  ctx.fill();
+  // flare petals
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t + (i / N) * Math.PI * 2);
+    const pg = ctx.createLinearGradient(0, 0, 0, -rad * 1.3);
+    pg.addColorStop(0, "rgba(200,235,255,0)");
+    pg.addColorStop(0.5, `rgba(160,210,255,${0.22 * ramp})`);
+    pg.addColorStop(1, "rgba(120,160,255,0)");
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    ctx.ellipse(0, -rad * 0.65, Math.max(1, rad * 0.05), rad * 0.65, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  // bright core
+  const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad * 0.18);
+  cg.addColorStop(0, `rgba(240,250,255,${0.6 * ramp + 0.15})`);
+  cg.addColorStop(1, "rgba(160,210,255,0)");
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rad * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 export function refreshStarChart(world: World): void {
   if (!scOpen) return;
   scWorld = world;
@@ -1667,6 +1714,9 @@ export function refreshStarChart(world: World): void {
     ctx.fillRect(cx + Math.cos(a) * rr * (SC_SIZE / 2), cy + Math.sin(a) * rr * (SC_SIZE / 2), 1.4, 1.4);
   }
   ctx.globalAlpha = 1;
+
+  // --- the Beacon wormhole, behind the bodies, blooming with charge progress ---
+  drawSCWormhole(ctx, cx, cy, SC_SIZE * 0.42, Math.max(0.07, beaconIntensity(world)), world.tick);
 
   // --- the system's star(s): one central sun, or a binary pair ---
   const starPos = (st: { angle: number; dist: number }): [number, number] =>
