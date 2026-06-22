@@ -224,6 +224,7 @@ export interface Ship {
   size?: number; // dock-tier scale (1 standard, 2 large, 3 super) — bigger ships
   fuelNeed?: number; // fuel units the ship buys on landing (income)
   gas?: GasKind; // breathing gas of the guests aboard (which hotels they can use)
+  rotV?: number; // smoothed visual heading (radians) — eased so turns are graceful
 }
 
 // A pending social encounter between two co-located agents, awaiting the player's

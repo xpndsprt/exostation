@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EXOSTATION — Ship Editor</title>
+<style>
+  :root{ --bg:#070a12; --panel:#0e1320; --edge:#222c3e; --edge2:#2c3a52; --ink:#e3e7ef; --dim:#8b93a6; --cyan:#19e6e6; --amber:#e8a33d; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(1200px 700px at 50% -10%,#0d1424,#070a12);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;}
+  header{padding:14px 18px 6px;}
+  header h1{margin:0;font-size:18px;letter-spacing:.14em;color:var(--cyan);}
+  header p{margin:4px 0 0;color:var(--dim);font-size:12px;}
+  main{display:flex;gap:14px;padding:12px 16px 40px;align-items:flex-start;}
+  .col{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:12px;}
+  #controls{width:280px;flex:0 0 280px;}
+  h4{margin:14px 0 6px;font-size:11px;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;}
+  h4:first-child{margin-top:0;}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0;}
+  select,input[type=text]{background:#0d1019;border:1px solid var(--edge2);color:var(--ink);border-radius:7px;padding:7px;font-size:13px;}
+  button{background:#141a26;border:1px solid var(--edge2);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer;}
+  button:hover{background:#1b2333;}
+  button.active{background:rgba(25,230,230,.16);border-color:var(--cyan);color:#aff7f7;}
+  .tones{display:flex;gap:5px;flex-wrap:wrap;}
+  .sw{width:24px;height:24px;border-radius:6px;border:1px solid #0008;cursor:pointer;}
+  .sw.active{outline:2px solid var(--cyan);outline-offset:1px;}
+  .hint{color:var(--dim);font-size:11px;line-height:1.5;margin-top:6px;}
+  canvas{display:block;background:#0a0e16;border:1px solid var(--edge);border-radius:8px;image-rendering:pixelated;}
+  .cvlabel{font-size:11px;color:var(--dim);margin:0 0 5px;letter-spacing:.08em;}
+  .stage{display:flex;gap:14px;flex-wrap:wrap;}
+  a.back{color:var(--cyan);text-decoration:none;font-size:12px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>EXOSTATION — SHIP EDITOR</h1>
+  <p>Design one ship per race — hull, nav lights, thrusters (vapor) and landing legs. Saved to your browser; the game renders them on arrival. · <a class="back" href="editor.html">tile editor</a> · <a class="back" href="index.html">game</a></p>
+</header>
+<main>
+  <div id="controls" class="col">
+    <h4>Race</h4>
+    <div class="row"><select id="race" style="flex:1"></select></div>
+    <div class="hint">Each race stores its own ship. Switching loads that race's ship.</div>
+
+    <h4>Tool</h4>
+    <div class="row">
+      <button id="t-paint" class="active">✎ Paint</button>
+      <button id="t-erase">⌫ Erase</button>
+    </div>
+    <div class="row">
+      <button id="t-light" title="Place a blinking nav light">● Light</button>
+      <button id="t-thruster" title="Place a thruster (emits landing vapor)">▼ Thruster</button>
+      <button id="t-leg" title="Place a landing-leg anchor (extends on touchdown)">⊥ Leg</button>
+    </div>
+    <div class="hint">Marker tools: click to place, click a marker again to remove.</div>
+
+    <h4>Hull colour</h4>
+    <div class="tones" id="palette"></div>
+    <div class="row"><input type="color" id="pick" value="#b8c2cc" /><span class="hint" style="margin:0">custom</span></div>
+
+    <h4>Light colour</h4>
+    <div class="row"><input type="color" id="lightcol" value="#7fffa0" /><span class="hint" style="margin:0">used by the Light tool</span></div>
+
+    <h4>Zoom</h4>
+    <div class="row"><input type="range" id="zoom" min="6" max="18" value="11" style="flex:1" /></div>
+
+    <h4>Library</h4>
+    <div class="row">
+      <button id="save">💾 Save race ship</button>
+      <button id="clear">✖ Clear</button>
+    </div>
+    <div class="row">
+      <button id="export">⭳ Export JSON</button>
+      <button id="import">⭱ Import</button>
+      <input type="file" id="file" accept="application/json" style="display:none" />
+    </div>
+    <div class="hint">Save writes to <code>exo.ships</code> and switches the game to your ships. The game falls back to its built-in shuttle for any unsaved race.</div>
+  </div>
+
+  <div class="col">
+    <div class="stage">
+      <div>
+        <div class="cvlabel">SHIP — nose points up · bottom lands on the pad</div>
+        <canvas id="cv"></canvas>
+      </div>
+      <div>
+        <div class="cvlabel">LANDING PREVIEW — lights · vapor · legs</div>
+        <canvas id="prev" width="320" height="360"></canvas>
+      </div>
+    </div>
+    <div class="hint" id="status"></div>
+  </div>
+</main>
+
+<script>
+const RES = 48;
+const LS = "exo.ships";
+const SPECIES = [
+  { id: "human", label: "Human", accent: "#7fa8e0" },
+  { id: "drenn", label: "Drenn", accent: "#e8c349" },
+  { id: "thol", label: "Thol", accent: "#d98a3a" },
+  { id: "vryl", label: "Vry'l", accent: "#8fd14f" },
+  { id: "korro", label: "Korro", accent: "#c0453a" },
+  { id: "chlorithe", label: "Chlorithe", accent: "#9bd14a" },
+  { id: "naaz", label: "Naaz", accent: "#6a8fd1" },
+  { id: "voltaar", label: "Voltaar", accent: "#d16a9b" },
+  { id: "vorn", label: "Vorn", accent: "#b256c9" },
+  { id: "sszra", label: "Sszra", accent: "#57c2a8" },
+];
+const HULL = ["#e9eef3", "#b8c2cc", "#7e8a97", "#4a5360", "#222a36", "#0e141c", "#2fa8da", "#ffe0a0"];
+
+const $ = (id) => document.getElementById(id);
+const load = () => { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch { return {}; } };
+const save = (o) => { localStorage.setItem(LS, JSON.stringify(o)); localStorage.setItem("exo.ships.enabled", "1"); };
+let ships = load();
+let curId = "human";
+let tool = "paint";
+let color = "#b8c2cc";
+let zoom = 11;
+
+function blank() { return { res: RES, pixels: new Array(RES * RES).fill(null), lights: [], thrusters: [], legs: [] }; }
+function getShip(id) {
+  const s = ships[id];
+  if (!s) return seedShip(id);
+  return { res: s.res || RES, pixels: (s.pixels || []).slice(), lights: (s.lights || []).map((m) => ({ ...m })), thrusters: (s.thrusters || []).map((m) => ({ ...m })), legs: (s.legs || []).map((m) => ({ ...m })) };
+}
+// a simple default hull so a new race isn't a blank page
+function seedShip(id) {
+  const sp = blank();
+  const acc = (SPECIES.find((s) => s.id === id) || {}).accent || "#b8c2cc";
+  const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < RES && y < RES) sp.pixels[y * RES + x] = c; };
+  const cx = 24;
+  for (let y = 8; y < 40; y++) {
+    const half = Math.round(2 + (1 - Math.abs(y - 24) / 18) * 9); // a tapered teardrop hull
+    for (let x = -half; x <= half; x++) {
+      const e = Math.abs(x) >= half - 1;
+      set(cx + x, y, e ? "#4a5360" : "#b8c2cc");
+    }
+  }
+  for (let y = 18; y < 30; y++) for (let x = -2; x <= 2; x++) set(cx + x, y, "#2fa8da"); // canopy
+  for (let y = 12; y < 18; y++) set(cx, y, "#e9eef3"); // nose
+  sp.lights = [{ x: cx - 9, y: 30, c: "#ff5a5a" }, { x: cx + 9, y: 30, c: "#7fffa0" }, { x: cx, y: 14, c: "#ffffff" }];
+  sp.thrusters = [{ x: cx - 4, y: 39 }, { x: cx + 4, y: 39 }];
+  sp.legs = [{ x: cx - 8, y: 36 }, { x: cx + 8, y: 36 }];
+  return sp;
+}
+let sprite = getShip(curId);
+
+// ---------- shared ship drawing (used by editor + preview) ----------
+// opts: { markers:bool, legExt:0..1, vapor:0..1, blink:0..1, scale, ox, oy }
+function drawShip(ctx, sp, scale, ox, oy, opts = {}) {
+  const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(ox + x * scale, oy + y * scale, w * scale, h * scale); };
+  // landing legs (under the hull) first so the hull sits on top
+  const legExt = opts.legExt ?? 0;
+  if (legExt > 0) {
+    ctx.strokeStyle = "#9aa6b2"; ctx.lineWidth = Math.max(1.5, scale * 0.6); ctx.lineCap = "round";
+    for (const m of sp.legs) {
+      const bx = ox + (m.x + 0.5) * scale, by = oy + (m.y + 0.5) * scale;
+      const len = scale * 7 * legExt, sx = (m.x < RES / 2 ? -1 : 1);
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + sx * scale * 3 * legExt, by + len); ctx.stroke();
+      ctx.fillStyle = "#c6d0db"; ctx.beginPath(); ctx.arc(bx + sx * scale * 3 * legExt, by + len, scale * 0.9, 0, 7); ctx.fill(); // foot pad
+    }
+  }
+  // hull pixels
+  for (let y = 0; y < RES; y++) for (let x = 0; x < RES; x++) { const c = sp.pixels[y * RES + x]; if (c) px(x, y, 1, 1, c); }
+  // thruster vapor (downward plume from each thruster)
+  const vapor = opts.vapor ?? 0;
+  if (vapor > 0) {
+    for (const m of sp.thrusters) {
+      const tx = ox + (m.x + 0.5) * scale, ty = oy + (m.y + 1) * scale;
+      for (let k = 0; k < 6; k++) {
+        const f = k / 6;
+        const r = scale * (0.8 + f * 2.4) * vapor;
+        ctx.fillStyle = `rgba(${230 - f * 60},${238 - f * 40},255,${(1 - f) * 0.5 * vapor})`;
+        ctx.beginPath(); ctx.arc(tx + (Math.sin(k * 1.7 + (opts.t || 0) * 6) * scale * f), ty + f * scale * 6 * vapor, r, 0, 7); ctx.fill();
+      }
+    }
+  }
+  // nav lights (blink)
+  const blink = opts.blink ?? 1;
+  for (const m of sp.lights) {
+    const lx = ox + (m.x + 0.5) * scale, ly = oy + (m.y + 0.5) * scale;
+    const a = 0.35 + 0.65 * blink;
+    const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, scale * 2.4);
+    g.addColorStop(0, m.c); g.addColorStop(1, m.c + "00");
+    ctx.globalAlpha = a; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, scale * 2.4, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(lx, ly, scale * 0.6, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  }
+  // marker overlays (editor only)
+  if (opts.markers) {
+    ctx.lineWidth = 1.5;
+    for (const m of sp.thrusters) { ctx.strokeStyle = "#ff9a3a"; ctx.beginPath(); const x = ox + m.x * scale, y = oy + m.y * scale; ctx.moveTo(x, y); ctx.lineTo(x + scale, y); ctx.lineTo(x + scale / 2, y + scale); ctx.closePath(); ctx.stroke(); }
+    for (const m of sp.legs) { ctx.strokeStyle = "#19e6e6"; ctx.strokeRect(ox + m.x * scale + 1, oy + m.y * scale + 1, scale - 2, scale - 2); }
+  }
+}
+
+// ---------- editor canvas ----------
+const cv = $("cv"), cx = cv.getContext("2d");
+function resizeCanvas() { cv.width = RES * zoom; cv.height = RES * zoom; render(); }
+function render() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  // checker bg
+  for (let y = 0; y < RES; y++) for (let x = 0; x < RES; x++) { cx.fillStyle = (x + y) & 1 ? "#0c1018" : "#0e131c"; cx.fillRect(x * zoom, y * zoom, zoom, zoom); }
+  drawShip(cx, sprite, zoom, 0, 0, { markers: true, blink: 1 });
+  // grid
+  cx.strokeStyle = "rgba(120,140,170,0.08)"; cx.lineWidth = 1;
+  for (let i = 0; i <= RES; i += 4) { cx.beginPath(); cx.moveTo(i * zoom, 0); cx.lineTo(i * zoom, cv.height); cx.stroke(); cx.beginPath(); cx.moveTo(0, i * zoom); cx.lineTo(cv.width, i * zoom); cx.stroke(); }
+}
+function cellAt(ev) { const r = cv.getBoundingClientRect(); return [Math.floor((ev.clientX - r.left) / zoom), Math.floor((ev.clientY - r.top) / zoom)]; }
+function toggleMarker(list, x, y, extra) { const i = list.findIndex((m) => m.x === x && m.y === y); if (i >= 0) list.splice(i, 1); else list.push({ x, y, ...extra }); }
+let drawing = false, erasing = false;
+function apply(x, y) {
+  if (x < 0 || y < 0 || x >= RES || y >= RES) return;
+  if (tool === "paint") sprite.pixels[y * RES + x] = color;
+  else if (tool === "erase") sprite.pixels[y * RES + x] = null;
+}
+cv.addEventListener("contextmenu", (e) => e.preventDefault());
+cv.addEventListener("pointerdown", (e) => {
+  const [x, y] = cellAt(e);
+  if (tool === "light") { toggleMarker(sprite.lights, x, y, { c: $("lightcol").value }); render(); return; }
+  if (tool === "thruster") { toggleMarker(sprite.thrusters, x, y); render(); return; }
+  if (tool === "leg") { toggleMarker(sprite.legs, x, y); render(); return; }
+  drawing = true; erasing = e.button === 2; const t = erasing ? "erase" : tool;
+  const save = tool; tool = t === "erase" ? "erase" : tool; apply(x, y); tool = save; render();
+});
+cv.addEventListener("pointermove", (e) => { if (!drawing) return; const [x, y] = cellAt(e); const save = tool; if (erasing) tool = "erase"; apply(x, y); tool = save; render(); });
+window.addEventListener("pointerup", () => { drawing = false; erasing = false; });
+
+// ---------- controls ----------
+const raceSel = $("race");
+SPECIES.forEach((s) => { const o = document.createElement("option"); o.value = s.id; o.textContent = s.label; raceSel.appendChild(o); });
+raceSel.onchange = () => { ships[curId] = sprite; curId = raceSel.value; sprite = getShip(curId); status(); render(); };
+
+const pal = $("palette");
+HULL.forEach((c, i) => { const b = document.createElement("div"); b.className = "sw" + (i === 1 ? " active" : ""); b.style.background = c; b.onclick = () => { color = c; $("pick").value = c; document.querySelectorAll(".sw").forEach((s) => s.classList.remove("active")); b.classList.add("active"); }; pal.appendChild(b); });
+$("pick").oninput = (e) => { color = e.target.value; document.querySelectorAll(".sw").forEach((s) => s.classList.remove("active")); };
+
+const toolBtns = { paint: "t-paint", erase: "t-erase", light: "t-light", thruster: "t-thruster", leg: "t-leg" };
+for (const [t, id] of Object.entries(toolBtns)) $(id).onclick = () => { tool = t; Object.values(toolBtns).forEach((b) => $(b).classList.remove("active")); $(id).classList.add("active"); };
+
+$("zoom").oninput = (e) => { zoom = +e.target.value; resizeCanvas(); };
+$("save").onclick = () => { ships[curId] = sprite; save(ships); status("Saved " + curId + " ship — the game will use it (reload the game)."); };
+$("clear").onclick = () => { if (confirm("Clear this race's ship?")) { sprite = blank(); render(); } };
+$("export").onclick = () => { ships[curId] = sprite; const blob = new Blob([JSON.stringify(ships, null, 1)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "exo-ships.json"; a.click(); };
+$("import").onclick = () => $("file").click();
+$("file").onchange = (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { ships = JSON.parse(r.result); sprite = getShip(curId); render(); status("Imported."); } catch { alert("Bad JSON"); } }; r.readAsText(f); };
+function status(msg) { $("status").textContent = msg || `Editing the ${(SPECIES.find((s) => s.id === curId) || {}).label} ship · ${sprite.lights.length} lights · ${sprite.thrusters.length} thrusters · ${sprite.legs.length} legs`; }
+
+// ---------- landing preview (rAF) ----------
+const pv = $("prev"), pc = pv.getContext("2d");
+let t0 = null;
+function preview(ts) {
+  if (t0 === null) t0 = ts;
+  const t = (ts - t0) / 1000;
+  const cycle = 5.5; // seconds per landing loop
+  const u = (t % cycle) / cycle; // 0..1
+  pc.clearRect(0, 0, pv.width, pv.height);
+  // ground
+  const groundY = pv.height - 40;
+  pc.fillStyle = "#0a0e16"; pc.fillRect(0, 0, pv.width, pv.height);
+  pc.strokeStyle = "#22303f"; pc.lineWidth = 2; pc.beginPath(); pc.moveTo(0, groundY); pc.lineTo(pv.width, groundY); pc.stroke();
+  for (let i = 0; i < 5; i++) { pc.fillStyle = (i % 2 ? "#7fffa0" : "#244a2e"); pc.beginPath(); pc.arc(pv.width / 2 - 60 + i * 30, groundY - 4, 2.5, 0, 7); pc.fill(); } // pad lights
+  // flight: descend (0..0.55), settle (0.55..1)
+  const scale = 4.4;
+  const shipH = RES * scale;
+  const topY = -shipH * 0.4, restY = groundY - shipH + scale * 8;
+  let y, vapor, legExt;
+  if (u < 0.55) { const k = u / 0.55; y = topY + (restY - topY) * (k * k * (3 - 2 * k)); vapor = 0.2 + k * 0.9; legExt = Math.max(0, (k - 0.6) / 0.4); }
+  else { y = restY; vapor = Math.max(0, 0.6 - (u - 0.55) / 0.2) ; legExt = 1; }
+  const ox = (pv.width - RES * scale) / 2;
+  const blink = Math.abs(Math.sin(t * 4));
+  drawShip(pc, sprite, scale, ox, y, { legExt, vapor, blink, t });
+  requestAnimationFrame(preview);
+}
+
+resizeCanvas();
+status();
+requestAnimationFrame(preview);
+</script>
+</body>
+</html>

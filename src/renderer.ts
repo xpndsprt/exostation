@@ -1333,7 +1333,16 @@ export class Renderer {
       // the hull when stationary. Sprite art faces up (-y).
       let hx = ahead.x - x, hy = ahead.y - y;
       if (Math.hypot(hx, hy) < 0.01) { hx = -(ship.dx ?? 0); hy = -(ship.dy ?? 0); }
-      const rot = hx || hy ? Math.atan2(hy, hx) + Math.PI / 2 : 0;
+      const target = hx || hy ? Math.atan2(hy, hx) + Math.PI / 2 : (ship.rotV ?? 0);
+      // ease the displayed heading toward the travel direction by the shortest arc,
+      // so the ship banks through graceful turns instead of snapping to an angle.
+      let cur = ship.rotV ?? target;
+      let dA = target - cur;
+      while (dA > Math.PI) dA -= Math.PI * 2;
+      while (dA < -Math.PI) dA += Math.PI * 2;
+      cur += dA * 0.18;
+      ship.rotV = cur;
+      const rot = cur;
       const sizeMul = ship.size === 3 ? 2 : ship.size === 2 ? 1.5 : 1;
       // arrival ring around a parked shuttle
       if (ship.phase === "wait" || ship.phase === undefined) {
@@ -1378,7 +1387,7 @@ export class Renderer {
       const sp = new Sprite(it.t);
       sp.scale.set(it.scale ?? SCALE);
       sp.anchor.set(0.5);
-      if (it.rot) sp.rotation = it.rot;
+      sp.rotation = it.rot ?? 0;
       if (it.tint !== undefined) sp.tint = it.tint;
       sp.x = it.x;
       sp.y = it.y;

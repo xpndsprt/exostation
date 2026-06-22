@@ -14,6 +14,8 @@ export default defineConfig({
       input: {
         main: "index.html",
         howtowin: "how-to-win.html",
+        editor: "editor.html",
+        shipeditor: "ship-editor.html",
       },
     },
   },
