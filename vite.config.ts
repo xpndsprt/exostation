@@ -8,4 +8,13 @@ import { defineConfig } from "vite";
 // unaffected (it always serves from "/").
 export default defineConfig({
   base: "./",
+  build: {
+    // Multi-page: publish the game AND the standalone visual "how to win" guide.
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        howtowin: "how-to-win.html",
+      },
+    },
+  },
 });
