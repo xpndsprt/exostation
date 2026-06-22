@@ -23,7 +23,7 @@ function scaleOf(name: string): number {
 // so pools and shadow edges feather like RimWorld rather than reading as squares.
 // Interior baseline brightness when unlit (a multiply tint); space stays white.
 // Tuned dark + cool (our station's blue cast) so warm light pools really pop.
-const AMBIENT_RGB: [number, number, number] = [0.5, 0.52, 0.58];
+const AMBIENT_RGB: [number, number, number] = [0.74, 0.76, 0.8]; // bright white-plastic habitat
 // Each room's unlit ambient is multiplied by its gas's tint, so a wing's whole
 // interior reads in that gas's mood (subtle — warm light pools still cut through):
 // O₂ a bit blue, CH₄ reddish, Cl₂ green, NH₃ indigo, H₂ magenta, mixed danger-red.
@@ -212,17 +212,17 @@ function makeHeightTexture(px: Px, w: number, h: number, base: number): Texture 
 }
 // ---- cohesive tone-mapping pass (the editor's duotone-blend, applied to every
 // module/ship sprite at build time so the station reads as one designed set).
-// Grouped by feel; species creatures, lamps and the species-tinted bunks are
-// left untouched so identity/colour cues survive. TONE_STR=0 fully disables it.
-// Biomechanical duotone (Giger × Mœbius): a unified skin pulled toward bone-on-
-// charcoal hull, oxidized bronze industry, sinew greens and biolum plasma. Bumped
-// strength so the whole station reads as one designed biomech organism.
-const TONE_STR = 0.62;
+// Grouped by feel; species creatures, lamps, the walls/floor and species-tinted
+// bunks are left untouched so identity/colour cues survive. TONE_STR=0 disables it.
+// NASAPUNK / "The Martian": clean WHITE PLASTIC habitat ~10 years in the future —
+// everything pulled toward bright moulded plastic with only a faint accent per
+// system (warm-white industry, mint life-support, blue research). No Giger.
+const TONE_STR = 0.66;
 const TONE_DUO: Record<string, [string, string]> = {
-  steel: ["#0c1018", "#cfc6b4"], // hull, walls, floor, generators, docks, silo, ships — bone on charcoal
-  rust: ["#160a06", "#c2823f"], // doors, fuel/forge/ore industry, raider — oxidized bronze
-  bio: ["#091610", "#86c66f"], // life: vats, synth, bloom garden, trader — sinew green
-  plasma: ["#130a1e", "#b06ad8"], // weapons + research/AI energy — biolum violet
+  steel: ["#9aa3ae", "#f5f8fc"], // hull, generators, docks, silo, ships — white plastic
+  rust: ["#b6a98f", "#f4eee1"], // doors, fuel/forge/ore industry, raider — warm white plastic
+  bio: ["#a4bcb0", "#eef7f1"], // life: vats, synth, bloom garden, trader — mint white
+  plasma: ["#a2b0c8", "#eef3fc"], // weapons + research/AI energy — cool blue-white
 };
 // Outside the station is "void" — that's the space background (COLORS.space), not
 // a sprite, so it's left as-is. Creatures, lamps, the species-tinted bunks and the
@@ -230,7 +230,7 @@ const TONE_DUO: Record<string, [string, string]> = {
 function toneCatOf(name: string): keyof typeof TONE_DUO | null {
   // untoned: creatures, lamps, species-tinted bunks, the clean Med Bay, and the
   // hero ships (their authored palettes carry intentional engine glow / colour).
-  if (name in SPECIES || name.startsWith("god_") || ["pod", "hotel", "lamp", "asteroid", "medbay", "shuttle", "trader", "raider"].includes(name)) return null;
+  if (name in SPECIES || name.startsWith("god_") || ["pod", "hotel", "lamp", "asteroid", "medbay", "shuttle", "trader", "raider", "floor", "wall", "wallcorner", "wallt", "wallcross", "wallend", "wallnode"].includes(name)) return null;
   if (name === "door" || ["fuelrefinery", "autoforge", "orerefinery", "heater"].includes(name)) return "rust";
   if (["vat", "synth", "bloomgarden", "tradehub", "cargoex"].includes(name)) return "bio";
   if (["turret", "lab", "aicore", "fusion", "cmdhub", "tradenexus"].includes(name)) return "plasma";

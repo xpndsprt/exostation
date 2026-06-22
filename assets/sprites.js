@@ -90,8 +90,8 @@
       ...Array(10).fill(D(32)),
     ];
   })();
-  // clean cool-alloy ramp + a cyan display glow (the Nasapunk style reinforces it)
-  const WALL_PAL = { d: "#10151c", k: "#0a0d12", m: "#5c6775", h: "#c6d0db", b: "#46c7d6" };
+  // white moulded-plastic ramp + a blue display glow (The Martian habitat look)
+  const WALL_PAL = { d: "#aab2bd", k: "#7e8a97", m: "#e9eef3", h: "#ffffff", b: "#2fa8da" };
 
   // Biomechanical floor plate (32×32): a panel with a beveled inset, a dashed
   // vertebral cross-seam and corner rivets — Moebius-clean, Giger-boned by the tone.
@@ -792,7 +792,7 @@
     /* ---------- structural tiles (1x1) ---------- */
     {
       name: "floor", tileW: 1, tileH: 1,
-      palette: { v: "#070a0f", d: "#161b22", m: "#222b34", p: "#2a343f", h: "#46586b", b: "#6a7d8d", r: "#5b3a29", w: "#dfe8f2" },
+      palette: { v: "#0a0e14", d: "#c2cad3", m: "#d2dae2", p: "#e6ebf1", h: "#f8fafc", b: "#9aa6b2", r: "#c08a5a", w: "#ffffff" },
       states: { default: floorTile(), window: floorWindow() },
     },
     {
