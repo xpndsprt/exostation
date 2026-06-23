@@ -81,8 +81,22 @@ function sfxForNotify(msg: string): string {
   return "";
 }
 
+// Cap the WebGL backing store to a pixel budget so a big/4K display (or a weak GPU)
+// doesn't allocate a framebuffer it can't sustain — the cause of the
+// webglcontextlost→restore loop that whites out the canvas. `resolution` shrinks
+// the backing store WITHOUT touching the logical (CSS-pixel) coordinate space, so
+// camera + input math are unaffected. `degrade` drops it further each time the
+// context is lost, so an unstable GPU settles into a lighter footprint.
+const RES_BUDGET = 2_200_000; // ~1920×1146 backing pixels
+function capResolution(degrade: number): number {
+  const w = window.innerWidth || 1280, h = window.innerHeight || 800;
+  const fit = Math.sqrt(RES_BUDGET / Math.max(1, w * h));
+  return Math.max(0.4, Math.min(1, fit) * degrade);
+}
+
 async function boot(): Promise<void> {
   const app = new Application();
+  let resDegrade = 1; // multiplier lowered on each context loss (recovery)
   // Force WebGL: dynamic CanvasSource texture re-uploads (the lighting buffer,
   // updated every frame via source.update()) don't reliably refresh on the WebGPU
   // backend, which left the multiply-lightmap blank → a black screen. WebGL is
@@ -93,7 +107,7 @@ async function boot(): Promise<void> {
   // display makes a huge framebuffer that GPUs under pressure drop — which shows
   // up as a webglcontextlost→restore loop ending in a blank field. resolution 1 +
   // no AA keeps it light and stable across machines.
-  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, resolution: 1, autoDensity: true });
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, resolution: capResolution(resDegrade), autoDensity: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
@@ -124,9 +138,17 @@ async function boot(): Promise<void> {
   // (draw-on-change) layer to repaint, so the static tiles/shadows/lightmap come
   // back too — not just the per-frame crew. Without this, ~60% of the scene (the
   // baked layers) stays blank after a context blip.
-  app.canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); console.warn("WebGL context lost — awaiting restore"); }, false);
+  app.canvas.addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    resDegrade = Math.max(0.4, resDegrade * 0.8); // shrink the framebuffer so it can be sustained
+    console.warn(`WebGL context lost — awaiting restore (resolution → ${capResolution(resDegrade).toFixed(2)})`);
+  }, false);
   app.canvas.addEventListener("webglcontextrestored", () => {
     console.warn("WebGL context restored — rebuilding scene");
+    try {
+      app.renderer.resolution = capResolution(resDegrade); // lighter footprint on restore
+      app.renderer.resize(window.innerWidth, window.innerHeight);
+    } catch (err) { console.error(err); }
     try { renderer.restoreContext(); } catch (err) { console.error(err); }
     try { starfield.rebuild(window.innerWidth, window.innerHeight); } catch (err) { console.error(err); }
     needRedraw = true;
@@ -147,7 +169,10 @@ async function boot(): Promise<void> {
     starfield.update(cam, clock);
   };
 
-  window.addEventListener("resize", () => starfield.resize(window.innerWidth, window.innerHeight));
+  window.addEventListener("resize", () => {
+    try { app.renderer.resolution = capResolution(resDegrade); } catch { /* ignore */ }
+    starfield.resize(window.innerWidth, window.innerHeight);
+  });
 
   const centerOnCell = (cell: number): void => {
     const wx = (cell % world.w) * TILE + TILE / 2;
