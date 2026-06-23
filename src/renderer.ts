@@ -416,6 +416,7 @@ export class Renderer {
   private lastTileSig = -1;
   private lastConduitSig = ""; // skip redrawing static cabling
   private lastAtmoSig = ""; // skip redrawing unchanged gas tints
+  private lastStructSig = ""; // skip rebuilding the module layer when unchanged
   private atmo = new Graphics();
   private grid = new Graphics();
   private sitesC = new Container();
@@ -483,6 +484,7 @@ export class Renderer {
     this.lastTileSig = -1;
     this.lastConduitSig = "";
     this.lastAtmoSig = "";
+    this.lastStructSig = "";
     this.heightSig = -1;
     this.bakeSig = "";
   }
@@ -981,6 +983,16 @@ export class Renderer {
   }
 
   private drawStructures(world: World): void {
+    // Cache: the module layer changes only when a structure is added/removed or its
+    // kind/power/recipe flips, or its condition / beacon-charge crosses a coarse
+    // bucket (so wear + charge bars still tick, but a steady station skips rebuild).
+    let sig = "";
+    for (const id in world.structures) {
+      const s = world.structures[id];
+      sig += `${id}:${s.kind}:${s.powered ? 1 : 0}:${s.recipe ?? ""}:${(s.condition / 8) | 0}:${((s.timer || 0) / 5) | 0}:${s.cells[1] ?? s.cell};`;
+    }
+    if (sig === this.lastStructSig) return; // unchanged — keep last frame's sprites + fx
+    this.lastStructSig = sig;
     this.structsC.removeChildren();
     this.structFx.clear();
     for (const id in world.structures) {
