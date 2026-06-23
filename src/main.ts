@@ -15,6 +15,7 @@ import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
 import { Wormhole, beaconAnchor } from "./wormhole";
 import { beaconIntensity } from "./beacon";
+import { autogameStep, autogameOn, setAutogame } from "./autogame";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
   setupUI,
@@ -153,6 +154,30 @@ async function boot(): Promise<void> {
     try { starfield.rebuild(window.innerWidth, window.innerHeight); } catch (err) { console.error(err); }
     needRedraw = true;
   }, false);
+
+  // Autogame button (top-right): a hardcoded test agent that builds a winning
+  // station and plays the game to victory on fast-forward. Toggle on/off.
+  const agBtn = document.createElement("button");
+  agBtn.id = "autogame";
+  agBtn.style.cssText =
+    "position:fixed;top:10px;right:12px;z-index:50;padding:7px 12px;border-radius:9px;" +
+    "font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;border:1px solid #2c3a52;" +
+    "background:#0d1019;color:#9fd8ff;box-shadow:0 6px 18px rgba(0,0,0,.5)";
+  const syncAg = (): void => {
+    const on = autogameOn();
+    agBtn.textContent = on ? "■ AUTOGAME (on)" : "▶ AUTOGAME";
+    agBtn.style.background = on ? "rgba(25,230,230,.16)" : "#0d1019";
+    agBtn.style.borderColor = on ? "#19e6e6" : "#2c3a52";
+    agBtn.style.color = on ? "#aff7f7" : "#9fd8ff";
+  };
+  agBtn.onclick = () => {
+    const on = !autogameOn();
+    setAutogame(on);
+    if (on) setSpeed(world, 3); // fast-forward so it wins quickly
+    syncAg();
+  };
+  syncAg();
+  document.body.appendChild(agBtn);
 
   const state: UIState = { tool: "floor" };
   let sel: Selection = null;
@@ -841,6 +866,7 @@ async function boot(): Promise<void> {
       acc += (ticker.deltaMS / 1000) * world.speed;
       let steps = 0;
       while (acc >= STEP && steps < 120) {
+        if (autogameOn()) autogameStep(world); // the hardcoded test agent builds + plays
         simStep(world, STEP);
         acc -= STEP;
         steps++;
@@ -860,6 +886,7 @@ async function boot(): Promise<void> {
     // victory / defeat transitions — pause and surface the end banner
     if (world.phase !== prevPhase) {
       prevPhase = world.phase;
+      setAutogame(false); syncAg(); // any end state disengages the test agent
       if (world.phase === "won") {
         setSpeed(world, 0);
         audio.play("victory");

@@ -5,6 +5,7 @@ import { costOf, DOCK_TIER, STRUCTURES } from "../src/structures";
 import { SPECIES } from "../src/species";
 import { RELATIONS } from "../src/relations";
 import { recomputeRooms } from "../src/rooms";
+import { setAutogame, autogameStep, autogameOn } from "../src/autogame";
 import { findPath } from "../src/pathfind";
 import { powerSystem as rawPowerSystem } from "../src/power";
 import { maintenanceSystem } from "../src/maintenance";
@@ -2474,6 +2475,24 @@ function forceCouple(w: World, a: number, b: number) {
   for (const c of wc.conduits) c.hp = 0; // the run breaks
   for (let i = 0; i < 3; i++) step(wc);
   check("Conduit: a broken run cuts the far module", far.powered === false);
+}
+
+// --- Autogame: the hardcoded agent must build a station and win on its own ---
+{
+  const wa = createWorld();
+  (wa as unknown as { __noauto?: boolean }).__noauto = true; // autogame lays its own conduits
+  setAutogame(true);
+  let wonAt = -1;
+  for (let i = 0; i < 4000 && wa.phase !== "won"; i++) {
+    autogameStep(wa);
+    step(wa);
+    if (wa.phase === "won" && wonAt < 0) wonAt = i;
+  }
+  check("Autogame builds a station and wins (Beacon online)", wa.phase === "won");
+  check("Autogame charged all 5 beacon nodes", beaconCharged(wa) >= 5);
+  autogameStep(wa); // one more tick — it self-disengages once the game is won
+  check("Autogame disengaged after winning", autogameOn() === false);
+  setAutogame(false);
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
