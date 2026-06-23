@@ -414,6 +414,8 @@ function floorIsWindow(x: number, y: number): boolean {
 export class Renderer {
   private cellsC = new Container();
   private lastTileSig = -1;
+  private lastConduitSig = ""; // skip redrawing static cabling
+  private lastAtmoSig = ""; // skip redrawing unchanged gas tints
   private atmo = new Graphics();
   private grid = new Graphics();
   private sitesC = new Container();
@@ -479,6 +481,8 @@ export class Renderer {
   restoreContext(): void {
     rebuildTextures();
     this.lastTileSig = -1;
+    this.lastConduitSig = "";
+    this.lastAtmoSig = "";
     this.heightSig = -1;
     this.bakeSig = "";
   }
@@ -892,9 +896,16 @@ export class Renderer {
   }
 
   private drawConduits(world: World): void {
+    // Cache: the cabling is static unless a conduit is broken/worn (those blink) or
+    // the layout/solar-sockets change. Skip the rebuild when nothing visible moved.
+    let anim = false, sig = "";
+    for (const c of world.conduits) { const b = c.hp <= 0 ? 2 : c.hp < 40 ? 1 : 0; if (b) anim = true; sig += c.cell + ":" + b + ";"; }
+    for (const id in world.structures) { const s = world.structures[id]; if (s.kind === "solar") sig += "s" + s.cell; }
+    if (!anim && sig === this.lastConduitSig) return; // unchanged static cabling — keep last frame's draw
+    this.lastConduitSig = sig;
     const g = this.conduitG;
     g.clear();
-    if (!world.conduits.length) return;
+    if (!world.conduits.length) { this.drawSockets(world, g); return; }
     const has = new Set(world.conduits.map((c) => c.cell));
     const blink = 0.45 + 0.55 * Math.abs(Math.sin(((world.tick % 10) / 10) * Math.PI * 2));
     for (const c of world.conduits) {
@@ -911,12 +922,12 @@ export class Renderer {
       g.circle(x, y, 2.6).fill({ color: col, alpha: broken ? 0.8 : 0.9 });
       if (broken) g.circle(x, y, 5 + 3 * blink).stroke({ width: 1.5, color: 0xff4d4d, alpha: 0.5 * blink }); // spark ring
     }
-    this.drawSockets(world, g, blink);
+    this.drawSockets(world, g);
   }
 
   // Power sockets: a Solar mounts on a wall and feeds the deck cell just inside it.
   // Mark that socket so the player knows where to start a conduit run from.
-  private drawSockets(world: World, g: Graphics, blink: number): void {
+  private drawSockets(world: World, g: Graphics): void {
     for (const id in world.structures) {
       const s = world.structures[id];
       if (s.kind !== "solar") continue;
@@ -932,13 +943,21 @@ export class Renderer {
           if (t !== "floor" && t !== "storage") continue;
           const px = ix * TILE + TILE / 2, py = iy * TILE + TILE / 2;
           g.rect(px - 5, py - 5, 10, 10).fill({ color: 0x1a2230, alpha: 0.9 }).stroke({ width: 1.5, color: 0xffd86a, alpha: 0.95 });
-          g.circle(px, py, 2.4).fill({ color: 0xffe9a0, alpha: 0.7 + 0.3 * blink }); // power tap (wire from here)
+          g.circle(px, py, 2.4).fill({ color: 0xffe9a0, alpha: 0.9 }); // power tap (wire from here); static so the layer caches
         }
       }
     }
   }
 
   private drawAtmosphere(world: World): void {
+    // Cache: gas tints change only when a room's gas or layout changes.
+    let sig = "";
+    for (let i = 0; i < world.cells.length; i++) {
+      const c = world.cells[i];
+      if (c.type === "floor" && c.roomId >= 0) { const r = world.rooms[c.roomId]; if (r && r.gas !== "none") sig += i + r.gas; }
+    }
+    if (sig === this.lastAtmoSig) return;
+    this.lastAtmoSig = sig;
     const g = this.atmo;
     g.clear();
     for (let y = 0; y < world.h; y++)

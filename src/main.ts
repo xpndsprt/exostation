@@ -167,6 +167,8 @@ async function boot(): Promise<void> {
   let sel: Selection = null;
   let overlay: OverlayMode = "none";
   let needRedraw = true;
+  let domAcc = 0; // throttle the DOM panel re-renders (innerHTML rebuilds) to ~6 Hz
+  let domSig = ""; // force a DOM refresh immediately when selection/tool/overlay changes
   let clock = 0; // running seconds, drives starfield drift/twinkle
   const canvas = app.canvas;
   const STRUCTURE_TOOLS = Object.keys(STRUCTURES) as StructureKind[];
@@ -846,6 +848,7 @@ async function boot(): Promise<void> {
     }
     wormhole.update(ticker.deltaMS / 1000, beaconIntensity(world), wa.x, wa.y, wormholeR, mouth);
 
+    domAcc += ticker.deltaMS; // DOM-panel throttle accumulator
     if (world.speed > 0) {
       acc += (ticker.deltaMS / 1000) * world.speed;
       let steps = 0;
@@ -956,18 +959,26 @@ async function boot(): Promise<void> {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
       }
-      renderer.draw(world, sc, overlay);
-      updateHud(world);
-      updateInfo(world, sel, handlers);
-      if (isStarChartOpen()) refreshStarChart(world); // live ETAs / drone position while it's up
-      renderTech(world, handlers.onBuyUnlock);
-      refreshPalette(world);
-      renderRequests(world);
-      renderAlienpedia(world, handlers.onLocateSpecies);
-      renderAdvisor(world);
-      renderObjective(world);
-      renderTutorial(world);
-      renderStory(world);
+      renderer.draw(world, sc, overlay); // the world renders every redraw (stays responsive)
+      // The DOM panels (HUD, info, tech, palette, requests, advisor, …) are heavy
+      // innerHTML rebuilds that don't need 10 Hz — throttle to ~6 Hz, but refresh
+      // instantly when the selection / tool / overlay changes so input feels snappy.
+      const ds = `${sc}|${state.tool}|${overlay}|${world.objectiveIx}|${world.phase}`;
+      if (domAcc >= 150 || ds !== domSig) {
+        domAcc = 0;
+        domSig = ds;
+        updateHud(world);
+        updateInfo(world, sel, handlers);
+        if (isStarChartOpen()) refreshStarChart(world); // live ETAs / drone position while it's up
+        renderTech(world, handlers.onBuyUnlock);
+        refreshPalette(world);
+        renderRequests(world);
+        renderAlienpedia(world, handlers.onLocateSpecies);
+        renderAdvisor(world);
+        renderObjective(world);
+        renderTutorial(world);
+        renderStory(world);
+      }
       needRedraw = false;
     }
   });
