@@ -1417,6 +1417,7 @@ export class Renderer {
       const u = easeIn((p - 0.35) / 0.65); const q = bez(S, C, W, u); return { x: q.x, y: q.y, thrust: 1, scale: lerp(1, SMALL, u) }; // curve back + zoom into the wormhole, shrinking
     };
     const sprites: { t: Texture | null; x: number; y: number; c: boolean; tint?: number; rot?: number; scale?: number }[] = [];
+    const hostilePos: { x: number; y: number }[] = []; // for turret laser targeting
     for (const ship of world.ships) {
       const here = flightPos(ship, ship.prog ?? 0);
       const ahead = flightPos(ship, clamp01((ship.prog ?? 0) + 0.02));
@@ -1461,6 +1462,13 @@ export class Renderer {
         g.moveTo(x, y).lineTo(tx, ty).stroke({ width: 2.5, color: 0xff5a3a, alpha: 0.5 + 0.4 * Math.abs(Math.sin(phase * Math.PI * 2)) });
         g.circle(tx, ty, TILE * (0.3 + 0.12 * Math.sin(phase * Math.PI * 2))).stroke({ width: 2, color: 0xff3b2a, alpha: 0.85 });
       }
+      // a raider with a health bar above it (turrets are lasering it down)
+      if (ship.hostile && ship.hp !== undefined && ship.hp < 100) {
+        const wbar = TILE * 0.9;
+        g.rect(x - wbar / 2, y - TILE * 0.8, wbar, 3).fill({ color: 0x300808, alpha: 0.8 });
+        g.rect(x - wbar / 2, y - TILE * 0.8, wbar * Math.max(0, ship.hp) / 100, 3).fill({ color: 0xff5a3a, alpha: 0.95 });
+      }
+      if (ship.hostile) hostilePos.push({ x, y });
       // A per-race ship designed in the Ship Editor (top-down): textured hull plus
       // its own nav lights, landing vapor and legs that splay on touchdown.
       const design = !ship.hostile && ship.race ? RACE_SHIPS.get(ship.race) : undefined;
@@ -1515,6 +1523,21 @@ export class Renderer {
           t: tex(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle", "default"),
           x, y, c: true, rot, scale: scaleOf(ship.hostile ? "raider" : ship.trader ? "trader" : "shuttle") * sizeMul * here.scale,
         });
+      }
+    }
+
+    // turret lasers: every powered Turret fires a bright bolt at the nearest raider
+    if (hostilePos.length) {
+      const lz = 0.5 + 0.5 * Math.abs(Math.sin(phase * Math.PI * 4)); // fast laser flicker
+      for (const id in world.structures) {
+        const s = world.structures[id];
+        if (s.kind !== "turret" || !s.powered) continue;
+        const tx = (s.cell % world.w) * TILE + TILE / 2, ty = ((s.cell / world.w) | 0) * TILE + TILE / 2;
+        let best = hostilePos[0], bd = Infinity;
+        for (const hpp of hostilePos) { const d = (hpp.x - tx) ** 2 + (hpp.y - ty) ** 2; if (d < bd) { bd = d; best = hpp; } }
+        g.moveTo(tx, ty).lineTo(best.x, best.y).stroke({ width: 2.5, color: 0x39e6ff, alpha: 0.45 + 0.45 * lz });
+        g.circle(tx, ty, 3).fill({ color: 0xaef2ff, alpha: 0.9 }); // muzzle glow
+        g.circle(best.x, best.y, TILE * 0.22 * lz + 2).fill({ color: 0x9fe8ff, alpha: 0.5 * lz }); // impact flash
       }
     }
 

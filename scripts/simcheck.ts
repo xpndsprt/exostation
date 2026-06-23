@@ -1224,8 +1224,8 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Raider never targets life support", o2.condition === 100);
   addStructure(w, "turret", 8, 7);
   powerSystem(w, 0.1);
-  eventsSystem(w, 0.1);
-  check("A powered Turret destroys the raider", !w.ships.some((s) => s.hostile));
+  for (let i = 0; i < 40 && w.ships.some((s) => s.hostile); i++) { powerSystem(w, 0.1); eventsSystem(w, 0.1); } // turret lasers it down over ~1.3s
+  check("A powered Turret lasers the raider down within a few seconds", !w.ships.some((s) => s.hostile));
 }
 {
   // boarding raiders: a party storms in, smashes modules, is cut down / withdraws

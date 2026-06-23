@@ -235,6 +235,7 @@ export interface Ship {
   gas?: GasKind; // breathing gas of the guests aboard (which hotels they can use)
   rotV?: number; // smoothed visual heading (radians) — eased so turns are graceful
   race?: Species; // which race's ship design to render (Ship Editor), if any
+  hp?: number; // raider health — turrets laser this down to 0 to destroy it
 }
 
 // A pending social encounter between two co-located agents, awaiting the player's

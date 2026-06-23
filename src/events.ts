@@ -1,4 +1,4 @@
-import { World } from "./types";
+import { World, Ship, Structure } from "./types";
 import { STRUCTURES, isDock } from "./structures";
 import { idx, inBounds, setCell, exteriorCell, eraseAt } from "./world";
 import { activeDoctrine } from "./research";
@@ -17,6 +17,8 @@ const RAID_DPS_BASE = 16; // raiders hit hard — an undefended module is wrecke
 const RAID_DPS_PER = 0.7;
 const RAID_DPS_MAX = 48;
 const RAID_WALL_TICKS = 40; // every ~4s an active raid also blows open a hull wall
+const RAID_HP = 100; // raider ship health — turrets laser this down
+const TURRET_DPS = 75; // damage per powered Turret per second to a raider (~1.3s/kill)
 
 function hash(n: number): number {
   return (n * 2654435761) >>> 0;
@@ -105,23 +107,36 @@ export function eventsSystem(w: World, dt: number): void {
 }
 
 function handleRaiders(w: World, dt: number): void {
-  let turret = false;
-  for (const id in w.structures) {
-    const s = w.structures[id];
-    if (s.kind === "turret" && s.powered) {
-      turret = true;
-      break;
+  // Powered Turrets open fire: each focuses the nearest live raider and lasers its
+  // hull down. The raider still arrives (and chips a module while alive), so you
+  // SEE the dogfight — turrets just kill it fast. The renderer draws the beams.
+  const turrets: Structure[] = [];
+  for (const id in w.structures) { const s = w.structures[id]; if (s.kind === "turret" && s.powered) turrets.push(s); }
+  let anyRaider = false;
+  for (const sh of w.ships) if (sh.hostile) anyRaider = true;
+  if (!anyRaider) { w.raidTarget = -1; return; }
+
+  for (const t of turrets) {
+    const tx = t.cell % w.w, ty = (t.cell / w.w) | 0;
+    let best: Ship | null = null, bestD = Infinity;
+    for (const sh of w.ships) {
+      if (!sh.hostile || (sh.hp ?? 0) <= 0) continue;
+      const sx = sh.cell % w.w, sy = (sh.cell / w.w) | 0;
+      const d = Math.abs(sx - tx) + Math.abs(sy - ty);
+      if (d < bestD) { bestD = d; best = sh; }
     }
+    if (best) best.hp = (best.hp ?? RAID_HP) - TURRET_DPS * dt;
   }
+  // remove raiders the turrets have shot down
   let raided = false;
   for (let i = w.ships.length - 1; i >= 0; i--) {
     const sh = w.ships[i];
     if (!sh.hostile) continue;
-    if (turret) {
+    if ((sh.hp ?? RAID_HP) <= 0) {
       w.ships.splice(i, 1);
       w.notify.push("A Turret shot down a raider.");
     } else {
-      raided = true;
+      raided = true; // still alive — it wrecks a module this tick
     }
   }
   if (!raided) {
@@ -247,7 +262,7 @@ function raid(w: World): boolean {
   if (!dock) return false;
   const ex = exteriorCell(w, dock);
   if (ex < 0) return false;
-  w.ships.push({ cell: ex, t: RAID_TIME, hostile: true });
+  w.ships.push({ cell: ex, t: RAID_TIME, hostile: true, hp: RAID_HP });
   w.notify.push("Raider inbound! Build a Turret to drive it off.");
   // a boarding party storms aboard to wreck the place from the inside
   spawnBoardingParty(w, 2 + (hash(w.tick) % 3), RAID_TIME);
