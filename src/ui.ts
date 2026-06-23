@@ -14,7 +14,7 @@ import { RESIDENT_SPECIES, HOTEL_SPECIES } from "./economy";
 import { BEACON_SPECIES, moduleActive, beaconIntensity } from "./beacon";
 import { encounterText, encounterChoices } from "./encounters";
 import { coupleOf } from "./romance";
-import { isMuted, setMuted } from "./audio";
+import { isMuted, setMuted, isMusicMuted, setMusicMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
 import { currentYear } from "./story";
@@ -375,6 +375,23 @@ function buildOverlayControls(handlers: UIHandlers): void {
     sync();
   };
   ctl.appendChild(sound);
+  // music-only toggle (independent of the master sound mute)
+  const music = document.createElement("button");
+  music.className = "tbtn";
+  music.title = "Toggle music";
+  music.textContent = "🎵";
+  const syncMusic = () => {
+    const off = isMusicMuted();
+    music.style.opacity = off ? "0.4" : "1";
+    music.style.textDecoration = off ? "line-through" : "none";
+    music.title = off ? "Music off — click to play" : "Music on — click to mute";
+  };
+  syncMusic();
+  music.onclick = () => {
+    setMusicMuted(!isMusicMuted());
+    syncMusic();
+  };
+  ctl.appendChild(music);
   bar.appendChild(ctl);
 }
 

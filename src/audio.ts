@@ -9,6 +9,7 @@ const MASTER_VOL = 0.8;
 const MUSIC_VOL = 0.135; // soundtrack at 15% of the SFX (world-bus 0.9) level
 const TAPE = true; // run the soundtrack through an "old Aiwa tape deck" coloring
 const MUTE_KEY = "exo.muted";
+const MUSIC_MUTE_KEY = "exo.musicMuted"; // music-only toggle (separate from the master mute)
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -26,6 +27,13 @@ let musicPos = 0;
 let muted = (() => {
   try {
     return localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+})();
+let musicMuted = (() => {
+  try {
+    return localStorage.getItem(MUSIC_MUTE_KEY) === "1";
   } catch {
     return false;
   }
@@ -152,10 +160,10 @@ function startMusic(): void {
   });
   order = tracks.map((_, i) => i);
   reshuffle();
-  if (!muted) playTrack();
+  if (!muted && !musicMuted) playTrack();
 }
 function playTrack(): void {
-  if (!musicEl || tracks.length === 0) return;
+  if (!musicEl || tracks.length === 0 || musicMuted) return;
   musicEl.src = tracks[order[musicPos]];
   musicEl.play().catch(() => {
     /* autoplay/availability — ignore */
@@ -204,7 +212,7 @@ export function setMuted(m: boolean): void {
   muted = m;
   if (master && ctx) master.gain.setTargetAtTime(m ? 0 : MASTER_VOL, ctx.currentTime, 0.02);
   if (musicEl) {
-    if (m) musicEl.pause();
+    if (m || musicMuted) musicEl.pause();
     else if (ready) {
       if (!musicEl.src) playTrack();
       else void musicEl.play().catch(() => {});
@@ -218,4 +226,25 @@ export function setMuted(m: boolean): void {
 }
 export function isMuted(): boolean {
   return muted;
+}
+
+// Music-only toggle (independent of the master sound mute): silences the
+// soundtrack but leaves SFX playing.
+export function setMusicMuted(m: boolean): void {
+  musicMuted = m;
+  if (musicEl) {
+    if (m) musicEl.pause();
+    else if (ready && !muted) {
+      if (!musicEl.src) playTrack();
+      else void musicEl.play().catch(() => {});
+    }
+  }
+  try {
+    localStorage.setItem(MUSIC_MUTE_KEY, m ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+export function isMusicMuted(): boolean {
+  return musicMuted;
 }
