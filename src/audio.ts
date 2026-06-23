@@ -68,10 +68,16 @@ async function boot(): Promise<void> {
     master = ctx.createGain();
     master.gain.value = muted ? 0 : MASTER_VOL;
     master.connect(ctx.destination);
+    // 80s tape-deck coloring on the SFX/ambient path: a worn-cassette band-limit
+    // (dull highs), a boxy mid bump, soft saturation and a gentle wow/flutter
+    // warble — so the whole game reads like it's coming off a tape deck. (The
+    // streamed soundtrack has its own tape chain and bypasses this.)
+    const sfxTape = ctx.createGain();
+    tapeChain(ctx, sfxTape, master, { lpF: 5200, hpF: 90, midF: 1400, midG: 4, sat: 2.1, wowHz: 0.7, wowAmt: 0.0022, flutHz: 8.5, flutAmt: 0.0013 });
     for (const b of ["ui", "world", "music"] as Bus[]) {
       const g = ctx.createGain();
       g.gain.value = BUS_VOL[b];
-      g.connect(master);
+      g.connect(sfxTape); // through the cassette stage
       buses[b] = g;
     }
     const mods = import.meta.glob("../assets/sfx/*.wav", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
@@ -119,21 +125,21 @@ function tapeSaturationCurve(amount = 1.7) {
 // lows) + a mid "boxy" bump, soft-saturate, then warble the pitch with a delay
 // modulated by a slow WOW and a faster FLUTTER LFO, and lay a faint hiss bed
 // underneath (routed to master so Mute kills it too). src → … → out.
-function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode): void {
-  const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 70;
-  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 8500;
-  const mid = c.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = 1600; mid.Q.value = 0.8; mid.gain.value = 3;
-  const shaper = c.createWaveShaper(); shaper.curve = tapeSaturationCurve(1.7); shaper.oversample = "2x";
+type TapeOpts = { lpF?: number; hpF?: number; midF?: number; midG?: number; sat?: number; wowHz?: number; wowAmt?: number; flutHz?: number; flutAmt?: number };
+function tapeChain(c: AudioContext, src: AudioNode, out: AudioNode, o: TapeOpts = {}): void {
+  const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = o.hpF ?? 70;
+  const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = o.lpF ?? 8500;
+  const mid = c.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = o.midF ?? 1600; mid.Q.value = 0.8; mid.gain.value = o.midG ?? 3;
+  const shaper = c.createWaveShaper(); shaper.curve = tapeSaturationCurve(o.sat ?? 1.7); shaper.oversample = "2x";
   const delay = c.createDelay(0.1); delay.delayTime.value = 0.02; // base; the LFOs wobble it
-  const wow = c.createOscillator(); wow.frequency.value = 0.6;
-  const wowAmt = c.createGain(); wowAmt.gain.value = 0.0035; wow.connect(wowAmt).connect(delay.delayTime);
-  const flutter = c.createOscillator(); flutter.frequency.value = 7.5;
-  const flutAmt = c.createGain(); flutAmt.gain.value = 0.0009; flutter.connect(flutAmt).connect(delay.delayTime);
+  const wow = c.createOscillator(); wow.frequency.value = o.wowHz ?? 0.6;
+  const wowAmt = c.createGain(); wowAmt.gain.value = o.wowAmt ?? 0.0035; wow.connect(wowAmt).connect(delay.delayTime);
+  const flutter = c.createOscillator(); flutter.frequency.value = o.flutHz ?? 7.5;
+  const flutAmt = c.createGain(); flutAmt.gain.value = o.flutAmt ?? 0.0009; flutter.connect(flutAmt).connect(delay.delayTime);
   wow.start(); flutter.start();
   src.connect(hp); hp.connect(lp); lp.connect(mid); mid.connect(shaper); shaper.connect(delay); delay.connect(out);
   // (no hiss bed — white noise read as "broken"; the tape feel comes from the
-  // wow/flutter warble, saturation, band-limiting, head-bump + the tape-head
-  // dropouts/azimuth drift in startTapeHead().)
+  // wow/flutter warble, saturation, band-limiting + the boxy mid head-bump.)
 }
 
 function startMusic(): void {
@@ -151,7 +157,7 @@ function startMusic(): void {
   musicEl = new Audio();
   musicEl.preload = "auto";
   const src = ctx.createMediaElementSource(musicEl); // route through the mixer
-  if (TAPE) tapeChain(ctx, src, gain);
+  if (TAPE) tapeChain(ctx, src, gain, { lpF: 6800, midF: 1500, midG: 4, sat: 2.0, wowHz: 0.6, wowAmt: 0.0042, flutHz: 7, flutAmt: 0.0012 }); // worn-cassette character
   else src.connect(gain);
   musicEl.addEventListener("ended", () => {
     musicPos++;
