@@ -1,5 +1,6 @@
 import { Application, Container, Ticker } from "pixi.js";
 import "../assets/sprites.js"; // populates window.SPRITES (shared with the editor)
+import "../assets/ships.js"; // populates window.SHIPS — default per-race ship designs
 import { createWorld, setCell, addStructureMulti, addDock, addBay, seedSolarSystem, eraseAt, inBounds, idx, addConduit } from "./world";
 import { simStep, refresh } from "./sim";
 import { resolveBreed } from "./spawn";

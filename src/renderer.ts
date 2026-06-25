@@ -341,22 +341,13 @@ function applyEditorLibrary(): void {
 // Load the per-race ships designed in the Ship Editor (same-origin localStorage,
 // opt-in via "exo.ships.enabled"). Builds a hull texture per race + keeps the
 // light/thruster/leg markers for the landing effects.
+type ShipDesign = { res?: number; pixels?: (string | null)[]; lights?: { x: number; y: number; c: string }[]; thrusters?: { x: number; y: number }[]; legs?: { x: number; y: number }[] };
 function loadRaceShips(): void {
   RACE_SHIPS.clear();
-  let lib: Record<string, { res?: number; pixels?: (string | null)[]; lights?: { x: number; y: number; c: string }[]; thrusters?: { x: number; y: number }[]; legs?: { x: number; y: number }[] }>;
-  try {
-    if (localStorage.getItem("exo.ships.enabled") !== "1") return;
-    const raw = localStorage.getItem("exo.ships");
-    if (!raw) return;
-    lib = JSON.parse(raw);
-  } catch {
-    return;
-  }
-  for (const race in lib) {
-    const s = lib[race];
-    if (!s || !Array.isArray(s.pixels)) continue;
+  const add = (race: string, s: ShipDesign | undefined): void => {
+    if (!s || !Array.isArray(s.pixels)) return;
     const res = s.res || Math.round(Math.sqrt(s.pixels.length)) || 48;
-    if (res * res !== s.pixels.length) continue; // must be square
+    if (res * res !== s.pixels.length) return; // must be square
     RACE_SHIPS.set(race, {
       tex: makeTexture(s.pixels, res, res),
       res,
@@ -364,6 +355,18 @@ function loadRaceShips(): void {
       thrusters: Array.isArray(s.thrusters) ? s.thrusters : [],
       legs: Array.isArray(s.legs) ? s.legs : [],
     });
+  };
+  // 1) defaults baked into the game (assets/ships.js → window.SHIPS) — every race
+  const defaults = (window as unknown as { SHIPS?: Record<string, ShipDesign> }).SHIPS;
+  if (defaults) for (const race in defaults) add(race, defaults[race]);
+  // 2) the Ship Editor's saved designs override the defaults (opt-in)
+  try {
+    if (localStorage.getItem("exo.ships.enabled") === "1") {
+      const raw = localStorage.getItem("exo.ships");
+      if (raw) { const lib = JSON.parse(raw) as Record<string, ShipDesign>; for (const race in lib) add(race, lib[race]); }
+    }
+  } catch {
+    /* ignore */
   }
 }
 function texH(name: string, state: string): Texture | null {
