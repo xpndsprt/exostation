@@ -218,14 +218,19 @@ function seedShip(id) {
     sp.lights = [{ x: 12, y: 40, c: RED }, { x: 35, y: 40, c: GRN }, { x: cx, y: 10, c: c.g }];
     sp.thrusters = [{ x: cx - 3, y: 42 }, { x: cx + 3, y: 42 }];
     sp.legs = [{ x: cx - 6, y: 30 }, { x: cx + 6, y: 30 }, { x: 14, y: 40 }, { x: 33, y: 40 }];
-  } else { // human — a clean NASA-style shuttle: fuselage + delta wings + twin engines
-    ell(cx, 22, 5, 16, c.h); ell(16, 32, 8, 4, c.h); ell(32, 32, 8, 4, c.h);
-    disc(cx, 7, 2, c.l); ell(cx, 13, 3, 6, c.h); ell(cx, 13, 2, 3, c.g);
-    line(cx, 8, cx, 40, c.d); rct(cx - 5, 38, cx - 2, 43, c.d); rct(cx + 2, 38, cx + 5, 43, c.d);
+  } else { // human — a Star Trek / Star Wars starship: saucer + engineering hull + twin warp nacelles
+    ell(cx, 14, 10, 8, c.h);               // saucer section (front)
+    disc(cx, 14, 4, c.l); disc(cx, 14, 2, c.d); disc(cx, 13, 1, c.g); // bridge + dome light
+    rct(cx - 1, 21, cx, 27, c.d);          // dorsal neck
+    ell(cx, 33, 4, 9, c.h);                // engineering (secondary) hull
+    disc(cx, 41, 2, c.g);                  // deflector dish (glow, aft-facing here is fine top-down)
+    line(cx - 4, 31, cx - 9, 31, c.d, 1); line(cx + 4, 31, cx + 9, 31, c.d, 1); // nacelle struts
+    ell(cx - 10, 33, 2, 10, c.h); ell(cx + 10, 33, 2, 10, c.h);   // warp nacelles
+    disc(cx - 10, 24, 2, c.g); disc(cx + 10, 24, 2, c.g);         // bussard collectors (blue glow, front)
     outline(c.k);
-    sp.lights = [{ x: 9, y: 33, c: RED }, { x: 38, y: 33, c: GRN }, { x: cx, y: 9, c: "#ffffff" }];
-    sp.thrusters = [{ x: cx - 3, y: 43 }, { x: cx + 3, y: 43 }];
-    sp.legs = [{ x: 13, y: 34 }, { x: 34, y: 34 }, { x: 20, y: 40 }, { x: 27, y: 40 }];
+    sp.lights = [{ x: cx - 10, y: 24, c: RED }, { x: cx + 10, y: 24, c: GRN }, { x: cx, y: 7, c: c.g }];
+    sp.thrusters = [{ x: cx - 10, y: 42 }, { x: cx + 10, y: 42 }, { x: cx, y: 41 }];
+    sp.legs = [{ x: cx - 7, y: 14 }, { x: cx + 7, y: 14 }, { x: cx - 4, y: 38 }, { x: cx + 4, y: 38 }];
   }
   return sp;
 }
