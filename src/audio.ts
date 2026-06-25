@@ -157,8 +157,15 @@ function startMusic(): void {
   musicEl = new Audio();
   musicEl.preload = "auto";
   const src = ctx.createMediaElementSource(musicEl); // route through the mixer
-  if (TAPE) tapeChain(ctx, src, gain, { lpF: 6800, midF: 1500, midG: 4, sat: 2.0, wowHz: 0.6, wowAmt: 0.0042, flutHz: 7, flutAmt: 0.0012 }); // worn-cassette character
-  else src.connect(gain);
+  if (TAPE) {
+    // Wet/dry blend: 50% clean (raw) music + 50% worn-cassette tape coloring, so the
+    // music reads ~50% clearer while keeping the tape character.
+    const dry = ctx.createGain(); dry.gain.value = 0.5; // raw music
+    const wet = ctx.createGain(); wet.gain.value = 0.5; // tape effect
+    src.connect(dry).connect(gain);
+    tapeChain(ctx, src, wet, { lpF: 6800, midF: 1500, midG: 4, sat: 2.0, wowHz: 0.6, wowAmt: 0.0042, flutHz: 7, flutAmt: 0.0012 });
+    wet.connect(gain);
+  } else src.connect(gain);
   musicEl.addEventListener("ended", () => {
     musicPos++;
     if (musicPos >= order.length) reshuffle();
