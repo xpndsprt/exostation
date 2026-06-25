@@ -540,7 +540,7 @@ dock.condition = 50;
 let shipSeen = false;
 let dockServiced = false;
 let guestSeen = false;
-for (let i = 0; i < 300; i++) {
+for (let i = 0; i < 600; i++) { // 60s — room for the slower wormhole approach + spawn interval
   step(wd);
   if (wd.ships.length > 0) shipSeen = true;
   if (dock.servicedBy >= 0) dockServiced = true;
