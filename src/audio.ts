@@ -7,7 +7,6 @@ type Bus = "ui" | "world" | "music";
 const BUS_VOL: Record<Bus, number> = { ui: 0.6, world: 0.9, music: 0.45 };
 const MASTER_VOL = 0.8;
 const MUSIC_VOL = 0.135; // soundtrack at 15% of the SFX (world-bus 0.9) level
-const TAPE = true; // run the soundtrack through an "old Aiwa tape deck" coloring
 const MUTE_KEY = "exo.muted";
 const MUSIC_MUTE_KEY = "exo.musicMuted"; // music-only toggle (separate from the master mute)
 
@@ -148,24 +147,12 @@ function startMusic(): void {
   tracks = Object.values(mods);
   if (tracks.length === 0) return;
   const gain = ctx.createGain();
-  gain.gain.value = MUSIC_VOL; // constant — no volume modulation on music
-  // a gentle static treble lowpass for tape warmth (no drift, no dropouts).
-  const radioLP = ctx.createBiquadFilter();
-  radioLP.type = "lowpass";
-  radioLP.frequency.value = 15000;
-  gain.connect(radioLP).connect(master);
+  gain.gain.value = MUSIC_VOL; // constant level
+  gain.connect(master); // straight to master — NO effects on music
   musicEl = new Audio();
   musicEl.preload = "auto";
-  const src = ctx.createMediaElementSource(musicEl); // route through the mixer
-  if (TAPE) {
-    // Wet/dry blend: 50% clean (raw) music + 50% worn-cassette tape coloring, so the
-    // music reads ~50% clearer while keeping the tape character.
-    const dry = ctx.createGain(); dry.gain.value = 0.5; // raw music
-    const wet = ctx.createGain(); wet.gain.value = 0.5; // tape effect
-    src.connect(dry).connect(gain);
-    tapeChain(ctx, src, wet, { lpF: 6800, midF: 1500, midG: 4, sat: 2.0, wowHz: 0.6, wowAmt: 0.0042, flutHz: 7, flutAmt: 0.0012 });
-    wet.connect(gain);
-  } else src.connect(gain);
+  const src = ctx.createMediaElementSource(musicEl);
+  src.connect(gain); // raw, unprocessed music
   musicEl.addEventListener("ended", () => {
     musicPos++;
     if (musicPos >= order.length) reshuffle();
