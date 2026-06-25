@@ -32,6 +32,7 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "hydrogen", label: "Hydrogen Life-Support", desc: "Build Hydrogen Generators — a sealed H₂ wing lets you host the Voltaar.", cost: 500, labs: 2, tool: "h2gen" },
   { id: "climate", label: "Climate Control", desc: "Build Heaters and Cryo Units to warm or chill a wing — keeps heat-loving Voltaar and cold-loving Naaz content.", cost: 300, labs: 2, tool: "heater", tools: ["heater", "cooler"] },
   { id: "exobiology", label: "Exobiology", desc: "Set Vats to Microbes and Synths to Live-Protein or Exo-Culture — the food chains for Sszra and the exotic-gas crews.", cost: 350, labs: 2 },
+  { id: "waterreclam", label: "Water Reclamation", desc: "Dispatch Bot Bay drones to comets to harvest ICE → water. Your advanced (2+ lab) modules run as coolant/feedstock; without water they overheat and wear out fast.", cost: 350, labs: 2 },
   { id: "security", label: "Station Security", desc: "Build Turrets that shoot down raiders before they wreck your modules.", cost: 500, labs: 2, tool: "turret" },
   { id: "largedock", label: "Expanded Docking", desc: "Build Large Docks — bigger berths land bigger ships: more guests and more fuel sold.", cost: 350, labs: 2, tool: "docklarge", requires: ["fuelrefining"] },
   { id: "implants", label: "Breathing Implants", desc: "Fit cross-gas lovers with implants so each can breathe the other's air — couples of different gases can finally live and work together.", cost: 400, labs: 2, requires: ["medicine"] },
@@ -52,6 +53,19 @@ export const UNLOCKS: UnlockDef[] = [
   { id: "bloomgarden", label: "Bloom Garden", desc: "Vry'l signature module: +50% food production while a Vry'l is aboard. Charges the Beacon.", cost: 700, labs: 3, tool: "bloomgarden" },
   { id: "orerefinery", label: "Ore Refinery", desc: "Korro signature module: +50% mining yield while a Korro is aboard. Charges the Beacon.", cost: 700, labs: 3, tool: "orerefinery" },
 ];
+
+// Every build tool gated behind 2+ research labs — these "advanced" modules draw on
+// water (when Water Reclamation is owned). maintenance.ts further filters to powered,
+// power-drawing ones. (Used for the water/coolant system.)
+export const WATER_MODULE_KINDS: Set<StructureKind> = (() => {
+  const s = new Set<StructureKind>();
+  for (const u of UNLOCKS) {
+    if (u.labs < 2) continue;
+    if (u.tool) s.add(u.tool);
+    for (const t of u.tools ?? []) s.add(t);
+  }
+  return s;
+})();
 
 export function isUnlocked(w: World, id: string): boolean {
   return !!w.unlocked[id];

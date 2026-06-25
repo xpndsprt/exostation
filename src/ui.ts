@@ -599,6 +599,7 @@ export function updateHud(world: World): void {
       chip("🌱", `${Math.floor(st.biomass)}/${caps.biomass}${st.spores > 0 ? ` ·${Math.floor(st.spores)}sp` : ""}${st.microbes > 0 ? ` ·${Math.floor(st.microbes)}mi` : ""}`, st.biomass >= caps.biomass * 0.95) +
       chip("⛏", `${Math.floor(st.minerals)}/${caps.minerals}`, st.minerals >= caps.minerals * 0.95) +
       (st.fuel > 0 ? chip("⛽", `${Math.floor(st.fuel)}/${caps.fuel}`, st.fuel >= caps.fuel * 0.95) : "") +
+      (isUnlocked(world, "waterreclam") ? chip("💧", `${Math.floor(st.water)}/${caps.water}`, st.water <= 0) : "") +
       chip("▦", `${seen.size} <span class="muted">(${breathable} air)</span>`);
   }
 

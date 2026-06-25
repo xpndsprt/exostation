@@ -186,6 +186,15 @@ Food is a two-step, **power-driven** loop, and modules have **selectable recipes
 - **Running costs (M37):** the station has **upkeep** — every operating module costs **~0.15¢/s** and every resident draws a **wage of ~0.2¢/s**. The credit chip shows your **net ¢/s** next to the balance (red when negative). So an *idle* station slowly **bleeds**; only an active economy (lodging + trade + fuel) stays in the black. Watch the net rate — if it's red, you're shrinking.
 - **Takeaway:** Hotel Rooms + a dock drive lodging; mining + a **Trade Hub** drive trade; **minerals → Fuel Refinery → fuel → bigger docks** is a third income stream that rewards scaling your berths. Keep net income positive, then spend the surplus on expansion and **research**; deconstruct for a 50% refund.
 
+### Water — comet ice for your advanced wing (late game)
+- **Water only matters once you research Water Reclamation (¢350, 2 Labs)** — until then it doesn't exist. Researching it puts **two ICE comets** in the Star Chart as **drone targets** (kind *comet*, icy-blue).
+- **Send a Bot Bay drone to a comet** like any mining trip — it returns **~26–30 water** (piped straight to the tanks, **not** hauled). Comets are far + eccentric, so the trips are long.
+- Water shows on the **💧 chip** (turns red at 0). **Storage Floors + Silos** raise the cap (base **80**).
+- **What uses it:** only **advanced modules** — anything that needed **2+ research Labs** (exotic gens, Climate units, Turret, Cargo Exchange, Fusion, AI Core, the Beacon modules…). They draw **0.04 water/s** each while running.
+  - **With water → they run COOL: ½ the normal wear** (coolant prolongs them — far less servicing).
+  - **Out of water → they OVERHEAT: 3× wear** — they break fast and your crew can't keep up.
+- **Takeaway:** once you go high-tech, keep a comet drone running so your advanced wing stays cool. Letting the tank hit 0 is worse than never researching it.
+
 ---
 
 ## 9 · The species (who you're hosting)
@@ -271,7 +280,7 @@ This is the failure state the whole game is designed around.
 ## 12 · Research & tech (M30) — where your credits go
 Banked credits aren't just a score — they buy **tech unlocks** that gate most of the catalog. Build a **Research Lab** (¢150, 2×1), keep it **powered**, and the 🔬 **Research** tab (left dock) lets you spend **credits** on upgrades. Locked build tools show **"???"** in the palette (hover for the requirement) and **light up** when you research them. **Higher tiers require more powered Labs** — each tech shows its **🔬×N** Lab requirement, so you build several Labs to climb the tree.
 - **Tier 1 — 1 Lab (cheap):** Energy Storage (¢100 → Battery) · Recreation (¢120 → Lounge) · Robotics (¢150 → Bot Bay) · Commerce (¢150 → Trade Hub) · **Fuel Refining (¢150 → Fuel Refinery)** · **Medicine (¢200 → Med Bay)**.
-- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · **Climate Control (¢300 → Heater + Cryo Unit)** · **Exobiology (¢350 → Microbes/Live-Protein/Exo-Culture recipes for Sszra + exotic crews)** · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)**.
+- **Tier 2 — 2 Labs:** Cargo Logistics (¢250 → Silo) · Fungal Synthesis (¢300 → Vry'l food) · **Climate Control (¢300 → Heater + Cryo Unit)** · **Exobiology (¢350 → Microbes/Live-Protein/Exo-Culture recipes for Sszra + exotic crews)** · Methane Life-Support (¢350 → Thol wing) · **Chlorine / Ammonia / Hydrogen Life-Support (¢400/450/500 → Cl₂/NH₃/H₂ wings for Chlorithe/Naaz/Voltaar)** · Station Security (¢500 → Turret) · **Expanded Docking (¢350 → Large Dock; *needs Fuel Refining*)** · **Water Reclamation (¢350 → harvest ice from comets; advanced modules run on water — see *Water* below)**.
 - **Tier 3 — 3 Labs (big-ticket):** Fusion Power (¢600 → Fusion Reactor; *needs Robotics*) · Bulk Trade (¢600 → Cargo Exchange; *needs Commerce*) · Cybernetics (¢800 → AI Core; *needs Cargo Logistics*) · **Spaceport (¢700 → Spaceport Dock; *needs Expanded Docking*)**.
 - **Tier 4 — 3 Labs (the win):** the five **Beacon** signature modules (¢700 each) — see *The Sector Beacon* below.
 - **Doctrine fork — 2 Labs, pick ONE (M40):** a permanent **station specialization** — choosing one **locks the other two for the rest of the run**, so credits can't buy everything. Each needs a Tier-1 prerequisite:

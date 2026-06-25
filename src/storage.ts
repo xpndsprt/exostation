@@ -4,7 +4,7 @@ import { World } from "./types";
 // instead of climbing forever — sizing production to population (and trading
 // minerals to make room) becomes an ongoing decision. A Storage Silo raises
 // every cap (unlocked via Cargo Logistics in the tech tree).
-export const BASE_CAPS = { biomass: 400, spores: 250, microbes: 250, rations: 50, fungal: 50, protein: 50, exotic: 50, minerals: 200, fuel: 120 } as const;
+export const BASE_CAPS = { biomass: 400, spores: 250, microbes: 250, rations: 50, fungal: 50, protein: 50, exotic: 50, minerals: 200, fuel: 120, water: 80 } as const;
 export const SILO_BONUS = 250;
 
 export interface Caps {
@@ -17,6 +17,7 @@ export interface Caps {
   exotic: number;
   minerals: number;
   fuel: number;
+  water: number;
 }
 
 export const CARGOEX_MINERAL_BONUS = 500; // a Cargo Exchange holds far more ore
@@ -47,5 +48,6 @@ export function storageCaps(w: World): Caps {
     exotic: BASE_CAPS.exotic + mealAdd,
     minerals: BASE_CAPS.minerals + add + cargoex * CARGOEX_MINERAL_BONUS + storeCells * STORE_MINERAL_PER_CELL,
     fuel: BASE_CAPS.fuel + add,
+    water: BASE_CAPS.water + add + storeCells * STORE_MINERAL_PER_CELL, // Silos + storage floor hold more water
   };
 }

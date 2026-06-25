@@ -159,6 +159,7 @@ export interface Stock {
   spores: number; // grown in Vats; feedstock for Fungal Mash
   microbes: number; // grown in Vats; feedstock for exotic food (Live-Protein / Exo-Culture)
   fuel: number; // refined from minerals at a Fuel Refinery; sold to docking ships
+  water: number; // ice harvested from comets; coolant/feedstock for advanced (Tier-2+) modules
   meals: Record<FoodLine, number>; // synthesized food, per line; eaten by crew
 }
 
@@ -180,7 +181,7 @@ export interface Drone {
 // drone to it from the Star Chart. Unknown until a drone first visits ("discovered"),
 // at which point its yield/richness are revealed. Every body gives minerals; the
 // only difference is how much (yield/trip) and how much is left (richness).
-export type SiteKind = "asteroid" | "planet" | "moon";
+export type SiteKind = "asteroid" | "planet" | "moon" | "comet";
 
 export interface Site {
   id: number;

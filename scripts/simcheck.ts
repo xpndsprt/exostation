@@ -2495,5 +2495,38 @@ function forceCouple(w: World, a: number, b: number) {
   setAutogame(false);
 }
 
+// --- Water (M-water): comet harvesting + the soft coolant/wear model ---
+{
+  const ww = createWorld();
+  for (let y = 5; y <= 8; y++) for (let x = 5; x <= 9; x++) setCell(ww, x, y, "floor");
+  addStructure(ww, "bay", 7, 6); // a Bot Bay + its drone
+  ww.unlocked.waterreclam = true;
+  miningSystem(ww, 0.1); // ensureComets adds the two ICE comets
+  const comet = Object.values(ww.sites).find((s) => s.kind === "comet");
+  check("Water: comets become drone targets once Water Reclamation is researched", !!comet);
+  const drone = Object.values(ww.drones)[0];
+  if (comet && drone) { drone.siteId = comet.id; drone.state = "inbound"; drone.cargo = 30; drone.t = 1; }
+  miningSystem(ww, 0.1); // drone unloads its ice → water tank
+  check("Water: a drone returning from a comet fills the water tank", ww.stock.water >= 25);
+}
+{
+  const wearOf = (water: number, unlock: boolean): number => {
+    const w = createWorld();
+    for (let y = 5; y <= 8; y++) for (let x = 5; x <= 8; x++) setCell(w, x, y, "floor");
+    addStructure(w, "cl2gen", 6, 6); // a 2+ lab module (advanced)
+    const s = Object.values(w.structures)[0];
+    s.powered = true; s.condition = 100;
+    if (unlock) w.unlocked.waterreclam = true;
+    w.stock.water = water;
+    for (let i = 0; i < 10; i++) maintenanceSystem(w, 0.1);
+    return s.condition; // higher = wore less
+  };
+  const normal = wearOf(0, false); // no water tech → normal wear
+  const cooled = wearOf(50, true); // watered → runs cool (½ wear)
+  const overheat = wearOf(0, true); // dry → overheats (3× wear)
+  check("Water: a watered advanced module wears slower than normal", cooled > normal);
+  check("Water: a dry advanced module overheats and wears faster than normal", overheat < normal);
+}
+
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURE(S)`);
 process.exit(failures === 0 ? 0 : 1);

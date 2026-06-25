@@ -3,7 +3,19 @@ import { TRAITS } from "./species";
 import { storageCaps } from "./storage";
 import { aiBoost } from "./structures";
 import { beaconActive } from "./beacon";
-import { industryBoost } from "./research";
+import { industryBoost, isUnlocked } from "./research";
+import { addBody } from "./world";
+
+// Once Water Reclamation is researched, two ICE comets enter the system as drone
+// targets (kind "comet"); dispatching a Bot Bay drone to one returns WATER. They're
+// far + eccentric (long trips) and effectively endless. Idempotent.
+function ensureComets(w: World): void {
+  if (!isUnlocked(w, "waterreclam")) return;
+  for (const id in w.sites) if (w.sites[id].kind === "comet") return; // already added
+  addBody(w, "comet", { angle: 1.2, dist: 0.92, yield: 30, richness: 1e7, name: "Comet Vela", orbSpeed: 0.05, tint: "#9fe0ff" });
+  addBody(w, "comet", { angle: 4.0, dist: 0.78, yield: 26, richness: 1e7, name: "Comet Halis", orbSpeed: -0.07, tint: "#bff0ff" });
+  w.notify.push("Water Reclamation online — two ICE comets are now dispatch targets in the Star Chart.");
+}
 
 // Drone trip timing. A round trip to a body is one off-map "transit" leg whose
 // length scales with the body's orbital distance, bracketed by short lift-off /
@@ -63,6 +75,7 @@ function advanceOrbits(w: World, dt: number): void {
 // richness left. Each trip risks loss to a hazard; a lost drone is rebuilt by the
 // Bay for a fee. It keeps re-running trips to its target until the body is dry.
 export function miningSystem(w: World, dt: number): void {
+  ensureComets(w);
   if (dt > 0) advanceOrbits(w, dt);
   const mult = haulMult(w);
   for (const id in w.drones) {
@@ -133,7 +146,12 @@ export function miningSystem(w: World, dt: number): void {
         d.t += dt / IN_FLY;
         if (d.t >= 1) {
           d.t = 0;
-          bay.outBuf += d.cargo; // ore piles on the pad — crew haul it to storage
+          if (site && site.kind === "comet") {
+            // ice → water, piped straight to the tanks (capped by storage)
+            w.stock.water = Math.min(storageCaps(w).water, w.stock.water + d.cargo);
+          } else {
+            bay.outBuf += d.cargo; // ore piles on the pad — crew haul it to storage
+          }
           d.cargo = 0;
           d.state = "docked";
           if (site && site.richness <= 0) {

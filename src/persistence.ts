@@ -172,10 +172,11 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.couples)) w.couples = [];
   if (!w.relThaw || typeof w.relThaw !== "object") w.relThaw = {};
   if (w.romance === undefined) w.romance = null;
-  const st = w.stock as unknown as { spores?: number; microbes?: number; fuel?: number; meals: unknown };
+  const st = w.stock as unknown as { spores?: number; microbes?: number; fuel?: number; water?: number; meals: unknown };
   if (typeof st.spores !== "number") st.spores = 0;
   if (typeof st.microbes !== "number") st.microbes = 0;
   if (typeof st.fuel !== "number") st.fuel = 0;
+  if (typeof st.water !== "number") st.water = 0;
   if (typeof st.meals === "number") w.stock.meals = { rations: st.meals, fungal: 0, protein: 0, exotic: 0 };
   else if (!st.meals || typeof st.meals !== "object") w.stock.meals = { rations: 0, fungal: 0, protein: 0, exotic: 0 };
   else {

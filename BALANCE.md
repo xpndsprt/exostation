@@ -152,6 +152,7 @@ Research Labs (¢150, draw 6) gate most of the catalog; unlocks cost credits, an
 | Hydrogen Life-Support | 500 | 2 | Hydrogen Gen (Voltaar) |
 | Station Security | 500 | 2 | Turret |
 | Expanded Docking | 350 | 2 | Large Dock *(needs Fuel Refining)* |
+| Water Reclamation | 350 | 2 | comet ice harvesting + the water/coolant system |
 | Spaceport | 700 | 3 | Spaceport Dock *(needs Expanded Docking)* |
 | Fusion Power | 600 | 3 | Fusion Reactor *(needs Robotics)* |
 | Bulk Trade | 600 | 3 | Cargo Exchange *(needs Commerce)* |
@@ -212,6 +213,7 @@ Random **encounters** (`encounters.ts`): first possible at **55 s**, then a roll
 
 ## Operating economy / credit sink (M37)
 Recurring costs give the economy an equilibrium instead of a one-way ratchet.
+- **Water (M-water, soft coolant model):** gated behind **Water Reclamation** (¢350, 2 Labs). Until researched, water doesn't exist and nothing uses it. Once researched: **two comet Sites** (kind `comet`, yield **30 / 26** water, effectively endless, far/eccentric → long trips) become Bot-Bay drone targets; a returning comet drone deposits its haul **straight into the water tank** (capped — base **80**, +Silos/Storage Floor like minerals). **Advanced modules** (any tool gated behind **2+ Labs**, powered, draw > 0) each sip **0.04 water/s**; with water they wear at **×0.5** (cool), dry at **×3** (overheat). No new module — uses the Bot Bay. HUD **💧 chip** (red at 0).
 - **Module upkeep:** **0.15¢/s** per *powered, operating* module (draw > 0; passive solar/battery/silo are free).
 - **Power conduits (M-conduit, strict wiring):** a consumer is powered **only if it touches a source or a non-broken conduit** (reach **1 tile**, Chebyshev). Sources: a **Solar** feeds the deck **socket** just inside the wall it's mounted on; **Battery/Reactor** feed their own footprint. A **Power Conduit** (¢1/tile, layable on floor/storage/**doors**) reaches **1 tile** and chains, so a continuous run carries power across the station. No gating when there are zero generators/batteries (that's a normal blackout). Conduits lose **0.25 hp/s** each (independent → longer networks break more often); at hp 0 a conduit **stops conducting** until crew repair it (**+15 hp/s**). No per-tick credit upkeep — the cost is build price + repair labour.
 - **Crew wages:** **0.2¢/s** per resident.

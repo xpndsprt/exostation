@@ -1,6 +1,7 @@
 import { Agent, Species, World } from "./types";
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
+import { isUnlocked, WATER_MODULE_KINDS } from "./research";
 import { RELATIONS } from "./relations";
 
 export type Severity = "critical" | "warn" | "tip";
@@ -61,6 +62,8 @@ function stationAdvice(world: World): Advice[] {
     out.push({ sev: "critical", text: "A room has MIXED gases (lethal) — keep different gas generators in separate rooms." });
   if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))
     out.push({ sev: "critical", text: "A module has broken down — crew must repair it." });
+  if (isUnlocked(world, "waterreclam") && world.stock.water <= 0 && structures.some((s) => s.powered && WATER_MODULE_KINDS.has(s.kind) && STRUCTURES[s.kind].draw > 0))
+    out.push({ sev: "warn", text: "Water empty — your advanced modules are overheating (3× wear). Dispatch a Bot Bay drone to a comet in the Star Chart." });
 
   const residents = agents.filter((a) => !a.guest).length;
   const machines = structures.filter((s) => STRUCTURES[s.kind].draw > 0).length;

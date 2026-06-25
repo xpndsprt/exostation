@@ -32,7 +32,7 @@ export function createWorld(): World {
     power: { supply: 0, draw: 0, battery: 0, batteryMax: 0, brownout: false },
     // Generous starting biomass so the synth feeds crew for a long while — the
     // player needn't spend on Bio Vats right at the start.
-    stock: { minerals: 0, biomass: 300, spores: 0, microbes: 0, fuel: 0, meals: { rations: 0, fungal: 0, protein: 0, exotic: 0 } },
+    stock: { minerals: 0, biomass: 300, spores: 0, microbes: 0, fuel: 0, water: 0, meals: { rations: 0, fungal: 0, protein: 0, exotic: 0 } },
     credits: 1000, // starting funds to build the first station
     tradeTimer: 0,
     crewTimer: 0,
