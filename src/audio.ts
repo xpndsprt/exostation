@@ -164,8 +164,11 @@ function startMusic(): void {
     if (musicPos >= order.length) reshuffle();
     playTrack();
   });
+  // Fresh shuffle on every game load, AND a random starting position so even the
+  // first track differs each time the page loads.
   order = tracks.map((_, i) => i);
   reshuffle();
+  musicPos = order.length ? Math.floor(Math.random() * order.length) : 0;
   if (!muted && !musicMuted) playTrack();
 }
 function playTrack(): void {
