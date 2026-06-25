@@ -791,18 +791,32 @@ export class Renderer {
     }
     // Paint the light buffer as multiply-blended rects (reliable on every backend,
     // unlike a re-uploaded canvas texture). Open space is left unpainted = full
-    // bright (multiply by nothing); interior cells carry their dimming/shadows.
+    // bright. PERF: quantize each cell's colour to 16 levels/channel and run-length
+    // merge equal cells along each row into one rect — a uniform interior collapses
+    // from ~one-rect-per-cell to ~one-rect-per-row (a big draw-call reduction).
     const g = this.lightG;
     g.clear();
-    const clamp1 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-    for (let i = 0; i < world.cells.length; i++) {
-      if (world.cells[i].type === "space") continue;
+    const w = world.w, h = world.h;
+    const cellCol = (i: number): number => {
       const o = i * 3;
-      const col =
-        (Math.round(clamp1(buf[o]) * 255) << 16) |
-        (Math.round(clamp1(buf[o + 1]) * 255) << 8) |
-        Math.round(clamp1(buf[o + 2]) * 255);
-      g.rect((i % world.w) * TILE, ((i / world.w) | 0) * TILE, TILE, TILE).fill({ color: col });
+      const r = buf[o] < 0 ? 0 : buf[o] > 1 ? 15 : Math.round(buf[o] * 15);
+      const gr = buf[o + 1] < 0 ? 0 : buf[o + 1] > 1 ? 15 : Math.round(buf[o + 1] * 15);
+      const b = buf[o + 2] < 0 ? 0 : buf[o + 2] > 1 ? 15 : Math.round(buf[o + 2] * 15);
+      return ((r * 17) << 16) | ((gr * 17) << 8) | (b * 17); // 4-bit → 8-bit per channel
+    };
+    for (let y = 0; y < h; y++) {
+      let runX = -1, runCol = -1;
+      const flush = (endX: number): void => {
+        if (runX >= 0) g.rect(runX * TILE, y * TILE, (endX - runX) * TILE, TILE).fill({ color: runCol });
+        runX = -1;
+      };
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (world.cells[i].type === "space") { flush(x); continue; }
+        const col = cellCol(i);
+        if (col !== runCol) { flush(x); runX = x; runCol = col; }
+      }
+      flush(w);
     }
   }
 
@@ -1102,8 +1116,20 @@ export class Renderer {
   }
 
   // Eggs (incubating clutches) and spiders (hatched vermin the crew hunt).
+  // Sprite pool: reuse a container's existing children instead of destroying and
+  // re-creating a Sprite every frame (kills GC churn for crew/ships/drones).
+  private poolSprite(c: Container, idx: number, t: Texture): Sprite {
+    let sp = c.children[idx] as Sprite | undefined;
+    if (!sp) { sp = new Sprite(t); sp.anchor.set(0.5); c.addChild(sp); return sp; }
+    sp.texture = t; sp.visible = true; sp.tint = 0xffffff; sp.rotation = 0; sp.alpha = 1;
+    return sp;
+  }
+  private hideExtra(c: Container, used: number): void {
+    for (let k = used; k < c.children.length; k++) c.children[k].visible = false;
+  }
+
   private drawCritters(world: World): void {
-    this.critterC.removeChildren();
+    let cn = 0; // pooled sprite index
     const g = this.critterFx;
     g.clear();
     const pulse = 0.5 + 0.5 * Math.sin(((world.tick % 18) / 18) * Math.PI * 2);
@@ -1117,12 +1143,10 @@ export class Renderer {
       g.circle(cx, cy, TILE * 0.42).fill({ color: ready ? 0xe24b4b : 0xe8c349, alpha: (ready ? 0.16 : 0.08) + 0.08 * pulse });
       const t = tex("egg", "default");
       if (t) {
-        const sp = new Sprite(t);
+        const sp = this.poolSprite(this.critterC, cn++, t);
         sp.scale.set(scaleOf("egg"));
-        sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
-        this.critterC.addChild(sp);
       }
     }
     for (const p of world.pests ?? []) {
@@ -1130,12 +1154,10 @@ export class Renderer {
       g.circle(cx, cy, TILE * 0.4).fill({ color: 0xff3b3b, alpha: 0.05 + 0.05 * pulse });
       const t = tex("spider", "default");
       if (t) {
-        const sp = new Sprite(t);
+        const sp = this.poolSprite(this.critterC, cn++, t);
         sp.scale.set(scaleOf("spider"));
-        sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
-        this.critterC.addChild(sp);
       }
       // health bar while wounded
       if (p.health < 40) {
@@ -1155,10 +1177,11 @@ export class Renderer {
       g.rect(cx - r, cy - r - 6, r * 2, 2).fill(0x11151c);
       g.rect(cx - r, cy - r - 6, r * 2 * Math.max(0, b.health / 70), 2).fill(0xff4357);
     }
+    this.hideExtra(this.critterC, cn);
   }
 
   private drawAgents(world: World): void {
-    this.agentsC.removeChildren();
+    let an = 0; // pooled sprite index
     const g = this.agentFx;
     g.clear();
     for (const id in world.agents) {
@@ -1172,12 +1195,10 @@ export class Renderer {
       const state = !a.alive ? "dead" : suited ? (moving ? "suitwalk" : "suitidle") : moving ? "walk" : "idle";
       const t = tex(a.species, state);
       if (t) {
-        const sp = new Sprite(t);
+        const sp = this.poolSprite(this.agentsC, an++, t);
         sp.scale.set(scaleOf(a.species));
-        sp.anchor.set(0.5);
         sp.x = cx;
         sp.y = cy;
-        this.agentsC.addChild(sp);
       }
       if (!a.alive) continue;
       const r = TILE * 0.32;
@@ -1235,10 +1256,11 @@ export class Renderer {
       this.speciesFlash.t -= 1;
       if (this.speciesFlash.t <= 0) this.speciesFlash = null;
     }
+    this.hideExtra(this.agentsC, an);
   }
 
   private drawDrones(world: World): void {
-    this.dronesC.removeChildren();
+    let dn = 0; // pooled sprite index
     const g = this.dronesFx;
     g.clear();
     const phase = (world.tick % 12) / 12;
@@ -1333,16 +1355,15 @@ export class Renderer {
 
       const t = tex("drone", d.cargo > 0 ? "laden" : "empty");
       if (t) {
-        const sp = new Sprite(t);
+        const sp = this.poolSprite(this.dronesC, dn++, t);
         sp.scale.set(scaleOf("drone") * vis);
-        sp.anchor.set(0.5);
         sp.rotation = rot;
         sp.alpha = alpha;
         sp.x = x;
         sp.y = y;
-        this.dronesC.addChild(sp);
       }
     }
+    this.hideExtra(this.dronesC, dn);
   }
 
   // Race-gods drift through space, ship-sized and glowing, each a distinct form.
@@ -1580,18 +1601,17 @@ export class Renderer {
       g.circle(bx, by, TILE * 0.18).fill({ color: 0xff3b3b, alpha: 0.7 });
     }
 
-    this.shipsC.removeChildren();
+    let sn = 0; // pooled sprite index
     for (const it of sprites) {
       if (!it.t) continue;
-      const sp = new Sprite(it.t);
+      const sp = this.poolSprite(this.shipsC, sn++, it.t);
       sp.scale.set(it.scale ?? SCALE);
-      sp.anchor.set(0.5);
       sp.rotation = it.rot ?? 0;
       if (it.tint !== undefined) sp.tint = it.tint;
       sp.x = it.x;
       sp.y = it.y;
-      this.shipsC.addChild(sp);
     }
+    this.hideExtra(this.shipsC, sn);
   }
 
   private drawOverlay(world: World, mode: "none" | "power" | "rooms"): void {
