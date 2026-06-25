@@ -6,6 +6,7 @@ import { exteriorCell, isOpaque } from "./world";
 import { SPECIES } from "./species";
 import { SERVICE_THRESHOLD } from "./maintenance";
 import { beaconAnchor } from "./wormhole";
+import { storageCaps } from "./storage";
 
 // Sprite art is authored at a native resolution (px per tile) that can vary per
 // sprite (32px for the current set; older art may be 16). The renderer reads each
@@ -447,6 +448,8 @@ export class Renderer {
   // that's the documented "one frame, then black" failure on some GPU backends.)
   private lightG = new Graphics();
   private conduitG = new Graphics(); // power cabling laid on the deck
+  private storageG = new Graphics(); // crates + water tanks sitting on storage floor
+  private lastStorageSig = ""; // skip redrawing stored goods when stock is unchanged
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
@@ -470,7 +473,7 @@ export class Renderer {
     buildTextures();
     this.lightG.blendMode = "multiply";
     for (const layer of [
-      this.cellsC, this.atmo, this.grid, this.conduitG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
+      this.cellsC, this.atmo, this.grid, this.conduitG, this.storageG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
       this.lightG, this.heightC, this.overlay, this.selection, this.cursor,
     ])
@@ -488,6 +491,7 @@ export class Renderer {
     this.lastConduitSig = "";
     this.lastAtmoSig = "";
     this.lastStructSig = "";
+    this.lastStorageSig = "";
     this.heightSig = -1;
     this.bakeSig = "";
   }
@@ -610,6 +614,7 @@ export class Renderer {
     this.drawTiles(world);
     this.drawAtmosphere(world);
     this.drawConduits(world);
+    this.drawStorage(world);
     // Asteroids/planets live off-map in the Star Chart now — nothing on the grid.
     this.drawStructures(world);
     this.drawCritters(world);
@@ -968,6 +973,54 @@ export class Renderer {
     }
   }
 
+  // Stored goods made physical: crates of ore / biomass / food and a water tank
+  // sit on the Storage Floor, growing with how full each resource is. Cached by a
+  // coarse fill signature so it only repaints when stock crosses a bucket.
+  private drawStorage(world: World): void {
+    const tiles: number[] = [];
+    for (let i = 0; i < world.cells.length; i++) if (world.cells[i].type === "storage") tiles.push(i);
+    const st = world.stock;
+    const caps = storageCaps(world);
+    const meals = st.meals.rations + st.meals.fungal + st.meals.protein + st.meals.exotic;
+    const biomass = st.biomass + st.spores + st.microbes;
+    const goods: { fill: number; col: number; light: number; tank?: boolean }[] = [];
+    if (st.minerals > 0) goods.push({ fill: st.minerals / caps.minerals, col: 0x6a7d8d, light: 0x9aa6b2 });
+    if (biomass > 0) goods.push({ fill: biomass / caps.biomass, col: 0x3f7a4a, light: 0x6fae5a });
+    if (meals > 0) goods.push({ fill: meals / (caps.rations * 4), col: 0xb07a3a, light: 0xe0a85a });
+    if (st.water > 0) goods.push({ fill: st.water / caps.water, col: 0x2f8ada, light: 0x7fd0ff, tank: true });
+    const sig = tiles.length + "|" + goods.map((x) => (x.tank ? "w" : "") + Math.round(Math.min(1, x.fill) * 10)).join(",");
+    if (sig === this.lastStorageSig) return;
+    this.lastStorageSig = sig;
+    const g = this.storageG;
+    g.clear();
+    if (!tiles.length || !goods.length) return;
+    for (let i = 0; i < tiles.length; i++) {
+      const cx = (tiles[i] % world.w) * TILE + TILE / 2;
+      const cy = ((tiles[i] / world.w) | 0) * TILE + TILE / 2;
+      const gd = goods[i % goods.length];
+      if (gd.tank) this.drawTank(g, cx, cy, gd.fill);
+      else this.drawCrates(g, cx, cy, gd.col, gd.light, gd.fill);
+    }
+  }
+  private drawCrates(g: Graphics, cx: number, cy: number, col: number, light: number, fill: number): void {
+    const n = 1 + Math.min(2, Math.floor(Math.min(1, fill) * 3)); // 1..3 crates by fill
+    const s = TILE * 0.34;
+    for (let k = 0; k < n; k++) {
+      const ox = (k % 2) * s * 0.9 - s * 0.45;
+      const oy = -k * s * 0.5 + s * 0.2;
+      g.rect(cx + ox - s / 2, cy + oy - s / 2, s, s).fill({ color: col }).stroke({ width: 1, color: 0x0c0e12, alpha: 0.7 });
+      g.rect(cx + ox - s / 2, cy + oy - s / 2, s, s * 0.32).fill({ color: light, alpha: 0.85 }); // lit top
+    }
+  }
+  private drawTank(g: Graphics, cx: number, cy: number, fill: number): void {
+    const w = TILE * 0.5, h = TILE * 0.6;
+    g.rect(cx - w / 2, cy - h / 2, w, h).fill({ color: 0x1a2530 }).stroke({ width: 1.2, color: 0x3a4a5a, alpha: 0.9 }); // shell
+    const fh = h * Math.max(0.08, Math.min(1, fill));
+    g.rect(cx - w / 2 + 1, cy + h / 2 - fh, w - 2, fh).fill({ color: 0x2f8ada, alpha: 0.85 }); // water level
+    g.rect(cx - w / 2 + 1, cy + h / 2 - fh, w - 2, 2).fill({ color: 0x9fe0ff, alpha: 0.9 }); // surface highlight
+    g.ellipse(cx, cy - h / 2, w / 2, 3).fill({ color: 0x2a3a4a }); // top rim
+  }
+
   private drawAtmosphere(world: World): void {
     // Cache: gas tints change only when a room's gas or layout changes.
     let sig = "";
@@ -1225,11 +1278,15 @@ export class Renderer {
       if (a.guest) g.circle(cx, cy, r).stroke({ width: 2, color: COLORS.guest, alpha: 0.9 });
       if (suited) g.circle(cx, cy, r + 1.5).stroke({ width: 2, color: COLORS.suit, alpha: 0.85 });
       if (a.food < 40 || a.rest < 40) g.circle(cx, cy, r + 3).stroke({ width: 2, color: COLORS.needLow });
-      // a hauled crate rides above the carrier (colour by good)
+      // a hauled CRATE rides above the carrier (colour by good, lit top so it reads
+      // as a box being carried to storage / the Synth / a Mess Table)
       if (a.task && a.task.type === "haul") {
         const good = (a.task as { good?: string }).good;
-        const col = good === "spores" ? 0x9fd14f : good === "microbes" ? 0xd98ad9 : good === "minerals" ? 0x9a8a64 : 0xcaa06a;
-        g.rect(cx - 3.5, cy - r - 12, 7, 7).fill(col).stroke({ width: 1, color: 0x0c0e12, alpha: 0.85 });
+        const col = good === "spores" ? 0x6fae5a : good === "microbes" ? 0xb07ad0 : good === "minerals" ? 0x6a7d8d : 0xc08a4a;
+        const light = good === "spores" ? 0x9fd14f : good === "microbes" ? 0xd98ad9 : good === "minerals" ? 0x9aa6b2 : 0xe0a85a;
+        const bx = cx, by = cy - r - 10, s = 7;
+        g.rect(bx - s / 2, by - s / 2, s, s).fill(col).stroke({ width: 1, color: 0x0c0e12, alpha: 0.85 });
+        g.rect(bx - s / 2, by - s / 2, s, s * 0.34).fill({ color: light, alpha: 0.85 }); // lit lid
       }
       // mood dot
       const moodColor = a.mood >= 60 ? 0x49d17a : a.mood >= 35 ? 0xe8c349 : 0xe24b4b;

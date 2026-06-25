@@ -9,6 +9,14 @@ import { addBody } from "./world";
 // Once Water Reclamation is researched, two ICE comets enter the system as drone
 // targets (kind "comet"); dispatching a Bot Bay drone to one returns WATER. They're
 // far + eccentric (long trips) and effectively endless. Idempotent.
+// The station can hold drone cargo only if it has dedicated storage — a Storage
+// Floor tile or a Storage Silo. Without it, drones have nowhere to unload.
+export function hasStorage(w: World): boolean {
+  for (let i = 0; i < w.cells.length; i++) if (w.cells[i].type === "storage") return true;
+  for (const id in w.structures) if (w.structures[id].kind === "silo") return true;
+  return false;
+}
+
 function ensureComets(w: World): void {
   if (!isUnlocked(w, "waterreclam")) return;
   for (const id in w.sites) if (w.sites[id].kind === "comet") return; // already added
@@ -89,7 +97,9 @@ export function miningSystem(w: World, dt: number): void {
 
     switch (d.state) {
       case "docked": {
-        if (!bay.powered || !site || site.richness <= 0) {
+        // A drone won't run a trip unless there's somewhere to PUT the cargo: a
+        // Storage Floor or a Silo. No storage → it stays docked (build storage).
+        if (!bay.powered || !site || site.richness <= 0 || !hasStorage(w)) {
           if (site && site.richness <= 0) d.siteId = -1; // target ran dry — idle
           break;
         }

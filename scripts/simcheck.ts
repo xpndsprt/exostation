@@ -194,6 +194,7 @@ for (let y = 5; y <= 7; y++) {
 recomputeRooms(w3);
 addStructure(w3, "solar", 6, 6); // +10 supply covers bay's 4 draw
 addStructure(w3, "bay", 7, 6); // spawns one drone
+setCell(w3, 8, 7, "storage"); // a Storage Floor so the drone has somewhere to unload
 const bodyId = addBody(w3, "asteroid", { angle: 0, dist: 0.1, yield: 15, richness: 300 });
 w3.stock.minerals = 0;
 
@@ -1003,6 +1004,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
     addStructure(w, "solar", 7, 6); // power for o2gen + bay
     addStructure(w, "o2gen", 6, 7);
     addStructure(w, "bay", 8, 6); // one drone
+    setCell(w, 7, 7, "storage"); // drones need somewhere to unload
     const id = addBody(w, "asteroid", { angle: 0, dist: 0.1, yield: 15, richness: 5000 }); // deep target — won't deplete
     Object.values(w.drones)[0].siteId = id;
     if (withKorro) addAgent(w, 8, 7, "korro");
@@ -1018,6 +1020,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   recomputeRooms(w);
   addStructure(w, "solar", 6, 6);
   addStructure(w, "bay", 7, 6);
+  setCell(w, 8, 7, "storage"); // drones need somewhere to unload
   const id = addBody(w, "asteroid", { angle: 0, dist: 0.05, yield: 20, richness: 40 }); // tiny — empties in ~2 trips
   const dr = Object.values(w.drones)[0];
   dr.siteId = id;

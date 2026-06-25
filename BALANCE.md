@@ -52,7 +52,7 @@ No on-grid asteroids: bodies live **off-map** in the star system, dispatched fro
 Bot Bay's **Star Chart** dialog (`src/mining.ts`, `ui.ts` star-chart canvas).
 - **Bodies** (`seedSolarSystem`): **14 asteroids** (dist 0.08–0.6, yield **8–20**, richness **120–320**) + **4 planets** (dist 0.62–0.98, yield **40–80**, richness **600–1400**). All start **undiscovered**.
 - **Trip time** = `TRIP_BASE 18 + dist × TRIP_SPAN 55` seconds of off-map transit, bracketed by **1.5s** lift-off + **1.5s** descent. So ~**23s** (near asteroid) → ~**67s** (far planet) per round trip.
-- **Loop:** `docked → outbound → transit (off-map) → inbound → unload`. A drone only flies when its bay is **powered** and it has a target with richness left; it auto-repeats trips until the body **depletes (finite)**, then un-targets and idles.
+- **Loop:** `docked → outbound → transit (off-map) → inbound → unload`. A drone only flies when its bay is **powered**, it has a target with richness left, **and the station has storage to unload into** (`hasStorage` — any Storage Floor tile or a Silo; else it stays docked). It auto-repeats trips until the body **depletes (finite)**, then un-targets and idles.
 - **First arrival reveals** the body (yield + richness) **and** delivers that haul — discovery and mining are the same trip.
 - **Haul/trip** = body `yield` × **Korro Hauler 1.5** (if aboard) × **AI Core 1.25** × **Industrialist 1.15** × **Ore Refinery beacon 1.5**, capped by remaining richness, capped into the minerals storage cap on unload.
 - One drone per Bot Bay; more bays = more concurrent drones. Targets are global/shared knowledge; each bay dispatches its own drone from the chart.
