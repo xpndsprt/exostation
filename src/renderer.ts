@@ -995,24 +995,36 @@ export class Renderer {
     const st = world.stock;
     const caps = storageCaps(world);
     const meals = st.meals.rations + st.meals.fungal + st.meals.protein + st.meals.exotic;
-    const biomass = st.biomass + st.spores + st.microbes;
-    const goods: { fill: number; col: number; light: number; tank?: boolean }[] = [];
-    if (st.minerals > 0) goods.push({ fill: st.minerals / caps.minerals, col: 0x6a7d8d, light: 0x9aa6b2 });
-    if (biomass > 0) goods.push({ fill: biomass / caps.biomass, col: 0x3f7a4a, light: 0x6fae5a });
-    if (meals > 0) goods.push({ fill: meals / (caps.rations * 4), col: 0xb07a3a, light: 0xe0a85a });
-    if (st.water > 0) goods.push({ fill: st.water / caps.water, col: 0x2f8ada, light: 0x7fd0ff, tank: true });
-    const sig = tiles.length + "|" + goods.map((x) => (x.tank ? "w" : "") + Math.round(Math.min(1, x.fill) * 10)).join(",");
+    const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+    // The warehouse physically shows the haulable goods whose caps the Storage
+    // Floor raises: ore, prepared meals, and (once harvested) water. Each good gets
+    // a contiguous ZONE of the storage tiles that fills with crates / a tank in
+    // proportion to how much is actually stocked, and empties as you spend it — so
+    // the floor mirrors the real stockpile instead of showing arbitrary crates.
+    const cats: { frac: number; col: number; light: number; tank?: boolean }[] = [
+      { frac: st.minerals / caps.minerals, col: 0x6a7d8d, light: 0x9aa6b2 }, // ore
+      { frac: meals / (caps.rations * 4), col: 0xb07a3a, light: 0xe0a85a }, // meals
+    ];
+    if (st.water > 0) cats.push({ frac: st.water / caps.water, col: 0x2f8ada, light: 0x7fd0ff, tank: true });
+    const sig = tiles.length + "|" + cats.map((c) => (c.tank ? "w" : "") + Math.round(clamp01(c.frac) * 20)).join(",");
     if (sig === this.lastStorageSig) return;
     this.lastStorageSig = sig;
     const g = this.storageG;
     g.clear();
-    if (!tiles.length || !goods.length) return;
-    for (let i = 0; i < tiles.length; i++) {
-      const cx = (tiles[i] % world.w) * TILE + TILE / 2;
-      const cy = ((tiles[i] / world.w) | 0) * TILE + TILE / 2;
-      const gd = goods[i % goods.length];
-      if (gd.tank) this.drawTank(g, cx, cy, gd.fill);
-      else this.drawCrates(g, cx, cy, gd.col, gd.light, gd.fill);
+    if (!tiles.length) return;
+    const T = tiles.length, n = cats.length;
+    let ti = 0;
+    for (let c = 0; c < n; c++) {
+      const zone = Math.floor(T / n) + (c < T % n ? 1 : 0); // this good's slice of the floor
+      const want = clamp01(cats[c].frac) * zone; // how many of its tiles are filled (fractional)
+      for (let z = 0; z < zone; z++, ti++) {
+        const local = clamp01(want - z); // 1 = packed tile, 0 = empty deck, between = partial
+        if (local <= 0.001) continue; // empty — the bare deck shows through
+        const cx = (tiles[ti] % world.w) * TILE + TILE / 2;
+        const cy = ((tiles[ti] / world.w) | 0) * TILE + TILE / 2;
+        if (cats[c].tank) this.drawTank(g, cx, cy, local);
+        else this.drawCrates(g, cx, cy, cats[c].col, cats[c].light, local);
+      }
     }
   }
   private drawCrates(g: Graphics, cx: number, cy: number, col: number, light: number, fill: number): void {

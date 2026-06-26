@@ -12,6 +12,7 @@ import { resolveEncounter } from "./encounters";
 import * as audio from "./audio";
 import { saveWorld, loadWorld, deleteSave, serializeWorld, parseSave } from "./persistence";
 import { canPlace, isAreaTool, dragCells, solarFootprint, footprintCells, bayFootprint } from "./placement";
+import { storageBlocksBuild } from "./storage";
 import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
 import { Wormhole, beaconAnchor } from "./wormhole";
@@ -473,6 +474,12 @@ async function boot(): Promise<void> {
     }
     // paid actions — only charge on a successful placement
     if (toolLock(world, tool)) return; // tech not researched yet
+    // Advanced (2+ Lab) modules need warehouse capacity — gate them on storage.
+    if (storageBlocksBuild(world, tool as StructureKind)) {
+      audio.play("build-invalid");
+      pushAlert("Advanced modules need warehouse space — lay more Storage Floor or build a Silo first.", "warn");
+      return;
+    }
     const cost = costOf(tool);
     if (world.credits < cost) {
       audio.play("build-invalid");
@@ -602,6 +609,7 @@ async function boot(): Promise<void> {
       ghost = [hover];
       valid = canPlace(world, tool, tx, ty);
     }
+    if (valid && storageBlocksBuild(world, tool as StructureKind)) valid = false; // not enough warehouse
     renderer.drawCursor(world, ghost, valid, hover, anchor);
 
     const ent = hover >= 0 ? pickEntity(hover) : null;

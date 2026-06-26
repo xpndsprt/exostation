@@ -3,6 +3,7 @@ import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 import { isUnlocked, WATER_MODULE_KINDS } from "./research";
 import { hasStorage } from "./mining";
+import { warehouseSlots, advancedSlotsUsed, SLOTS_PER_ADVANCED, isStorageGated } from "./storage";
 import { RELATIONS } from "./relations";
 
 export type Severity = "critical" | "warn" | "tip";
@@ -119,6 +120,9 @@ function stationAdvice(world: World): Advice[] {
     out.push({ sev: "warn", text: "Output is piling up unhauled — a producer will stall. Add Storage Floor nearby and keep crew free to haul." });
   if (residents > 0 && !has("table"))
     out.push({ sev: "tip", text: "Build a Mess Table so crew gather and eat there (they'll carry meals from storage to it)." });
+  // tier-gate: advanced (2+ Lab) modules each reserve warehouse capacity
+  if (structures.some((s) => isStorageGated(s.kind)) && advancedSlotsUsed(world) + SLOTS_PER_ADVANCED > warehouseSlots(world))
+    out.push({ sev: "tip", text: "Out of warehouse space for advanced modules — lay more Storage Floor or build a Silo before adding tier-2+ modules." });
 
   // recreation infrastructure + rivals sharing a room
   if (!has("rec") && agents.length > 1) out.push({ sev: "tip", text: "Build a Lounge so crew and visitors can relax and socialize." });

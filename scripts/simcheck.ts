@@ -34,7 +34,7 @@ import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { boardingSystem, spawnBoardingParty } from "../src/boarding";
 import { godsSystem, GODS, WEIRD_GODS } from "../src/gods";
 import { storySystem, currentYear } from "../src/story";
-import { storageCaps, BASE_CAPS, SILO_BONUS } from "../src/storage";
+import { storageCaps, BASE_CAPS, SILO_BONUS, storageBlocksBuild, isStorageGated, warehouseSlots } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves, serializeWorld, parseSave } from "../src/persistence";
 import { World } from "../src/types";
@@ -1167,6 +1167,29 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   const before = storageCaps(w).biomass;
   addStructure(w, "silo", 8, 7);
   check("A Storage Silo raises the cap", storageCaps(w).biomass === before + SILO_BONUS);
+}
+
+// --- Tier-gated storage: advanced (2+ Lab) modules need warehouse capacity ---
+{
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  // classification: 1-Lab/starter modules are never gated; 2+-Lab ones are,
+  // except the storage modules themselves (or you couldn't build the fix).
+  check("Tier gate: a starter module (o2gen) is never storage-gated", !isStorageGated("o2gen"));
+  check("Tier gate: an advanced module (ch4gen) is storage-gated", isStorageGated("ch4gen"));
+  check("Tier gate: the Silo itself is exempt", !isStorageGated("silo"));
+  // with no warehouse, an advanced module is blocked; a starter module never is
+  check("Tier gate: advanced build blocked with no storage", storageBlocksBuild(w, "ch4gen") === true);
+  check("Tier gate: starter build allowed with no storage", storageBlocksBuild(w, "o2gen") === false);
+  // lay two Storage Floor tiles → enough slots for one advanced module
+  setCell(w, 6, 6, "storage");
+  setCell(w, 7, 6, "storage");
+  check("Tier gate: two storage tiles provide slots", warehouseSlots(w) === 2);
+  check("Tier gate: advanced build allowed once storage exists", storageBlocksBuild(w, "ch4gen") === false);
+  // build that advanced module; now the slots are reserved → the next one is blocked again
+  addStructure(w, "ch4gen", 9, 6);
+  check("Tier gate: the next advanced module is blocked until more storage", storageBlocksBuild(w, "ch4gen") === true);
 }
 
 // --- M29: station incidents ---
