@@ -60,6 +60,15 @@ function stationAdvice(world: World): Advice[] {
   const p = world.power;
 
   if (p.brownout) out.push({ sev: "critical", text: "Power shortfall — add a Solar Panel or Battery." });
+  // an UNWIRED module: a switched-on, working consumer left dark not by a shortfall
+  // but because the grid can't reach it — power only carries 1 tile from a source, so
+  // it needs cabling. (This is the most common first-module gotcha.)
+  const hasSource = structures.some((s) => STRUCTURES[s.kind].gen > 0 || STRUCTURES[s.kind].battery > 0);
+  if (hasSource && !p.brownout && structures.some((s) => {
+    const d = STRUCTURES[s.kind];
+    return d.draw > 0 && d.gen <= 0 && d.battery <= 0 && s.on && s.condition > 0 && (s.faultT ?? 0) <= 0 && !s.powered;
+  }))
+    out.push({ sev: "warn", text: "A module is dark because nothing's wired to it — power reaches only 1 tile from a Solar Panel's socket (the deck cell just inside its wall) or a Battery. Run a Power Conduit from the source to the module to light it up." });
   if (Object.values(world.rooms).some((r) => r.gas === "mixed"))
     out.push({ sev: "critical", text: "A room has MIXED gases (lethal) — keep different gas generators in separate rooms." });
   if (structures.some((s) => STRUCTURES[s.kind].draw > 0 && s.condition <= 0))

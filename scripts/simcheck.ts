@@ -445,6 +445,25 @@ addStructure(wa, "o2gen", 6, 7); // draw, but no solar -> brownout
 for (let i = 0; i < 10; i++) step(wa);
 check("Advisor raises a critical on power shortfall", advise(wa).some((a) => a.sev === "critical" && /power/i.test(a.text)));
 
+// Advisor: a switched-on module left UNWIRED (off the grid, but supply is fine)
+// gets a "run a Power Conduit" hint — the classic first-module gotcha.
+{
+  const w = createWorld();
+  (w as unknown as { __noauto?: boolean }).__noauto = true; // exercise wiring by hand
+  carve(w, 5, 5, 14, 9); // interior x6..13, y6..8
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6); // a source; its socket is its own cell here
+  addStructure(w, "o2gen", 12, 7); // far from the source, no conduit → off the grid
+  powerSystem(w, DT);
+  const o2 = Object.values(w.structures).find((s) => s.kind === "o2gen")!;
+  check("Unwired module reads as unpowered with no brownout", !o2.powered && !w.power.brownout);
+  check("Advisor flags an unwired module with a Power Conduit hint", advise(w).some((a) => /power conduit/i.test(a.text)));
+  for (let x = 7; x <= 11; x++) addConduit(w, x, 6); // cable along the top…
+  addConduit(w, 11, 7); // …and down beside the module
+  powerSystem(w, DT);
+  check("Cabling powers the module and clears the conduit hint", o2.powered && !advise(w).some((a) => /power conduit/i.test(a.text)));
+}
+
 // --- Food loop: Vat grows biomass, Synth cooks meals (no mining needed) ---
 const wf = createWorld();
 carve(wf, 40, 5, 44, 8);
