@@ -233,7 +233,7 @@ function buildPalette(state: UIState, handlers: UIHandlers): void {
         b.dataset.species = sp;
         b.style.borderLeft = `3px solid ${SP_COLOR[sp]}`;
         b.innerHTML = `<span class="nm">${label}</span><span class="hk">¢${cost}</span>`;
-        b.title = label; // full name on hover (truncates in the grid)
+        b.title = label; // full name on hover
         b.onclick = () => {
           if (b.classList.contains("locked")) return; // species not researched yet
           state.lodgingSpecies = sp;
@@ -255,7 +255,7 @@ function buildPalette(state: UIState, handlers: UIHandlers): void {
     b.onclick = () => setActiveTool(entry.t, state);
     // double-click a build tool to pan-cycle through its placed instances
     if (entry.t in STRUCTURES) b.ondblclick = () => handlers.onCycle(entry.t);
-    // hover shows the full name (the label truncates in the 3-col grid)
+    // hover adds the double-click hint; the label now wraps in the 2-col grid
     b.title = entry.label + (entry.t in STRUCTURES ? " · double-click to find placed ones" : "");
     toolButtons.set(entry.t, b);
     (grid ?? bar).appendChild(b);

@@ -136,14 +136,14 @@
     #leftpanel .lp-tabs button[data-tab="alienpedia"].active { background: rgba(25,230,230,.16); border-color: var(--cyan); color: #aff7f7; box-shadow: inset 0 0 12px rgba(25,230,230,.2), var(--glow-cyan); }
     #leftpanel .lp-pane { display: none; overflow-y: auto; padding: 8px; min-height: 0; }
     #leftpanel .lp-pane.active { display: block; flex: 1 1 auto; }
-    #palette .pal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    #palette .pal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; align-items: stretch; }
     #palette button {
       background: #11151f; color: var(--ink2); border: 1px solid var(--edge2); border-radius: 6px;
       padding: 4px 7px; font-size: 12px; cursor: pointer; text-align: left; min-width: 0; overflow: hidden;
     }
     #palette button:hover { background: #171d2a; border-color: var(--cyan-dim); }
     #palette button.active { background: rgba(25,230,230,.16); border-color: var(--cyan); color: #d9fbfb; box-shadow: inset 0 0 10px rgba(25,230,230,.18), var(--glow-cyan); }
-    #palette button .nm { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #palette button .nm { display: block; white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
     #palette button.locked .nm { color: var(--faint); letter-spacing: 2px; }
     #palette button.revealed { animation: reveal 1.05s ease-out; }
     @keyframes reveal {
