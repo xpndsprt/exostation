@@ -48,6 +48,7 @@ export function createWorld(): World {
     priceT: 0,
     notify: [],
     overflow: false,
+    raidCount: 0,
     encounterTimer: 0,
     encounter: null,
     breaches: [],

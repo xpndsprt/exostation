@@ -1345,6 +1345,33 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("A powered Turret lasers the raider down within a few seconds", !w.ships.some((s) => s.hostile));
 }
 {
+  // The FIRST raid is a gentle introduction; the second+ hit at full strength.
+  const mk = () => {
+    const w = createWorld();
+    carve(w, 5, 5, 9, 8);
+    recomputeRooms(w);
+    addStructure(w, "solar", 6, 6);
+    addStructure(w, "solar", 6, 7);
+    addStructure(w, "o2gen", 7, 6);
+    addStructure(w, "bay", 7, 7);
+    addDock(w, 9, 6);
+    powerSystem(w, 0.1);
+    return w;
+  };
+  const w1 = mk();
+  const introDps = raiderDps(w1); // raidCount 0/1 → intro scaling
+  w1.raidCount = 5; // pretend several raids have already happened
+  const fullDps = raiderDps(w1);
+  check("First raid deals far less module damage than later raids", introDps < fullDps * 0.5);
+
+  const wa = mk();
+  forceEvent(wa, "raid");
+  check("First raid sends a lone boarder (gentle intro)", wa.raidCount === 1 && wa.boarders.length === 1);
+  wa.boarders = []; // isolate the next wave
+  forceEvent(wa, "raid");
+  check("Second raid escalates to a full boarding party", wa.raidCount === 2 && wa.boarders.length >= 2);
+}
+{
   // boarding raiders: a party storms in, smashes modules, is cut down / withdraws
   const sumCond = (ww: World): number => Object.values(ww.structures).filter((s) => STRUCTURES[s.kind].draw > 0).reduce((a, s) => a + s.condition, 0);
 

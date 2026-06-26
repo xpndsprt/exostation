@@ -157,6 +157,7 @@ function sanitize(w: World): World {
   if (typeof w.priceT !== "number") w.priceT = 0;
   if (!Array.isArray(w.notify)) w.notify = [];
   if (typeof w.overflow !== "boolean") w.overflow = false;
+  if (typeof w.raidCount !== "number") w.raidCount = 0;
   if (typeof w.encounterTimer !== "number") w.encounterTimer = 0;
   if (w.encounter === undefined) w.encounter = null;
   if (!Array.isArray(w.breaches)) w.breaches = [];

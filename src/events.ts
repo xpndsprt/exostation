@@ -16,6 +16,7 @@ const RAID_TIME = 18; // seconds a raider lingers
 const RAID_DPS_BASE = 16; // raiders hit hard — an undefended module is wrecked fast
 const RAID_DPS_PER = 0.7;
 const RAID_DPS_MAX = 48;
+const RAID_FIRST_SCALE = 0.35; // the FIRST raid is a gentle probe (far less module damage)
 const RAID_WALL_TICKS = 40; // every ~4s an active raid also blows open a hull wall
 const RAID_HP = 100; // raider ship health — turrets laser this down
 const TURRET_DPS = 75; // damage per powered Turret per second to a raider (~1.3s/kill)
@@ -71,7 +72,8 @@ export function raiderDps(w: World): number {
     if (STRUCTURES[s.kind].draw > 0 && s.powered) n++;
   }
   const garrison = activeDoctrine(w) === "garrison" ? 0.5 : 1; // Garrison doctrine halves it
-  return Math.min(RAID_DPS_MAX, RAID_DPS_BASE + n * RAID_DPS_PER) * garrison;
+  const intro = w.raidCount <= 1 ? RAID_FIRST_SCALE : 1; // ease the player's very first raid
+  return Math.min(RAID_DPS_MAX, RAID_DPS_BASE + n * RAID_DPS_PER) * garrison * intro;
 }
 
 function enclosedRoomCount(w: World): number {
@@ -170,7 +172,7 @@ function handleRaiders(w: World, dt: number): void {
   // Raiders also blast the hull itself: every few seconds an active raid tears a
   // wall open so the wing vents to space (crew scramble to reseal). That makes an
   // undefended raid genuinely dangerous — modules wrecked AND air escaping.
-  if (w.tick % RAID_WALL_TICKS === 0) breach(w);
+  if (w.raidCount > 1 && w.tick % RAID_WALL_TICKS === 0) breach(w); // the first raid spares the hull
 }
 
 function fireEvent(w: World): void {
@@ -262,9 +264,18 @@ function raid(w: World): boolean {
   if (!dock) return false;
   const ex = exteriorCell(w, dock);
   if (ex < 0) return false;
+  w.raidCount++;
+  const first = w.raidCount === 1;
   w.ships.push({ cell: ex, t: RAID_TIME, hostile: true, hp: RAID_HP });
-  w.notify.push("Raider inbound! Build a Turret to drive it off.");
-  // a boarding party storms aboard to wreck the place from the inside
-  spawnBoardingParty(w, 2 + (hash(w.tick) % 3), RAID_TIME);
+  if (first) {
+    // gentle introduction: a lone probe, light damage (RAID_FIRST_SCALE), one
+    // boarder, no hull breaching — so a new player learns the threat, not loses to it.
+    w.notify.push("A lone raider probes your station — a light first raid. They'll come in force next time, so build a Turret.");
+    spawnBoardingParty(w, 1, RAID_TIME);
+  } else {
+    w.notify.push("Raider inbound! Build a Turret to drive it off.");
+    // a boarding party storms aboard to wreck the place from the inside
+    spawnBoardingParty(w, 2 + (hash(w.tick) % 3), RAID_TIME);
+  }
   return true;
 }
