@@ -62,18 +62,20 @@ export function foodSystem(w: World, dt: number): void {
         s.outBuf += Math.round(VAT.amount * boost);
       }
     } else if (s.kind === "synth") {
-      // recipe → produced food line + the base resource it consumes
-      const { line, base } = SYNTH_RECIPE[s.recipe] ?? SYNTH_RECIPE.rations;
-      // Cook from crew-delivered feedstock (s.inBuf) when it's there; otherwise pull
-      // straight from the warehouse so the loop never deadlocks (and headless sims work).
+      // recipe → the base resource this Synth consumes (its recipe IS the food line)
+      const base = (SYNTH_RECIPE[s.recipe] ?? SYNTH_RECIPE.rations).base;
+      // Cooked meals pile in the Synth's OWN output buffer (like a Vat). Crew carry
+      // them to storage to stockpile food (only if storage exists); with nowhere to
+      // bank them, crew just eat straight off the cooker. The Synth STALLS when its
+      // buffer is full. Cook from crew-delivered feedstock (inBuf) or the warehouse.
       const hasFeed = s.inBuf >= SYNTH.input || w.stock[base] >= SYNTH.input;
-      if (hasFeed && w.stock.meals[line] < caps[line]) {
+      if (hasFeed && s.outBuf < SYNTH_OUTCAP) {
         s.timer += dtp;
         if (s.timer >= SYNTH.time) {
           s.timer -= SYNTH.time;
           if (s.inBuf >= SYNTH.input) s.inBuf -= SYNTH.input;
           else w.stock[base] -= SYNTH.input;
-          w.stock.meals[line] = Math.min(caps[line], w.stock.meals[line] + SYNTH.meals);
+          s.outBuf = Math.min(SYNTH_OUTCAP, s.outBuf + SYNTH.meals);
         }
       } else {
         s.timer = 0;
@@ -89,12 +91,19 @@ export function foodSystem(w: World, dt: number): void {
   if (residents === 0) {
     for (const id in w.structures) {
       const s = w.structures[id];
-      if (s.kind !== "vat" || s.outBuf <= 0) continue;
-      const grows = VAT_BASE[s.recipe] ?? "biomass";
-      const move = Math.min(s.outBuf, caps[grows] - w.stock[grows]);
-      if (move > 0) { w.stock[grows] += move; s.outBuf -= move; }
+      if (s.outBuf <= 0) continue;
+      if (s.kind === "vat") {
+        const grows = VAT_BASE[s.recipe] ?? "biomass";
+        const move = Math.min(s.outBuf, caps[grows] - w.stock[grows]);
+        if (move > 0) { w.stock[grows] += move; s.outBuf -= move; }
+      } else if (s.kind === "synth") {
+        const line = (SYNTH_RECIPE[s.recipe] ?? SYNTH_RECIPE.rations).line;
+        const move = Math.min(s.outBuf, caps[line] - w.stock.meals[line]);
+        if (move > 0) { w.stock.meals[line] += move; s.outBuf -= move; }
+      }
     }
   }
 }
 
 export const VAT_OUTCAP = 9; // vat output units that pile up before it stalls (awaiting haul)
+export const SYNTH_OUTCAP = 9; // cooked meals a Synth buffers before it stalls (awaiting haul/eat)

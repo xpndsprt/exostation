@@ -200,7 +200,10 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
           // the meal was removed from the warehouse when crew staged it on the table
           if (table.inBuf > 0 && table.recipe === line) { table.inBuf -= 1; a.food = 100; }
         } else if (w.stock.meals[line] > 0) {
-          w.stock.meals[line] -= 1;
+          w.stock.meals[line] -= 1; // eat from the warehouse-banked supply
+          a.food = 100;
+        } else if (table && table.kind === "synth" && table.recipe === line && table.outBuf > 0) {
+          table.outBuf -= 1; // no banked food — eat straight off the cooker's fresh batch
           a.food = 100;
         }
         a.task = null;
@@ -270,9 +273,14 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
               if (s.kind === "table") s.recipe = good; // the line now staged at this table
             }
           } else {
-            const cap = (storageCaps(w) as unknown as Record<string, number>)[good] ?? Infinity;
-            const stock = w.stock as unknown as Record<string, number>;
-            stock[good] = Math.min(cap, (stock[good] ?? 0) + 1);
+            const caps = storageCaps(w) as unknown as Record<string, number>;
+            const meals = w.stock.meals as unknown as Record<string, number>;
+            if (good in meals) {
+              meals[good] = Math.min(caps[good] ?? Infinity, (meals[good] ?? 0) + 1); // a cooked meal line → warehouse
+            } else {
+              const stock = w.stock as unknown as Record<string, number>;
+              stock[good] = Math.min(caps[good] ?? Infinity, (stock[good] ?? 0) + 1);
+            }
           }
         }
         a.task = null;
@@ -314,14 +322,14 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
       a.path = seat.path;
       return;
     }
-    // fallback: eat at a Synth straight from the warehouse (keeps everyone fed)
-    if (w.stock.meals[diet] > 0) {
-      const synth = nearestReachable(w, a, a.cell, "synth", true); // eating is quick — may venture
-      if (synth) {
-        a.task = { type: "eat", target: synth.cell };
-        a.path = synth.path;
-        return;
-      }
+    // fallback: eat at a Synth — from warehouse-banked meals if you have them, else
+    // straight from a Synth's fresh output buffer (the "eat at the station" path
+    // when there's no storage to stockpile food).
+    const synth = nearestSynthServing(w, a, a.cell, diet);
+    if (synth) {
+      a.task = { type: "eat", target: synth.cell, structureId: synth.id };
+      a.path = synth.path;
+      return;
     }
   }
   // Both crew and visitors relax at a Lounge when bored (and socialize there).
@@ -447,8 +455,9 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
 // routed start → pickup → drop (a Storage tile, else a free cell in the vat's
 // room). Reserves one unit. Returns the route + which good, or null.
 function claimHaul(w: World, a: Agent, start: number): { target: number; path: number[]; good: string } | null {
-  // producers that pile up output crew must clear: Bio Vats (feedstock) + Bot Bays (ore)
-  const prod = Object.values(w.structures).filter((s) => (s.kind === "vat" || s.kind === "bay") && s.outBuf > 0);
+  // producers that pile up output crew must clear: Bio Vats (feedstock), Bot Bays
+  // (ore) and Rations Synths (cooked meals → storage, to stockpile food).
+  const prod = Object.values(w.structures).filter((s) => (s.kind === "vat" || s.kind === "bay" || s.kind === "synth") && s.outBuf > 0);
   prod.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const v of prod) {
     const pick = accessCell(w, v);
@@ -458,10 +467,16 @@ function claimHaul(w: World, a: Agent, start: number): { target: number; path: n
     if (!toPick) continue;
     const dest = pickHaulDest(w, a, pick, v);
     if (dest < 0) continue;
+    // Cooked meals can only be banked into real Storage (you can't pile food on the
+    // bare deck). With no storage the Synth keeps them and crew eat straight off it.
+    if (v.kind === "synth" && w.cells[dest].type !== "storage") continue;
     const toDest = findPath(w, pick, dest);
     if (!toDest) continue;
     v.outBuf -= 1; // reserve one unit for this hauler
-    const good = v.kind === "bay" ? "minerals" : v.recipe === "spores" || v.recipe === "microbes" ? v.recipe : "biomass";
+    const good =
+      v.kind === "bay" ? "minerals"
+      : v.kind === "synth" ? v.recipe // the cooked food line (rations/fungal/…)
+      : v.recipe === "spores" || v.recipe === "microbes" ? v.recipe : "biomass";
     return { target: dest, path: toPick.concat(toDest), good };
   }
   return null;
@@ -724,6 +739,22 @@ function nearestReachable(
 ): Found | null {
   const ok = (s: Structure) => nativeAt(w, a, s.cell) || (venture && a.suit >= VENTURE_SUIT);
   const list = Object.values(w.structures).filter((s) => s.kind === kind && ok(s));
+  list.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const s of list) {
+    const path = findPath(w, start, s.cell);
+    if (path) return { id: s.id, cell: s.cell, path };
+  }
+  return null;
+}
+
+// Nearest Synth that can feed this diner: any Synth if the warehouse has banked
+// meals of their line, otherwise one whose fresh output buffer holds their line.
+// (Eating is quick, so a suited crew member may venture across airless deck.)
+function nearestSynthServing(w: World, a: Agent, start: number, diet: string): Found | null {
+  const banked = w.stock.meals[diet as keyof typeof w.stock.meals] > 0;
+  const list = Object.values(w.structures).filter(
+    (s) => s.kind === "synth" && (nativeAt(w, a, s.cell) || a.suit >= VENTURE_SUIT) && (banked || (s.recipe === diet && s.outBuf > 0)),
+  );
   list.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
   for (const s of list) {
     const path = findPath(w, start, s.cell);

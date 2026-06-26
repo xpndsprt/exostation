@@ -86,14 +86,20 @@ The economy is physical: producers buffer output that crew carry to **Storage Fl
 | Constant | Value | Meaning |
 |----------|:-----:|---------|
 | `VAT_OUTCAP` | 9 | output units a Bio Vat buffers before it **stalls** (awaiting haul) |
+| `SYNTH_OUTCAP` | 9 | cooked meals a Rations Synth buffers before it **stalls** (awaiting haul/eat) |
 | `FEED_CAP` | 4 | feedstock units crew stage at a Synth (storage → Synth `inBuf`) |
 | `TABLE_CAP` | 4 | rations crew stage on a Mess Table |
 | `TRADE_FEED_CAP` | 30 | minerals crew stage at a Trade Hub before topping stops |
 | Storage cap / tile | +3 meals (each line), +6 minerals | each Storage Floor tile raises caps |
 | Storage tile cost | ¢3 | airless; only a Light Fixture may sit on it |
-| Mess Table | ¢50, 3×3 | crew/guests eat at the seat-ring; crew restock from storage |
+| Mess Table | ¢50, 3×3 | crew/guests eat at the seat-ring; crew restock **from storage** |
 
-Drone ore now lands in the **Bay's** buffer; crew haul it to storage. Trades sell **crew-delivered hub minerals first**, then the warehouse. Eating prefers a **stocked table**, else falls back to the Synth (no starvation). Storage decks are **airless**, so hauling onto them needs a charged suit (`VENTURE_SUIT` 80).
+**Food storage loop (the Synth now mirrors the Vat).** A Rations Synth cooks meals into its **own `outBuf`** (cap `SYNTH_OUTCAP` 9), not straight into `stock`. From there:
+- **Storage exists →** crew haul cooked meals into the warehouse (`stock.meals[line]`, capped by `storageCaps`), visibly filling the storage-floor meal crates. Banked food buffers Synth outages and **feeds crew immigration** (which requires `stock.meals[diet] > 0`).
+- **No storage →** meals can't be banked (crew won't pile food on the bare deck — `claimHaul` requires a `storage` destination for synth output), so the Synth holds them and hungry crew **eat straight from its buffer** (`nearestSynthServing` → eat decrements `outBuf`). You survive but can't stockpile or grow.
+- A **Mess Table** stocks **from `stock.meals`** (so it needs banked food); with none, crew fall back to the Synth. **Bootstrap trickle** (no residents) moves vat **and synth** output straight to `stock` so the opening/headless sims work.
+
+Drone ore lands in the **Bay's** buffer; crew haul it to storage. Trades sell **crew-delivered hub minerals first**, then the warehouse. Storage decks are **airless**, so hauling onto them needs a charged suit (`VENTURE_SUIT` 80).
 
 ## Mood modifiers
 | Source | Effect |

@@ -485,6 +485,50 @@ check("No mining means minerals stay 0", wf.stock.minerals === 0);
   check("A resident hauls vat output into the warehouse", w.stock.biomass > 0);
 }
 
+// --- Food storage loop: cooked meals bank only if storage exists, else eat fresh ---
+{
+  // NO storage → crew eat straight off the Synth's output buffer; nothing banks.
+  const w = createWorld();
+  for (let y = 5; y <= 7; y++) for (let x = 5; x <= 14; x++) {
+    const border = x === 5 || x === 14 || y === 5 || y === 7;
+    setCell(w, x, y, border ? "wall" : "floor");
+  }
+  recomputeRooms(w);
+  addStructure(w, "o2gen", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "synth", 9, 6);
+  addAgent(w, 8, 6);
+  const h = Object.values(w.agents)[0];
+  const synth = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  synth.recipe = "rations";
+  synth.outBuf = 4; // a fresh batch sitting on the cooker
+  w.stock.meals.rations = 0; // nothing banked; there is no storage anywhere
+  h.food = 8; // hungry
+  for (let i = 0; i < 40; i++) step(w);
+  check("No storage: crew eat fresh off the Synth's buffer", h.food > 90);
+  check("No storage: cooked meals never bank in the warehouse", w.stock.meals.rations === 0);
+}
+{
+  // WITH storage → a resident hauls cooked meals from the Synth into the warehouse.
+  const w = createWorld();
+  carve(w, 5, 5, 11, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "o2gen", 6, 8);
+  addStructure(w, "synth", 9, 6);
+  setCell(w, 10, 9, "storage");
+  recomputeRooms(w);
+  addAgent(w, 8, 8, "human");
+  const synth = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  synth.recipe = "rations";
+  synth.outBuf = 6; // a stockpile waiting to be banked
+  w.stock.biomass = 30; // keep it cooking too
+  w.stock.meals.rations = 0;
+  for (let i = 0; i < 600; i++) step(w);
+  check("With storage, crew bank cooked meals into the warehouse", w.stock.meals.rations > 0);
+}
+
 // --- Solar panels: wall-mounted, 3 tiles normal to a space-facing wall ---
 const ws = createWorld();
 setCell(ws, 10, 10, "wall");
@@ -901,12 +945,15 @@ function synthMeals(twoFriends: boolean): number {
   addStructure(w, "solar", 7, 6);
   addStructure(w, "o2gen", 6, 7);
   addStructure(w, "synth", 9, 7);
+  setCell(w, 10, 7, "storage"); // bank cooked meals so total output is measurable
+  recomputeRooms(w);
   addAgent(w, 8, 6, "human");
   if (twoFriends) addAgent(w, 9, 6, "drenn");
   w.stock.biomass = 200;
   w.stock.meals.rations = 0;
   for (let i = 0; i < 300; i++) step(w);
-  return w.stock.meals.rations;
+  const synth = Object.values(w.structures).find((s) => s.kind === "synth")!;
+  return w.stock.meals.rations + synth.outBuf; // banked + still-buffered = cooked output
 }
 check("Harmonious room boosts production", synthMeals(true) > synthMeals(false));
 
@@ -994,6 +1041,7 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   w.unlocked.robotics = true;
   Object.values(w.structures).filter((s) => s.kind === "pod").forEach((p, i) => (p.recipe = i === 0 ? "human" : "korro"));
   addAgent(w, 6, 7, "human"); // one human already aboard
+  w.stock.meals.rations = 20; // banked food so the immigration shuttle has crew to feed
   let korro = 0;
   for (let i = 0; i < 1000; i++) {
     step(w);
