@@ -250,6 +250,30 @@ check("M6 lodging earned credits", w4.credits > 0);
 check("M6 guests are the drenn species", Object.values(w4.agents).every((a) => !a.guest || a.species === "drenn"));
 check("M6 guests depart after their stay", seenGuestIds.size > aliveGuests);
 
+// --- Founding charter subsidy: a healthy station earns credits with no hotel/trade ---
+{
+  const w = createWorld();
+  for (let y = 5; y <= 8; y++) for (let x = 5; x <= 9; x++) {
+    const border = x === 5 || x === 9 || y === 5 || y === 8;
+    setCell(w, x, y, border ? "wall" : "floor");
+  }
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 5); // power
+  addStructure(w, "o2gen", 6, 6); // life support → breathable air
+  addAgent(w, 7, 6); // one resident, breathing
+  w.credits = 0;
+  for (let i = 0; i < 300; i++) step(w); // 30s — no hotel, no trade hub
+  check("Charter subsidy: a healthy station earns credits with no hotel/trade", w.credits > 0);
+  // suffocated crew stop earning it: cut power so o2 collapses, then it shouldn't climb
+  for (const id in w.structures) if (w.structures[id].kind === "solar") delete w.structures[id];
+  recomputeRooms(w);
+  for (let i = 0; i < 400; i++) step(w); // air bleeds out, crew suffocates
+  const dead = Object.values(w.agents).some((a) => !a.alive);
+  const afterDeath = w.credits;
+  for (let i = 0; i < 200; i++) step(w);
+  check("Charter subsidy: a suffocated/empty station stops earning it", dead && w.credits <= afterDeath + 0.01);
+}
+
 // --- M7: save / load round-trip ---
 const w5 = createWorld();
 setCell(w5, 3, 3, "floor");
@@ -1374,18 +1398,22 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
 }
 
 // --- M37: recurring credit sink (wages + module upkeep) ---
+// The founding-charter subsidy keeps a *tiny* station afloat, but once it grows
+// module-heavy the per-crew stipend can't cover upkeep and it bleeds again.
 {
   const w = createWorld();
-  carve(w, 5, 5, 9, 8);
+  carve(w, 5, 5, 10, 8);
   recomputeRooms(w);
   addStructure(w, "solar", 6, 6);
-  addStructure(w, "solar", 6, 7);
-  addStructure(w, "o2gen", 7, 6);
-  addStructure(w, "synth", 8, 6);
-  addAgent(w, 7, 7, "human"); // a wage-earning resident, no trade/lodging income
+  addStructure(w, "solar", 7, 6);
+  addStructure(w, "solar", 8, 6); // +30 power
+  addStructure(w, "o2gen", 6, 7);
+  addStructure(w, "synth", 7, 7);
+  addStructure(w, "vat", 8, 7); // three operating modules — upkeep tops the 1-crew stipend
+  addAgent(w, 9, 7, "human"); // one wage-earning resident, no trade/lodging income
   const c0 = w.credits;
-  for (let i = 0; i < 300; i++) step(w); // 30s of pure upkeep
-  check("Upkeep bleeds an idle station", w.credits < c0);
+  for (let i = 0; i < 600; i++) step(w); // 60s: wages + 3 modules outweigh the subsidy
+  check("Upkeep bleeds a module-heavy station past the subsidy", w.credits < c0);
   check("Net-income readout reads negative when idle", w.creditRate < 0);
 }
 

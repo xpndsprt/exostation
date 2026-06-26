@@ -9,6 +9,15 @@ import { activeDoctrine } from "./research";
 const MODULE_UPKEEP = 0.15; // credits/s per powered, operating module
 const WAGE = 0.2; // credits/s per resident crew member
 
+// Founding charter subsidy — a small operations stipend just for keeping a station
+// running. The crew's home federations pay a per-head retainer for every certified
+// resident (alive and breathing well) you keep alive. It's capped at a handful of
+// crew, so it bootstraps the opening (positive cashflow before you have hotels or
+// a Trade Hub) and fades to irrelevance once a real economy is online.
+const STIPEND_RATE = 0.5; // credits/s per certified resident
+const STIPEND_CAP = 5; // only the first few crew earn the bootstrap stipend
+const STIPEND_O2 = 50; // a resident must be breathing above this to count (rewards upkeep)
+
 const SPAWN_INTERVAL = 20; // seconds between guest arrivals per dock
 const LODGING_RATE = 1.5; // credits per second per living guest
 const SHIP_TIME = 14; // seconds a trader/crew shuttle stays parked
@@ -85,6 +94,7 @@ export function economySystem(w: World, dt: number): void {
 
   let guests = 0;
   let residents = 0;
+  let certified = 0; // living residents breathing well — they earn the upkeep stipend
   let hasDrenn = false; // Drenn merchant trait raises mineral prices
   const resCount: Partial<Record<Species, number>> = {};
   const guestsByGas: Record<string, number> = {}; // guests already aboard, per gas
@@ -98,6 +108,7 @@ export function economySystem(w: World, dt: number): void {
     } else {
       residents++;
       resCount[a.species] = (resCount[a.species] || 0) + 1;
+      if (a.o2 >= STIPEND_O2) certified++; // breathing well → earns the subsidy
     }
     if (a.species === "drenn") hasDrenn = true;
   }
@@ -132,6 +143,13 @@ export function economySystem(w: World, dt: number): void {
   // idle station bleeds; only an active economy (trade/lodging) stays in the black.
   const upkeep = residents * WAGE + operating * MODULE_UPKEEP;
   w.credits = Math.max(0, w.credits - upkeep * dt);
+
+  // founding charter subsidy — the income floor that keeps a young station solvent
+  // before lodging/trade come online. Pays per certified (well-oxygenated) resident,
+  // capped, so a small well-run station turns a modest profit but it never matters
+  // late game. Suffocating crew (o2 below the threshold) stop earning it.
+  const stipend = Math.min(certified, STIPEND_CAP) * STIPEND_RATE;
+  w.credits += stipend * dt;
 
   // guest arrivals — gas-aware (need a free hotel IN THE GUESTS' GAS + a powered
   // dock). Each breathing gas draws its own visitor class: O₂ → Drenn (et al),
