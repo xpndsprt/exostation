@@ -889,8 +889,14 @@ async function boot(): Promise<void> {
       needRedraw = true;
     }
 
+    // Render every frame so motion is smooth at the display refresh rate: the
+    // sim runs at 10 Hz, but entity positions are interpolated per frame (see
+    // Renderer.follow) so ships/crew/drones glide instead of stepping at 10/20fps.
+    // The heavy DOM/dialog work below stays gated to actual sim changes.
+    const sc = selCell();
+    renderer.draw(world, sc, overlay, ticker.deltaMS / 1000);
+
     if (needRedraw) {
-      const sc = selCell();
       if (sc < 0 && sel) sel = null;
       const firstSeen = updateSeen(world);
       if (firstSeen.length && world.phase === "playing") {
@@ -960,7 +966,6 @@ async function boot(): Promise<void> {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
       }
-      renderer.draw(world, sc, overlay); // the world renders every redraw (stays responsive)
       // The DOM panels (HUD, info, tech, palette, requests, advisor, …) are heavy
       // innerHTML rebuilds that don't need 10 Hz — throttle to ~6 Hz, but refresh
       // instantly when the selection / tool / overlay changes so input feels snappy.

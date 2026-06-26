@@ -415,6 +415,14 @@ function floorIsWindow(x: number, y: number): boolean {
   return h % 17 === 0;
 }
 
+// Render-time motion smoothing. The sim updates positions at 10 Hz; rendering at
+// the display refresh (e.g. 120 Hz) we ease each moving entity toward its latest
+// sim position so it glides instead of stepping. Both are time-constants (1/s) so
+// the look is frame-rate independent. FOLLOW_RATE → screen position; ROT_RATE →
+// a ship's banking heading (was a fixed 0.18/tick ≈ 2/s).
+const FOLLOW_RATE = 16;
+const ROT_RATE = 2;
+
 export class Renderer {
   private cellsC = new Container();
   private lastTileSig = -1;
@@ -435,6 +443,10 @@ export class Renderer {
   private dronesC = new Container();
   private shipsFx = new Graphics(); // arrival pulse around parked ships
   private shipsC = new Container();
+  private frameDt = 1 / 60; // seconds since the last rendered frame (motion smoothing)
+  // last-rendered screen position per moving entity (ship/crew/drone), keyed by the
+  // entity object so it's auto-dropped with the entity and survives no save/load.
+  private renderPos = new WeakMap<object, { x: number; y: number }>();
   private godsFx = new Graphics(); // race-god auras
   private godsC = new Container(); // race-god creature sprites
   // height field: a parallel scene drawn with each sprite's heightmap (grayscale),
@@ -610,7 +622,8 @@ export class Renderer {
     this.cursor.clear();
   }
 
-  draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none"): void {
+  draw(world: World, selCell = -1, overlay: "none" | "power" | "rooms" = "none", frameDt = 1 / 60): void {
+    this.frameDt = frameDt;
     this.drawTiles(world);
     this.drawAtmosphere(world);
     this.drawConduits(world);
@@ -1157,6 +1170,20 @@ export class Renderer {
     }
   }
 
+  // Smooth a moving entity's screen position across the 10 Hz sim ticks: an
+  // exponential follow toward its true (latest-tick) position, evaluated every
+  // render frame, so ships/crew/drones glide at the display refresh rate instead
+  // of stepping at the sim rate. Frame-rate independent via frameDt. First sight
+  // (or a fresh entity after load) snaps, so nothing slides in from the origin.
+  private follow(o: object, x: number, y: number): [number, number] {
+    let p = this.renderPos.get(o);
+    if (!p) { p = { x, y }; this.renderPos.set(o, p); return [x, y]; }
+    const k = 1 - Math.exp(-FOLLOW_RATE * this.frameDt);
+    p.x += (x - p.x) * k;
+    p.y += (y - p.y) * k;
+    return [p.x, p.y];
+  }
+
   private agentCenter(world: World, a: World["agents"][number]): [number, number] {
     const center = (i: number): [number, number] => [
       (i % world.w) * TILE + TILE / 2,
@@ -1242,7 +1269,8 @@ export class Renderer {
     g.clear();
     for (const id in world.agents) {
       const a = world.agents[id];
-      const [cx, cy] = this.agentCenter(world, a);
+      const [tcx, tcy] = this.agentCenter(world, a);
+      const [cx, cy] = this.follow(a, tcx, tcy); // glide across the 10 Hz steps
       const rm = world.cells[a.cell].roomId;
       const native = rm >= 0 && world.rooms[rm]?.gas === SPECIES[a.species].gas;
       // Off native air a suit auto-dons — show the suited graphic (helmet on).
@@ -1400,6 +1428,8 @@ export class Renderer {
         alpha = 0.65 + 0.35 * approach;
       }
 
+      [x, y] = this.follow(d, x, y); // glide across the 10 Hz steps
+
       if (d.state !== "docked")
         g.moveTo(px, py).lineTo(ex, ey).stroke({ width: 1, color: COLORS.route, alpha: 0.22 });
 
@@ -1533,21 +1563,24 @@ export class Renderer {
     for (const ship of world.ships) {
       const here = flightPos(ship, ship.prog ?? 0);
       const ahead = flightPos(ship, clamp01((ship.prog ?? 0) + 0.02));
-      const x = here.x, y = here.y;
       // nose points along the direction of travel (banking); fall back to facing
-      // the hull when stationary. Sprite art faces up (-y).
-      let hx = ahead.x - x, hy = ahead.y - y;
+      // the hull when stationary. Sprite art faces up (-y). Use the TRUE positions
+      // for heading so banking tracks the path, not the smoothed lag.
+      let hx = ahead.x - here.x, hy = ahead.y - here.y;
       if (Math.hypot(hx, hy) < 0.01) { hx = -(ship.dx ?? 0); hy = -(ship.dy ?? 0); }
       const target = hx || hy ? Math.atan2(hy, hx) + Math.PI / 2 : (ship.rotV ?? 0);
-      // ease the displayed heading toward the travel direction by the shortest arc,
-      // so the ship banks through graceful turns instead of snapping to an angle.
+      // ease the displayed heading toward the travel direction by the shortest arc
+      // (frame-rate independent), so the ship banks through graceful turns.
       let cur = ship.rotV ?? target;
       let dA = target - cur;
       while (dA > Math.PI) dA -= Math.PI * 2;
       while (dA < -Math.PI) dA += Math.PI * 2;
-      cur += dA * 0.18;
+      cur += dA * (1 - Math.exp(-ROT_RATE * this.frameDt));
       ship.rotV = cur;
       const rot = cur;
+      // smoothed screen position — glide across the 10 Hz steps (a ship's position
+      // only changes on a sim tick; interpolate it per render frame).
+      const [x, y] = this.follow(ship, here.x, here.y);
       // Dock tier → ship size: a Super berth lands a notably grand ship that fills
       // its 7×7 pad; a Large berth a clearly bigger one; standard the base size.
       const sizeMul = ship.size === 3 ? 2.6 : ship.size === 2 ? 1.7 : 1;

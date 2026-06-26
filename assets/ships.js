@@ -94,9 +94,10 @@
       sp.lights = [{ x: 12, y: 40, c: RED }, { x: 35, y: 40, c: GRN }, { x: cx, y: 10, c: c.g }];
       sp.thrusters = [{ x: cx - 3, y: 42 }, { x: cx + 3, y: 42 }];
       sp.legs = [{ x: cx - 6, y: 30 }, { x: cx + 6, y: 30 }, { x: 14, y: 40 }, { x: 33, y: 40 }];
-    } else { // human — a Star Trek / Star Wars starship: saucer + engineering hull + twin warp nacelles
-      ell(cx, 14, 10, 8, c.h);               // saucer section (front)
-      disc(cx, 14, 4, c.l); disc(cx, 14, 2, c.d); disc(cx, 13, 1, c.g); // bridge + dome light
+    } else { // human — a blocky explorer: square command module + engineering hull + twin nacelles
+      rct(cx - 9, 6, cx + 9, 22, c.h);       // command module (squared front hull — no saucer)
+      rct(cx - 9, 6, cx + 9, 7, c.l); rct(cx - 9, 21, cx + 9, 22, c.d); // lit top edge / shaded base
+      rct(cx - 4, 11, cx + 4, 17, c.d); disc(cx, 14, 2, c.l); disc(cx, 13, 1, c.g); // bridge window + dome light
       rct(cx - 1, 21, cx, 27, c.d);          // dorsal neck
       ell(cx, 33, 4, 9, c.h);                // engineering (secondary) hull
       disc(cx, 41, 2, c.g);                  // deflector dish
