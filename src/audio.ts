@@ -92,7 +92,8 @@ async function boot(): Promise<void> {
       }),
     );
     ready = true;
-    loop("ambient-station");
+    // No looping ambient bed — its constant low-bass drone was distracting; SFX +
+    // music carry the soundscape now. (ambient-station.wav stays in assets if wanted.)
     startMusic();
   } catch {
     /* no audio available — stay silent */
@@ -198,17 +199,6 @@ export function play(id: string, opts: { volume?: number; rate?: number } = {}):
   g.gain.value = Math.max(0, (opts.volume ?? 1) * (1 + wob() * VARY_VOL));
   src.connect(g).connect(buses[busOf(id)]);
   src.start(now + Math.random() * VARY_DELAY);
-}
-
-function loop(id: string): void {
-  if (!ready || !ctx) return;
-  const buf = buffers.get(id);
-  if (!buf) return;
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.loop = true;
-  src.connect(buses[busOf(id)]);
-  src.start();
 }
 
 export function setMuted(m: boolean): void {
