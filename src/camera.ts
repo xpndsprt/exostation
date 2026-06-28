@@ -1,4 +1,4 @@
-import { ZOOM_MIN, ZOOM_MAX } from "./config";
+import { ZOOM_MIN, ZOOM_MAX, TILE } from "./config";
 
 export interface Camera {
   x: number; // world container offset (screen px)
@@ -23,12 +23,17 @@ export function screenToTile(
   return { tx: Math.floor(wx / tile), ty: Math.floor(wy / tile) };
 }
 
-// Zoom toward a screen point so the world under the cursor stays put.
+// Zoom toward a screen point so the world under the cursor stays put. The scale is
+// snapped so a tile always spans a WHOLE number of pixels — pixel art stays crisp
+// with no texel crawl when zooming (a tiny nudge keeps each wheel tick moving even
+// when rounding would otherwise stall).
 export function zoomAt(cam: Camera, sx: number, sy: number, factor: number): void {
-  const ns = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, cam.scale * factor));
   const wx = (sx - cam.x) / cam.scale;
   const wy = (sy - cam.y) / cam.scale;
-  cam.scale = ns;
-  cam.x = sx - wx * ns;
-  cam.y = sy - wy * ns;
+  const cur = Math.round(cam.scale * TILE);
+  let nk = Math.round(cam.scale * factor * TILE);
+  if (nk === cur) nk += factor > 1 ? 1 : -1; // ensure the zoom actually changes
+  cam.scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, nk / TILE));
+  cam.x = sx - wx * cam.scale;
+  cam.y = sy - wy * cam.scale;
 }

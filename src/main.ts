@@ -110,7 +110,10 @@ async function boot(): Promise<void> {
   // display makes a huge framebuffer that GPUs under pressure drop — which shows
   // up as a webglcontextlost→restore loop ending in a blank field. resolution 1 +
   // no AA keeps it light and stable across machines.
-  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, resolution: capResolution(resDegrade), autoDensity: true });
+  // roundPixels: snap every renderable to whole device pixels so the nearest-
+  // neighbour pixel art stays crisp (no sub-pixel smear) while panning/zooming.
+  // It's device-pixel level, so the interpolated ship/crew/drone motion stays smooth.
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, roundPixels: true, resolution: capResolution(resDegrade), autoDensity: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
