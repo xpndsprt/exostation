@@ -173,7 +173,7 @@ function makeTexture(px: Px, w: number, h: number): Texture {
       }
     }
   const t = Texture.from(c);
-  (t.source as unknown as { scaleMode: string }).scaleMode = "nearest";
+  (t.source as unknown as { scaleMode: string }).scaleMode = "linear"; // smooth scaling (anti-aliased look)
   return t;
 }
 
@@ -220,7 +220,7 @@ function makeHeightTexture(px: Px, w: number, h: number, base: number): Texture 
   }
   o.putImageData(img, 0, 0);
   const t = Texture.from(c);
-  (t.source as unknown as { scaleMode: string }).scaleMode = "nearest";
+  (t.source as unknown as { scaleMode: string }).scaleMode = "linear"; // smooth scaling (anti-aliased look)
   return t;
 }
 // ---- cohesive tone-mapping pass (the editor's duotone-blend, applied to every

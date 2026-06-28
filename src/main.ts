@@ -110,10 +110,12 @@ async function boot(): Promise<void> {
   // display makes a huge framebuffer that GPUs under pressure drop — which shows
   // up as a webglcontextlost→restore loop ending in a blank field. resolution 1 +
   // no AA keeps it light and stable across machines.
-  // roundPixels: snap every renderable to whole device pixels so the nearest-
-  // neighbour pixel art stays crisp (no sub-pixel smear) while panning/zooming.
-  // It's device-pixel level, so the interpolated ship/crew/drone motion stays smooth.
-  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, roundPixels: true, resolution: capResolution(resDegrade), autoDensity: true });
+  // Smooth look: MSAA antialiasing smooths every vector edge — the wormhole,
+  // conduits, ship/agent outlines, lasers, the floor/wall detail. Textures use
+  // linear filtering (set per-texture in the renderer) so sprites scale softly too.
+  // resolution stays capped so the MSAA framebuffer doesn't balloon on big/4K
+  // displays (the documented webglcontextlost trigger).
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true, resolution: capResolution(resDegrade), autoDensity: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");
