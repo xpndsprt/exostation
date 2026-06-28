@@ -50,7 +50,7 @@ Every `.md` in this repo has a generated `.html` sibling (PostToolUse hook runs
 
 ## Architecture (quick map)
 - `src/world.ts` — `World` state + create/place/erase helpers.
-- `src/main.ts` — boot, fixed-step sim loop (10 Hz), input, camera, UI wiring.
+- `src/main.ts` — boot, fixed-step sim loop (5 Hz; `world.tick` is deciseconds), input, camera, UI wiring.
 - Systems (run per tick, in this order): `power → mining → food → atmosphere →
   agents → mood → combat → economy`.
 - `src/rooms.ts` room detection · `src/pathfind.ts` A* · `src/renderer.ts` PixiJS

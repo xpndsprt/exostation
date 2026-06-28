@@ -3,6 +3,7 @@
 // headless sim. Pure logic: no rendering, no DOM. (See TECH_DESIGN.md.)
 
 import { World } from "./types";
+import { TICK_STEP } from "./config";
 import { recomputeRooms } from "./rooms";
 import { powerSystem } from "./power";
 import { maintenanceSystem } from "./maintenance";
@@ -57,7 +58,7 @@ export function simStep(world: World, dt: number): void {
   romanceSystem(world, dt);
   beaconSystem(world, dt);
   objectivesSystem(world, dt);
-  world.tick++;
+  world.tick += TICK_STEP; // tick = deciseconds (real-time), independent of SIM_HZ
 }
 
 // A no-step refresh (paused): re-seal rooms and recompute power/atmosphere so the
