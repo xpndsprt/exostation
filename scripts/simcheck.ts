@@ -33,7 +33,7 @@ import { toolLock, buyUnlock, canResearch, activeDoctrine, industryBoost, isUnlo
 import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { boardingSystem, spawnBoardingParty } from "../src/boarding";
 import { godsSystem, GODS, WEIRD_GODS } from "../src/gods";
-import { storySystem, currentYear } from "../src/story";
+import { storySystem, currentDay } from "../src/story";
 import { storageCaps, BASE_CAPS, SILO_BONUS, storageBlocksBuild, isStorageGated, warehouseSlots } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves, serializeWorld, parseSave } from "../src/persistence";
@@ -2351,9 +2351,9 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   addAgent(w, 7, 6, "human");
   storySystem(w, 0.1);
   check("Chronicler welcomes a newly-present race", w.story.includes("Human") && w.welcomed.includes("human"));
-  check("Year count starts at 1+", currentYear(w) >= 1);
-  w.tick = 1000; // 100 in-world years at 10 ticks/yr
-  check("Year count advances with ticks", currentYear(w) === 101);
+  check("Day count starts at 1+", currentDay(w) >= 1);
+  w.tick = 1000; // 25 in-world days at 40 ticks/day (4× slower than the old year clock)
+  check("Day count advances with ticks", currentDay(w) === 26);
 }
 
 // --- Reproduction: contented species lay clutches that hatch young + spiders ---

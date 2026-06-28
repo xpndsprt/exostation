@@ -17,7 +17,7 @@ import { coupleOf } from "./romance";
 import { isMuted, setMuted, isMusicMuted, setMusicMuted } from "./audio";
 import { storageCaps } from "./storage";
 import { listSaves, SlotId } from "./persistence";
-import { currentYear } from "./story";
+import { currentDay } from "./story";
 import { GODS, WEIRD_GODS } from "./gods";
 import { chronicleSaga } from "./archive";
 
@@ -584,7 +584,7 @@ export function updateHud(world: World): void {
     const rate = world.creditRate;
     const rateStr = `${rate >= 0 ? "+" : "−"}${Math.abs(rate).toFixed(1)}/s`;
     status.innerHTML =
-      chip("📅", `Yr ${currentYear(world)}`) +
+      chip("📅", `Day ${currentDay(world)}`) +
       chip("¢", `<b>${Math.floor(world.credits)}</b> <span class="muted">${rateStr}</span>`, rate < -0.05) +
       chip(
         "⚡",

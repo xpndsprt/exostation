@@ -1,7 +1,7 @@
 import { World } from "./types";
 import { SPECIES } from "./species";
 import { STRUCTURES, isDock } from "./structures";
-import { currentYear } from "./story";
+import { currentDay } from "./story";
 
 // Post-mortem: read the dead station and report, plainly, what killed it. Used by
 // the defeat screen so the player learns exactly where it went wrong.
@@ -78,11 +78,11 @@ const SIGNOFFS = [
 // A brutal letter from the Emperor on the loss of the colony. Deterministic
 // (sign-off picked from the tick) so a reload of the same defeat reads the same.
 export function emperorLetter(w: World): string {
-  const yr = currentYear(w);
+  const days = currentDay(w);
   let dead = 0;
   for (const id in w.agents) if (!w.agents[id].alive) dead++;
   const signoff = SIGNOFFS[(w.tick >>> 4) % SIGNOFFS.length];
-  const span = yr <= 1 ? "barely a single year" : `${yr} years`;
+  const span = days <= 1 ? "barely a single day" : `${days} days`;
 
   return [
     "Commander,",

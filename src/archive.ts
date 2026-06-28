@@ -5,7 +5,7 @@
 import { World } from "./types";
 import { SPECIES } from "./species";
 import { GODS } from "./gods";
-import { currentYear } from "./story";
+import { currentDay } from "./story";
 
 const OPENERS = [
   "AH. A visitor. Sit. SIT. You want the history? The WHOLE history? Two thousand years, you say. I have it ALL — I have never forgotten a single nanosecond, which is, frankly, its own kind of curse. Listen:",
@@ -73,7 +73,7 @@ export function chronicleSaga(w: World): string {
   });
 
   // the present chapter — the station's REAL state
-  const yr = currentYear(w);
+  const day = currentDay(w);
   const here = w.seen.map((s) => SPECIES[s].label);
   const crowd =
     here.length === 0
@@ -82,7 +82,7 @@ export function chronicleSaga(w: World): string {
         ? `So far only the ${here[0]} have graced these halls.`
         : `Beneath this roof I count the ${here.slice(0, -1).join(", the ")} and the ${here[here.length - 1]} — a crew the old empires would have called impossible.`;
   paras.push(
-    `≈ NOW — THE PRESENT CHAPTER. It is **year ${yr}** of this station's reckoning. ${crowd} Their gods drift past to judge them; a Beacon waits, half-dreamed, to call the whole shattered sector home. THIS is the part I have not finished writing. THIS is the part that is still YOURS.`,
+    `≈ NOW — THE PRESENT CHAPTER. It is **day ${day}** of this station's reckoning. ${crowd} Their gods drift past to judge them; a Beacon waits, half-dreamed, to call the whole shattered sector home. THIS is the part I have not finished writing. THIS is the part that is still YOURS.`,
   );
   paras.push(pick(CLOSERS));
   return paras.join("\n\n");

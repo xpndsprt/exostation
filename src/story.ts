@@ -8,11 +8,14 @@ import { beaconCharged } from "./beacon";
 // welcomes each race as it arrives, comments on relationships, each race's
 // standing with its god, and the Sector Beacon. Thousands of combinations from
 // templated lines × species × pairs × moods. Cosmetic, so it may use Math.random.
-const YEAR_TICKS = 10; // sim ticks per in-world year (≈ 1 year / second at 1×)
-const STORY_INTERVAL = 100; // seconds between chronicle entries (≈ every 100 years)
+// Display-only calendar (does NOT affect the simulation — the sim still runs at
+// 10 Hz). One in-world DAY = 40 sim ticks, so at 1× the day counter ticks over
+// every ~4 s — 4× gentler than the old year clock (which was 10 ticks ≈ 1/s).
+const DAY_TICKS = 40; // sim ticks per displayed in-world day
+const STORY_INTERVAL = 100; // seconds between chronicle entries
 
-export function currentYear(w: World): number {
-  return 1 + Math.floor(w.tick / YEAR_TICKS);
+export function currentDay(w: World): number {
+  return 1 + Math.floor(w.tick / DAY_TICKS);
 }
 
 const rng = <T>(a: T[]): T => a[Math.floor(Math.random() * a.length)];
@@ -30,7 +33,7 @@ function moodOf(w: World, sp: Species): number {
 
 function welcome(w: World, sp: Species): string {
   const L = SPECIES[sp].label, g = GODS[sp];
-  return `Year ${currentYear(w)} — ` + rng([
+  return `Day ${currentDay(w)} — ` + rng([
     `Word travels the dark: the ${L} have come to dwell on this station.`,
     `A ${L} crosses the threshold for the first time. The chronicle grows a chapter.`,
     `The ${L} arrive — and far beyond the hull, ${g} turns its attention here.`,
@@ -71,10 +74,10 @@ function beaconLine(w: World): string {
 
 function ambient(): string {
   return rng([
-    `A century turns. The station endures — a candle held against a vast cold.`,
+    `Another watch turns. The station endures — a candle held against a vast cold.`,
     `Out past the lights, the void keeps its long, patient silence.`,
-    `Generations come and go; the hull groans, the lamps hold, the work goes on.`,
-    `Another hundred years are etched into the station's bones.`,
+    `Shifts come and go; the hull groans, the lamps hold, the work goes on.`,
+    `Another long stretch is etched into the station's bones.`,
     `The chronicle lengthens. So few stations last this long.`,
   ]);
 }
@@ -87,7 +90,7 @@ function chronicle(w: World): string {
   else if (kind === "god") line = godLine(w, here);
   else if (kind === "beacon") line = beaconLine(w);
   if (!line) line = ambient();
-  return `Year ${currentYear(w)} — ${line}`;
+  return `Day ${currentDay(w)} — ${line}`;
 }
 
 export function storySystem(w: World, dt: number): void {
