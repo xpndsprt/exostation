@@ -500,6 +500,7 @@ export class Renderer {
     ])
       world.addChild(layer);
     this.heightC.visible = false;
+    this.grid.visible = false; // the cell grid is an opt-in overlay (off by default)
   }
 
   // Recover from a lost-then-restored WebGL context: rebuild the sprite textures on
@@ -515,6 +516,12 @@ export class Renderer {
     this.lastStorageSig = "";
     this.heightSig = -1;
     this.bakeSig = "";
+  }
+
+  // Toggle the cell grid overlay. Returns the new visibility for the UI button.
+  toggleGrid(): boolean {
+    this.grid.visible = !this.grid.visible;
+    return this.grid.visible;
   }
 
   // Toggle the height-field inspector (the grayscale occluder map the shadow pass

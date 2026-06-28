@@ -137,6 +137,7 @@ export interface UIHandlers {
   onArchive: (id: number) => void; // consult the Grand Library's archivist AI
   onOverlay: (mode: OverlayMode) => void;
   onRecenter: () => void;
+  onToggleGrid: () => boolean; // toggle the cell-grid overlay; returns the new state
   onBuyUnlock: (id: string) => void;
   onCycle: (kind: string) => void; // double-click a palette tool to find its instances
   onLocateSpecies: (species: Species) => void; // click an Alienpedia entry to find them
@@ -153,7 +154,7 @@ let saveBtn: HTMLButtonElement | null = null;
 
 export function setupUI(state: UIState, world: World, handlers: UIHandlers): void {
   buildPalette(state, handlers);
-  buildTimeControls(world);
+  buildTimeControls(world, handlers);
   buildOverlayControls(handlers);
   buildSaveControls(world, handlers);
   setupCollapse();
@@ -317,7 +318,7 @@ export function refreshPalette(world: World): void {
   }
 }
 
-function buildTimeControls(world: World): void {
+function buildTimeControls(world: World, handlers: UIHandlers): void {
   const bar = document.getElementById("topbar");
   if (!bar) return;
   const ctl = document.createElement("span");
@@ -332,6 +333,13 @@ function buildTimeControls(world: World): void {
     ctl.appendChild(b);
     return b;
   });
+  // grid overlay toggle, sitting next to the speed buttons (off by default)
+  const grid = document.createElement("button");
+  grid.className = "tbtn";
+  grid.textContent = "▦";
+  grid.title = "Toggle cell grid";
+  grid.onclick = () => grid.classList.toggle("active", handlers.onToggleGrid());
+  ctl.appendChild(grid);
   bar.appendChild(ctl);
 }
 

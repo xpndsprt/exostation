@@ -374,6 +374,7 @@ async function boot(): Promise<void> {
       needRedraw = true;
     },
     onRecenter: recenter,
+    onToggleGrid: () => { const on = renderer.toggleGrid(); needRedraw = true; return on; },
     onBuyUnlock: (id) => {
       const u = UNLOCKS.find((x) => x.id === id);
       if (!u || isUnlocked(world, id)) return;

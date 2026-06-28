@@ -25,6 +25,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 **Views & camera**
 - **Right-drag** = pan · **mouse wheel** = zoom · **Recenter** button snaps back to your station.
 - **Overlay** buttons (top bar): **Power** (powered/unpowered modules) and **Rooms** (per-room tint). Atmosphere is always shown as a colored fill.
+- **▦ grid toggle** (top bar, next to the speed buttons) shows/hides the cell grid — it's **off by default**.
 - **🔊 / 🔇** (top bar) toggles **sound** (state is remembered). Audio starts on your first click/keypress. A **shuffled soundtrack** (from `assets/music/`) plays under the SFX at ~30% volume. A separate **🎵** button next to it toggles the **music only** (keeps SFX), also remembered.
 
 **Your objective & the HUD**
