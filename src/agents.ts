@@ -18,7 +18,7 @@ function breathes(a: Agent, gas: string | undefined): boolean {
 
 const REPAIR_INJURY_RATE = 0.03; // per-second injury chance servicing a high-tier module
 
-const SPEED = 4; // cells / second
+const SPEED = 2; // cells / second (a calm, deliberate walking pace)
 const O2_DECAY = 8; // breath lost per second once the suit is empty
 const O2_RECOVER = 15;
 const SUIT_DECAY = 14; // suit reserve spent per second off native air (~7s of cover)
