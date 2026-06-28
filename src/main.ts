@@ -110,12 +110,12 @@ async function boot(): Promise<void> {
   // display makes a huge framebuffer that GPUs under pressure drop — which shows
   // up as a webglcontextlost→restore loop ending in a blank field. resolution 1 +
   // no AA keeps it light and stable across machines.
-  // Smooth look: MSAA antialiasing smooths every vector edge — the wormhole,
-  // conduits, ship/agent outlines, lasers, the floor/wall detail. Textures use
-  // linear filtering (set per-texture in the renderer) so sprites scale softly too.
-  // resolution stays capped so the MSAA framebuffer doesn't balloon on big/4K
-  // displays (the documented webglcontextlost trigger).
-  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: true, resolution: capResolution(resDegrade), autoDensity: true });
+  // Smoothing WITHOUT hardware MSAA: a full-size multisample framebuffer balloons
+  // on big/4K displays and drops the WebGL context (white-screen webglcontextlost),
+  // so antialias stays OFF. Instead we soften the look cheaply: textures use linear
+  // filtering (set per-texture in the renderer) and the wormhole gets a small
+  // BlurFilter (a tiny render-texture, not a screen-size multisample buffer).
+  await app.init({ preference: "webgl", background: COLORS.space, resizeTo: window, antialias: false, resolution: capResolution(resDegrade), autoDensity: true });
   audio.initAudio(); // loads SFX + unlocks audio on the first user gesture
   const mount = document.getElementById("app");
   if (!mount) throw new Error("#app mount missing");

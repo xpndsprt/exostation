@@ -3,7 +3,7 @@
 // faint, small swirl (~1/3 size) and, as the five beacon nodes charge, blooms into
 // a bright, cloudy blue flower of light with particles streaming from the core.
 // Purely cosmetic; driven by beaconIntensity() (0..1).
-import { Container, Graphics } from "pixi.js";
+import { BlurFilter, Container, Graphics } from "pixi.js";
 import { TILE } from "./config";
 import type { World } from "./types";
 
@@ -33,6 +33,11 @@ export class Wormhole {
 
   constructor() {
     this.container.eventMode = "none";
+    // A small blur dissolves the vector edges (no global MSAA needed) and reads as
+    // a soft, glowy vortex. blendMode "add" keeps it luminous over the starfield
+    // even though the filter flattens the additive children into one pass.
+    this.container.filters = [new BlurFilter({ strength: 3, quality: 3 })];
+    this.container.blendMode = "add";
 
     // outer nebulous glow — faint concentric blue/violet rings (additive)
     for (let i = 6; i >= 1; i--) {
