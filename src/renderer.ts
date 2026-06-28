@@ -415,6 +415,14 @@ function floorIsWindow(x: number, y: number): boolean {
   return h % 17 === 0;
 }
 
+// Stable per-cell pseudo-random (uint32) for deterministic deck variation/grime &
+// wall seams — same cell always looks the same, so it caches with the tile layer.
+function cellHash(x: number, y: number): number {
+  let h = (Math.imul(x, 374761393) ^ Math.imul(y, 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
 // Render-time motion smoothing. The sim updates positions at 10 Hz; rendering at
 // the display refresh (e.g. 120 Hz) we ease each moving entity toward its latest
 // sim position so it glides instead of stepping. Both are time-constants (1/s) so
@@ -425,6 +433,7 @@ const ROT_RATE = 2;
 
 export class Renderer {
   private cellsC = new Container();
+  private decalG = new Graphics(); // floor/wall detail: contact-shadow AO, grime, bevels (cached with the tile sig)
   private lastTileSig = -1;
   private lastConduitSig = ""; // skip redrawing static cabling
   private lastAtmoSig = ""; // skip redrawing unchanged gas tints
@@ -485,7 +494,7 @@ export class Renderer {
     buildTextures();
     this.lightG.blendMode = "multiply";
     for (const layer of [
-      this.cellsC, this.atmo, this.grid, this.conduitG, this.storageG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
+      this.cellsC, this.decalG, this.atmo, this.grid, this.conduitG, this.storageG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
       this.lightG, this.heightC, this.overlay, this.selection, this.cursor,
     ])
@@ -929,6 +938,54 @@ export class Renderer {
         if (c.type === "storage") sp.tint = 0x5b6675; // airless storage deck — a distinct cool grey
         else if (c.type === "floor" && !c.enclosed) sp.tint = 0xff9a9a; // open-to-space cue
         this.cellsC.addChild(sp);
+      }
+    this.drawTileDecals(world); // floor/wall detail (same layout cache as the tiles)
+  }
+
+  // Floor & wall detail painted over the tile sprites — rebuilt only when the
+  // layout changes (shares the tile signature cache, so it's free per frame):
+  //  • contact-shadow ambient occlusion where a wall meets the deck (rooms gain depth)
+  //  • subtle per-tile tonal variation + sparse grime/scuff so the deck stops tiling
+  //  • a lit top edge + base shadow on walls (they read as raised hull), faint seams
+  private drawTileDecals(world: World): void {
+    const g = this.decalG;
+    g.clear();
+    const W = world.w, H = world.h;
+    const isWall = (x: number, y: number): boolean =>
+      x >= 0 && y >= 0 && x < W && y < H && world.cells[y * W + x].type === "wall";
+    const near = Math.round(TILE * 0.30); // darkest contact band depth
+    const far = Math.round(TILE * 0.55); // soft outer band depth
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const c = world.cells[y * W + x];
+        const px = x * TILE, py = y * TILE;
+        const deck = c.type === "floor" || c.type === "storage" || c.type === "door";
+        if (deck) {
+          // contact-shadow AO — two stacked bands per wall-facing edge so the strip
+          // fades inward; inner corners darken automatically where bands overlap.
+          if (isWall(x, y - 1)) { g.rect(px, py, TILE, far).fill({ color: 0, alpha: 0.09 }); g.rect(px, py, TILE, near).fill({ color: 0, alpha: 0.09 }); }
+          if (isWall(x, y + 1)) { g.rect(px, py + TILE - far, TILE, far).fill({ color: 0, alpha: 0.09 }); g.rect(px, py + TILE - near, TILE, near).fill({ color: 0, alpha: 0.09 }); }
+          if (isWall(x + 1, y)) { g.rect(px + TILE - far, py, far, TILE).fill({ color: 0, alpha: 0.09 }); g.rect(px + TILE - near, py, near, TILE).fill({ color: 0, alpha: 0.09 }); }
+          if (isWall(x - 1, y)) { g.rect(px, py, far, TILE).fill({ color: 0, alpha: 0.09 }); g.rect(px, py, near, TILE).fill({ color: 0, alpha: 0.09 }); }
+          // deck material variation + grime (deterministic per cell; not on doors)
+          if (c.type !== "door") {
+            const hsh = cellHash(x, y);
+            const r = hsh % 100;
+            if (r < 34) g.rect(px, py, TILE, TILE).fill({ color: 0x000000, alpha: 0.05 }); // a slightly darker plate
+            else if (r < 50) g.rect(px, py, TILE, TILE).fill({ color: 0xffffff, alpha: 0.03 }); // a slightly lighter plate
+            if (r >= 88) { // a scuff/stain
+              const sx = px + 4 + ((hsh >> 8) % (TILE - 8));
+              const sy = py + 4 + ((hsh >> 16) % (TILE - 8));
+              g.circle(sx, sy, 2 + (hsh % 2)).fill({ color: 0x000000, alpha: 0.10 });
+              g.circle(sx + 2, sy + 1, 1.5).fill({ color: 0x000000, alpha: 0.07 });
+            }
+          }
+        } else if (c.type === "wall") {
+          // bevel: lit top edge + shadowed base → walls read as raised hull
+          g.rect(px, py, TILE, 2).fill({ color: 0xffffff, alpha: 0.07 });
+          g.rect(px, py + TILE - 2, TILE, 2).fill({ color: 0x000000, alpha: 0.16 });
+          if (cellHash(x, y) % 3 === 0) g.rect(px + TILE / 2 - 0.5, py + 3, 1, TILE - 6).fill({ color: 0x000000, alpha: 0.10 }); // faint panel seam
+        }
       }
   }
 
