@@ -156,6 +156,8 @@
     <div class="hint" style="margin-top:5px">Picking a style does the whole station: <b>redraws the aliens</b> (humans stay human; others get distinct body plans) <b>and</b> colours/relights every sprite, all saved to the library so the game uses them.</div>
     <div class="row" style="margin-top:8px"><button id="saveAllBtn" style="flex:1">💾 Save ALL to library (use in game)</button></div>
     <div class="hint" style="margin-top:5px">Bakes every tile (built-ins + your edits) into the library so the game picks them all up. Reload the game after.</div>
+    <div class="row" style="margin-top:8px"><button id="resetBuiltinBtn" style="flex:1">♻ Use built-in art (reset)</button></div>
+    <div class="hint" style="margin-top:5px">Switches the game back to the original built-in sprites. Your saved library is kept (just disabled) — Save again to re-apply. Reload the game after.</div>
     <div class="row" style="margin-top:8px"><button id="undoBtn">↶ Undo</button></div>
     <div id="styleOut" class="hint" style="margin-top:6px"></div>
     <h4>Zoom</h4>
@@ -770,6 +772,16 @@ $("saveAllBtn").onclick = () => {
   const n = Object.keys(store).length;
   if ($("styleOut")) $("styleOut").textContent = `Saved ALL ${n} sprites to the library — reload the game to use them.`;
   alert(`Saved ALL ${n} sprites to the library. Reload the game to use them.`);
+};
+
+// Switch the game back to its original built-in sprites without losing your work:
+// flip the opt-in flag off (the game's applyEditorLibrary only loads the library
+// when "exo.sprites.enabled" === "1"). The saved library stays; Save re-applies it.
+$("resetBuiltinBtn").onclick = () => {
+  if (!confirm("Switch the game back to the built-in sprites?\n\nYour saved edits are kept (just disabled) — Save ALL re-applies them.")) return;
+  localStorage.setItem("exo.sprites.enabled", "0");
+  if ($("styleOut")) $("styleOut").textContent = "Built-in art re-enabled — reload the game to see the originals. (Your library is kept; Save ALL to re-apply.)";
+  alert("Done — the game will use built-in art on its next reload. Your edits are still saved.");
 };
 
 // ===== Procedural alien redraw =======================================
