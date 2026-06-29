@@ -44,9 +44,10 @@ export const BEATS: Beat[] = [
     speaker: "COMMAND",
     title: "ASSIGNMENT",
     body: () =>
-      "Commander. This derelict ring is yours now — I expect it crewed, solvent, and breathing. " +
-      "But hear the true purpose: the Sector Beacon. Five peoples, five signatures, one signal to call the scattered home. " +
-      "Light it, and your name enters the record. Fail, and the void keeps you.",
+      "Commander. These are coordinates in the deep dark — empty vacuum, a fabrication charter, and my expectations. " +
+      "Build a station here from nothing: seal a hull, power it, make it breathe, and crew it. " +
+      "But hear the true purpose — the Sector Beacon. Five peoples, five signatures, one signal to call the scattered home. " +
+      "Raise it from the void, and your name enters the record. Fail, and the void keeps you.",
     choices: [
       { label: "It will be done.", hint: "Accept the charge.", reply: "See that it is." },
       { label: "And what do I get?", hint: "Name your price.", flag: "merc", reply: "You get to keep breathing. Generous, I think." },
