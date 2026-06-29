@@ -393,7 +393,7 @@ The finale (the last objective) is **bringing the Sector Beacon online**, which 
 ## Quick reference
 | System | Key numbers |
 |--------|-------------|
-| Sim tick | 5 steps/s at 1× (render interpolates between steps for smooth motion) |
+| Sim tick | 10 steps/s at 1× (render interpolates between steps for smooth motion) |
 | Doors | walkable but block gas (airlock); connect wings without mixing atmospheres |
 | Breath | suit protects first; once suit empty, −8%/s in wrong air; +15%/s in right air; death at 0 |
 | Space suit | drains ~14%/s off native air (full ≈ 7s ≈ 28 tiles; turn back at ~30%), recharges ~40%/s in native air |

@@ -428,7 +428,7 @@ function cellHash(x: number, y: number): number {
 // sim position so it glides instead of stepping. Both are time-constants (1/s) so
 // the look is frame-rate independent. FOLLOW_RATE → screen position; ROT_RATE →
 // a ship's banking heading (was a fixed 0.18/tick ≈ 2/s).
-const FOLLOW_RATE = 8; // ~0.12s time-constant — smooth glide across the 5 Hz (0.2s) sim steps
+const FOLLOW_RATE = 16; // ~0.06s time-constant — snappy glide across the 10 Hz (0.1s) sim steps
 const ROT_RATE = 2;
 
 export class Renderer {

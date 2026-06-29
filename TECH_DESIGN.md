@@ -65,11 +65,11 @@ narration layer only: a data table of beats with `when(world)` triggers that set
 `firedBeats` / `storyFlags` (save-persisted) keep the arc from repeating.
 
 ### Tick / time model
-- Fixed simulation step: **5 steps/sec at 1×** (`SIM_HZ`), driven by an
+- Fixed simulation step: **10 steps/sec at 1×** (`SIM_HZ`), driven by an
   accumulator inside PixiJS's `app.ticker`; rendering is decoupled and happens
   every frame (entity positions are interpolated, so motion stays smooth). NOTE:
   `world.tick` is a real-time clock in **deciseconds** (advances `10/SIM_HZ` per
-  step = 2 at 5 Hz), so all tick-based timers read the same regardless of step rate.
+  step = 1 at 10 Hz), so all tick-based timers read the same regardless of step rate.
   on the same RAF, gated by a `needRedraw` flag.
 - Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s). The
   accumulator caps catch-up at 120 steps/frame to avoid spiral-of-death.

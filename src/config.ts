@@ -25,7 +25,7 @@ export const COLORS = {
   guest: 0xe8c349, // Drenn guest outline
 } as const;
 
-export const SIM_HZ = 5; // simulation steps per second at 1× speed
+export const SIM_HZ = 10; // simulation steps per second at 1× speed
 // world.tick is a real-time clock in DECISECONDS (10/s) — every tick-based timer
 // (event schedules, day counter, blink animations) assumes that. So the sim step
 // advances tick by 10/SIM_HZ, keeping all those timings identical to the real
