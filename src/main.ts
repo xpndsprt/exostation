@@ -906,6 +906,9 @@ async function boot(): Promise<void> {
     // The heavy DOM/dialog work below stays gated to actual sim changes.
     const sc = selCell();
     renderer.draw(world, sc, overlay, ticker.deltaMS / 1000);
+    // The Star Chart is a live animated map (orbits, drones) — redraw it every frame
+    // while it's open so it's smooth, not stuck at the ~6 Hz DOM-panel cadence.
+    if (isStarChartOpen()) refreshStarChart(world);
 
     if (needRedraw) {
       if (sc < 0 && sel) sel = null;
@@ -1006,7 +1009,6 @@ async function boot(): Promise<void> {
         domSig = ds;
         updateHud(world);
         updateInfo(world, sel, handlers);
-        if (isStarChartOpen()) refreshStarChart(world); // live ETAs / drone position while it's up
         renderTech(world, handlers.onBuyUnlock);
         refreshPalette(world);
         renderRequests(world);

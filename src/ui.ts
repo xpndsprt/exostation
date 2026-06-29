@@ -1820,11 +1820,11 @@ export function refreshStarChart(world: World): void {
   ctx.beginPath();
   ctx.arc(cx, cy, r0, 0, Math.PI * 2);
   ctx.stroke();
-  const stAngle = -Math.PI / 2 + world.tick * 0.0006; // slow orbit (starts near the top)
+  const stAngle = -Math.PI / 2 + world.tick * 0.007; // visibly orbits (~90s/lap; starts near the top)
   const stx = cx + Math.cos(stAngle) * r0;
   const sty = cy + Math.sin(stAngle) * r0;
   // the Beacon wormhole orbits the station like a moon
-  const moonA = world.tick * 0.002;
+  const moonA = world.tick * 0.03;
   drawSCWormhole(ctx, stx + Math.cos(moonA) * 48, sty + Math.sin(moonA) * 48, SC_SIZE * 0.085, beaconIntensity(world), world.tick);
   ctx.fillStyle = "#49d17a";
   ctx.fillRect(stx - 4, sty - 4, 8, 8);
