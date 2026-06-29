@@ -935,9 +935,9 @@ async function boot(): Promise<void> {
           setSpeed(world, 0);
           audio.play("first-contact");
           showStoryBeat(
-            { speaker: beat.speaker, title: beat.title, body: beat.body(world), choices: beat.choices ?? [] },
-            (choice) => {
-              resolveBeat(world, id, choice);
+            { speaker: beat.speaker, species: beat.species, title: beat.title, body: beat.body(world) },
+            () => {
+              resolveBeat(world);
               if (world.phase === "playing") setSpeed(world, resumeSpeed);
               needRedraw = true;
             },

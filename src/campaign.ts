@@ -1,27 +1,20 @@
-// The campaign spine — a story told in COMMAND transmissions (the Emperor) that
-// thread the station from arrival to the Sector Beacon. Each beat is a paused
-// dialog box that fires once when its trigger condition is met; fired ids are
-// saved on the World so the arc survives save/load and never repeats. Choices set
-// light flags that colour later transmissions (see storyFlags). Purely a narration
-// layer over events the sim already produces — it never changes the simulation.
-import { World } from "./types";
-import { beaconCharged } from "./beacon";
-
-export interface BeatChoice {
-  label: string;
-  hint?: string; // small sub-text under the choice
-  flag?: string; // sets w.storyFlags[flag] = 1 when picked
-  credits?: number; // +/- credits applied when picked
-  reply?: string; // COMMAND's curt reply, surfaced as a toast
-}
+// The campaign spine — a story told in dialog boxes, fired once at milestones from
+// arrival to the Sector Beacon. The Emperor ("COMMAND") narrates the throughline;
+// the five Beacon signatures are spoken by the species that raise them (their
+// portrait shows in the dialog). Pure narration: each beat is dismissed with a
+// single button and changes nothing in the sim. Fired ids persist on the World so
+// the arc survives save/load and never repeats.
+import { Species, World } from "./types";
+import { SPECIES } from "./species";
+import { beaconCharged, BEACON_SPECIES } from "./beacon";
 
 export interface Beat {
   id: string;
   when: (w: World) => boolean; // fires the first tick this is true
-  speaker: string;
+  speaker: string; // shown above the line
+  species?: Species; // if set, the dialog shows this species' portrait (else a COMMAND emblem)
   title: string;
   body: (w: World) => string;
-  choices?: BeatChoice[];
 }
 
 function residents(w: World): number {
@@ -32,15 +25,26 @@ function residents(w: World): number {
 function breathable(w: World): boolean {
   return Object.values(w.rooms).some((r) => r.enclosed && r.gas !== "none" && r.gas !== "mixed");
 }
-const merc = (w: World): boolean => !!w.storyFlags.merc;
+function built(w: World, kind: string): boolean {
+  for (const id in w.structures) if (w.structures[id].kind === kind) return true;
+  return false;
+}
+
+// Voice lines for each Beacon signature, spoken by the species that raises it.
+const SIGNATURE: Record<string, string> = {
+  cmdhub: "The Command Hub stands. Humanity lends the Beacon its voice — order carved out of the long silence.",
+  tradenexus: "The Trade Nexus opens. We Drenn will sell the whole sector its way home — at a fair margin, naturally.",
+  autoforge: "The Auto-Forge breathes. We Thol give the Beacon hands that never tire and never err.",
+  bloomgarden: "The Bloom Garden flowers. We Vry'l offer the Beacon life itself — and the scent of a living world.",
+  orerefinery: "The Ore Refinery roars to life. We Korro feed the Beacon raw strength, torn from the deep rock.",
+};
 
 // The arc, in order. campaignSystem fires the first unfired beat whose `when` is
-// true, one at a time. objectiveIx counts objectives already cleared
-// (grow → bank → diverse → beacon), so it doubles as chapter progress.
+// true, one at a time. objectiveIx counts objectives already cleared.
 export const BEATS: Beat[] = [
   {
     id: "prologue",
-    when: () => true, // the opening transmission
+    when: () => true,
     speaker: "COMMAND",
     title: "ASSIGNMENT",
     body: () =>
@@ -48,10 +52,6 @@ export const BEATS: Beat[] = [
       "Build a station here from nothing: seal a hull, power it, make it breathe, and crew it. " +
       "But hear the true purpose — the Sector Beacon. Five peoples, five signatures, one signal to call the scattered home. " +
       "Raise it from the void, and your name enters the record. Fail, and the void keeps you.",
-    choices: [
-      { label: "It will be done.", hint: "Accept the charge.", reply: "See that it is." },
-      { label: "And what do I get?", hint: "Name your price.", flag: "merc", reply: "You get to keep breathing. Generous, I think." },
-    ],
   },
   {
     id: "first_air",
@@ -59,7 +59,7 @@ export const BEATS: Beat[] = [
     speaker: "COMMAND",
     title: "FIRST BREATH",
     body: () =>
-      "Air holds. A sealed room, a generator that runs — the simplest miracle, and the one most stations die without. " +
+      "Air holds. A sealed room, a generator that runs — the simplest miracle, and the one most claims die without. " +
       "Now fill it with hands.",
   },
   {
@@ -67,7 +67,7 @@ export const BEATS: Beat[] = [
     when: (w) => residents(w) >= 1,
     speaker: "COMMAND",
     title: "A CREW OF ONE",
-    body: () => "Someone answered the call. One body is not a station, Commander — it is a start. Grow it, and keep them alive.",
+    body: () => "Someone answered the call across all that dark. One body is not a station, Commander — it is a start. Grow it, and keep them alive.",
   },
   {
     id: "act_grow",
@@ -92,34 +92,35 @@ export const BEATS: Beat[] = [
     when: (w) => w.objectiveIx >= 3,
     speaker: "COMMAND",
     title: "THE GATHERING",
-    body: (w) =>
+    body: () =>
       "Bloodlines the old empires swore could never share a deck — and you have them. Now each must raise its signature: " +
-      "the Command Hub (Human), Trade Nexus (Drenn), Auto-Forge (Thol), Bloom Garden (Vry'l), Ore Refinery (Korro). " +
-      "Light all five and the Beacon wakes." + (merc(w) ? " And yes — your reward is real. This once." : ""),
+      "the Command Hub, the Trade Nexus, the Auto-Forge, the Bloom Garden, the Ore Refinery. " +
+      "Light all five and the Beacon wakes. Build them, Commander.",
   },
-  {
-    id: "beacon_first",
-    when: (w) => beaconCharged(w) >= 1,
-    speaker: "COMMAND",
-    title: "FIRST SIGNATURE",
-    body: (w) => `${beaconCharged(w)} of five signatures sings into the dark. The Beacon stirs at the sound. Keep going.`,
-  },
+  // The five signatures — each spoken by the species that raises it (portrait shown).
+  ...Object.keys(BEACON_SPECIES).map((kind): Beat => ({
+    id: `sig_${kind}`,
+    when: (w) => built(w, kind),
+    speaker: SPECIES[BEACON_SPECIES[kind] as Species].label.toUpperCase(),
+    species: BEACON_SPECIES[kind] as Species,
+    title: "A SIGNATURE RISES",
+    body: () => SIGNATURE[kind] ?? "Another signature joins the Beacon's song.",
+  })),
   {
     id: "beacon_mid",
     when: (w) => beaconCharged(w) >= 3,
     speaker: "COMMAND",
     title: "THE BEACON STIRS",
-    body: () => "Three of five. Across the sector, old antennae twitch toward your signal. Finish it, Commander — the dark is listening.",
+    body: () => "Three of five signatures sing into the dark. Across the sector, old antennae twitch toward your signal. Finish it, Commander.",
   },
   {
     id: "finale",
     when: (w) => beaconCharged(w) >= 5,
     speaker: "COMMAND",
     title: "THE BEACON WAKES",
-    body: (w) =>
+    body: () =>
       "Five signatures. The Beacon blazes complete, and a sector that had forgotten how to hope turns its face toward your station. " +
-      "You were sent to build a light in the dark. You did." +
-      (merc(w) ? " Your reward is logged — spend it well." : " I do not say this often: well done."),
+      "You were sent to build a light in the dark. You did. I do not say this often: well done, Commander.",
   },
 ];
 
@@ -141,13 +142,7 @@ export function campaignSystem(w: World, _dt: number): void {
   }
 }
 
-// Apply a chosen response (flag / credits / reply toast) and clear the dialog.
-export function resolveBeat(w: World, id: string, choiceIdx: number): void {
-  const c = getBeat(id)?.choices?.[choiceIdx];
-  if (c) {
-    if (c.flag) w.storyFlags[c.flag] = 1;
-    if (c.credits) w.credits = Math.max(0, w.credits + c.credits);
-    if (c.reply) w.notify.push(`COMMAND: ${c.reply}`);
-  }
+// Dismiss the current transmission.
+export function resolveBeat(w: World): void {
   w.storyBeat = null;
 }

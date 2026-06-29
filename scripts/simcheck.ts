@@ -2364,8 +2364,8 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Campaign fires the prologue first", w.storyBeat === "prologue" && w.firedBeats.includes("prologue"));
   campaignSystem(w, 0.1);
   check("Campaign holds while a transmission is pending", w.storyBeat === "prologue" && w.firedBeats.length === 1);
-  resolveBeat(w, "prologue", 1); // the 'name your price' choice sets the merc flag
-  check("Resolving a beat clears it and records the flag", w.storyBeat === null && w.storyFlags.merc === 1);
+  resolveBeat(w); // dismiss
+  check("Dismissing a beat clears it", w.storyBeat === null);
   campaignSystem(w, 0.1); // no air/crew yet → no further beat
   check("No beat fires until its trigger is met", w.storyBeat === null);
 }

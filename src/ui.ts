@@ -1408,27 +1408,36 @@ export function isStoryBeatOpen(): boolean {
   return sbShown;
 }
 export function showStoryBeat(
-  beat: { speaker: string; title: string; body: string; choices: { label: string; hint?: string }[] },
-  onChoose: (choice: number) => void,
+  beat: { speaker: string; species?: string; title: string; body: string },
+  onDismiss: () => void,
 ): void {
   const el = document.getElementById("storybeat");
-  if (!el) { onChoose(0); return; }
+  if (!el) { onDismiss(); return; }
   sbShown = true;
+  // portrait: the speaking species, or a COMMAND emblem (a crown in the imperial hue)
+  const art = el.querySelector(".sb-art") as HTMLCanvasElement;
+  if (beat.species) {
+    drawSpeciesArt(art, beat.species);
+  } else {
+    art.width = 76; art.height = 76;
+    const ctx = art.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, 76, 76);
+      ctx.fillStyle = "#0c0f16"; ctx.fillRect(0, 0, 76, 76);
+      ctx.font = "44px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ff8a6a"; ctx.fillText("♛", 38, 42);
+    }
+  }
   (el.querySelector(".sb-tag") as HTMLElement).textContent = beat.speaker;
   (el.querySelector(".sb-title") as HTMLElement).textContent = beat.title;
   (el.querySelector(".sb-body") as HTMLElement).textContent = beat.body;
   const box = el.querySelector(".sb-choices") as HTMLElement;
-  const choices = beat.choices.length ? beat.choices : [{ label: "Continue" }];
-  box.innerHTML = choices
-    .map((c, i) => `<button type="button" data-i="${i}"><b>${c.label}</b>${c.hint ? `<span class="ch-hint">${c.hint}</span>` : ""}</button>`)
-    .join("");
-  box.querySelectorAll("button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      el.classList.remove("show");
-      sbShown = false;
-      onChoose(Number((btn as HTMLButtonElement).dataset.i));
-    }, { once: true });
-  });
+  box.innerHTML = `<button type="button"><b>Continue</b></button>`;
+  (box.querySelector("button") as HTMLButtonElement).addEventListener("click", () => {
+    el.classList.remove("show");
+    sbShown = false;
+    onDismiss();
+  }, { once: true });
   el.classList.add("show");
 }
 
