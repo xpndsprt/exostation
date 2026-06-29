@@ -47,6 +47,7 @@ Defined by `TILE_COST` in `src/structures.ts`. The skeleton: defines rooms, atmo
 | Heater | `heater` | Warms its room to the **hot** climate band (keeps heat-loving **Voltaar** content; wrong band = −10 mood). | 5 | 2×2 | 130 | **Climate Control** (¢300) | on / off / unpowered |
 | Cryo Unit | `cooler` | Chills its room to the **cold** climate band (keeps cold-loving **Naaz** content). Heater + Cryo in one room cancel to temperate. | 7 | 2×2 | 170 | **Climate Control** (¢300) | on / off / unpowered |
 | Lounge | `rec` | Entertainment: crew **and** visitors path here to relax (restore **Fun**) and socialize when fun runs low. | 4 | 2×2 | 80 | — | busy / empty |
+| Lavatory | `toilet` | Crew **and** guests relieve the **Relief** need here (any species, breathable air). Dirties with use (−condition); crew service it. No Lavatory → floor **messes** + mood drag. | 0 | 1×1 | 25 | — (none) | clean / dirty |
 | Hotel Room | `hotel` | Lodging **prepped for one visitor species** (Select → Reassign species); only that species lodges there. Drenn free; others need their research. Drives lodging income. | 2 | 2×1 | 60 | — (Drenn free; others gated) | prepped sp / in use |
 | Trade Hub | `tradehub` | Lets **traders dock and buy your minerals** for credits — the trade-income engine. | 5 | 2×2 | 120 | — | active / unpowered |
 | Research Lab | `lab` | Enables the **TECH** panel: spend credits to research unlocks. Must stay powered to research. | 6 | 2×1 | 150 | — | powered / unpowered |

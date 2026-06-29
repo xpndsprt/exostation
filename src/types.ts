@@ -4,6 +4,7 @@
 
 export type StructureKind =
   | "solar"
+  | "toilet"
   | "battery"
   | "o2gen"
   | "ch4gen"
@@ -108,13 +109,20 @@ export interface Structure {
   inBuf: number; // input feedstock units crew have delivered, ready to consume (Synth)
 }
 
-export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court" | "haul" | "fixconduit";
+export type TaskType = "flee" | "eat" | "sleep" | "leave" | "service" | "relax" | "seal" | "court" | "haul" | "fixconduit" | "relieve" | "clean";
 
 // An open hull breach (a vented wall cell) awaiting emergency repair by crew.
 export interface Breach {
   cell: number; // the breached (now-space) wall cell
   sealer: number; // agent id repairing it, or -1 if unclaimed
   progress: number; // 0..1 toward resealed
+}
+
+// A floor mess (someone relieved themselves with no Lavatory) awaiting a crew clean-up.
+export interface Mess {
+  cell: number; // deck cell soiled
+  cleaner: number; // agent id scrubbing it, or -1 if unclaimed
+  progress: number; // 0..1 toward cleaned
 }
 
 export interface Task {
@@ -142,6 +150,7 @@ export interface Agent {
   food: number; // 0..100
   rest: number; // 0..100
   fun: number; // 0..100 recreation; restored at entertainment modules
+  relief: number; // 0..100 bathroom need; at 0 they soil the floor (a Mess) unless a Lavatory is reached
   mood: number; // 0..100 (needs + neighbor relations)
   health: number; // 0..100 (combat)
   tension: number; // 0..100 (toward a skirmish)
@@ -408,6 +417,7 @@ export interface World {
   encounterTimer: number; // accumulator toward the next random social encounter
   encounter?: Encounter | null; // a pending crew encounter awaiting the player's choice
   breaches: Breach[]; // open hull breaches crew rush to reseal
+  messes: Mess[]; // floor messes (no Lavatory) crew scrub away
   reputation: Partial<Record<Species, number>>; // 0..100 per species (default 50)
   requests: StationRequest[]; // active species requests (goals)
   reqTimer: number; // accumulator for spawning new requests

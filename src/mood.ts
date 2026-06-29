@@ -16,12 +16,15 @@ export interface MoodBreakdown {
   command: number; // station-wide lift from an active Command Hub
   overflow: number; // morale hit from resources visibly going to waste at cap
   temp: number; // comfort/discomfort from the room's climate band vs species pref
+  filth: number; // morale hit from floor messes nearby (no Lavatory)
   target: number; // resulting target mood (0..100)
 }
 
 const COMMAND_LIFT = 8; // mood bonus while a Human-staffed Command Hub runs
 const OVERFLOW_HIT = -5; // morale drag while a resource is wasting at its cap (M41)
 const TEMP_HIT = -10; // morale drag while in a room of the wrong climate band
+const FILTH_PER = -4; // morale per floor mess within PROXIMITY (gross)
+const FILTH_CLAMP = -20; // worst the stench can drag mood
 
 // Single source of truth for what an agent's mood is pulled toward. The system
 // eases actual mood toward this; the UI reads the same breakdown for tooltips.
@@ -49,8 +52,13 @@ export function moodBreakdown(w: World, a: Agent): MoodBreakdown {
   // likes is unhappy. Most crews want "temperate" (the default), so this only
   // bites the exotic crews — Voltaar (hot), Naaz (cold) — until you climate-control.
   const temp = room && room.gas !== "none" && room.temp !== SPECIES[a.species].temp ? TEMP_HIT : 0;
-  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command + overflow + temp));
-  return { base: BASE, needs, social, harmony, command, overflow, temp, target };
+  let near = 0;
+  for (const m of w.messes ?? []) {
+    if (Math.abs(ax - (m.cell % w.w)) + Math.abs(ay - ((m.cell / w.w) | 0)) <= PROXIMITY) near++;
+  }
+  const filth = Math.max(FILTH_CLAMP, near * FILTH_PER);
+  const target = Math.max(0, Math.min(100, BASE + needs + social + harmony + command + overflow + temp + filth));
+  return { base: BASE, needs, social, harmony, command, overflow, temp, filth, target };
 }
 
 // Mood blends need-satisfaction with how an agent feels about nearby neighbors

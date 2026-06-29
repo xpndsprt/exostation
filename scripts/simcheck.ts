@@ -549,6 +549,41 @@ check("No mining means minerals stay 0", wf.stock.minerals === 0);
   check("With storage, crew bank cooked meals into the warehouse", w.stock.meals.rations > 0);
 }
 
+// --- Lavatories: no toilet → soil the floor + crew clean; toilet → relieve + wear ---
+{
+  // NO toilet: a desperate crew member soils the deck, then a resident cleans it.
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 8, 6);
+  addAgent(w, 11, 8, "human");
+  const h = Object.values(w.agents)[0];
+  h.relief = 0.05; // about to give out, and there is no Lavatory anywhere
+  let sawMess = false;
+  for (let i = 0; i < 500; i++) { step(w); if (w.messes.length > 0) sawMess = true; }
+  check("No Lavatory: a desperate crew soils the floor", sawMess);
+  check("A resident scrubs the floor mess away", w.messes.length === 0);
+}
+{
+  // WITH a toilet: the crew relieve themselves — need restored, fixture wears, no mess.
+  const w = createWorld();
+  carve(w, 5, 5, 12, 9);
+  recomputeRooms(w);
+  addStructure(w, "solar", 6, 6);
+  addStructure(w, "o2gen", 8, 6);
+  addStructure(w, "toilet", 11, 7);
+  addAgent(w, 11, 8, "human");
+  const h = Object.values(w.agents)[0];
+  const toilet = Object.values(w.structures).find((s) => s.kind === "toilet")!;
+  h.relief = 10; // below the threshold → head for the Lavatory
+  let peak = 0;
+  for (let i = 0; i < 200; i++) { step(w); if (h.relief > peak) peak = h.relief; } // capture the peak (it decays again after)
+  check("With a Lavatory, crew relieve themselves (need restored)", peak > 90);
+  check("Using a Lavatory wears it (so it needs servicing)", toilet.condition < 100);
+  check("With a Lavatory, the floor stays clean", w.messes.length === 0);
+}
+
 // --- Solar panels: wall-mounted, 3 tiles normal to a space-facing wall ---
 const ws = createWorld();
 setCell(ws, 10, 10, "wall");

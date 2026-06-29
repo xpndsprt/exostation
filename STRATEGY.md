@@ -126,6 +126,7 @@ Each crew member tracks four meters (see them in the info panel; a mood dot floa
 - **Food** — decays ~**1.5%/s**; when **< 40** they path to a **Rations Synth** and eat a meal (refills to full).
 - **Rest** — decays ~**1%/s**; when **< 35** they sleep (recover ~**12%/s**) to full, then release the bunk. **Crew sleep in Crew Quarters; visitors sleep in Hotel Rooms** — separate accommodations.
 - **Fun** — decays ~**0.4%/s**; when **< 40** they head to a **Lounge** to relax (recover ~**20%/s**). Both crew and visitors use lounges — see *Entertainment* below.
+- **Relief (bathroom)** — decays ~**0.7%/s**; when **< 35** crew **and** guests path to the nearest **Lavatory** (¢25, 1×1, **no research**, usable by every species in breathable air). If none is reachable and relief hits **0**, they **soil the deck** — a brown **mess** that **drags mood (−4 each nearby, down to −20)** until a resident **scrubs it** (~2s). Each toilet **use dirties the fixture** (−7 condition); like any machine, crew **service** it back up (it shows the amber wear bar). **Takeaway:** lay a Lavatory or two early — cheap, no research, and a station with no toilets quickly turns into a filthy, miserable one.
 - **Mood** — see the political web below.
 - Crew **pathfind (A\*)** at ~**4 tiles/s** along connected floor. If they can't reach food/a pod, the need stays unmet — an **orange ring** warns you.
 

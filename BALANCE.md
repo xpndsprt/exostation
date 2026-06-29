@@ -119,6 +119,11 @@ Drone ore lands in the **Bay's** buffer; crew haul it to storage. Trades sell **
 
 **Implemented social weight (M42):** the summed neighbor opinion is clamped at **±45** (was ±30), so neighbors now rival needs (food/rest/fun ≈ ±22 total). Room harmony scales relation sums by /15, so a **LOVE/HATE** pair drives a room to ±1.0 harmony (vs ±0.53 for like/dislike).
 
+## Sanitation (Lavatories & messes — `agents.ts`)
+- **Relief need** (`relief` 0..100): decays **0.7/s**; below **35** crew **and** guests path to the nearest **Lavatory** and refill at **70/s**. At **0**, with no toilet reached, they soil their deck cell → a **Mess** and **−12 mood** to the offender; relief resets to 100.
+- **Lavatory** (`toilet`, ¢25, 1×1, draw 0, **no research**, any species in breathable air): each use costs **−7 condition**; it's serviced by crew via the normal service job (added to `claimService`; shows the wear bar). A toilet at 0 condition is out of order (skipped).
+- **Messes** (`w.messes`): residents take a **clean** job (scrub **0.5/s**, ~2s). While present they drag mood **−4 each within `PROXIMITY` (4 tiles), clamped −20** (`FILTH_PER`/`FILTH_CLAMP` in `mood.ts`).
+
 ## Tension & skirmishes
 - Each **species-pair present on the station** accrues a Tension value (0–100).
 - Tension rises from: shared zones/corridors between Disliked (+2/min) or Hated (+5/min) pairs; deaths/grievances (+25 instant); resource shortages station-wide (+1/min to all hostile pairs).

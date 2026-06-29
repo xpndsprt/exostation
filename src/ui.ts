@@ -79,6 +79,7 @@ const PALETTE: PaletteEntry[] = [
   { t: "pod", label: "Crew Quarters", key: "7" },
   { t: "hotel", label: "Hotel Room", key: "8" },
   { t: "rec", label: "Lounge", key: "9" },
+  { t: "toilet", label: "Lavatory", key: "" },
   { t: "bar", label: "Bar", key: "" },
   { t: "table", label: "Mess Table", key: "" },
   { t: "library", label: "Grand Library", key: "" },
@@ -820,7 +821,7 @@ export function showTooltip(world: World, target: HoverTarget, x: number, y: num
       const b = moodBreakdown(world, a);
       moodLine =
         `<div>Mood ${Math.round(a.mood)}% <span class="muted">→ ${Math.round(b.target)}</span></div>` +
-        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}${b.overflow ? ` · waste ${sgn(b.overflow)}` : ""}${b.temp ? ` · climate ${sgn(b.temp)}` : ""}</div>`;
+        `<div class="muted">base 50 · needs ${sgn(b.needs)} · neighbors ${sgn(b.social)} · room ${sgn(b.harmony)}${b.command ? ` · command ${sgn(b.command)}` : ""}${b.overflow ? ` · waste ${sgn(b.overflow)}` : ""}${b.temp ? ` · climate ${sgn(b.temp)}` : ""}${b.filth ? ` · filth ${sgn(b.filth)}` : ""}</div>`;
     }
     html =
       `<h4>${name}${a.guest ? " (guest)" : ""}</h4>` +

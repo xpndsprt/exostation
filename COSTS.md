@@ -41,6 +41,7 @@ You start a new game with **¢1000**. Building deducts the cost up front; you ca
 | Storage Silo | 70 | 1×1 | Raises every resource cap (+250). Unlock: Cargo Logistics |
 | Turret | 200 | 1×1 | Shoots down raiders. Unlock: Station Security |
 | Light Fixture | 30 | 1×1 | Emits a light pool (visual lighting/shadows); cheap ambiance |
+| Lavatory | 25 | 1×1 | Crew/guests relieve themselves here (no research); dirties with use, crew service it |
 | Mess Table | 50 | 3×3 | A spot for crew to gather and eat (no research) |
 | Fusion Reactor | 2000 | 2×2 | +150 PU — but **burns minerals as fuel** (needs a Bot Bay mining). Unlock: Fusion Power |
 | Cargo Exchange | 1500 | 2×2 | Bigger/faster/better mineral trade + raises mineral cap. Unlock: Bulk Trade |

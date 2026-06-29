@@ -123,6 +123,7 @@ function sanitize(w: World): World {
     if (!a.guest) a.stay = Infinity;
     else if (a.stay == null) a.stay = 0;
     if (typeof a.fun !== "number") a.fun = 100;
+    if (typeof a.relief !== "number") a.relief = 100;
     if (typeof a.injured !== "boolean") a.injured = false;
     if (typeof a.name !== "string") a.name = nameFor(a.species, +id);
     if (typeof a.mateId !== "number") a.mateId = -1;
@@ -164,6 +165,7 @@ function sanitize(w: World): World {
   if (typeof w.encounterTimer !== "number") w.encounterTimer = 0;
   if (w.encounter === undefined) w.encounter = null;
   if (!Array.isArray(w.breaches)) w.breaches = [];
+  if (!Array.isArray(w.messes)) w.messes = [];
   if (!w.reputation || typeof w.reputation !== "object") w.reputation = {};
   if (!Array.isArray(w.requests)) w.requests = [];
   if (typeof w.reqTimer !== "number") w.reqTimer = 0;

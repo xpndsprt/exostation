@@ -471,6 +471,7 @@ export class Renderer {
   private conduitG = new Graphics(); // power cabling laid on the deck
   private storageG = new Graphics(); // crates + water tanks sitting on storage floor
   private lastStorageSig = ""; // skip redrawing stored goods when stock is unchanged
+  private sanitationG = new Graphics(); // floor messes (no Lavatory) — redrawn each frame
   private overlay = new Graphics();
   private selection = new Graphics();
   private cursor = new Graphics();
@@ -494,7 +495,7 @@ export class Renderer {
     buildTextures();
     this.lightG.blendMode = "multiply";
     for (const layer of [
-      this.cellsC, this.decalG, this.atmo, this.grid, this.conduitG, this.storageG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
+      this.cellsC, this.decalG, this.atmo, this.grid, this.conduitG, this.storageG, this.sanitationG, this.sitesC, this.shadowsC, this.structsC, this.structFx,
       this.critterC, this.critterFx, this.agentsC, this.agentFx, this.dronesFx, this.dronesC, this.shipsFx, this.shipsC, this.godsFx, this.godsC,
       this.lightG, this.heightC, this.overlay, this.selection, this.cursor,
     ])
@@ -644,6 +645,7 @@ export class Renderer {
     this.drawAtmosphere(world);
     this.drawConduits(world);
     this.drawStorage(world);
+    this.drawSanitation(world);
     // Asteroids/planets live off-map in the Star Chart now — nothing on the grid.
     this.drawStructures(world);
     this.drawCritters(world);
@@ -1110,6 +1112,22 @@ export class Renderer {
     g.ellipse(cx, cy - h / 2, w / 2, 3).fill({ color: 0x2a3a4a }); // top rim
   }
 
+  // Floor messes (someone soiled the deck with no Lavatory) — small brown splats
+  // that fade as crew scrub them. Redrawn each frame (they're dynamic + few).
+  private drawSanitation(world: World): void {
+    const g = this.sanitationG;
+    g.clear();
+    for (const m of world.messes ?? []) {
+      const cx = (m.cell % world.w) * TILE + TILE / 2;
+      const cy = ((m.cell / world.w) | 0) * TILE + TILE / 2;
+      const a = 0.85 * (1 - (m.progress ?? 0)); // fades as it's cleaned
+      if (a <= 0.02) continue;
+      g.ellipse(cx, cy, TILE * 0.26, TILE * 0.2).fill({ color: 0x6b4a2a, alpha: a });
+      g.ellipse(cx - 3, cy + 2, TILE * 0.1, TILE * 0.08).fill({ color: 0x4f351d, alpha: a });
+      g.ellipse(cx + 4, cy - 1, TILE * 0.08, TILE * 0.06).fill({ color: 0x4f351d, alpha: a });
+    }
+  }
+
   private drawAtmosphere(world: World): void {
     // Cache: gas tints change only when a room's gas or layout changes.
     let sig = "";
@@ -1217,6 +1235,20 @@ export class Renderer {
         const wpx = (maxx - minx + 1) * TILE, hpx = (maxy - miny + 1) * TILE;
         this.structFx.rect(px + 3, py + 3, wpx - 6, hpx - 6).fill({ color: 0x6a4f34 }).stroke({ width: 1.5, color: 0x3a2c1c });
         this.structFx.rect(px + TILE * 0.6, py + TILE * 0.6, wpx - TILE * 1.2, hpx - TILE * 1.2).fill({ color: 0x8a6a48 });
+        continue;
+      }
+
+      // Lavatory: a small white fixture (tank + bowl). Tints amber as it gets dirty,
+      // and shows the same wear bar as serviced machinery.
+      if (s.kind === "toilet") {
+        const px = (s.cell % world.w) * TILE, py = ((s.cell / world.w) | 0) * TILE;
+        const dirty = s.condition < SERVICE_THRESHOLD;
+        const bowl = dirty ? 0xcdb98c : 0xeef3f8; // clean white → grimy when worn
+        this.structFx.rect(px + TILE * 0.30, py + TILE * 0.18, TILE * 0.40, TILE * 0.22).fill({ color: 0xcfd8e2 }).stroke({ width: 1, color: 0x6a7480 }); // cistern
+        this.structFx.ellipse(px + TILE * 0.5, py + TILE * 0.62, TILE * 0.26, TILE * 0.20).fill({ color: bowl }).stroke({ width: 1.2, color: 0x6a7480 }); // bowl
+        this.structFx.ellipse(px + TILE * 0.5, py + TILE * 0.62, TILE * 0.15, TILE * 0.11).fill({ color: dirty ? 0x8a7a4a : 0xb9c6d2 }); // basin
+        if (s.condition > 0 && dirty)
+          this.structFx.rect(px + 3, py + TILE - 5, (TILE - 6) * (s.condition / 100), 3).fill(0xe8a33d); // wear/dirt bar
         continue;
       }
 

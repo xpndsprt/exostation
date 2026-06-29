@@ -42,6 +42,7 @@ export const STRUCTURES: Record<StructureKind, StructDef> = {
   silo: { label: "Storage Silo", color: 0x7c8596, gen: 0, draw: 0, battery: 0, priority: 0, w: 1, h: 1, cost: 70 },
   turret: { label: "Turret", color: 0xd0564a, gen: 0, draw: 4, battery: 0, priority: 1, w: 1, h: 1, cost: 200 },
   lamp: { label: "Light Fixture", color: 0xffe9a8, gen: 0, draw: 1, battery: 0, priority: 2, w: 1, h: 1, cost: 30 },
+  toilet: { label: "Lavatory", color: 0xdfe7ee, gen: 0, draw: 0, battery: 0, priority: 0, w: 1, h: 1, cost: 25 },
   table: { label: "Mess Table", color: 0x8a6a48, gen: 0, draw: 0, battery: 0, priority: 0, w: 3, h: 3, cost: 50 },
   library: { label: "Grand Library", color: 0x9a7bd5, gen: 0, draw: 4, battery: 0, priority: 3, w: 2, h: 2, cost: 180 },
   bar: { label: "Bar", color: 0xd98a5a, gen: 0, draw: 3, battery: 0, priority: 2, w: 2, h: 2, cost: 110 },

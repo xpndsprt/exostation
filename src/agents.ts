@@ -29,11 +29,17 @@ const FEED_CAP = 4; // feedstock units crew stage at a Synth before they stop to
 const FOOD_DECAY = 1.5;
 const REST_DECAY = 1.0;
 const FUN_DECAY = 0.4;
+const RELIEF_DECAY = 0.7; // bathroom need creeps down over ~2.5 min from full
 const FOOD_LOW = 40;
 const REST_LOW = 35;
 const FUN_LOW = 40;
+const RELIEF_LOW = 35; // below this, head for a Lavatory
 const REST_RATE = 12; // recovery while sleeping
 const RELAX_RATE = 20; // fun recovered while at a Lounge
+const RELIEF_RATE = 70; // relief restored per second while at a Lavatory (quick)
+const TOILET_USE_WEAR = 7; // condition a Lavatory loses each use — crew must service it
+const CLEAN_RATE = 0.5; // floor-mess scrubbed per second (~2s per mess)
+const SOIL_MOOD = 12; // mood lost by whoever soils the floor
 const SEAL_RATE = 0.4; // breach repair per second (~2.5s to reseal)
 const BREACH_COST = 120; // emergency-repair credits per breach sealed
 
@@ -54,6 +60,17 @@ export function agentSystem(w: World, dt: number): void {
     a.food = Math.max(0, a.food - FOOD_DECAY * dt);
     a.rest = Math.max(0, a.rest - REST_DECAY * dt);
     a.fun = Math.max(0, a.fun - FUN_DECAY * dt);
+    a.relief = Math.max(0, a.relief - RELIEF_DECAY * dt);
+    // Desperate with no Lavatory in reach: soil the deck (a Mess crew must clean),
+    // then reset. They never reach 0 if they're already on the way to a toilet.
+    if (a.relief <= 0 && a.task?.type !== "relieve") {
+      const t = w.cells[a.cell].type;
+      if (t === "floor" || t === "storage") {
+        if (!w.messes.some((m) => m.cell === a.cell)) w.messes.push({ cell: a.cell, cleaner: -1, progress: 0 });
+        a.relief = 100;
+        a.mood = Math.max(0, a.mood - SOIL_MOOD);
+      }
+    }
     if (a.guest) a.stay -= dt;
 
     const cell = w.cells[a.cell];
@@ -216,6 +233,22 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
         a.mood = Math.min(100, a.mood + 2 * dt);
         if (a.fun >= 100) releaseTask(w, a);
         return; // keep relaxing (and socializing with whoever's here)
+      } else if (a.task.type === "relieve") {
+        a.relief = Math.min(100, a.relief + RELIEF_RATE * dt);
+        if (a.relief >= 100) {
+          const t = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
+          if (t && t.kind === "toilet") t.condition = Math.max(0, t.condition - TOILET_USE_WEAR); // it gets dirtier with use
+          releaseTask(w, a);
+        }
+        return; // keep going until relieved
+      } else if (a.task.type === "clean") {
+        const m = w.messes.find((x) => x.cell === a.task!.target && x.cleaner === a.id);
+        if (m) {
+          m.progress += CLEAN_RATE * dt;
+          if (m.progress >= 1) { w.messes = w.messes.filter((x) => x !== m); releaseTask(w, a); }
+          return; // keep scrubbing
+        }
+        releaseTask(w, a); // mess already gone
       } else if (a.task.type === "service") {
         const s = a.task.structureId != null ? w.structures[a.task.structureId] : undefined;
         if (s) {
@@ -340,6 +373,24 @@ function think(w: World, a: Agent, dt: number, _breathable: boolean): void {
     if (spot) {
       a.task = { type: "relax", target: spot.cell };
       a.path = spot.path;
+      return;
+    }
+  }
+  // Everyone (crew and guests) heads for a Lavatory when the need is pressing.
+  if (a.relief < RELIEF_LOW) {
+    const toilet = claimToilet(w, a, a.cell);
+    if (toilet) {
+      a.task = { type: "relieve", target: toilet.cell, structureId: toilet.id };
+      a.path = toilet.path;
+      return;
+    }
+  }
+  // Residents clean up floor messes (someone soiled the deck with no Lavatory).
+  if (!a.guest) {
+    const clean = claimClean(w, a, a.cell);
+    if (clean) {
+      a.task = { type: "clean", target: clean.cell };
+      a.path = clean.path;
       return;
     }
   }
@@ -763,6 +814,34 @@ function nearestSynthServing(w: World, a: Agent, start: number, diet: string): F
   return null;
 }
 
+// Nearest usable Lavatory (any species, in air they can breathe — a quick venture
+// is allowed). A toilet worn to 0 condition is out of order and skipped.
+function claimToilet(w: World, a: Agent, start: number): Found | null {
+  const list = Object.values(w.structures).filter(
+    (s) => s.kind === "toilet" && s.condition > 0 && (nativeAt(w, a, s.cell) || a.suit >= VENTURE_SUIT),
+  );
+  list.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const s of list) {
+    const path = findPath(w, start, s.cell);
+    if (path) return { id: s.id, cell: s.cell, path };
+  }
+  return null;
+}
+
+// Nearest unclaimed floor mess a resident can reach (a charged suit lets them
+// venture into airless deck to scrub it).
+function claimClean(w: World, a: Agent, start: number): { cell: number; path: number[] } | null {
+  const list = (w.messes ?? []).filter(
+    (m) => (m.cleaner < 0 || m.cleaner === a.id) && (nativeAt(w, a, m.cell) || a.suit >= VENTURE_SUIT),
+  );
+  list.sort((p, q) => manhattan(w, start, p.cell) - manhattan(w, start, q.cell));
+  for (const m of list) {
+    const path = findPath(w, start, m.cell);
+    if (path) { m.cleaner = a.id; return { cell: m.cell, path }; }
+  }
+  return null;
+}
+
 // Nearest dock, targeting its interior access cell (the wall cell isn't
 // walkable). Gas-agnostic — used by departing guests.
 function nearestDockAccess(w: World, start: number): Found | null {
@@ -799,7 +878,8 @@ function claimConduitRepair(w: World, a: Agent, start: number): { cell: number; 
 function claimService(w: World, a: Agent, start: number): Found | null {
   const jobs = Object.values(w.structures).filter(
     (s) =>
-      STRUCTURES[s.kind].draw > 0 &&
+      // powered machinery wears down; a Lavatory gets dirty with use — both serviced
+      (STRUCTURES[s.kind].draw > 0 || s.kind === "toilet") &&
       s.condition < SERVICE_THRESHOLD &&
       (s.servicedBy < 0 || s.servicedBy === a.id) &&
       canSee(w, a, s.cell), // they only fix faults they can actually see
