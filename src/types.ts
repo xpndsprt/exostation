@@ -415,6 +415,9 @@ export interface World {
   welcomed: Species[]; // species the Chronicler has already welcomed aboard
   story: string; // the Chronicler's current narrative line (story.ts)
   storyTimer: number; // accumulator toward the next chronicle entry
+  storyBeat: string | null; // pending Command transmission (campaign beat id) awaiting the player
+  firedBeats: string[]; // campaign beats already shown (save-persisted; never repeat)
+  storyFlags: Record<string, number>; // remembered story choices (light branching)
   eggs: Egg[]; // incubating clutches laid by contented species (spawn.ts)
   pests: Pest[]; // spiders hatched from bad eggs, hunted by the crew
   boarders: Boarder[]; // raiders that stormed the station from a raided dock (boarding.ts)

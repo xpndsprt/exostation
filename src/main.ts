@@ -17,6 +17,7 @@ import { Renderer, resetTextures } from "./renderer";
 import { Starfield } from "./starfield";
 import { Wormhole, beaconAnchor } from "./wormhole";
 import { beaconIntensity } from "./beacon";
+import { getBeat, resolveBeat } from "./campaign";
 import { autogameStep, autogameOn, setAutogame } from "./autogame";
 import { createCamera, screenToTile, zoomAt } from "./camera";
 import {
@@ -44,6 +45,8 @@ import {
   isFirstContactOpen,
   showEncounter,
   isEncounterOpen,
+  showStoryBeat,
+  isStoryBeatOpen,
   showStarChart,
   showArchive,
   isStarChartOpen,
@@ -921,9 +924,29 @@ async function boot(): Promise<void> {
           if (world.phase === "playing") setSpeed(world, resumeSpeed);
         });
       }
+      // a pending COMMAND story transmission pauses for the player (the campaign
+      // spine — defer behind a first-contact card; they share the pause)
+      if (world.storyBeat && world.phase === "playing" && !isStoryBeatOpen() && !isFirstContactOpen()) {
+        const id = world.storyBeat;
+        const beat = getBeat(id);
+        if (!beat) { world.storyBeat = null; }
+        else {
+          const resumeSpeed = world.speed || 1;
+          setSpeed(world, 0);
+          audio.play("first-contact");
+          showStoryBeat(
+            { speaker: beat.speaker, title: beat.title, body: beat.body(world), choices: beat.choices ?? [] },
+            (choice) => {
+              resolveBeat(world, id, choice);
+              if (world.phase === "playing") setSpeed(world, resumeSpeed);
+              needRedraw = true;
+            },
+          );
+        }
+      }
       // a pending social encounter pauses the game for the player's choice
       // (defer if a first-contact card is still up — they share the pause)
-      if (world.encounter && world.phase === "playing" && !isEncounterOpen() && !isFirstContactOpen()) {
+      if (world.encounter && world.phase === "playing" && !isEncounterOpen() && !isFirstContactOpen() && !isStoryBeatOpen()) {
         const resumeSpeed = world.speed || 1;
         const conflict = world.encounter.kind === "conflict";
         setSpeed(world, 0);
@@ -939,7 +962,7 @@ async function boot(): Promise<void> {
         });
       }
       // a god has rendered a verdict → pause and show its dialog (with portrait)
-      if (world.godVerdict && world.phase === "playing" && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()) {
+      if (world.godVerdict && world.phase === "playing" && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen() && !isStoryBeatOpen()) {
         const gv = world.godVerdict;
         world.godVerdict = null;
         const resumeSpeed = world.speed || 1;
@@ -952,7 +975,7 @@ async function boot(): Promise<void> {
       // a contented species asks to lay a clutch → pause for the player's answer
       if (
         world.breedOffer && world.phase === "playing" &&
-        !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()
+        !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen() && !isStoryBeatOpen()
       ) {
         const bo = world.breedOffer;
         const resumeSpeed = world.speed || 1;
@@ -969,7 +992,7 @@ async function boot(): Promise<void> {
       // a romance milestone (fell in love / turbulence / breakup / implants)
       if (
         world.romance && world.phase === "playing" &&
-        !isRomanceOpen() && !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen()
+        !isRomanceOpen() && !isBreedOpen() && !isGodOpen() && !isEncounterOpen() && !isFirstContactOpen() && !isStoryBeatOpen()
       ) {
         const rp = world.romance;
         world.romance = null;

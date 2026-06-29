@@ -34,6 +34,7 @@ import { eventsSystem, forceEvent, raiderDps } from "../src/events";
 import { boardingSystem, spawnBoardingParty } from "../src/boarding";
 import { godsSystem, GODS, WEIRD_GODS } from "../src/gods";
 import { storySystem, currentDay } from "../src/story";
+import { campaignSystem, resolveBeat } from "../src/campaign";
 import { storageCaps, BASE_CAPS, SILO_BONUS, storageBlocksBuild, isStorageGated, warehouseSlots } from "../src/storage";
 import { advise, updateSeen } from "../src/advisor";
 import { saveWorld, loadWorld, deleteSave, listSaves, serializeWorld, parseSave } from "../src/persistence";
@@ -2354,6 +2355,19 @@ check("Harmonious room boosts production", synthMeals(true) > synthMeals(false))
   check("Day count starts at 1+", currentDay(w) >= 1);
   w.tick = 1000; // 25 in-world days at 40 ticks/day (4× slower than the old year clock)
   check("Day count advances with ticks", currentDay(w) === 26);
+}
+
+// --- Campaign spine: COMMAND transmissions fire once, in order, and record flags ---
+{
+  const w = createWorld();
+  campaignSystem(w, 0.1);
+  check("Campaign fires the prologue first", w.storyBeat === "prologue" && w.firedBeats.includes("prologue"));
+  campaignSystem(w, 0.1);
+  check("Campaign holds while a transmission is pending", w.storyBeat === "prologue" && w.firedBeats.length === 1);
+  resolveBeat(w, "prologue", 1); // the 'name your price' choice sets the merc flag
+  check("Resolving a beat clears it and records the flag", w.storyBeat === null && w.storyFlags.merc === 1);
+  campaignSystem(w, 0.1); // no air/crew yet → no further beat
+  check("No beat fires until its trigger is met", w.storyBeat === null);
 }
 
 // --- Reproduction: contented species lay clutches that hatch young + spiders ---

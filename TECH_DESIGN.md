@@ -55,8 +55,14 @@ simStep(world, dt):              // src/main.ts
   romanceSystem      // 13c. love-couples: daily love growth, turbulence dice, thaw, implants
   beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
   objectivesSystem   // 15. scenario goal progression, win/lose
-  world.tick++
+  campaignSystem     // 15b. fire the next COMMAND story transmission (campaign.ts)
+  world.tick += 10/SIM_HZ   // tick = deciseconds (real-time), independent of step rate
 ```
+(Other narration systems — `gods`, `story`, `bar`, `romance` — also run in this
+phase; the list above is abbreviated.) The **campaign** (`campaign.ts`) is a
+narration layer only: a data table of beats with `when(world)` triggers that set
+`world.storyBeat` (a pending dialog id); the main loop pauses and shows it, and
+`firedBeats` / `storyFlags` (save-persisted) keep the arc from repeating.
 
 ### Tick / time model
 - Fixed simulation step: **5 steps/sec at 1×** (`SIM_HZ`), driven by an

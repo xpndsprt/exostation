@@ -61,6 +61,7 @@ If you're ever overwhelmed: **pause (Space)**, fix air and power, then unpause.
 
 **Species (Alienpedia) + Advisor**
 - **First contact:** the very first time a species ever appears on your station, the game **pauses and shows a portrait + backstory card** for them. Dismiss with **Continue** (multiple new arrivals queue up). Afterwards they live in the Alienpedia.
+- **The campaign (COMMAND transmissions):** a story spine runs through the game as **paused dialog boxes from the Emperor's Command**, firing at key milestones — your arrival briefing, first breath, first crew, each objective cleared, and the five Beacon signatures, ending with the **Beacon finale**. A couple of transmissions offer **choices** that set the tone (and nudge a credit/flag); your picks colour later messages. It threads the whole arc from boot to lighting the Sector Beacon. Progress is saved, so the story never repeats.
 - The **Alienpedia** lives under the **👽 Species** tab (left dock) — a reference card for **every species that has visited**: what they breathe, eat, their combat power, who they like/dislike, role, and how many are aboard. **Click an entry** (when that species is aboard) to **jump the camera to them and ring them**; it also shows their **live count and average mood**.
 - The **Advisor** (bottom-centre) shows your **current goal** (the 🎯 progress bar, at the top of the panel) and your **next logical steps**, most urgent first (red = critical danger, amber = should-do, green = tip). When in doubt, do what the top red/amber item says.
 

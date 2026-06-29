@@ -1402,6 +1402,36 @@ export function showEncounter(enc: Encounter, onChoose: (choice: number) => void
   el.classList.add("show");
 }
 
+// ---- COMMAND story transmission (the campaign spine) ----
+let sbShown = false;
+export function isStoryBeatOpen(): boolean {
+  return sbShown;
+}
+export function showStoryBeat(
+  beat: { speaker: string; title: string; body: string; choices: { label: string; hint?: string }[] },
+  onChoose: (choice: number) => void,
+): void {
+  const el = document.getElementById("storybeat");
+  if (!el) { onChoose(0); return; }
+  sbShown = true;
+  (el.querySelector(".sb-tag") as HTMLElement).textContent = beat.speaker;
+  (el.querySelector(".sb-title") as HTMLElement).textContent = beat.title;
+  (el.querySelector(".sb-body") as HTMLElement).textContent = beat.body;
+  const box = el.querySelector(".sb-choices") as HTMLElement;
+  const choices = beat.choices.length ? beat.choices : [{ label: "Continue" }];
+  box.innerHTML = choices
+    .map((c, i) => `<button type="button" data-i="${i}"><b>${c.label}</b>${c.hint ? `<span class="ch-hint">${c.hint}</span>` : ""}</button>`)
+    .join("");
+  box.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      el.classList.remove("show");
+      sbShown = false;
+      onChoose(Number((btn as HTMLButtonElement).dataset.i));
+    }, { once: true });
+  });
+  el.classList.add("show");
+}
+
 // ---- god dialog: a race-god's verdict, with its creature portrait ----
 let godShown = false;
 export function isGodOpen(): boolean {

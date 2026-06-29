@@ -24,6 +24,7 @@ import { economySystem } from "./economy";
 import { eventsSystem } from "./events";
 import { godsSystem } from "./gods";
 import { storySystem } from "./story";
+import { campaignSystem } from "./campaign";
 import { requestsSystem } from "./requests";
 import { encountersSystem } from "./encounters";
 import { barSystem } from "./bar";
@@ -52,6 +53,7 @@ export function simStep(world: World, dt: number): void {
   eventsSystem(world, dt);
   godsSystem(world, dt);
   storySystem(world, dt);
+  campaignSystem(world, dt);
   requestsSystem(world, dt);
   encountersSystem(world, dt);
   barSystem(world, dt);

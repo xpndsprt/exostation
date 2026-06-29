@@ -309,6 +309,7 @@ A playable vertical slice that proves the core loop end-to-end, then introduces 
 - **M5** — Mining Bot loop fills the Silo; Synthesizer turns resources into meals.
 - **M6** — Docking Port spawns **Drenn** guests; occupied pods earn lodging credits.
 - **M7** — Time controls, save/load, alerts, info panel polish.
+- **M42** — ⚙️ **Campaign spine**: a story told in paused **COMMAND (Emperor)** dialog transmissions, triggered by milestones from arrival to the **Sector Beacon finale**, with light flag-based choices (`campaign.ts`; `world.storyBeat`/`firedBeats`/`storyFlags`).
 
 ## Definition of done (MVP)
 A fresh load lets the player build a sealed powered room, keep a Human alive indefinitely via the mining→food→O₂ loop, watch Drenn guests dock and lodge for credits, survive a deliberately induced brownout by re-prioritizing power, and reload the saved station — with no crashes at 3× speed on an ~80×80 grid with dozens of agents.

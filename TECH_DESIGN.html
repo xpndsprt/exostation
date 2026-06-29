@@ -97,7 +97,9 @@ tr:hover td { background: #eef3ff; }
   romanceSystem      // 13c. love-couples: daily love growth, turbulence dice, thaw, implants
   beaconSystem       // 14. Sector Beacon charge while species-staffed (win finale)
   objectivesSystem   // 15. scenario goal progression, win/lose
-  world.tick++</code></pre>
+  campaignSystem     // 15b. fire the next COMMAND story transmission (campaign.ts)
+  world.tick += 10/SIM_HZ   // tick = deciseconds (real-time), independent of step rate</code></pre>
+<p>(Other narration systems — <code>gods</code>, <code>story</code>, <code>bar</code>, <code>romance</code> — also run in this phase; the list above is abbreviated.) The <strong>campaign</strong> (<code>campaign.ts</code>) is a narration layer only: a data table of beats with <code>when(world)</code> triggers that set <code>world.storyBeat</code> (a pending dialog id); the main loop pauses and shows it, and <code>firedBeats</code> / <code>storyFlags</code> (save-persisted) keep the arc from repeating.</p>
 <h3>Tick / time model</h3>
 <ul><li>Fixed simulation step: <strong>5 steps/sec at 1×</strong> (<code>SIM_HZ</code>), driven by an accumulator inside PixiJS's <code>app.ticker</code>; rendering is decoupled and happens every frame (entity positions are interpolated, so motion stays smooth). NOTE: <code>world.tick</code> is a real-time clock in <strong>deciseconds</strong> (advances <code>10/SIM_HZ</code> per step = 2 at 5 Hz), so all tick-based timers read the same regardless of step rate. on the same RAF, gated by a <code>needRedraw</code> flag.</li><li>Speed = tick multiplier: Pause (0), 1× (10/s), 2× (20/s), 3× (30/s). The accumulator caps catch-up at 120 steps/frame to avoid spiral-of-death.</li><li>While paused, a lightweight <code>refresh()</code> still recomputes rooms / power / atmosphere so edits show their effect immediately.</li></ul>
 <h3>Determinism</h3>

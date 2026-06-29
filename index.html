@@ -358,11 +358,23 @@
     #tutorial .tut-foot button:hover { background: #171d2a; border-color: var(--cyan-dim); }
 
     /* ---- modal shared shell ---- */
-    #saves, #firstcontact, #encounter, #starchart, #god, #breed, #romance, #defeat, #intro, #archive {
+    #saves, #firstcontact, #encounter, #starchart, #god, #breed, #romance, #defeat, #intro, #archive, #storybeat {
       position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
       background: rgba(3,5,10,.78); backdrop-filter: blur(4px); }
     #saves.show, #firstcontact.show, #encounter.show, #starchart.show, #god.show,
-    #breed.show, #romance.show, #defeat.show, #intro.show, #archive.show { display: flex; }
+    #breed.show, #romance.show, #defeat.show, #intro.show, #archive.show, #storybeat.show { display: flex; }
+    /* COMMAND story transmissions (the Emperor's arc to the Beacon) */
+    #storybeat { z-index: 65; }
+    #storybeat .sb-card { background: var(--panel-solid); border: 1px solid var(--edge2); border-radius: 16px;
+      padding: 20px 22px; width: 460px; max-width: 92vw; box-shadow: 0 0 0 1px rgba(232,120,90,.14), 0 22px 70px rgba(0,0,0,.78); }
+    #storybeat .sb-tag { font-size: 11px; letter-spacing: .24em; color: #ff8a6a; text-transform: uppercase; text-align: center; }
+    #storybeat .sb-title { margin: 8px 2px 10px; font-size: 18px; color: var(--ink); text-align: center; }
+    #storybeat .sb-body { color: var(--ink2); font-size: 13px; line-height: 1.6; margin: 0 2px 16px; text-align: center; white-space: pre-wrap; }
+    #storybeat .sb-choices { display: flex; flex-direction: column; gap: 8px; }
+    #storybeat .sb-choices button { text-align: left; background: #11151f; color: var(--ink); border: 1px solid var(--edge2);
+      border-radius: 9px; padding: 9px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+    #storybeat .sb-choices button:hover { background: rgba(232,120,90,.10); border-color: #ff8a6a; }
+    #storybeat .sb-choices .ch-hint { display: block; color: var(--dim); font-size: 11px; margin-top: 2px; }
     /* Grand Library archivist */
     #archive { z-index: 66; }
     #archive .arc-card { background: var(--panel-solid); border: 1px solid var(--edge2); border-radius: 14px;
@@ -685,6 +697,12 @@
     <h3 class="enc-title"></h3>
     <p class="enc-body"></p>
     <div class="enc-choices"></div>
+  </div></div>
+  <div id="storybeat"><div class="sb-card">
+    <div class="sb-tag">COMMAND</div>
+    <h3 class="sb-title"></h3>
+    <p class="sb-body"></p>
+    <div class="sb-choices"></div>
   </div></div>
   <div id="starchart"><div class="sc-card">
     <div class="sc-head"><div class="sc-tag">STAR CHART</div><button class="sc-close" type="button" title="Close">✕</button></div>

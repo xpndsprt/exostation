@@ -135,6 +135,9 @@ function sanitize(w: World): World {
   if (!Array.isArray(w.welcomed)) w.welcomed = [];
   if (typeof w.story !== "string") w.story = "";
   if (typeof w.storyTimer !== "number") w.storyTimer = 0;
+  if (w.storyBeat !== null && typeof w.storyBeat !== "string") w.storyBeat = null;
+  if (!Array.isArray(w.firedBeats)) w.firedBeats = [];
+  if (typeof w.storyFlags !== "object" || w.storyFlags === null) w.storyFlags = {};
   if (!Array.isArray(w.ships)) w.ships = [];
   if (!Array.isArray(w.gods)) w.gods = [];
   if (typeof w.godTimer !== "number") w.godTimer = 0;
