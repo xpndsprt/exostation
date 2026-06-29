@@ -51,7 +51,6 @@ import {
   showArchive,
   isStarChartOpen,
   refreshStarChart,
-  showIntro,
   renderStory,
   showGodDialog,
   isGodOpen,
@@ -240,14 +239,8 @@ async function boot(): Promise<void> {
 
   let prevPhase: Phase = "playing";
   let prevObjectiveIx = world.objectiveIx;
-  // Pause and show the new-station briefing (Beacon goal + species rules), then resume.
-  const launchIntro = (): void => {
-    const resume = world.speed || 1;
-    setSpeed(world, 0);
-    showIntro(() => {
-      if (world.phase === "playing") setSpeed(world, resume);
-    });
-  };
+  // (The old new-station briefing modal is gone — the campaign's prologue
+  // transmission now delivers the goal and setup; see campaign.ts.)
 
   const restart = (): void => {
     const fresh = createWorld();
@@ -268,7 +261,7 @@ async function boot(): Promise<void> {
     recenter();
     renderer.clearCursor();
     needRedraw = true;
-    launchIntro(); // a deliberate new station always gets the briefing
+    // a fresh world resets firedBeats, so the campaign prologue re-fires as the intro
   };
 
   const handlers: UIHandlers = {
@@ -464,7 +457,8 @@ async function boot(): Promise<void> {
     handlers.onStarChart(bay ? bay.id : -1);
   });
   applyCam();
-  launchIntro(); // show the briefing on every fresh game start
+  // No separate intro modal — the campaign's prologue transmission fires on the
+  // first sim step and delivers the briefing (see campaign.ts).
 
   const tileAt = (clientX: number, clientY: number): { tx: number; ty: number } => {
     const rect = canvas.getBoundingClientRect();
