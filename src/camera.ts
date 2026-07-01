@@ -10,7 +10,7 @@ export interface Camera {
 export const ZOOM_STEPS = [0.25, 0.5, 1, 2, 3];
 
 export function createCamera(): Camera {
-  return { x: 60, y: 60, scale: 0.5 }; // start at 50% — the whole station in view, crisp
+  return { x: 60, y: 60, scale: 1 }; // start at 100% (one ladder step in from 50%)
 }
 
 function nearestStep(scale: number): number {
